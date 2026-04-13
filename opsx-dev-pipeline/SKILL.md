@@ -181,7 +181,7 @@ metadata:
     - 对象转换（MapStruct）、事务管理、安全性与性能
 
     保存审查报告到 `openspec/review/`：
-    - 文件名：`YYYY-MM-DD-HHmm-<branch-name>-pipeline-review.md`
+    - 文件名：`YYYY-MM-DD-HH:mm-<branch-name>-pipeline-review.md`
     - 多轮审查时追加轮次后缀：`-round-2.md`、`-round-3.md`
 
 11. **[决策点 3] 审查结果处理**
