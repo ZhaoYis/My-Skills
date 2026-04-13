@@ -1,0 +1,56 @@
+<#--
+  ============================================================================
+  Domain层更新请求模板
+  版本: v1.1.0 | 层级: Core 层 | 维护人: pprod-team
+  说明: 生成 Domain 层更新请求对象
+  依赖: UpdateInfo, Lombok
+  ============================================================================
+-->
+package ${packageName}.core.service${moduleName}.request;
+
+<#list columns as column>
+    <#if column.enumInfo??>
+import ${packageName}.common.service.facade${moduleName}.enums.${column.javaFieldNameUF}Enum;
+    </#if>
+</#list>
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.EqualsAndHashCode;
+import ${packageName}.common.service.facade.base.UpdateInfo;
+<#if hasLocalDateTimeField>
+import java.time.LocalDateTime;
+</#if>
+<#if hasLocalDateField>
+import java.time.LocalDate;
+</#if>
+<#if hasBigDecimalField>
+import java.math.BigDecimal;
+</#if>
+
+/**
+ * 更新${tableComment}请求
+ *
+ * @author ${author}
+ */
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@EqualsAndHashCode(callSuper = false)
+public class ${javaBeanName}UpdateRequest extends UpdateInfo {
+
+<#list columns as column>
+    <#if column.javaFieldName != "id" && column.javaFieldName != "createUserId" && column.javaFieldName != "createName" && column.javaFieldName != "createTime" && column.javaFieldName != "updateUserId" && column.javaFieldName != "updateName" && column.javaFieldName != "updateTime" && column.javaFieldName != "deleteFlag">
+    /**
+     * ${column.comment!""}
+     */
+    <#if column.enumInfo??>
+    private ${column.javaFieldNameUF}Enum ${column.javaFieldName};
+    <#else>
+    private ${column.javaTypeBox} ${column.javaFieldName};
+    </#if>
+    </#if>
+</#list>
+}
