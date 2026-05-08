@@ -29,7 +29,7 @@ metadata:
 | 0 | 入口判断 | `references/phase-0-entrance.md` |
 | 1 | 提案编写 (Propose) | `references/phase-1-propose.md` |
 | 2 | 提案应用 (Apply) | `references/phase-2-apply.md` |
-| 3 | 代码审查 (Review) | `references/phase-3-review.md` |
+| 3 | 代码审查 (Review) | `references/phase-3-review.md`；「生成修复提案并应用」见 `references/phase-3.1-fix-review.md` |
 | 4 | 提案归档 (Archive) | `references/phase-4-archive.md` |
 | 5 | 提交前单元测试 | `references/phase-5-unit-tests.md` |
 | 6 | 提交合并推送 (Merge & Push) | `references/phase-6-merge-push.md` |
@@ -44,7 +44,7 @@ metadata:
 | 1–2 | 0 | 环境预检、入口类型与续接确认 | `phase-0-entrance.md` |
 | 3–4 | 1 | 创建 change / 生成制品；**决策点 1**（提案门禁） | `phase-1-propose.md` |
 | 5–7 | 2 | 获取 apply 上下文、按任务实施；**决策点 2** | `phase-2-apply.md` |
-| 8–11 | 3 | 约定与 diff、审查、**决策点 3**（含 fix-cr 子流程） | `phase-3-review.md` |
+| 8–11 | 3 | 约定与 diff、审查、**决策点 3**（含 fix-cr 子流程） | `phase-3-review.md`，`phase-3.1-fix-review.md` |
 | 12–15 | 4 | 归档前检查、delta 同步、执行归档；**决策点 4** | `phase-4-archive.md` |
 | 16 | 5 | **决策点 4b**、单测子流程 | `phase-5-unit-tests.md` |
 | 17–22 | 6 | 预提交（**5a/5b**）、暂存提交（**决策点 5**）、推送（**5c**）、合并（**决策点 6**）、合并后分支、最终摘要 | `phase-6-merge-push.md` |
