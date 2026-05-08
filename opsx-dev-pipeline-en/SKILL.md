@@ -1,8 +1,8 @@
 ---
 name: opsx-dev-pipeline-en
-description: End-to-end requirement-driven development pipeline — openspec + git preflight (Phase 0), resume Phase 1/2/3 or new proposal by entry type (opsx-propose), align proposal with requirements gate, apply (opsx-apply), review-and-fix loop (incl. fix-cr subflow), archive (opsx-archive), Phase 5 pre-commit unit-test gate (decision 4b), Phase 6 pre-commit checks and push-only or push-and-merge per decision 4. User decisions at key points.
+description: OpenSpec + Git end-to-end flow: preflight & propose → apply → review (incl. fix-cr) → archive → pre-commit unit tests → push/merge; user decisions at gates; authoritative steps in `references/`.
 license: MIT
-compatibility: Requires openspec CLI and git CLI. Strongly recommended in Cursor — AskQuestion tool. Optional child skills: `openspec-propose`, `openspec-apply-change`, `openspec-archive-change` for extra on-disk notes; code review, unit-test gate, commit/push, and merge are fully specified in this skill’s `references/` (Phase 3, 5 & 6).
+compatibility: Requires openspec and git CLI; Cursor + AskQuestion recommended. Review, unit-test gate, commit/merge live in `references/` (Phases 3/5/6); optional openspec child skills for extra checklists.
 metadata:
   author: zhaoyi
   version: "2.0"

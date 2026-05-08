@@ -28,7 +28,7 @@ Do **not** require loading or invoking these child skills separately. If a child
 
 **Git (review / commit / merge)**: no separate `git-*` skills — use **Phase 3** (review + report), **Phase 5** (pre-commit unit tests), **Phase 6** (stage, commit, push, merge, conflicts).
 
-For the Phase 3 **fix-cr** subflow, “invoke `openspec-propose` / `openspec-apply-change`” means: run the matching **Phase 1 / Phase 2** sections here using the fix change name — no external skill load.
+Phase 3 **fix-cr**: create `openspec/changes/fix-cr-*/`, **must pass** `phase-1-propose.md` **decision 1**, then run `phase-2-apply.md` — **do not** patch production code before that gate. Equivalent to **Phase 1 / Phase 2** with the fix change name; no external openspec child skills.
 
 ### Openspec / Git versions
 

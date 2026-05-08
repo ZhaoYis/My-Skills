@@ -94,16 +94,27 @@ compatibility: 需要 git；项目规范来自 `openspec/project.md` 或新版�
 
     **"生成修复提案并应用"子流程（最多循环 3 轮）：**
 
-    a. 根据审查报告中的问题，构建修复提案描述：
-       - 提案名称（kebab-case）：`fix-cr-<主要问题类型>`（如 `fix-cr-security`、`fix-cr-convention`、`fix-cr-mixed`）
+    **与「直接修复并重新审查」的界限**：本路径**必须**先落盘 OpenSpec 修复 change（`openspec/changes/<fix-name>/` 下制品）并经 **Phase 1 决策点 1**（见下）后，才允许改业务代码；**不得**把本选项执行成「无 change、直接打补丁」。
+
+    a. 根据审查报告中的问题，确定修复 change 名称与提案材料：
+       - 名称（kebab-case）：`fix-cr-<主要问题类型>`（如 `fix-cr-security`、`fix-cr-convention`、`fix-cr-mixed`）
        - 多轮时追加轮次：`fix-cr-<type>-round-2`
-       - 提案内容包含：问题列表、影响文件、修复方案、审查报告路径引用
-    b. 调用 `openspec-propose` 技能创建修复 change 并生成制品
-    c. 展示修复提案摘要，使用 **AskQuestion tool** 确认：
-       - `确认提案，开始修复` - 继续
-       - `修改提案` - 用户说明修改内容后更新
-       - `放弃修复，继续归档` - 清理已创建的修复 change（`rm -rf openspec/changes/fix-cr-*` 对应本次创建的），跳过修复，进入 Phase 4
-    d. 调用 `openspec-apply-change` 技能逐任务实施修复
+       - 将写入制品的内容：问题列表、影响文件、修复方案、审查报告路径引用
+
+    b. **新建修复 change 并生成制品（等价 Phase 1，禁止依赖外部「提案」子技能）**  
+       - 执行 `openspec new change "fix-cr-<type>"`（或本项目封装脚本）；名称冲突时按 `phase-1-propose.md` 步骤 3 的冲突处理。  
+       - 按 `phase-1-propose.md` **步骤 3** 生成/填写 `openspec/changes/fix-cr-<type>/` 下所需制品（`proposal.md`、`design.md`、`tasks.md`、delta specs 等以项目 openspec 规则为准），使 **`tasks.md` 仅描述本次 CR 修复项**。  
+       - **硬门禁**：在下一步 **决策点 1** 用户明确选择「确认提案，开始实施」之前，**仅允许**编辑 `openspec/changes/fix-cr-<type>/`、`openspec/review/` 等制品与报告路径引用；**禁止**对业务源码做修复性修改（读代码、列计划除外）。
+
+    c. **修复提案门禁（等价 Phase 1 决策点 1，必选）**  
+       展示修复提案与 `tasks.md` 要点摘要（对照审查报告），严格按 `phase-1-propose.md` **步骤 4** 使用 **AskQuestion**（三选项：`确认提案，开始实施` / `提案不符合预期，我要补充/修改` / `终止流程`）。  
+       - 未选「确认提案，开始实施」→ **不得**进入步骤 d。  
+       - 选「终止流程」→ 按该决策点语义退出；若用户要放弃已创建的 `fix-cr-*`，清理对应目录后再结束。  
+       - **禁止**用本节旧文案「确认提案，开始修复」等**替代** Phase 1 决策点 1 的三选项（避免跳过正式提案确认）。
+       - 若用户决定**不再走 fix change、直接归档原来的需求 change**：选「终止流程」，删除已创建的 `openspec/changes/fix-cr-<type>/`（若存在），并提示用户以**原 change 名称**从 `phase-4-archive.md` 续跑（本 fix 子流程结束；**不**在此路径内执行针对 `fix-cr-*` 的归档，除非用户明确要继续完成 fix）。
+
+    d. **逐任务实施修复（等价 Phase 2）**  
+       仅当步骤 c 已选「确认提案，开始实施」后：对 change **`fix-cr-<type>`** 执行 `phase-2-apply.md` **步骤 5–7**（`opsx-instructions-apply.sh "<name>"` / 等价 `openspec instructions apply`），按 `tasks.md` 勾选任务；**禁止**跳过步骤 b–c 直接改业务代码。
     e. 归档修复 change（修复类 change 通常无 delta specs：跳过 Step 13 的 delta 对话时，可用 `--skip-specs`；若有 delta 需合并则去掉该 flag）：
        ```bash
        bash opsx-dev-pipeline/scripts/opsx-archive.sh "fix-cr-<type>" -y --skip-specs

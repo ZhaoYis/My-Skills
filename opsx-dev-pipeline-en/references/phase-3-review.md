@@ -94,16 +94,27 @@ compatibility: Requires git; project conventions from `openspec/project.md` or n
 
     **`Create fix proposal and apply` sub-flow (max 3 rounds):**
 
-    a. From the report, draft a fix proposal:
+    **Boundary vs `Fix directly and re-review`**: This path **must** create an OpenSpec fix change under `openspec/changes/<fix-name>/`, pass **Phase 1 decision 1** (below), **then** edit production code. **Do not** treat this option as “patch code without a change.”
+
+    a. From the report, pick the fix change name and proposal material:
        - Name (kebab-case): `fix-cr-<main-issue-type>` (e.g. `fix-cr-security`, `fix-cr-convention`, `fix-cr-mixed`)
        - Later rounds: `fix-cr-<type>-round-2`
-       - Body: issue list, affected files, fix plan, link/path to review report.
-    b. Invoke the `openspec-propose` skill to create the fix change and artifacts.
-    c. Show fix proposal summary, **AskQuestion**:
-       - `Confirm proposal; start fix` — continue.
-       - `Revise proposal` — user explains edits; update artifacts.
-       - `Abandon fix; continue to archive` — remove this fix change (`rm -rf openspec/changes/fix-cr-*` for what you created); Phase 4.
-    d. Invoke `openspec-apply-change` to implement fix tasks.
+       - What goes into artifacts: issue list, affected files, fix plan, path to the review report.
+
+    b. **Create the fix change and artifacts (Phase 1 equivalent — no external “propose” skill)**  
+       - Run `openspec new change "fix-cr-<type>"` (or your repo’s wrapper); on name collision, follow `phase-1-propose.md` Step 3.  
+       - Follow `phase-1-propose.md` **Step 3** to produce files under `openspec/changes/fix-cr-<type>/` (`proposal.md`, `design.md`, `tasks.md`, delta specs per project rules). **`tasks.md` must only list this CR fix scope.**  
+       - **Hard gate**: Until the user explicitly picks **Confirm proposal, start implementation** at decision 1 (next step), you may edit only `openspec/changes/fix-cr-<type>/`, `openspec/review/`, and related references — **no** corrective edits to production source (read-only / planning is OK).
+
+    c. **Fix proposal gate (Phase 1 decision 1 — mandatory)**  
+       Show the fix proposal and `tasks.md` highlights (mapped to the review). Use **AskQuestion** exactly as `phase-1-propose.md` **Step 4**: `Confirm proposal, start implementation` / `Proposal does not match; I need to revise` / `Terminate pipeline`.  
+       - Without **Confirm proposal, start implementation** → **do not** enter Step d.  
+       - **Terminate** → honor that decision; if abandoning the new `fix-cr-*`, remove that change directory when appropriate.  
+       - **Do not** substitute ad-hoc options like “Confirm proposal; start fix” for Step 4’s three options.
+       - If the user **drops this fix change and wants to archive the original requirement change instead**: pick **Terminate pipeline**, remove `openspec/changes/fix-cr-<type>/` if it was created, and tell them to resume **`phase-4-archive.md`** with the **original change name** (fix subflow ends; **do not** archive `fix-cr-*` here unless the user still wants that fix completed).
+
+    d. **Implement fix tasks (Phase 2 equivalent)**  
+       Only **after** Step c: run `phase-2-apply.md` **Steps 5–7** for change **`fix-cr-<type>`** (`opsx-instructions-apply.sh "<name>"` / equivalent `openspec instructions apply`), ticking `tasks.md`. **Do not** skip b–c and patch production code directly.
     e. Archive the fix change (often no delta specs: if Step 13 is skipped, `--skip-specs` is typical; omit it if deltas must merge into main specs):
        ```bash
        bash opsx-dev-pipeline-en/scripts/opsx-archive.sh "fix-cr-<type>" -y --skip-specs

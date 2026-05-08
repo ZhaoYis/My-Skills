@@ -1,8 +1,8 @@
 ---
 name: opsx-dev-pipeline
-description: 需求开发全流程一站式执行：openspec + git 仓库预检（Phase 0）→ 按入口类型续接 Phase 1/2/3 或新建提案（opsx-propose）→ 方案与需求一致门禁 → 应用（opsx-apply）→ 审查与修复回路（含 fix-cr 子流程）→ 归档（opsx-archive）→ Phase 5 提交前单测（决策点 4b）→ Phase 6 预检与提交推送/合并。关键环节由用户决策。
+description: OpenSpec + Git 需求开发全流程：预检与提案 → 应用 → 审查（含 fix-cr）→ 归档 → 提交前单测 → 推送/合并；关键步骤用户决策，细则以 `references/` 为准。
 license: MIT
-compatibility: Requires openspec CLI and git CLI. Strongly recommended in Cursor — AskQuestion tool. Optional child skills: `openspec-propose`, `openspec-apply-change`, `openspec-archive-change` — only if you want extra on-disk checklists; code review, unit-test gate, commit/push, and merge steps are fully defined in this skill’s `references/` (Phase 3, 5 & 6).
+compatibility: 需安装 openspec 与 git CLI；建议在 Cursor 中配合 AskQuestion。审查、单测门禁、提交与合并在本技能 `references/`（Phase 3/5/6）中定义；`openspec-propose`、`openspec-apply-change`、`openspec-archive-change` 可选，仅作本地清单补充。
 metadata:
   author: zhaoyi
   version: "2.0"

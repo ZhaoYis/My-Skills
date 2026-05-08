@@ -28,7 +28,7 @@
 
 **Git（审查 / 提交 / 合并）**：不依赖任何独立的 `git-*` skill；见 **Phase 3**（审查与报告）、**Phase 5**（提交前单测）、**Phase 6**（暂存提交、推送、合并与冲突处理）。
 
-Phase 3 **fix-cr** 子流程写明的「调用 `openspec-propose` / `openspec-apply-change`」：在本仓库内改为按 **Phase 1 / Phase 2** 对应小节执行（使用 fix change 名称），无需加载外部 skill。
+Phase 3 **fix-cr** 子流程：创建 `openspec/changes/fix-cr-*/` 并**必经** `phase-1-propose.md` **决策点 1** 后，再按 `phase-2-apply.md` 实施；**禁止**跳过提案门禁直接改业务代码。等价流程即 **Phase 1 / Phase 2**（fix change 名称），无需加载任何外部 openspec 子技能。
 
 ### Openspec / Git 版本
 
