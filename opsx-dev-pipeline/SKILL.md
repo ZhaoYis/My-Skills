@@ -89,41 +89,46 @@ metadata:
 
 ```mermaid
 flowchart TD
-  START([开始]) --> OPEN{openspec CLI 可用?}
-  OPEN -->|否| PROMPT[提示安装 openspec]
-  PROMPT --> ENDNODE([结束])
-  OPEN -->|是| GIT{在 git 仓库内?}
-  GIT -->|否| GIT_WARN[提示 git init 或进入仓库]
+  START(["开始"]) --> OPEN{"openspec CLI 可用?"}
+  OPEN -->|否| PROMPT["提示安装 openspec"]
+  PROMPT --> ENDNODE(["结束"])
+  OPEN -->|是| GIT{"在 git 仓库内?"}
+  GIT -->|否| GIT_WARN["提示 git init 或进入仓库"]
   GIT_WARN --> ENDNODE
-  GIT -->|是| P0[Phase 0 入口 -> 需求 / 已有 change / 无输入]
+  GIT -->|是| P0["Phase 0 入口 → 需求 / 已有 change / 无输入"]
   P0 -->|终止| ENDNODE
-  P0 -->|需求描述·新建| P1[Phase 1 -> 提案与制品 -> opsx-propose]
-  P0 -->|已有 change·续接 Phase 1| P1
-  P0 -->|已有 change·从头新建 change| P1
-  P0 -->|已有 change·续接 Phase 2| APPLY
-  P0 -->|已有 change·续接 Phase 3| REVIEW
-  P1 --> ALIGN[Phase 1 决策点 1 -> 提案与原始需求一致?]
-  ALIGN -->|确认·开始实施| APPLY[Phase 2 -> opsx-apply]
+  P0 -->|需求描述·新建| P1["Phase 1 → 提案与制品 → opsx-propose"]
+  P0 -->|已有change·续接Phase 1| P1
+  P0 -->|已有change·从头新建change| P1
+  P0 -->|已有change·续接Phase 2| APPLY
+  P0 -->|已有change·续接Phase 3| REVIEW
+  P0 -->|已有change·续接Phase 4| ARCHIVE
+  P0 -->|已有change·续接Phase 5/6| UT
+  P1 --> ALIGN{"决策点 1 → 提案与原始需求一致?"}
+  ALIGN -->|确认·开始实施| APPLY["Phase 2 → opsx-apply"]
   ALIGN -->|补充/修改·对话澄清| P1
-  APPLY --> REVIEW[Phase 3 -> CodeReview]
-  REVIEW --> R3[Phase 3 决策点 3 -> 归档 / 修复回路 / 暂停…]
+  APPLY --> D2{"Phase 2 决策点 2"}
+  D2 -->|进入代码审查| REVIEW["Phase 3 → CodeReview"]
+  D2 -->|跳过审查·直接归档| ARCHIVE
+  D2 -->|暂停/终止| ENDNODE
+  REVIEW --> R3["决策点 3 → 归档 / 修复回路 / 暂停"]
   R3 -->|修复回路未结束| REVIEW
-  R3 -->|进入归档| ARCHIVE[Phase 4 -> opsx-archive]
-  ARCHIVE --> D4{Phase 4 决策点 4}
+  R3 -->|进入归档| ARCHIVE["Phase 4 → opsx-archive"]
+  ARCHIVE --> D4{"Phase 4 决策点 4"}
   D4 -->|终止流程| ENDNODE
-  D4 -->|仅提交并推送| UT[Phase 5：提交前单测（步骤16·决策点4b）]
+  D4 -->|仅提交并推送| UT["Phase 5：提交前单测, 决策点4b"]
   D4 -->|提交代码并合并| UT
-  UT --> P6[Phase 6：预检→提交→推送→（可选）合并]
-  P6 --> MERGECHK{决策点4 曾选合并?}
+  UT --> P6["Phase 6：预检→提交→推送→合并"]
+  P6 --> MERGECHK{"决策点4 曾选合并?"}
   MERGECHK -->|仅推送| ENDNODE
-  MERGECHK -->|合并| MERGE[Phase 6 决策点 6]
+  MERGECHK -->|合并| MERGE["Phase 6 决策点 6"]
   MERGE --> ENDNODE
 ```
 
 **要点**（与引用文件同序）：
 
 1. **环境预检（Phase 0）**：`openspec` 不可用 → 提示安装后结束；不在 git 仓库 → 提示初始化或进入仓库后结束。
-2. **入口（Phase 0）**：无输入则文本询问；需求描述则推导 change 名并进入 Phase 1；**已有 change** 则 `openspec status`，按制品/任务状态判断续接 **Phase 1 Step 3 / Phase 2 / Phase 3**，并由用户确认「从 Phase X 继续 / 从头新建 / 终止」——**不是**一律先进入 Phase 1 门禁。
+2. **入口（Phase 0）**：无输入则文本询问；需求描述则推导 change 名并进入 Phase 1；**已有 change** 则 `openspec status`，按制品/任务/归档/提交状态判断续接 **Phase 1 Step 3 / Phase 2 / Phase 3 / Phase 4 / Phase 5 / Phase 6**，并由用户确认「从 Phase X 继续 / 从头新建 / 终止」——**不是**一律先进入 Phase 1 门禁。
 3. **提案与门禁（Phase 1）**：进入 Phase 2 前须过**决策点 1**。用户修改需求时以文本改制品并回到该决策点；澄清可与 Phase 1 合并。
 4. **实施与审查（Phase 2～3）**：**决策点 2** 可暂停、跳过审查直接归档或终止（`phase-2-apply.md`）。审查未过：**fix-cr**、直接修复再审、暂停等（`phase-3-review.md`）；图中 `R3`→`REVIEW` 表示修复回路。
 5. **归档与 Git（Phase 4～6）**：**决策点 4**：终止 / 仅推送 / 提交并合并。进入 **Phase 5** 后**须先经决策点 4b**（是否编写/补充单元测试并运行通过，或跳过/暂停），再在 **Phase 6** 执行预检与提交；选「提交并合并」时在推送后进入**决策点 6**；「仅推送」则不再合并。

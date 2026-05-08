@@ -30,9 +30,12 @@ compatibility: 需要 openspec CLI 与 git；在 git 仓库根目录执行。
    - 运行 `bash opsx-dev-pipeline/scripts/opsx-change-status.sh "<name>"`（或 `openspec status --change "<name>" --json`）检查 change 状态
    - 如果 change 不存在：提示名称错误，运行 `bash opsx-dev-pipeline/scripts/opsx-list-changes.sh`（或 `openspec list --json`）展示可用 change，让用户重新选择
    - 如果 change 存在，根据制品和任务状态判断应从哪个阶段继续：
-     - `applyRequires` 制品未全部完成 → 从 **Phase 1 Step 3** 继续（检查哪些制品处于 `ready` 状态，仅对未完成的制品执行生成流程，已完成的制品保持不变）
-     - 制品已完成但任务未全部完成 → 从 **Phase 2** 继续实施
-     - 任务已全部完成 → 从 **Phase 3** 开始审查
+      - `applyRequires` 制品未全部完成 → 从 **Phase 1 Step 3** 继续（检查哪些制品处于 `ready` 状态，仅对未完成的制品执行生成流程，已完成的制品保持不变）
+      - 制品已完成但任务未全部完成 → 从 **Phase 2** 继续实施
+      - 任务已全部完成且 `openspec/review/` 下无该分支审查报告 → 从 **Phase 3** 开始审查
+      - 任务已全部完成且已有审查报告，但 change 尚未归档（仍在 `openspec/changes/<name>/` 下） → 从 **Phase 4** 开始归档
+      - change 已归档（在 `openspec/changes/archive/` 下）且有未提交变更（`git status` 非 clean） → 从 **Phase 5** 开始（提交前单测）
+      - change 已归档且变更已提交但未推送（`git log origin/<branch>..HEAD` 有提交） → 从 **Phase 6 Step 19** 推送
    - 使用 **AskQuestion tool** 确认：
      - `从 Phase X 继续` - 按判断结果继续
      - `从头开始（新建 change）` - 向用户询问新的 change 名称，走完整 Phase 1（原 change 保留不动）

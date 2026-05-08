@@ -64,7 +64,7 @@ compatibility: 需要 git；项目规范来自 `openspec/project.md` 或新版�
     **严重程度**：严重（安全漏洞、泄密、数据丢失、阻断性缺陷）→ 重要（规范/性能/设计明显问题）→ 一般（风格、命名）→ 建议（可选优化）。
 
     保存审查报告到 `openspec/review/`：
-    - 文件名：`YYYY-MM-DD-HH:mm-<branch-name>-pipeline-review.md`
+    - 文件名：`YYYY-MM-DD-HH-mm-<branch-name>-pipeline-review.md`
     - 多轮审查时追加轮次后缀：`-round-2.md`、`-round-3.md`
 
 11. **[决策点 3] 审查结果处理**
