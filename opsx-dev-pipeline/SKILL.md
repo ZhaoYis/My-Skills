@@ -14,6 +14,8 @@ metadata:
 
 **元数据与本页正文优先**；各 Phase 步骤与选项以 `references/` 为准。
 
+**代码规范**：凡涉及编写或修改实现/测试代码的 Phase，均以**目标仓库**的 **项目基准**（`openspec/project.md` → `openspec/config.yaml` → `CLAUDE.md`，与 Phase 3 步骤 8 一致）及**既有代码与单测风格**为准；细则见 `references/phase-2-apply.md` 与附录「代码与测试风格（项目内）」。
+
 ### 脚本（可选）
 
 在**目标 git 仓库根目录**执行；若工作区仅有业务项目、技能在其它目录，请换为技能实际绝对路径，或直接运行各脚本内注释的等价 `openspec` 命令。

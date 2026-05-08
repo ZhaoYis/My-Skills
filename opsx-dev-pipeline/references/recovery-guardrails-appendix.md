@@ -34,9 +34,9 @@ Phase 3 **fix-cr** 子流程写明的「调用 `openspec-propose` / `openspec-ap
 
 本流水线**不锁定** openspec 次版本；若 CLI 子命令或 JSON 字段与文档示例不一致，以实际 `openspec --help` 与命令输出为准。项目描述可能位于 **`openspec/project.md`**（旧版/并存）或 **`openspec/config.yaml`**（新版常见），以仓库实际文件为准，并优先走 **Error Handling** 表。
 
-### 项目专用技能（pprod）
+### 代码与测试风格（项目内）
 
-`pprod-code-auto-gen`：仅当仓库结构、文档或用户明示属于 pprod 时遵循；否则忽略该技能。
+编写或修改实现代码、测试代码时：**不**引用或依赖任何外部的「框架专用代码生成」类技能。以 **`openspec/project.md` / `openspec/config.yaml` / `CLAUDE.md`**（加载顺序同 Phase 3 步骤 8）为规范来源，并对照**本仓库已有实现与单测**保持风格一致。
 
 ---
 
@@ -51,7 +51,7 @@ Phase 3 **fix-cr** 子流程写明的「调用 `openspec-propose` / `openspec-ap
 - "暂停流水线"类选项统一行为：展示恢复指引后退出，用户重新传入 change 名称即可从断点续接
 - 代码审查修复循环最多 3 轮，超过后强制暂停
 - 提案修改以用户确认「与原始需求一致」为终止条件，不设固定次数上限；多轮仍无法对齐时须建议暂停/拆分并由用户决定是否终止
-- 编写代码时：若适用 **项目专用技能（pprod）** 一节中的 pprod 条件，再遵循 `pprod-code-auto-gen`；否则按仓库常规规范
+- 编写代码时：按 **代码与测试风格（项目内）** 一节的约定对齐当前仓库，禁止依赖外部代码生成类技能
 - **提交前单元测试（Phase 5 步骤 16 / 决策点 4b）**：用户于决策点 4 选择进入提交流程后，须先完成本环节并由用户确认是否编写/补充单测；不得未经 AskQuestion（或附录编号选项）默认跳过。规程全文见 `references/phase-5-unit-tests.md`。
 - 始终在提交时包含 openspec 相关文件
 - 提交信息使用 conventional commit 格式，包含 Co-Authored-By

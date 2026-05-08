@@ -1,7 +1,7 @@
 ---
 name: phase-2-apply
 description: 全局步骤 5–7，含决策点 2。通常进入 phase-3-review.md 步骤 8；跳过审查直接归档则进入 phase-4-archive.md 步骤 12。
-compatibility: 需要 openspec CLI、git；实施代码时若适用 pprod 需遵循 pprod-code-auto-gen。
+compatibility: 需要 openspec CLI、git；编写代码时以当前仓库的项目基准与既有代码风格为准（见正文）。
 ---
 
 ## Phase 2: 提案应用 (Apply)
@@ -25,7 +25,7 @@ compatibility: 需要 openspec CLI、git；实施代码时若适用 pprod 需遵
 
    遍历 tasks.md 中的待办任务，逐个实施：
    - 展示当前任务进度："正在实施任务 N/M: <任务描述>"
-   - 执行代码变更（编写代码时遵循 `pprod-code-auto-gen` 技能的规范）
+   - 执行代码变更时，遵循 **项目基准**（与 Phase 3 步骤 8 一致：优先 `openspec/project.md`，否则 `openspec/config.yaml`，均缺失时 `CLAUDE.md`），并对照**本仓库同类模块的既有实现**（命名、分层、错误处理、日志、单测目录与风格等），不引入与现场代码不一致的新范式；规范未覆盖处，以相邻文件与本次变更触及的目录为准。
    - 标记任务完成：`- [ ]` → `- [x]`
    - 继续下一个任务
 

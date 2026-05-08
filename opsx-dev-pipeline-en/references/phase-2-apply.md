@@ -1,7 +1,7 @@
 ---
 name: phase-2-apply
 description: Global steps 5–7, including decision 2. Usually continue at phase-3-review.md step 8; skip review and archive → phase-4-archive.md step 12.
-compatibility: Requires openspec CLI and git; follow pprod-code-auto-gen when the repo is pprod.
+compatibility: Requires openspec CLI and git; when writing code, follow this repo’s project baseline and existing style (see step 6).
 ---
 
 ## Phase 2: Apply
@@ -25,7 +25,7 @@ compatibility: Requires openspec CLI and git; follow pprod-code-auto-gen when th
 
    Walk pending tasks in `tasks.md`:
    - Show progress: "Implementing task N/M: <task description>"
-   - Make code changes (when writing code, follow the `pprod-code-auto-gen` skill if it applies).
+   - Make code changes using the **project baseline** (same as Phase 3 Step 8: prefer `openspec/project.md`, else `openspec/config.yaml`, else `CLAUDE.md`) and **match existing code** in the same areas of the repo (naming, layering, errors, logging, test layout/style, etc.); do not introduce patterns that contradict local conventions; where the baseline is silent, follow neighboring files and directories touched by this change.
    - Mark complete: `- [ ]` → `- [x]`
    - Continue to the next task.
 

@@ -27,7 +27,7 @@ Use the **project baseline** (`openspec/project.md` or `openspec/config.yaml`, e
 
 ## Sub-flow A (when “Yes”)
 
-1. Scope tests against **Phase 3** (`phase-3-review.md`) and current `git diff`; if a project-specific skill applies (see appendix pprod), follow its test layout/style.
+1. Scope tests against **Phase 3** (`phase-3-review.md`) and current `git diff`; align test packages, frameworks, and style with the **project baseline** and **existing tests** in the repo.
 2. Implement or edit **automated unit tests** only (no manual E2E unless the project treats them as the same command).
 3. Run the command from **16.1** (extra flags per **project baseline** when documented in `project.md` / `config.yaml`).
 4. **On failure**: short recap, **AskQuestion**: `Fix and re-run` / `Terminate pipeline` (re-run from sub-flow step 3 after fixes).

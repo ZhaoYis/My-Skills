@@ -34,9 +34,9 @@ For the Phase 3 **fix-cr** subflow, “invoke `openspec-propose` / `openspec-app
 
 This pipeline does **not** pin openspec minor versions. If CLI subcommands or JSON fields differ from examples, follow actual `openspec --help` and command output. Project metadata may live in **`openspec/project.md`** (legacy / coexistent) or **`openspec/config.yaml`** (common in newer installs) — follow what the repo has, then **Error Handling**.
 
-### Project-specific skill (pprod)
+### Code and test style (in-repo)
 
-`pprod-code-auto-gen`: follow only when the repo or user clearly indicates a pprod stack; otherwise ignore.
+When implementing or editing production or test code: **do not** rely on any external “framework-specific code generator” skill. Use **`openspec/project.md` / `openspec/config.yaml` / `CLAUDE.md`** (same precedence as Phase 3 Step 8) and **match existing code and tests** in this repository.
 
 ---
 
@@ -51,7 +51,7 @@ This pipeline does **not** pin openspec minor versions. If CLI subcommands or JS
 - **Pause pipeline** options: show resume guidance, exit; user re-runs with change name to resume.
 - Review fix loop: max **3** rounds, then force pause.
 - Proposal edits: stop when aligned with the original requirement (no fixed cap); if still misaligned after many rounds, suggest pause/split and let user terminate or not.
-- When coding: if **Project-specific skill (pprod)** applies, follow `pprod-code-auto-gen`; otherwise follow normal repo conventions.
+- When coding: follow **Code and test style (in-repo)**; no external code-generator skills.
 - **Pre-commit unit tests (Phase 5 Step 16 / decision 4b)**: After decision 4 chooses a commit/push path, always ask whether to add/extend unit tests; never skip this confirmation silently (AskQuestion or numbered options). Full procedure: `references/phase-5-unit-tests.md`.
 - Always include openspec-related files in commits.
 - Commit messages: conventional commits + `Co-Authored-By`.

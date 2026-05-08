@@ -14,6 +14,8 @@ metadata:
 
 **Frontmatter and this page take precedence**; Phase steps and options are authoritative in `references/`.
 
+**Code style**: Whenever you implement or edit production or test code, follow this repo’s **project baseline** (`openspec/project.md` → `openspec/config.yaml` → `CLAUDE.md`, same order as Phase 3 Step 8) and **existing code and test conventions**; details in `references/phase-2-apply.md` and appendix **Code and test style (in-repo)**.
+
 ### Scripts (optional)
 
 Run from the **target git repo root**. If only your app workspace is open, use an absolute path to this skill directory, or run the equivalent `openspec` commands noted in each script.
