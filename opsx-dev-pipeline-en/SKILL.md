@@ -2,10 +2,10 @@
 name: opsx-dev-pipeline-en
 description: End-to-end requirement-driven development pipeline — openspec + git preflight (Phase 0), resume Phase 1/2/3 or new proposal by entry type (opsx-propose), align proposal with requirements gate, apply (opsx-apply), review-and-fix loop (incl. fix-cr subflow), archive (opsx-archive), then push-only or push-and-merge per decision 4. User decisions at key points.
 license: MIT
-compatibility: Requires openspec CLI and git CLI.
+compatibility: Requires openspec CLI and git CLI. Strongly recommended in Cursor — AskQuestion tool; child skills (openspec-propose, openspec-apply-change, git-code-review, git-commit-push, git-merge-branch) optional when following this skill’s `references/` (see appendix).
 metadata:
   author: zhaoyi
-  version: "1.7"
+  version: "1.8"
 ---
 
 # End-to-end requirement development pipeline
@@ -55,7 +55,7 @@ flowchart TD
 4. **Apply and review (Phase 2–3)**: **Decision 2** can pause, skip review straight to archive, or terminate (`phase-2-apply.md`). Failed review: **fix-cr**, direct fix and re-review, pause, etc. (`phase-3-review.md`); `R3`→`REVIEW` in the diagram is the fix loop.
 5. **Archive and Git (Phase 4–5)**: **Decision 4**: terminate / push only / commit and merge. Choosing commit-and-merge surfaces **decision 6**; push-only ends after push.
 
-**Important:** All outputs must be in **English**.
+**Important:** All outputs must be in **Chinese**.
 
 ---
 
@@ -63,9 +63,9 @@ flowchart TD
 
 **Steps**
 
-**After clarification, return to the flow (mandatory)**: After the user adds free-text clarification, proposal edits, or notes about apply/review/archive/commit, do **not** end the turn with explanation or confirmation only. In the **same** turn: (1) state **Phase** and **change**; (2) update artifacts and run commands per the current Phase `references/phase-*.md`; (3) advance to the next **decision point** (call AskQuestion when required). If information is missing, list gaps first, then ask; after answers, repeat this rule.
+**After clarification, return to the flow (mandatory)**: After the user adds free-text clarification, proposal edits, or notes about apply/review/archive/commit, do **not** end the turn with explanation or confirmation only. In the **same** turn: (1) state **Phase** and **change**; (2) update artifacts and run commands per the current Phase `references/phase-*.md`; (3) advance to the next **decision point** (**prefer** AskQuestion; if unavailable, use numbered options per appendix **Compatibility & degradation**). If information is missing, list gaps first, then ask; after answers, repeat this rule.
 
-**Exit requires user consent**: Do not unilaterally close after many clarification rounds because the session is “too long,” etc. Except when the user chose **Terminate** at a decision point, to end the full pipeline first explain why and use AskQuestion for consent; if **not agreed**, return to current **Phase / change / unfinished step** and continue per “After clarification…” above and the matching `references/phase-*.md`. Exceptions: **Error Handling** in the appendix for environment/prereq failure; user already chose terminate/pause at a decision point or “pause pipeline” path — honor that.
+**Exit requires user consent**: Do not unilaterally close after many clarification rounds because the session is “too long,” etc. Except when the user chose **Terminate** at a decision point, to end the full pipeline first explain why and **ask for consent** (**prefer** AskQuestion; if unavailable, use numbered options: agree to stop vs continue). If **not agreed**, return to current **Phase / change / unfinished step** and continue per “After clarification…” above and the matching `references/phase-*.md`. Exceptions: **Error Handling** in the appendix for environment/prereq failure; user already chose terminate/pause at a decision point or “pause pipeline” path — honor that.
 
 Read and follow each Phase file in table order:
 
@@ -78,3 +78,23 @@ Read and follow each Phase file in table order:
 | 4 | Archive | `references/phase-4-archive.md` |
 | 5 | Commit, merge, push | `references/phase-5-merge-push.md` |
 | — | Resume, guardrails, errors, decision index | `references/recovery-guardrails-appendix.md` |
+
+### Global step index (cross-phase numbering)
+
+Phase files use continuous step numbers **1–21**. Use this table to see where you are (decision points are indexed in the appendix **Decision index**).
+
+| Step | Phase | Summary | Reference |
+|:----:|:-----:|---------|-----------|
+| 1–2 | 0 | Preflight, entry routing and resume confirmation | `phase-0-entrance.md` |
+| 3–4 | 1 | Create change / artifacts; **decision 1** (proposal gate) | `phase-1-propose.md` |
+| 5–7 | 2 | Apply context, implement tasks; **decision 2** | `phase-2-apply.md` |
+| 8–11 | 3 | Conventions, diff, review; **decision 3** (incl. fix-cr subflow) | `phase-3-review.md` |
+| 12–15 | 4 | Pre-archive checks, delta sync, archive; **decision 4** | `phase-4-archive.md` |
+| 16–21 | 5 | Pre-commit, stage & commit (**decision 5**), push, merge (**decision 6**), post-merge branch, final summary | `phase-5-merge-push.md` |
+
+### Compatibility, degradation, and child-skill fallback (summary)
+
+- **Hard prerequisites**: openspec CLI, git, working inside a git repo; if not met, follow Phase 0 / appendix **Error Handling** and stop.
+- **AskQuestion**: **Preferred** in Cursor; if the tool is missing, use **numbered lists** with the **same option labels** as the phase files — see appendix **Compatibility & degradation**.
+- **Child skills** (`openspec-propose`, `openspec-apply-change`, `git-code-review`, `git-commit-push`, `git-merge-branch`, `openspec-archive-change`): you do **not** need to invoke them separately; equivalent steps are inlined under `references/`. If a child skill is not installed, **follow the matching Phase file in this skill**; optional on-disk skill files may be read for extra checklists, but **`references/` steps take precedence**.
+- **Full rules and mapping table**: `references/recovery-guardrails-appendix.md` → **Compatibility & degradation**.
