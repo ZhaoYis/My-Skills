@@ -1,3 +1,9 @@
+---
+name: phase-4-archive
+description: Global steps 12–15, including decision 4. Push/commit paths continue at phase-5-unit-tests.md step 16 (decision 4b); terminate skips Phases 5–6.
+compatibility: Requires openspec CLI and git; prefer opsx-archive.sh or openspec archive.
+---
+
 ## Phase 4: Archive
 
 12. **Check artifacts and tasks**
@@ -52,6 +58,6 @@
     **AskQuestion**:
 
     **Options:**
-    - `Commit and merge into target branch` — full Phase 5.
-    - `Commit and push only (no merge)` — Phase 5: commit + push, then stop.
+    - `Commit and merge into target branch` — full **Phase 5 + Phase 6** (`phase-5-unit-tests.md`, then `phase-6-merge-push.md`).
+    - `Commit and push only (no merge)` — **Phase 5 + Phase 6**: commit + push, then stop (same two files).
     - `Terminate pipeline` — exit (show resume guidance).

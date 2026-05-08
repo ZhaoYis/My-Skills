@@ -5,7 +5,7 @@ Many clarification rounds or a long chat are **not** an automatic reason to stop
 Whenever the user picks **Terminate pipeline** or **Pause pipeline** at a decision point, show:
 - Change name, stopped phase, reason
 - **Phase checklist** (`[x]` done / `[ ]` not done)
-- **Resume**: Re-run this skill with the change name; or finish manually using **Phase 3** (`phase-3-review.md`), **Phase 4** (`phase-4-archive.md`), **Phase 5** (`phase-5-merge-push.md`) Git steps and decision flows; for openspec, follow **Phase 1 / 2 / 4** and the equivalent `openspec` CLI.
+- **Resume**: Re-run this skill with the change name; or finish manually using **Phase 3** (`phase-3-review.md`), **Phase 4** (`phase-4-archive.md`), **Phase 5** (`phase-5-unit-tests.md`), **Phase 6** (`phase-6-merge-push.md`) Git steps and decision flows; for openspec, follow **Phase 1 / 2 / 4** and the equivalent `openspec` CLI.
 
 ---
 
@@ -26,13 +26,13 @@ Do **not** require loading or invoking these child skills separately. If a child
 | `openspec-apply-change` | Phase 2, `phase-2-apply.md` (steps 5–7) |
 | `openspec-archive-change` | Phase 4, `phase-4-archive.md` (steps 12–15) |
 
-**Git (review / commit / merge)**: no separate `git-*` skills — use **Phase 3** (review + report) and **Phase 5** (stage, commit, push, merge, conflicts).
+**Git (review / commit / merge)**: no separate `git-*` skills — use **Phase 3** (review + report), **Phase 5** (pre-commit unit tests), **Phase 6** (stage, commit, push, merge, conflicts).
 
 For the Phase 3 **fix-cr** subflow, “invoke `openspec-propose` / `openspec-apply-change`” means: run the matching **Phase 1 / Phase 2** sections here using the fix change name — no external skill load.
 
 ### Openspec / Git versions
 
-This pipeline does **not** pin openspec minor versions. If CLI subcommands or JSON fields differ from examples, follow actual `openspec --help` and command output, then **Error Handling**.
+This pipeline does **not** pin openspec minor versions. If CLI subcommands or JSON fields differ from examples, follow actual `openspec --help` and command output. Project metadata may live in **`openspec/project.md`** (legacy / coexistent) or **`openspec/config.yaml`** (common in newer installs) — follow what the repo has, then **Error Handling**.
 
 ### Project-specific skill (pprod)
 
@@ -42,7 +42,7 @@ This pipeline does **not** pin openspec minor versions. If CLI subcommands or JS
 
 **Guardrails**
 
-- **Phase 3 / Phase 5** inline full code review, commit/push, and merge flows. **Openspec** equivalents sit in **Phase 1 / 2 / 4** (`openspec-propose`, `openspec-apply-change`, `openspec-archive-change`). Keep `references/` in sync if standalone skills change. At **runtime** rely on this skill’s Phase docs and **Child-skill fallback mapping** only — **no** extra Git review/commit/merge packages.
+- **Phase 3 / Phase 5 / Phase 6** inline full code review, pre-commit unit tests, commit/push, and merge flows. **Openspec** equivalents sit in **Phase 1 / 2 / 4** (`openspec-propose`, `openspec-apply-change`, `openspec-archive-change`). Keep `references/` in sync if standalone skills change. At **runtime** rely on this skill’s Phase docs and **Child-skill fallback mapping** only — **no** extra Git review/commit/merge packages.
 - Every decision point must expose **explicit paths**; **prefer** AskQuestion; if unavailable, use **numbered lists** per **AskQuestion unavailable**. Auto-run non-decision steps between decision points.
 - **Proposal gate**: Do not enter Phase 2 without an explicit **Confirm proposal, start implementation** at decision 1; user edits go through conversation and artifact updates until confirm or terminate.
 - For **free text** (requirements, proposal edits, custom commit message), ask in plain messages — not AskQuestion.
@@ -52,6 +52,7 @@ This pipeline does **not** pin openspec minor versions. If CLI subcommands or JS
 - Review fix loop: max **3** rounds, then force pause.
 - Proposal edits: stop when aligned with the original requirement (no fixed cap); if still misaligned after many rounds, suggest pause/split and let user terminate or not.
 - When coding: if **Project-specific skill (pprod)** applies, follow `pprod-code-auto-gen`; otherwise follow normal repo conventions.
+- **Pre-commit unit tests (Phase 5 Step 16 / decision 4b)**: After decision 4 chooses a commit/push path, always ask whether to add/extend unit tests; never skip this confirmation silently (AskQuestion or numbered options). Full procedure: `references/phase-5-unit-tests.md`.
 - Always include openspec-related files in commits.
 - Commit messages: conventional commits + `Co-Authored-By`.
 - After merge, check out the source branch again unless the user chose to delete it.
@@ -66,7 +67,7 @@ This pipeline does **not** pin openspec minor versions. If CLI subcommands or JS
 |-----------|--------|
 | openspec CLI unavailable | Prompt install; exit |
 | Not in a git repo | Prompt init; exit |
-| `openspec/project.md` missing | Warn; use CLAUDE.md defaults |
+| Both `openspec/project.md` and `openspec/config.yaml` missing | Warn; use CLAUDE.md defaults |
 | Change name collision | Ask reuse vs new name |
 | Change does not exist | List changes; user picks |
 | Nothing to review | Note it; jump to Phase 4 |
@@ -91,6 +92,7 @@ This pipeline does **not** pin openspec minor versions. If CLI subcommands or JS
 | 3a | Review subflow | Fix proposal confirm | Confirm fix / edit / abandon (cleanup change) |
 | 4a | Archive | Unfinished work | Archive anyway / back to apply / terminate |
 | 4 | Archive | After archive | commit+merge / push only / terminate |
+| 4b | Phase 5 | Pre-commit unit tests (Step 16) | yes (write + run green) / no (skip) / pause |
 | 5a | Commit | Behind / diverged | pull --rebase / ignore / terminate |
 | 5b | Commit | Sensitive files | exclude / include / terminate |
 | 5 | Commit | Commit message | confirm / edit (text) / cancel (exit) |
@@ -99,4 +101,4 @@ This pipeline does **not** pin openspec minor versions. If CLI subcommands or JS
 | 6a | Merge | Conflict | abort / theirs / ours / manual |
 | 6b | Merge | After merge | keep source / delete source |
 
-> **Note**: Suffix letters mark conditional decision points; 3a can repeat each fix round.
+> **Note**: Suffix letters mark conditional decision points; 3a can repeat each fix round. **4b** runs after decision 4 chooses a commit/push path and before **Phase 6** Step 17 (pre-commit checks); full procedure: `references/phase-5-unit-tests.md`; if paused, resume at Phase 5 **Step 16**.

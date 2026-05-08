@@ -1,3 +1,9 @@
+---
+name: phase-0-entrance
+description: 全局步骤 1–2（环境预检、入口类型与续接确认）。完成后按步骤 2 进入 phase-1-propose.md 步骤 3、phase-2-apply.md 步骤 5 或 phase-3-review.md 步骤 8；新建 change 后从 Phase 1 步骤 3 起；亦可终止。
+compatibility: 需要 openspec CLI 与 git；在 git 仓库根目录执行。
+---
+
 ## Phase 0: 入口判断
 
 1. **环境预检**

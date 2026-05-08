@@ -1,3 +1,9 @@
+---
+name: phase-2-apply
+description: 全局步骤 5–7，含决策点 2。通常进入 phase-3-review.md 步骤 8；跳过审查直接归档则进入 phase-4-archive.md 步骤 12。
+compatibility: 需要 openspec CLI、git；实施代码时若适用 pprod 需遵循 pprod-code-auto-gen。
+---
+
 ## Phase 2: 提案应用 (Apply)
 
 5. **获取实施指令并读取上下文**

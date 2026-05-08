@@ -1,10 +1,21 @@
+---
+name: phase-3-review
+description: Global steps 8–11, including decision 3 and fix-cr. On archive path, continue at phase-4-archive.md step 12.
+compatibility: Requires git; project conventions from `openspec/project.md` or newer `openspec/config.yaml`, else CLAUDE.md; AskQuestion recommended in Cursor.
+---
+
 ## Phase 3: Code review
 
 8. **Load project conventions**
 
-   Read `openspec/project.md` for stack, architecture rules, naming, etc.
+   **Sources** (cover different OpenSpec versions):
+   - **If `openspec/project.md` exists**: read it first (stack, architecture rules, naming, etc.).
+   - **Else if `openspec/config.yaml` exists**: read and interpret YAML (newer OpenSpec often stores project info here; keys follow the repo and `openspec` docs).
+   - **If neither exists**: warn "`openspec/project.md` and `openspec/config.yaml` not found; falling back to CLAUDE.md defaults", then use CLAUDE.md.
 
-   **If `openspec/project.md` is missing**: warn "`openspec/project.md` not found; falling back to defaults in CLAUDE.md", then use CLAUDE.md.
+   **If both exist**: treat `project.md` as the primary prose baseline; `config.yaml` may add non-conflicting detail (e.g. schema, toolchain).
+
+   Step 8’s loaded material is referred to below as the **project baseline**.
 
 9. **Get the diff**
 
@@ -27,7 +38,7 @@
     Scan the full diff for likely secrets: API keys / apikey patterns, `password` / `passwd`, `token` / `access_token` / `refresh_token`, PEM private keys (`-----BEGIN … PRIVATE KEY-----`), DB URLs with credentials, common cloud credential patterns. **Any hit** → file under **Critical**; recommend env vars or a secret manager; if already committed, warn about history rewriting (filter-repo / BFG, etc.).
 
     **10.2 Convention baseline**  
-    Use what Step 8 loaded: **`openspec/project.md` first** (stack, layering, naming, style, constraints); if missing, **CLAUDE.md** fallback. Whatever the baseline states must be checked against the diff.
+    Use Step 8’s **project baseline** (`project.md` / `config.yaml`, and **CLAUDE.md** when used): stack, layering, naming, style, constraints. Everything it states must be checked against the diff.
 
     **10.3 General dimensions** (fill gaps where the baseline is silent)  
     - **Correctness**: logic bugs, edge/null handling, missing error paths, resource leaks  
@@ -35,9 +46,9 @@
     - **Performance**: obvious N+1, hot-path inefficiency, unbounded batches  
     - **Maintainability**: duplication, oversized functions/classes, unclear critical behavior  
 
-    **10.4 Typical Java layered stack** (apply **only** when `project.md` or layout indicates it; otherwise stick to baseline + §10.3)  
+    **10.4 Typical Java layered stack** (apply **only** when the project baseline or layout indicates it; otherwise stick to baseline + §10.3)  
     - Layers: Web → Biz → Core → Common; no upward or illegal cross-layer deps  
-    - Naming suffixes per project.md (Controller, BizService/Impl, DomainService/Impl, Mapper, DO, VO, Request, Convert, …)  
+    - Naming suffixes per project baseline (Controller, BizService/Impl, DomainService/Impl, Mapper, DO, VO, Request, Convert, …)  
     - Writes: `@Transactional(rollbackFor = Throwable.class)` when Spring-style  
     - Mapping: prefer MapStruct (`INSTANCE`), avoid huge hand-rolled maps  
     - Logging: framework logger; avoid `System.out.println`  
@@ -49,7 +60,7 @@
     If stats show a very large change (e.g. on the order of 5000+ lines), review in chunks (by file/dir) and state the chunking strategy in the summary.
 
     **10.7 Report language**  
-    Pipeline rule: **`openspec/project.md`** and user-facing workflow may be English here, but the **saved review document body must remain 中文** (same as Phase 3 report filenames and parent skill). Structure: overview (files, +/- lines, counts by severity), **Critical / Major / Minor / Suggestions**, convention violations table vs `project.md`, file list, secret-scan section, delta vs last review (if any), fix list, positives.  
+    Pipeline rule: **Project baseline** (`project.md` / `config.yaml`) and user-facing workflow may be English here, but the **saved review document body must remain 中文** (same as Phase 3 report filenames and parent skill). Structure: overview (files, +/- lines, counts by severity), **Critical / Major / Minor / Suggestions**, convention violations table vs **project baseline**, file list, secret-scan section, delta vs last review (if any), fix list, positives.  
     **Severity**: critical (security/data loss/show-stoppers) > major (convention/perf/design) > minor (style/naming) > suggestion (optional).
 
     Save the report under `openspec/review/`:

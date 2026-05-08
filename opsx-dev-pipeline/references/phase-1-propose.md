@@ -1,3 +1,9 @@
+---
+name: phase-1-propose
+description: 全局步骤 3–4，含决策点 1（提案门禁）。用户确认「确认提案，开始实施」后进入 phase-2-apply.md 步骤 5。
+compatibility: 需要 openspec CLI、git 与已初始化 OpenSpec 的项目；Cursor 中推荐 AskQuestion。
+---
+
 ## Phase 1: 提案编写 (Propose)
 
 3. **创建 change 并生成制品**

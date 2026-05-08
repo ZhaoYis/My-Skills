@@ -1,8 +1,8 @@
 ---
 name: opsx-dev-pipeline-en
-description: End-to-end requirement-driven development pipeline — openspec + git preflight (Phase 0), resume Phase 1/2/3 or new proposal by entry type (opsx-propose), align proposal with requirements gate, apply (opsx-apply), review-and-fix loop (incl. fix-cr subflow), archive (opsx-archive), then push-only or push-and-merge per decision 4. User decisions at key points.
+description: End-to-end requirement-driven development pipeline — openspec + git preflight (Phase 0), resume Phase 1/2/3 or new proposal by entry type (opsx-propose), align proposal with requirements gate, apply (opsx-apply), review-and-fix loop (incl. fix-cr subflow), archive (opsx-archive), Phase 5 pre-commit unit-test gate (decision 4b), Phase 6 pre-commit checks and push-only or push-and-merge per decision 4. User decisions at key points.
 license: MIT
-compatibility: Requires openspec CLI and git CLI. Strongly recommended in Cursor — AskQuestion tool. Optional child skills: `openspec-propose`, `openspec-apply-change`, `openspec-archive-change` for extra on-disk notes; code review, commit/push, and merge are fully specified in this skill’s `references/` (Phase 3 & 5).
+compatibility: Requires openspec CLI and git CLI. Strongly recommended in Cursor — AskQuestion tool. Optional child skills: `openspec-propose`, `openspec-apply-change`, `openspec-archive-change` for extra on-disk notes; code review, unit-test gate, commit/push, and merge are fully specified in this skill’s `references/` (Phase 3, 5 & 6).
 metadata:
   author: zhaoyi
   version: "2.0"
@@ -33,7 +33,7 @@ Run from the **target git repo root**. If only your app workspace is open, use a
 
 **Convention**: when executing the pipeline, **prefer** a single script invocation per step (fewer missed flags, consistent `--json`). If scripts are unavailable, follow the raw CLI in each `references/phase-*.md`.
 
-**Flow overview** (main line `phase-0`–`phase-5`): Mermaid is a summary; `opsx-*` are aliases only; unresolved branches follow the Phase reference files.
+**Flow overview** (main line `phase-0`–`phase-6`): Mermaid is a summary; `opsx-*` are aliases only; unresolved branches follow the Phase reference files.
 
 ```mermaid
 flowchart TD
@@ -59,10 +59,12 @@ flowchart TD
   R3 -->|Archive| ARCHIVE[Phase 4 -> opsx-archive]
   ARCHIVE --> D4{Phase 4 decision 4}
   D4 -->|End flow| ENDNODE
-  D4 -->|Commit and push only| PUSH[Phase 5 -> commit + push]
-  PUSH --> ENDNODE
-  D4 -->|Commit and merge| PUSHM[Phase 5 -> commit + push]
-  PUSHM --> MERGE[Phase 5 decision 6 -> merge to target branch]
+  D4 -->|Commit and push only| UT[Phase 5: pre-commit unit tests (Step 16, decision 4b)]
+  D4 -->|Commit and merge| UT
+  UT --> P6[Phase 6: pre-commit → commit → push → merge (if chosen)]
+  P6 --> MERGECHK{Decision 4 was merge?}
+  MERGECHK -->|Push only| ENDNODE
+  MERGECHK -->|Merge| MERGE[Phase 6 decision 6]
   MERGE --> ENDNODE
 ```
 
@@ -72,7 +74,7 @@ flowchart TD
 2. **Entry (Phase 0)**: No input → ask in plain text; requirement text → derive change name and enter Phase 1; **existing change** → `openspec status`, infer resume **Phase 1 Step 3 / Phase 2 / Phase 3** from artifact/task state, and have user confirm **Continue from Phase X / New change from scratch / Terminate** — **not** always Phase 1 gate first.
 3. **Proposal and gate (Phase 1)**: **Decision 1** must pass before Phase 2. When the user revises requirements, update artifacts in text and return to this decision; clarification can fold into Phase 1.
 4. **Apply and review (Phase 2–3)**: **Decision 2** can pause, skip review straight to archive, or terminate (`phase-2-apply.md`). Failed review: **fix-cr**, direct fix and re-review, pause, etc. (`phase-3-review.md`); `R3`→`REVIEW` in the diagram is the fix loop.
-5. **Archive and Git (Phase 4–5)**: **Decision 4**: terminate / push only / commit and merge. Choosing commit-and-merge surfaces **decision 6**; push-only ends after push.
+5. **Archive and Git (Phase 4–6)**: **Decision 4**: terminate / push only / commit and merge. After **Phase 5**, **decision 4b** (add/extend unit tests and run, skip, or pause) runs; then **Phase 6** covers pre-commit through push; **decision 6** applies only when merge was chosen; push-only ends without merge.
 
 **Important:** All outputs must be in **Chinese**.
 
@@ -95,12 +97,13 @@ Read and follow each Phase file in table order:
 | 2 | Apply | `references/phase-2-apply.md` |
 | 3 | Code review | `references/phase-3-review.md` |
 | 4 | Archive | `references/phase-4-archive.md` |
-| 5 | Commit, merge, push | `references/phase-5-merge-push.md` |
+| 5 | Pre-commit unit tests | `references/phase-5-unit-tests.md` |
+| 6 | Commit, merge, push | `references/phase-6-merge-push.md` |
 | — | Resume, guardrails, errors, decision index | `references/recovery-guardrails-appendix.md` |
 
 ### Global step index (cross-phase numbering)
 
-Phase files use continuous step numbers **1–21**. Use this table to see where you are (decision points are indexed in the appendix **Decision index**).
+Phase files use continuous step numbers **1–22**. Use this table to see where you are (decision points are indexed in the appendix **Decision index**).
 
 | Step | Phase | Summary | Reference |
 |:----:|:-----:|---------|-----------|
@@ -109,11 +112,12 @@ Phase files use continuous step numbers **1–21**. Use this table to see where 
 | 5–7 | 2 | Apply context, implement tasks; **decision 2** | `phase-2-apply.md` |
 | 8–11 | 3 | Conventions, diff, review; **decision 3** (incl. fix-cr subflow) | `phase-3-review.md` |
 | 12–15 | 4 | Pre-archive checks, delta sync, archive; **decision 4** | `phase-4-archive.md` |
-| 16–21 | 5 | Pre-commit, stage & commit (**decision 5**), push, merge (**decision 6**), post-merge branch, final summary | `phase-5-merge-push.md` |
+| 16 | 5 | **Decision 4b**, unit-test sub-flow | `phase-5-unit-tests.md` |
+| 17–22 | 6 | Pre-commit (**5a/5b**), stage & commit (**decision 5**), push (**5c**), merge (**decision 6**), post-merge branch, final summary | `phase-6-merge-push.md` |
 
 ### Compatibility, degradation, and child-skill fallback (summary)
 
 - **Hard prerequisites**: openspec CLI, git, working inside a git repo; if not met, follow Phase 0 / appendix **Error Handling** and stop.
 - **AskQuestion**: **Preferred** in Cursor; if the tool is missing, use **numbered lists** with the **same option labels** as the phase files — see appendix **Compatibility & degradation**.
-- **Child skills** (`openspec-propose`, `openspec-apply-change`, `openspec-archive-change`): you do **not** need to invoke them separately; propose / apply / archive equivalents live in `references/`. **Code review, commit/push, and branch merge** are defined inline in **Phase 3 / Phase 5** — **no** separate `git-*` skills required. If an openspec-named skill is missing, **follow this skill’s Phase files**; optional on-disk copies are secondary — **`references/` wins**.
+- **Child skills** (`openspec-propose`, `openspec-apply-change`, `openspec-archive-change`): you do **not** need to invoke them separately; propose / apply / archive equivalents live in `references/`. **Code review, unit-test gate, commit/push, and branch merge** are defined inline in **Phase 3 / Phase 5 / Phase 6** — **no** separate `git-*` skills required. If an openspec-named skill is missing, **follow this skill’s Phase files**; optional on-disk copies are secondary — **`references/` wins**.
 - **Full rules and mapping table**: `references/recovery-guardrails-appendix.md` → **Compatibility & degradation**.

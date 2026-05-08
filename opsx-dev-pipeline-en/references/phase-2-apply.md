@@ -1,3 +1,9 @@
+---
+name: phase-2-apply
+description: Global steps 5–7, including decision 2. Usually continue at phase-3-review.md step 8; skip review and archive → phase-4-archive.md step 12.
+compatibility: Requires openspec CLI and git; follow pprod-code-auto-gen when the repo is pprod.
+---
+
 ## Phase 2: Apply
 
 5. **Fetch apply instructions and context**

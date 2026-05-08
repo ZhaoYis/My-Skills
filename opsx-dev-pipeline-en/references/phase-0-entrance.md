@@ -1,3 +1,9 @@
+---
+name: phase-0-entrance
+description: Global steps 1–2 (preflight, entry type and resume). Then follow step 2 into phase-1-propose.md step 3, phase-2-apply.md step 5, or phase-3-review.md step 8; new changes start at Phase 1 step 3; or terminate.
+compatibility: Requires openspec CLI and git; run from a git repo root.
+---
+
 ## Phase 0: Entry routing
 
 1. **Environment preflight**

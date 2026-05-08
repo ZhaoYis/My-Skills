@@ -1,10 +1,21 @@
+---
+name: phase-3-review
+description: 全局步骤 8–11，含决策点 3 与 fix-cr 子流程。进入归档路径后执行 phase-4-archive.md 步骤 12。
+compatibility: 需要 git；项目规范来自 `openspec/project.md` 或新版的 `openspec/config.yaml`，否则 CLAUDE.md；Cursor 中推荐 AskQuestion。
+---
+
 ## Phase 3: 代码审查 (Review)
 
 8. **加载项目规范**
 
-   读取 `openspec/project.md` 获取项目技术栈、架构规则、命名规范等。
+   **项目信息来源**（兼容不同 OpenSpec 版本）：
+   - **若存在 `openspec/project.md`**：优先读取（技术栈、架构规则、命名规范等）。
+   - **否则若存在 `openspec/config.yaml`**：读取并解析 YAML（新版本 OpenSpec 常以该文件承载项目信息；字段名以仓库内实际内容及 `openspec` 文档为准）。
+   - **若两者均不存在**：输出警告「未找到 openspec/project.md 与 openspec/config.yaml，将使用 CLAUDE.md 中的默认规范」，改用 CLAUDE.md。
 
-   **如果 `openspec/project.md` 不存在**：输出警告"未找到 openspec/project.md，将使用 CLAUDE.md 中的默认规范"，使用 CLAUDE.md 中的规范继续。
+   **若两者同时存在**：以 `project.md` 为规范叙述的首要依据；`config.yaml` 可作补充（如 schema、工具链），不与 `project.md` 明显冲突即可一并纳入审查基准。
+
+   下文将步骤 8 加载结果统称为 **项目基准**。
 
 9. **获取变更内容**
 
@@ -27,7 +38,7 @@
     在 diff 全文中检查疑似机密：API key / apikey、`password` / `passwd`、`token` / `access_token` / `refresh_token`、私钥块（`-----BEGIN … PRIVATE KEY-----`）、含用户名密码的数据库 URL、AWS/Azure/GCP 典型密钥格式等。**一旦发现**记入「严重」区块，建议使用环境变量或密钥管理服务；若已进提交历史须提示清理历史的风险（filter-repo / BFG 等）。
 
     **10.2 规范基准**  
-    以步骤 8 已加载的内容为准：**优先 `openspec/project.md`**（技术栈、分层、命名、风格、约束）；降级场景下为 **CLAUDE.md**。凡 project.md（或降级基准）写明的内容，须在 diff 上逐条对照。
+    以步骤 8 的 **项目基准** 为准（`project.md` / `config.yaml` 以及必要时 **CLAUDE.md**）：技术栈、分层、命名、风格、约束；凡基准中写明的内容，须在 diff 上逐条对照。
 
     **10.3 通用审查维度**（在基准文档未展开的缺口上补充）  
     - **正确性**：逻辑错误、边界与空值、错误处理遗漏、资源未关闭/泄漏风险  
@@ -35,9 +46,9 @@
     - **性能**：明显 N+1、无谓热路径复杂度、大批量无分页  
     - **可维护性**：重复逻辑、过大的函数/类、关键行为缺少可读说明  
 
-    **10.4 典型 Java 分层栈**（**仅当** project.md 或目录结构表明适用时强化检查，否则以 project.md 与通用维度为主）  
+    **10.4 典型 Java 分层栈**（**仅当**项目基准或目录结构表明适用时强化检查，否则以项目基准与通用维度为主）  
     - 分层与依赖：Web → Biz → Core → Common，禁止上层被下层反向依赖、禁止跨层乱依赖  
-    - 命名后缀：Controller、BizService/Impl、DomainService/Impl、Mapper、DO、Model、VO、Request、Convert 等（以 project.md 为准）  
+    - 命名后缀：Controller、BizService/Impl、DomainService/Impl、Mapper、DO、Model、VO、Request、Convert 等（以项目基准为准）  
     - 写操作事务：`@Transactional(rollbackFor = Throwable.class)`（若栈使用 Spring）  
     - 对象转换：优先 MapStruct（`INSTANCE`），避免大面积手写映射  
     - 日志：使用框架 logger，避免 `System.out.println`  
@@ -49,7 +60,7 @@
     若变更行数过多（例如统计超过约 5000 行），可按文件或目录分块审查，在报告「概要」中说明分块策略，避免遗漏整文件。
 
     **10.7 报告（必须使用中文）**  
-    报告须写入对话并保存到文件（目录不存在则 `mkdir -p openspec/review`）。建议结构：**概要**（文件数、增删行、问题分级统计）、**严重 / 重要 / 一般 / 建议**、**规范违规表**（对照 project.md）、**已审查文件列表**、**敏感信息扫描结果**、**与上次审查对比**（若有）、**修复建议**、**亮点**。  
+    报告须写入对话并保存到文件（目录不存在则 `mkdir -p openspec/review`）。建议结构：**概要**（文件数、增删行、问题分级统计）、**严重 / 重要 / 一般 / 建议**、**规范违规表**（对照项目基准）、**已审查文件列表**、**敏感信息扫描结果**、**与上次审查对比**（若有）、**修复建议**、**亮点**。  
     **严重程度**：严重（安全漏洞、泄密、破坏性缺陷）→ 重要（规范/性能/设计明显问题）→ 一般（风格、命名）→ 建议（可选优化）。
 
     保存审查报告到 `openspec/review/`：

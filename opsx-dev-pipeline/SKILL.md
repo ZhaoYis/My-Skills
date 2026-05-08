@@ -1,8 +1,8 @@
 ---
 name: opsx-dev-pipeline
-description: 需求开发全流程一站式执行：openspec + git 仓库预检（Phase 0）→ 按入口类型续接 Phase 1/2/3 或新建提案（opsx-propose）→ 方案与需求一致门禁 → 应用（opsx-apply）→ 审查与修复回路（含 fix-cr 子流程）→ 归档（opsx-archive）→ 按决策点 4 选择仅推送或推送后合并。关键环节由用户决策。
+description: 需求开发全流程一站式执行：openspec + git 仓库预检（Phase 0）→ 按入口类型续接 Phase 1/2/3 或新建提案（opsx-propose）→ 方案与需求一致门禁 → 应用（opsx-apply）→ 审查与修复回路（含 fix-cr 子流程）→ 归档（opsx-archive）→ Phase 5 提交前单测（决策点 4b）→ Phase 6 预检与提交推送/合并。关键环节由用户决策。
 license: MIT
-compatibility: Requires openspec CLI and git CLI. Strongly recommended in Cursor — AskQuestion tool. Optional child skills: `openspec-propose`, `openspec-apply-change`, `openspec-archive-change` — only if you want extra on-disk checklists; code review, commit/push, and merge steps are fully defined in this skill’s `references/` (Phase 3 & 5).
+compatibility: Requires openspec CLI and git CLI. Strongly recommended in Cursor — AskQuestion tool. Optional child skills: `openspec-propose`, `openspec-apply-change`, `openspec-archive-change` — only if you want extra on-disk checklists; code review, unit-test gate, commit/push, and merge steps are fully defined in this skill’s `references/` (Phase 3, 5 & 6).
 metadata:
   author: zhaoyi
   version: "2.0"
@@ -33,7 +33,7 @@ metadata:
 
 **约定**：执行流水线步骤时**优先**一条命令跑完上述脚本（减少漏参、统一 `--json`）；若脚本不存在或环境限制，按各 `references/phase-*.md` 内原样 CLI 执行即可。
 
-**流程概览**（`phase-0`～`phase-5` 主干）：Mermaid 为摘要；`opsx-*` 仅为别名；未尽分支以 Phase 引用文件为准。
+**流程概览**（`phase-0`～`phase-6` 主干）：Mermaid 为摘要；`opsx-*` 仅为别名；未尽分支以 Phase 引用文件为准。
 
 ```mermaid
 flowchart TD
@@ -59,10 +59,12 @@ flowchart TD
   R3 -->|进入归档| ARCHIVE[Phase 4 -> opsx-archive]
   ARCHIVE --> D4{Phase 4 决策点 4}
   D4 -->|终止流程| ENDNODE
-  D4 -->|仅提交并推送| PUSH[Phase 5 -> commit + push]
-  PUSH --> ENDNODE
-  D4 -->|提交代码并合并| PUSHM[Phase 5 -> commit + push]
-  PUSHM --> MERGE[Phase 5 决策点 6 -> 合并到目标分支]
+  D4 -->|仅提交并推送| UT[Phase 5：提交前单测（步骤16·决策点4b）]
+  D4 -->|提交代码并合并| UT
+  UT --> P6[Phase 6：预检→提交→推送→（可选）合并]
+  P6 --> MERGECHK{决策点4 曾选合并?}
+  MERGECHK -->|仅推送| ENDNODE
+  MERGECHK -->|合并| MERGE[Phase 6 决策点 6]
   MERGE --> ENDNODE
 ```
 
@@ -72,7 +74,7 @@ flowchart TD
 2. **入口（Phase 0）**：无输入则文本询问；需求描述则推导 change 名并进入 Phase 1；**已有 change** 则 `openspec status`，按制品/任务状态判断续接 **Phase 1 Step 3 / Phase 2 / Phase 3**，并由用户确认「从 Phase X 继续 / 从头新建 / 终止」——**不是**一律先进入 Phase 1 门禁。
 3. **提案与门禁（Phase 1）**：进入 Phase 2 前须过**决策点 1**。用户修改需求时以文本改制品并回到该决策点；澄清可与 Phase 1 合并。
 4. **实施与审查（Phase 2～3）**：**决策点 2** 可暂停、跳过审查直接归档或终止（`phase-2-apply.md`）。审查未过：**fix-cr**、直接修复再审、暂停等（`phase-3-review.md`）；图中 `R3`→`REVIEW` 表示修复回路。
-5. **归档与 Git（Phase 4～5）**：**决策点 4**：终止 / 仅推送 / 提交并合并。选「提交并合并」后出现**决策点 6**；选「仅推送」则 push 后直接结束。
+5. **归档与 Git（Phase 4～6）**：**决策点 4**：终止 / 仅推送 / 提交并合并。进入 **Phase 5** 后**须先经决策点 4b**（是否编写/补充单元测试并运行通过，或跳过/暂停），再在 **Phase 6** 执行预检与提交；选「提交并合并」时在推送后进入**决策点 6**；「仅推送」则不再合并。
 
 **重要：** 所有输出使用中文。
 
@@ -95,12 +97,13 @@ flowchart TD
 | 2 | 提案应用 (Apply) | `references/phase-2-apply.md` |
 | 3 | 代码审查 (Review) | `references/phase-3-review.md` |
 | 4 | 提案归档 (Archive) | `references/phase-4-archive.md` |
-| 5 | 提交合并推送 (Merge & Push) | `references/phase-5-merge-push.md` |
+| 5 | 提交前单元测试 | `references/phase-5-unit-tests.md` |
+| 6 | 提交合并推送 (Merge & Push) | `references/phase-6-merge-push.md` |
 | — | 中断恢复、护栏、错误处理、决策点总览 | `references/recovery-guardrails-appendix.md` |
 
 ### 全局步骤索引（跨 Phase 连续编号）
 
-各 `references/phase-*.md` 内沿用步骤编号 **1–21**；下表用于快速定位当前进度（决策点见附录 **决策点总览**）。
+各 `references/phase-*.md` 内沿用步骤编号 **1–22**；下表用于快速定位当前进度（决策点见附录 **决策点总览**）。
 
 | Step | Phase | 摘要 | 引用文件 |
 |:----:|:-----:|------|----------|
@@ -109,11 +112,12 @@ flowchart TD
 | 5–7 | 2 | 获取 apply 上下文、按任务实施；**决策点 2** | `phase-2-apply.md` |
 | 8–11 | 3 | 约定与 diff、审查、**决策点 3**（含 fix-cr 子流程） | `phase-3-review.md` |
 | 12–15 | 4 | 归档前检查、delta 同步、执行归档；**决策点 4** | `phase-4-archive.md` |
-| 16–21 | 5 | 提交前检查、暂存提交（**决策点 5**）、推送、合并（**决策点 6**）、合并后分支、最终摘要 | `phase-5-merge-push.md` |
+| 16 | 5 | **决策点 4b**、单测子流程 | `phase-5-unit-tests.md` |
+| 17–22 | 6 | 预提交（**5a/5b**）、暂存提交（**决策点 5**）、推送（**5c**）、合并（**决策点 6**）、合并后分支、最终摘要 | `phase-6-merge-push.md` |
 
 ### 兼容性、降级与子技能 fallback（摘要）
 
 - **硬前置**：`openspec` CLI、git、在 git 仓库内工作；不满足则按 Phase 0 / 附录 **Error Handling** 处理并结束。
 - **AskQuestion**：在 Cursor 中**首选**；若工具不可用，用与各 Phase **文案一致**的编号选项列表代替，见附录 **兼容性与降级**。
-- **子技能**（`openspec-propose`、`openspec-apply-change`、`openspec-archive-change`）：**不必**单独 invoke；提案 / 应用 / 归档的等价步骤在 `references/` 中。Git 侧**代码审查、提交推送、合并分支**由 **Phase 3 / Phase 5** 内联定义，**不**依赖任何独立 `git-*` skill。子技能缺失时**直接按本技能 Phase 文件执行**；若有同名 openspec 类 skill 仅可作补充阅读，**仍以本 `references/` 为准**。
+- **子技能**（`openspec-propose`、`openspec-apply-change`、`openspec-archive-change`）：**不必**单独 invoke；提案 / 应用 / 归档的等价步骤在 `references/` 中。Git 侧**代码审查、单测门禁、提交推送、合并分支**由 **Phase 3 / Phase 5 / Phase 6** 内联定义，**不**依赖任何独立 `git-*` skill。子技能缺失时**直接按本技能 Phase 文件执行**；若有同名 openspec 类 skill 仅可作补充阅读，**仍以本 `references/` 为准**。
 - **细节与对照表**：`references/recovery-guardrails-appendix.md` 中的 **兼容性与降级**。

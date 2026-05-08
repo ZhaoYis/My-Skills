@@ -5,7 +5,7 @@
 在任何决策点选择"终止流程"或"暂停流水线"时，展示：
 - change 名称、中断阶段、中断原因
 - 各 Phase 完成状态清单（`[x]` 已完成 / `[ ]` 未完成）
-- 恢复指引：重新运行此技能传入 change 名称从断点继续；或按需手动执行：**Phase 3**（`phase-3-review.md`）、**Phase 4**（`phase-4-archive.md`）、**Phase 5**（`phase-5-merge-push.md`）中的 Git 命令与决策流；Openspec 部分亦可对照 **Phase 1 / 2 / 4** 与等价 `openspec` CLI。
+- 恢复指引：重新运行此技能传入 change 名称从断点继续；或按需手动执行：**Phase 3**（`phase-3-review.md`）、**Phase 4**（`phase-4-archive.md`）、**Phase 5**（`phase-5-unit-tests.md`）、**Phase 6**（`phase-6-merge-push.md`）中的 Git 命令与决策流；Openspec 部分亦可对照 **Phase 1 / 2 / 4** 与等价 `openspec` CLI。
 
 ---
 
@@ -26,13 +26,13 @@
 | `openspec-apply-change` | Phase 2，`phase-2-apply.md`（步骤 5–7） |
 | `openspec-archive-change` | Phase 4，`phase-4-archive.md`（步骤 12–15） |
 
-**Git（审查 / 提交 / 合并）**：不依赖任何独立的 `git-*` skill；一律见 **Phase 3**（审查与报告）、**Phase 5**（暂存提交、推送、合并策略与冲突处理）。
+**Git（审查 / 提交 / 合并）**：不依赖任何独立的 `git-*` skill；见 **Phase 3**（审查与报告）、**Phase 5**（提交前单测）、**Phase 6**（暂存提交、推送、合并与冲突处理）。
 
 Phase 3 **fix-cr** 子流程写明的「调用 `openspec-propose` / `openspec-apply-change`」：在本仓库内改为按 **Phase 1 / Phase 2** 对应小节执行（使用 fix change 名称），无需加载外部 skill。
 
 ### Openspec / Git 版本
 
-本流水线**不锁定** openspec 次版本；若 CLI 子命令或 JSON 字段与文档示例不一致，以实际 `openspec --help` 与命令输出为准，并优先走 **Error Handling** 表。
+本流水线**不锁定** openspec 次版本；若 CLI 子命令或 JSON 字段与文档示例不一致，以实际 `openspec --help` 与命令输出为准。项目描述可能位于 **`openspec/project.md`**（旧版/并存）或 **`openspec/config.yaml`**（新版常见），以仓库实际文件为准，并优先走 **Error Handling** 表。
 
 ### 项目专用技能（pprod）
 
@@ -42,7 +42,7 @@ Phase 3 **fix-cr** 子流程写明的「调用 `openspec-propose` / `openspec-ap
 
 **Guardrails**
 
-- 本流水线在 **Phase 3 / Phase 5** 内联了代码审查、提交推送与分支合并的完整步骤；**Openspec** 类子技能（`openspec-propose`、`openspec-apply-change`、`openspec-archive-change`）的等价流程在 **Phase 1 / 2 / 4**。若单独 skill 有更新，应同步校验本技能 `references/`。**执行时**仅需本技能 Phase 文档与上文 **子技能缺失时的 fallback 对照表**，无需单独的 Git 审查/提交/合并类 skill。
+- 本流水线在 **Phase 3 / Phase 5 / Phase 6** 内联了代码审查、提交前单测、提交推送与分支合并的完整步骤；**Openspec** 类子技能（`openspec-propose`、`openspec-apply-change`、`openspec-archive-change`）的等价流程在 **Phase 1 / 2 / 4**。若单独 skill 有更新，应同步校验本技能 `references/`。**执行时**仅需本技能 Phase 文档与上文 **子技能缺失时的 fallback 对照表**，无需单独的 Git 审查/提交/合并类 skill。
 - 每个决策点必须向用户提供**明确可选路径**；**首选** AskQuestion tool；**若不可用**则按 **兼容性与降级** →「AskQuestion 不可用」用编号列表代替。决策点之间的非决策步骤自动连续执行。
 - **提案确认门禁**：未经决策点 1 中用户明确选择「确认提案，开始实施」，不得进入 Phase 2；用户提出修改时以对话澄清并改制品，循环直至确认或终止
 - 需要自由文本输入时（如用户描述需求、提案修改意见、自定义提交信息），直接通过文本消息询问，不使用 AskQuestion tool
@@ -52,6 +52,7 @@ Phase 3 **fix-cr** 子流程写明的「调用 `openspec-propose` / `openspec-ap
 - 代码审查修复循环最多 3 轮，超过后强制暂停
 - 提案修改以用户确认「与原始需求一致」为终止条件，不设固定次数上限；多轮仍无法对齐时须建议暂停/拆分并由用户决定是否终止
 - 编写代码时：若适用 **项目专用技能（pprod）** 一节中的 pprod 条件，再遵循 `pprod-code-auto-gen`；否则按仓库常规规范
+- **提交前单元测试（Phase 5 步骤 16 / 决策点 4b）**：用户于决策点 4 选择进入提交流程后，须先完成本环节并由用户确认是否编写/补充单测；不得未经 AskQuestion（或附录编号选项）默认跳过。规程全文见 `references/phase-5-unit-tests.md`。
 - 始终在提交时包含 openspec 相关文件
 - 提交信息使用 conventional commit 格式，包含 Co-Authored-By
 - 合并后始终切回源分支（除非用户选择删除源分支）
@@ -66,7 +67,7 @@ Phase 3 **fix-cr** 子流程写明的「调用 `openspec-propose` / `openspec-ap
 |------|----------|
 | openspec CLI 不可用 | 提示安装并退出 |
 | 不在 git 仓库中 | 提示初始化并退出 |
-| `openspec/project.md` 不存在 | 警告并使用 CLAUDE.md 默认规范继续 |
+| `openspec/project.md` 与 `openspec/config.yaml` 均不存在 | 警告并使用 CLAUDE.md 默认规范继续 |
 | change 名称冲突 | 询问复用还是创建新名称 |
 | change 不存在 | 列出可用 change 让用户选择 |
 | 审查时无变更可审 | 提示并跳到 Phase 4 |
@@ -91,6 +92,7 @@ Phase 3 **fix-cr** 子流程写明的「调用 `openspec-propose` / `openspec-ap
 | 3a | Review 子流程 | 修复提案确认 | 确认修复/修改提案/放弃修复(清理change) |
 | 4a | Archive | 未完成项处理 | 继续归档/回到实施/终止 |
 | 4 | Archive | 归档后操作 | 提交并合并/仅提交推送/终止 |
+| 4b | Phase 5 | 提交前是否编写/补充单元测试（步骤 16） | 需要（编写并运行通过）/不需要（跳过）/暂停流水线 |
 | 5a | Commit | 分支落后/分叉 | pull --rebase/忽略/终止 |
 | 5b | Commit | 敏感文件检测 | 排除后继续/包含继续/终止 |
 | 5 | Commit | 确认提交信息 | 确认/修改(文本输入)/取消(退出) |
@@ -99,4 +101,4 @@ Phase 3 **fix-cr** 子流程写明的「调用 `openspec-propose` / `openspec-ap
 | 6a | Merge | 合并冲突 | 中止/theirs/ours/暂停手动解决 |
 | 6b | Merge | 合并后操作 | 保留源分支/删除源分支 |
 
-> **注**：编号带字母后缀的为条件触发决策点，仅在对应条件满足时出现。决策点 3a 在每轮修复循环中触发。
+> **注**：编号带字母后缀的为条件触发决策点，仅在对应条件满足时出现。决策点 3a 在每轮修复循环中触发。**决策点 4b** 在用户于决策点 4 选择进入提交流程后、**Phase 6** 步骤 17（预提交检查）之前必经；规程全文见 `references/phase-5-unit-tests.md`；若用户选「暂停」，从 Phase 5 **步骤 16** 续跑。

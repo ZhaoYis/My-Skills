@@ -1,3 +1,9 @@
+---
+name: phase-1-propose
+description: Global steps 3–4, including decision 1 (proposal gate). After “Confirm proposal, start implementation”, go to phase-2-apply.md step 5.
+compatibility: Requires openspec CLI, git, and an OpenSpec-initialized project; AskQuestion recommended in Cursor.
+---
+
 ## Phase 1: Proposal (Propose)
 
 3. **Create change and generate artifacts**

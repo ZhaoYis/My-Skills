@@ -1,6 +1,12 @@
-## Phase 5: 提交合并推送 (Merge & Push)
+---
+name: phase-6-merge-push
+description: 全局步骤 17–22（预提交 5a/5b、提交决策点 5、推送 5c、合并决策点 6、合并后、最终摘要）。须先完成 phase-5-unit-tests.md 步骤 16；步骤 22 后主干结束。
+compatibility: 需要 git、可访问的 remote（推送/拉取）；Cursor 中推荐 AskQuestion。
+---
 
-16. **预提交检查**
+## Phase 6: 提交合并推送 (Merge & Push)
+
+17. **预提交检查**
 
     ```bash
     git status
@@ -23,7 +29,7 @@
     - `包含敏感文件继续提交` - 用户确认风险后继续
     - `终止流程` - 退出
 
-17. **暂存变更并提交**
+18. **暂存变更并提交**
 
     ```bash
     git add -A
@@ -42,7 +48,7 @@
     **[决策点 5] 选项：**
     - `确认提交` - 使用生成的信息提交
     - `修改提交信息` - 选择后，通过文本消息向用户询问自定义提交信息（不使用 AskQuestion tool），等待用户回复后使用其输入的信息提交
-    - `取消提交` - 不提交，展示恢复指引后退出（用户可稍后**从本 Phase 步骤 16 起**自行执行暂存、提交与推送）
+    - `取消提交` - 不提交，展示恢复指引后退出（用户可稍后**从 Phase 5 `phase-5-unit-tests.md` 步骤 16 或本 Phase 步骤 17 起**自行执行单测确认、暂存、提交与推送）
 
     **若无任何可提交变更**（已无 diff、且工作区干净）：告知用户并结束本 Phase，不强行 `git commit`。
 
@@ -54,7 +60,7 @@
     )"
     ```
 
-18. **推送到远程**
+19. **推送到远程**
 
     ```bash
     git push origin <current-branch>
@@ -62,15 +68,15 @@
 
     **如果推送失败**，使用 **AskQuestion tool** 询问：
     - `执行 pull --rebase 后重试` - 运行 `git pull --rebase origin <branch>`；如果 rebase 产生冲突，提示冲突文件并使用 AskQuestion 询问：`手动解决后继续`（用户解决后运行 `git rebase --continue` + 重新 push）/ `git rebase --abort 并终止`；如果 rebase 成功，重新 push
-    - `终止流程` - 退出（提示：提交若已保存在本地，可稍后执行 `git push origin <branch>`，步骤同本 Phase §18）
+    - `终止流程` - 退出（提示：提交若已保存在本地，可稍后执行 `git push origin <branch>`，步骤同本 Phase §19）
 
-19. **[决策点 6] 合并分支（仅当用户在决策点 4 选择"提交代码并合并"时）**
+20. **[决策点 6] 合并分支（仅当用户在决策点 4 选择"提交代码并合并"时）**
 
     **合并前自检**（对齐内联合并流程）：
     - 运行 `git status`：须无未暂存/未提交变更（除非当前流程与用户选择明确允许留有 WIP）；若有，**AskQuestion**：`先 stash 再继续` / `先提交再继续` / `终止流程`。
     - 记录源分支名 `<source-branch>`（当前分支）。
-    - **若**存在 `origin/<source-branch>`：**建议** `git log origin/<source-branch>..HEAD --oneline` 无未推送提交再合并；若有未推送提交，**AskQuestion** 是否在合并前补跑 §18 推送或仍继续（并说明风险）。
-    - 在满足 §18 **门禁**前提下再执行后续步骤：进入本步前应尽量保证 §18 已成功 push；若仅因网络未完成 push，应先处理或由用户确认再继续。
+    - **若**存在 `origin/<source-branch>`：**建议** `git log origin/<source-branch>..HEAD --oneline` 无未推送提交再合并；若有未推送提交，**AskQuestion** 是否在合并前补跑 §19 推送或仍继续（并说明风险）。
+    - 在满足 §19 **门禁**前提下再执行后续步骤：进入本步前应尽量保证 §19 已成功 push；若仅因网络未完成 push，应先处理或由用户确认再继续。
 
     列出可用分支（`git branch -a`），使用 **AskQuestion tool** 询问目标分支：
 
@@ -110,15 +116,16 @@
     - `使用我方版本 (ours)` - 执行 `git checkout --ours .` + `git add .` 后继续 push
     - `暂停，手动解决` - 展示冲突文件列表，提示用户手动解决后执行 `git add .` → `git commit` → `git push origin <target-branch>` → `git checkout <source-branch>`，然后退出
 
-20. **合并后操作**
+21. **合并后操作**
 
     合并成功后，使用 **AskQuestion tool** 询问：
     - `保留源分支（默认）` - 不做额外操作
     - `删除本地和远程源分支` - 执行 `git branch -d <source>` + `git push origin --delete <source>`，并留在目标分支
 
-21. **展示最终摘要**
+22. **展示最终摘要**
 
     根据实际执行路径动态生成摘要（跳过的阶段标记为"⏭️ 已跳过"），包含：
     - change 名称、归档路径、审查报告路径（含多轮 round 文件）
-    - 各阶段状态表（提案/应用/审查/归档/提交/合并）
+    - 各阶段状态表（提案/应用/审查/归档/**单元测试**/提交/合并）
+    - **决策点 4b** 选择（需要单测 / 跳过）及若适用时的测试命令与结果概要
     - 提交信息和变更统计（文件数、新增行、删除行）
