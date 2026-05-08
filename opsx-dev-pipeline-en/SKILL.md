@@ -14,9 +14,9 @@ metadata:
 
 **Frontmatter and this page take precedence**; Phase steps and options are authoritative in `references/`.
 
-### Scripts (optional speed-up)
+### Scripts (optional)
 
-Run from the **target git repo root**. Scripts for this skill live under `opsx-dev-pipeline-en/scripts/` (independent from the Chinese `opsx-dev-pipeline` copy). If only your app workspace is open, use an absolute path to this skill directory, or run the equivalent `openspec` commands noted in each script.
+Run from the **target git repo root**. If only your app workspace is open, use an absolute path to this skill directory, or run the equivalent `openspec` commands noted in each script.
 
 | Phase / use | Script | Notes |
 |-------------|--------|------|
