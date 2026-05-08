@@ -5,7 +5,7 @@ Many clarification rounds or a long chat are **not** an automatic reason to stop
 Whenever the user picks **Terminate pipeline** or **Pause pipeline** at a decision point, show:
 - Change name, stopped phase, reason
 - **Phase checklist** (`[x]` done / `[ ]` not done)
-- **Resume**: Re-run this skill with the change name to continue from the breakpoint, or finish manually with `openspec-apply-change`, `git-code-review`, `openspec-archive-change`, `git-commit-push`, `git-merge-branch`
+- **Resume**: Re-run this skill with the change name; or finish manually using **Phase 3** (`phase-3-review.md`), **Phase 4** (`phase-4-archive.md`), **Phase 5** (`phase-5-merge-push.md`) Git steps and decision flows; for openspec, follow **Phase 1 / 2 / 4** and the equivalent `openspec` CLI.
 
 ---
 
@@ -24,10 +24,9 @@ Do **not** require loading or invoking these child skills separately. If a child
 |-------------|--------------------------|
 | `openspec-propose` | Phase 1, `phase-1-propose.md` (steps 3–4) |
 | `openspec-apply-change` | Phase 2, `phase-2-apply.md` (steps 5–7) |
-| `git-code-review` | Phase 3, `phase-3-review.md` step 10; an optional on-disk `git-code-review` skill may add checks but **does not replace** Phase 3 |
 | `openspec-archive-change` | Phase 4, `phase-4-archive.md` (steps 12–15) |
-| `git-commit-push` | Phase 5, `phase-5-merge-push.md` steps 16–18 |
-| `git-merge-branch` | Phase 5, `phase-5-merge-push.md` steps 19–20 |
+
+**Git (review / commit / merge)**: no separate `git-*` skills — use **Phase 3** (review + report) and **Phase 5** (stage, commit, push, merge, conflicts).
 
 For the Phase 3 **fix-cr** subflow, “invoke `openspec-propose` / `openspec-apply-change`” means: run the matching **Phase 1 / Phase 2** sections here using the fix change name — no external skill load.
 
@@ -43,7 +42,7 @@ This pipeline does **not** pin openspec minor versions. If CLI subcommands or JS
 
 **Guardrails**
 
-- This skill inlines core flows from child skills (`openspec-propose`, `openspec-apply-change`, `git-code-review`, `git-commit-push`, `git-merge-branch`) for continuity; if those skills change, keep `references/` in sync. At **runtime**, if a child skill is missing, use **Child-skill fallback mapping** — separate installation is not required.
+- **Phase 3 / Phase 5** inline full code review, commit/push, and merge flows. **Openspec** equivalents sit in **Phase 1 / 2 / 4** (`openspec-propose`, `openspec-apply-change`, `openspec-archive-change`). Keep `references/` in sync if standalone skills change. At **runtime** rely on this skill’s Phase docs and **Child-skill fallback mapping** only — **no** extra Git review/commit/merge packages.
 - Every decision point must expose **explicit paths**; **prefer** AskQuestion; if unavailable, use **numbered lists** per **AskQuestion unavailable**. Auto-run non-decision steps between decision points.
 - **Proposal gate**: Do not enter Phase 2 without an explicit **Confirm proposal, start implementation** at decision 1; user edits go through conversation and artifact updates until confirm or terminate.
 - For **free text** (requirements, proposal edits, custom commit message), ask in plain messages — not AskQuestion.
@@ -74,7 +73,7 @@ This pipeline does **not** pin openspec minor versions. If CLI subcommands or JS
 | Push failed | Offer pull --rebase + retry or terminate |
 | Merge conflict | List files; abort / theirs / ours / manual |
 | Cannot create review dir | Show error; report in chat only |
-| Archive target exists | Append `-N` |
+| Archive target exists | Prefer `openspec archive` / `opsx-dev-pipeline-en/scripts/opsx-archive.sh` (CLI handles naming); with manual `mv`, append `-N` |
 | openspec command failed or unexpected JSON | Show output; ask (**prefer** AskQuestion; else numbered options): retry / skip step / terminate |
 | openspec hangs (> ~30s) | Kill; suggest network/config; retry or terminate |
 

@@ -2,10 +2,10 @@
 name: opsx-dev-pipeline
 description: 需求开发全流程一站式执行：openspec + git 仓库预检（Phase 0）→ 按入口类型续接 Phase 1/2/3 或新建提案（opsx-propose）→ 方案与需求一致门禁 → 应用（opsx-apply）→ 审查与修复回路（含 fix-cr 子流程）→ 归档（opsx-archive）→ 按决策点 4 选择仅推送或推送后合并。关键环节由用户决策。
 license: MIT
-compatibility: Requires openspec CLI and git CLI. Strongly recommended in Cursor — AskQuestion tool; child skills (openspec-propose, openspec-apply-change, git-code-review, git-commit-push, git-merge-branch) optional if this skill’s references are followed (see appendix).
+compatibility: Requires openspec CLI and git CLI. Strongly recommended in Cursor — AskQuestion tool. Optional child skills: `openspec-propose`, `openspec-apply-change`, `openspec-archive-change` — only if you want extra on-disk checklists; code review, commit/push, and merge steps are fully defined in this skill’s `references/` (Phase 3 & 5).
 metadata:
   author: zhaoyi
-  version: "1.8"
+  version: "2.0"
 ---
 
 # 需求开发全流程流水线
@@ -13,6 +13,25 @@ metadata:
 ## 执行说明
 
 **元数据与本页正文优先**；各 Phase 步骤与选项以 `references/` 为准。
+
+### 脚本加速（可选）
+
+在**目标 git 仓库根目录**执行；中文技能脚本路径以**本仓库**为例 `opsx-dev-pipeline/scripts/`。英文技能 `opsx-dev-pipeline-en` 使用其目录下独立的 `opsx-dev-pipeline-en/scripts/`，二者互不引用。若工作区仅有业务项目、技能在其它目录，请换为技能实际绝对路径，或直接运行各脚本内注释的等价 `openspec` 命令。
+
+| Phase / 用途 | 脚本 | 说明 |
+|----------------|------|------|
+| 0 预检 | `opsx-preflight.sh` | `openspec --version` + git 仓库检测 |
+| 0 / 1 / 4 | `opsx-change-status.sh <name>` | `openspec status --change <name> --json` |
+| 0 / 1 | `opsx-list-changes.sh` | `openspec list --json`（可跟 `openspec list` 的其它参数） |
+| 1 新建 | `opsx-new-change.sh <name>` | `openspec new change <name>` |
+| 1 制品 | `opsx-instructions.sh <name> [artifact]` | `openspec instructions … --json`；省略 `artifact` 时用 `openspec status` 中第一件 **ready** 制品（需本机 `python3`） |
+| 1 门禁（可选） | `opsx-validate-change.sh <name>` | 提案确认前结构校验 |
+| 2 Apply | `opsx-instructions-apply.sh <name>` | `openspec instructions apply --change <name> --json` |
+| 4 归档 | `opsx-archive.sh <name> …` | 封装 `openspec archive`（推荐 `-y`；不更新主 specs 时用 `--skip-specs`） |
+| CI / 批处理 | `opsx-validate-all.sh` | `openspec validate --all --json --no-interactive` |
+| 自检 | `opsx-selftest.sh` | 临时仓库中依次跑通本目录其余 `opsx-*.sh`（需 `git` + `openspec` + `python3`） |
+
+**约定**：执行流水线步骤时**优先**一条命令跑完上述脚本（减少漏参、统一 `--json`）；若脚本不存在或环境限制，按各 `references/phase-*.md` 内原样 CLI 执行即可。
 
 **流程概览**（`phase-0`～`phase-5` 主干）：Mermaid 为摘要；`opsx-*` 仅为别名；未尽分支以 Phase 引用文件为准。
 
@@ -96,5 +115,5 @@ flowchart TD
 
 - **硬前置**：`openspec` CLI、git、在 git 仓库内工作；不满足则按 Phase 0 / 附录 **Error Handling** 处理并结束。
 - **AskQuestion**：在 Cursor 中**首选**；若工具不可用，用与各 Phase **文案一致**的编号选项列表代替，见附录 **兼容性与降级**。
-- **子技能**（`openspec-propose`、`openspec-apply-change`、`git-code-review`、`git-commit-push`、`git-merge-branch`、`openspec-archive-change`）：**不必**单独 invoke；流水线已把等价步骤写在 `references/` 中。子技能缺失时**直接按本技能对应 Phase 文件执行**；若工作区内另有同名 skill 文件且需补充检查项，可读作参考，**仍以本 references 步骤为准**。
+- **子技能**（`openspec-propose`、`openspec-apply-change`、`openspec-archive-change`）：**不必**单独 invoke；提案 / 应用 / 归档的等价步骤在 `references/` 中。Git 侧**代码审查、提交推送、合并分支**由 **Phase 3 / Phase 5** 内联定义，**不**依赖任何独立 `git-*` skill。子技能缺失时**直接按本技能 Phase 文件执行**；若有同名 openspec 类 skill 仅可作补充阅读，**仍以本 `references/` 为准**。
 - **细节与对照表**：`references/recovery-guardrails-appendix.md` 中的 **兼容性与降级**。

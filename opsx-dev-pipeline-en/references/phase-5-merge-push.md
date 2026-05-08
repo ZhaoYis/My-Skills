@@ -5,8 +5,11 @@
     ```bash
     git status
     git branch --show-current
+    git stash list
     git fetch origin
     ```
+
+    If stash entries exist: **mention** them in the recap (do **not** auto `stash pop`).
 
     Branch sync (`git status` vs remote):
     - **Behind or diverged**: **AskQuestion**:
@@ -14,7 +17,7 @@
       - `Ignore; commit anyway (push may fail)` — continue commit flow
       - `Terminate pipeline` — exit
 
-    Scan sensitive paths (`.env`, `*.key`, `*.pem`, files with password/secret/token).
+    Scan sensitive paths and names: `.env`, `.env.local`, `.env.*.local`; path/name fragments `secret` / `password` / `credential`; `*.key`, `*.pem`, `*.p12`, `*.jks`; config text that clearly pairs `api_key` / `token` with credentials. For tracked `application-*.yml` / `application-*.properties`, warn only when plaintext secrets are likely.
     **If found**: list paths, **AskQuestion**:
     - `Exclude sensitive files and continue` — `git reset HEAD <files>` then commit
     - `Include sensitive files (I accept risk)` — continue after explicit confirm
@@ -28,10 +31,9 @@
 
     Unstage build artifacts (`target/`), IDE (`.idea/`), logs (`*.log`) with `git reset HEAD <file>`. Always keep openspec paths (archive, specs, review).
 
-    Draft a conventional commit message:
-    ```
-    <type>: <description>
+    Pick a **conventional-commit** `<type>` (examples): `feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `chore`, `style`, `ci`; keep the subject concise; optional body. Default trailer:
 
+    ```
     Co-Authored-By: Claude <noreply@anthropic.com>
     ```
 
@@ -40,7 +42,9 @@
     **[Decision 5] Options:**
     - `Confirm commit` — commit with generated message
     - `Edit commit message` — then ask in **plain text** for the custom message (not AskQuestion), wait, commit with user text
-    - `Cancel commit` — do not commit; show resume guidance (user can use `git-commit-push` later)
+    - `Cancel commit` — do not commit; show resume guidance (user may **resume from Step 16** in this Phase for staging, commit, and push)
+
+    **If nothing is committable** (clean tree, no pending changes): say so and end this Phase — do **not** run `git commit`.
 
     Commit (heredoc):
     ```bash
@@ -58,9 +62,15 @@
 
     **If push fails**, **AskQuestion**:
     - `Pull --rebase then retry` — `git pull --rebase origin <branch>`; on conflict, list files, AskQuestion: `Resolve manually` (user runs `git rebase --continue` + push again) / `git rebase --abort and stop`; if clean, push again
-    - `Terminate pipeline` — exit (note: commit exists locally; `git push origin <branch>` later)
+    - `Terminate pipeline` — exit (note: if a commit exists locally, run `git push origin <branch>` later — same flow as §18)
 
 19. **[Decision 6] Merge (only if decision 4 was commit-and-merge)**
+
+    **Pre-merge self-check** (inlined merge flow):
+    - `git status` must show no stray staged/uncommitted work (unless the user explicitly allowed WIP); if not clean, **AskQuestion**: `Stash then continue` / `Commit then continue` / `Terminate pipeline`.
+    - Remember `<source-branch>` (current branch).
+    - If `origin/<source-branch>` exists: **prefer** `git log origin/<source-branch>..HEAD --oneline` empty before merging; if there are unpushed commits, **AskQuestion** whether to finish §18 first or proceed (explain risk).
+    - Prefer a successful §18 push before merging; if only network blocked the push, fix push or confirm with user before merging.
 
     List branches (`git branch -a`), **AskQuestion** for target:
 

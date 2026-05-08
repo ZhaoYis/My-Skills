@@ -3,8 +3,10 @@
 5. **Fetch apply instructions and context**
 
    ```bash
-   openspec instructions apply --change "<name>" --json
+   bash opsx-dev-pipeline-en/scripts/opsx-instructions-apply.sh "<name>"
    ```
+
+   **Equivalent**: `openspec instructions apply --change "<name>" --json`
 
    **Handle returned state:**
    - `state: "blocked"` (missing artifacts) → **AskQuestion**:

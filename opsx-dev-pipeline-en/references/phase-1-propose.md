@@ -2,23 +2,27 @@
 
 3. **Create change and generate artifacts**
 
-   **a. Resuming an existing change from Phase 0 Step 2a**: Skip creation; run `openspec status --change "<name>" --json` and run generation only for incomplete artifacts.
+   **a. Resuming an existing change from Phase 0 Step 2a**: Skip creation; run `bash opsx-dev-pipeline-en/scripts/opsx-change-status.sh "<name>"` (or `openspec status --change "<name>" --json`) and run generation only for incomplete artifacts.
 
    **b. New change**:
 
    ```bash
-   openspec new change "<name>"
+   bash opsx-dev-pipeline-en/scripts/opsx-new-change.sh "<name>"
    ```
+
+   **Equivalent**: `openspec new change "<name>"`
 
    **If the change name already exists**, use **AskQuestion**:
    - `Continue on existing change` — treat as 3a (skip create, resume artifact generation).
    - `Use a new name` — ask in plain text for a new name, then create again.
 
    ```bash
-   openspec status --change "<name>" --json
+   bash opsx-dev-pipeline-en/scripts/opsx-change-status.sh "<name>"
    ```
 
-   Create artifacts in dependency order: for each artifact in `ready`, run `openspec instructions <artifact-id> --change "<name>" --json`, read dependencies, create files per `template`. Leave finished artifacts unchanged. Loop until all `applyRequires` artifacts are done.
+   **Equivalent**: `openspec status --change "<name>" --json`
+
+   Create artifacts in dependency order: for each artifact in `ready`, run `bash opsx-dev-pipeline-en/scripts/opsx-instructions.sh "<name>" <artifact-id>` (or `openspec instructions <artifact-id> --change "<name>" --json`), read dependencies, create files per `template`. Leave finished artifacts unchanged. Loop until all `applyRequires` artifacts are done. (Optional before **Decision 1**: `bash opsx-dev-pipeline-en/scripts/opsx-validate-change.sh "<name>"`.)
 
    Use **TodoWrite** to track artifact progress.
 

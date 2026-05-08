@@ -2,6 +2,14 @@
 
 1. **Environment preflight**
 
+   **Preferred (one shot)** (from repo root; adjust path to the skill on disk):
+
+   ```bash
+   bash opsx-dev-pipeline-en/scripts/opsx-preflight.sh
+   ```
+
+   **Equivalent** (no scripts):
+
    ```bash
    openspec --version
    git rev-parse --is-inside-work-tree
@@ -13,8 +21,8 @@
 2. **Determine entry type**
 
    **a. User provided an existing change name:**
-   - Run `openspec status --change "<name>" --json` to inspect change state.
-   - If the change does not exist: report invalid name, run `openspec list --json` to list changes, let the user pick again.
+   - Run `bash opsx-dev-pipeline-en/scripts/opsx-change-status.sh "<name>"` (or `openspec status --change "<name>" --json`) to inspect change state.
+   - If the change does not exist: report invalid name, run `bash opsx-dev-pipeline-en/scripts/opsx-list-changes.sh` (or `openspec list --json`) to list changes, let the user pick again.
    - If it exists, infer which phase to resume from artifacts and tasks:
      - Not all `applyRequires` artifacts done → continue from **Phase 1 Step 3** (see which artifacts are `ready`, run generation only for incomplete ones; leave completed artifacts unchanged).
      - Artifacts done but tasks not all done → continue **Phase 2** implementation.

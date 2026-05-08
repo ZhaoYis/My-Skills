@@ -21,12 +21,36 @@
 
 10. **Run code review**
 
-    Follow the `git-code-review` skill checklist:
-    - Secrets / sensitive data
-    - Stack compliance (e.g. Java 8)
-    - Layering (Web → Biz → Core → Common)
-    - Naming, annotations, style, error handling
-    - Mapping (MapStruct), transactions, security, performance
+    **Fully inlined**: execute the checklist below inside this pipeline — **do not** rely on any external standalone Git code-review skill.
+
+    **10.1 Secret scanning**  
+    Scan the full diff for likely secrets: API keys / apikey patterns, `password` / `passwd`, `token` / `access_token` / `refresh_token`, PEM private keys (`-----BEGIN … PRIVATE KEY-----`), DB URLs with credentials, common cloud credential patterns. **Any hit** → file under **Critical**; recommend env vars or a secret manager; if already committed, warn about history rewriting (filter-repo / BFG, etc.).
+
+    **10.2 Convention baseline**  
+    Use what Step 8 loaded: **`openspec/project.md` first** (stack, layering, naming, style, constraints); if missing, **CLAUDE.md** fallback. Whatever the baseline states must be checked against the diff.
+
+    **10.3 General dimensions** (fill gaps where the baseline is silent)  
+    - **Correctness**: logic bugs, edge/null handling, missing error paths, resource leaks  
+    - **Security**: injection (SQL etc.), XSS, exposed secrets, authz gaps  
+    - **Performance**: obvious N+1, hot-path inefficiency, unbounded batches  
+    - **Maintainability**: duplication, oversized functions/classes, unclear critical behavior  
+
+    **10.4 Typical Java layered stack** (apply **only** when `project.md` or layout indicates it; otherwise stick to baseline + §10.3)  
+    - Layers: Web → Biz → Core → Common; no upward or illegal cross-layer deps  
+    - Naming suffixes per project.md (Controller, BizService/Impl, DomainService/Impl, Mapper, DO, VO, Request, Convert, …)  
+    - Writes: `@Transactional(rollbackFor = Throwable.class)` when Spring-style  
+    - Mapping: prefer MapStruct (`INSTANCE`), avoid huge hand-rolled maps  
+    - Logging: framework logger; avoid `System.out.println`  
+
+    **10.5 Historical reviews**  
+    If `openspec/review/` has a recent report for the **same branch**, compare recurring issues, fixed items, regressions.
+
+    **10.6 Very large diffs**  
+    If stats show a very large change (e.g. on the order of 5000+ lines), review in chunks (by file/dir) and state the chunking strategy in the summary.
+
+    **10.7 Report language**  
+    Pipeline rule: **`openspec/project.md`** and user-facing workflow may be English here, but the **saved review document body must remain 中文** (same as Phase 3 report filenames and parent skill). Structure: overview (files, +/- lines, counts by severity), **Critical / Major / Minor / Suggestions**, convention violations table vs `project.md`, file list, secret-scan section, delta vs last review (if any), fix list, positives.  
+    **Severity**: critical (security/data loss/show-stoppers) > major (convention/perf/design) > minor (style/naming) > suggestion (optional).
 
     Save the report under `openspec/review/`:
     - File name: `YYYY-MM-DD-HH:mm-<branch-name>-pipeline-review.md`
@@ -69,11 +93,11 @@
        - `Revise proposal` — user explains edits; update artifacts.
        - `Abandon fix; continue to archive` — remove this fix change (`rm -rf openspec/changes/fix-cr-*` for what you created); Phase 4.
     d. Invoke `openspec-apply-change` to implement fix tasks.
-    e. Archive the fix change (fix changes often have no delta specs — skip sync check, archive):
+    e. Archive the fix change (often no delta specs: if Step 13 is skipped, `--skip-specs` is typical; omit it if deltas must merge into main specs):
        ```bash
-       mkdir -p openspec/changes/archive
-       mv openspec/changes/fix-cr-<type> openspec/changes/archive/YYYY-MM-DD-fix-cr-<type>
+       bash opsx-dev-pipeline-en/scripts/opsx-archive.sh "fix-cr-<type>" -y --skip-specs
        ```
+       **Equivalent**: `openspec archive "fix-cr-<type>" -y --skip-specs`; on failure, fall back to manual `mkdir` + `mv` (same Phase 4 fallback note).
     f. Re-run Steps 9–11.
     g. After 3 rounds with serious issues still open: force pause, tell the user to intervene manually, show resume guidance, exit.
 

@@ -3,8 +3,12 @@
 12. **检查制品和任务完成状态**
 
     ```bash
-    openspec status --change "<name>" --json
+    bash opsx-dev-pipeline/scripts/opsx-change-status.sh "<name>"
     ```
+
+    **等价**：`openspec status --change "<name>" --json`
+
+    （推荐）随后执行 `bash opsx-dev-pipeline/scripts/opsx-validate-change.sh "<name>"`，将结构问题在归档前暴露。
 
     读取 tasks.md 检查未完成任务数量。
 
@@ -20,20 +24,28 @@
     **如果有 delta specs**：
     - 对比 delta spec 与主 spec（`openspec/specs/<capability>/spec.md`），展示变更摘要
     - 使用 **AskQuestion tool** 询问：
-      - `同步到主 specs（推荐）` - 执行同步
-      - `不同步，直接归档` - 跳过同步
+      - `同步到主 specs（推荐）` - 在 Step 14 使用 `opsx-archive.sh "<name>" -y`（**无** `--skip-specs`）：由 OpenSpec 将 delta 合并进 `openspec/specs/` 并归档，无需手动拷贝
+      - `不同步，直接归档` - 在 Step 14 使用 `opsx-archive.sh "<name>" -y --skip-specs`：跳过对主 specs 的更新
 
 14. **执行归档**
 
-    ```bash
-    mkdir -p openspec/changes/archive
-    ```
+    **推荐（与 OpenSpec CLI 一致）**：在用户完成 Step 13 关于 delta 的选择后，用官方归档合并主 specs 并移动目录。
 
-    生成目标名称 `YYYY-MM-DD-<change-name>`。如果目标已存在，追加 `-N` 后缀。
+    - 若 Step 13 选择 **同步 delta 到主 specs**（需要更新 `openspec/specs/`）：  
 
-    ```bash
-    mv openspec/changes/<name> openspec/changes/archive/YYYY-MM-DD-<name>
-    ```
+      ```bash
+      bash opsx-dev-pipeline/scripts/opsx-archive.sh "<name>" -y
+      ```
+
+    - 若选择 **不更新主 specs**（工具链/文档类等）：  
+
+      ```bash
+      bash opsx-dev-pipeline/scripts/opsx-archive.sh "<name>" -y --skip-specs
+      ```
+
+    **等价**：`openspec archive "<name>" -y`（及必要时 `--skip-specs`）。CLI 会自动校验并将目录移到 `openspec/changes/archive/`，归档名含日期前缀。
+
+    **降级**：若 `openspec archive` 不可用或失败，可退回手动流程：`mkdir -p openspec/changes/archive`，生成 `YYYY-MM-DD-<change-name>`（冲突则追加 `-N`），再 `mv openspec/changes/<name> openspec/changes/archive/<目标目录>`（**不**含自动合并 specs，须与 Step 13 用户意图一致）。
 
 15. **[决策点 4] 归档后操作**
 

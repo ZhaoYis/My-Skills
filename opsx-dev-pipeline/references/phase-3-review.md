@@ -21,12 +21,36 @@
 
 10. **执行代码审查**
 
-    按照 `git-code-review` 技能的审查标准执行：
-    - 敏感信息扫描
-    - 技术栈合规性（Java 8 兼容性等）
-    - 分层架构合规性（Web → Biz → Core → Common）
-    - 命名规范、注解使用、代码风格、错误处理
-    - 对象转换（MapStruct）、事务管理、安全性与性能
+    **本步骤自包含**：以下审查标准全部在本流水线内执行，**不要求**安装任何外部的独立 Git 代码审查 skill。
+
+    **10.1 敏感信息扫描**  
+    在 diff 全文中检查疑似机密：API key / apikey、`password` / `passwd`、`token` / `access_token` / `refresh_token`、私钥块（`-----BEGIN … PRIVATE KEY-----`）、含用户名密码的数据库 URL、AWS/Azure/GCP 典型密钥格式等。**一旦发现**记入「严重」区块，建议使用环境变量或密钥管理服务；若已进提交历史须提示清理历史的风险（filter-repo / BFG 等）。
+
+    **10.2 规范基准**  
+    以步骤 8 已加载的内容为准：**优先 `openspec/project.md`**（技术栈、分层、命名、风格、约束）；降级场景下为 **CLAUDE.md**。凡 project.md（或降级基准）写明的内容，须在 diff 上逐条对照。
+
+    **10.3 通用审查维度**（在基准文档未展开的缺口上补充）  
+    - **正确性**：逻辑错误、边界与空值、错误处理遗漏、资源未关闭/泄漏风险  
+    - **安全**：注入（SQL 等）、XSS、敏感数据明文、鉴权/授权绕过或缺失  
+    - **性能**：明显 N+1、无谓热路径复杂度、大批量无分页  
+    - **可维护性**：重复逻辑、过大的函数/类、关键行为缺少可读说明  
+
+    **10.4 典型 Java 分层栈**（**仅当** project.md 或目录结构表明适用时强化检查，否则以 project.md 与通用维度为主）  
+    - 分层与依赖：Web → Biz → Core → Common，禁止上层被下层反向依赖、禁止跨层乱依赖  
+    - 命名后缀：Controller、BizService/Impl、DomainService/Impl、Mapper、DO、Model、VO、Request、Convert 等（以 project.md 为准）  
+    - 写操作事务：`@Transactional(rollbackFor = Throwable.class)`（若栈使用 Spring）  
+    - 对象转换：优先 MapStruct（`INSTANCE`），避免大面积手写映射  
+    - 日志：使用框架 logger，避免 `System.out.println`  
+
+    **10.5 历史审查**  
+    若 `openspec/review/` 中已有**同一分支**的近期报告，对比重复问题、已修复项与回归。
+
+    **10.6 超大 diff**  
+    若变更行数过多（例如统计超过约 5000 行），可按文件或目录分块审查，在报告「概要」中说明分块策略，避免遗漏整文件。
+
+    **10.7 报告（必须使用中文）**  
+    报告须写入对话并保存到文件（目录不存在则 `mkdir -p openspec/review`）。建议结构：**概要**（文件数、增删行、问题分级统计）、**严重 / 重要 / 一般 / 建议**、**规范违规表**（对照 project.md）、**已审查文件列表**、**敏感信息扫描结果**、**与上次审查对比**（若有）、**修复建议**、**亮点**。  
+    **严重程度**：严重（安全漏洞、泄密、破坏性缺陷）→ 重要（规范/性能/设计明显问题）→ 一般（风格、命名）→ 建议（可选优化）。
 
     保存审查报告到 `openspec/review/`：
     - 文件名：`YYYY-MM-DD-HH:mm-<branch-name>-pipeline-review.md`
@@ -69,11 +93,11 @@
        - `修改提案` - 用户说明修改内容后更新
        - `放弃修复，继续归档` - 清理已创建的修复 change（`rm -rf openspec/changes/fix-cr-*` 对应本次创建的），跳过修复，进入 Phase 4
     d. 调用 `openspec-apply-change` 技能逐任务实施修复
-    e. 归档修复 change（修复类 change 无 delta specs，跳过同步检查，直接归档）：
+    e. 归档修复 change（修复类 change 通常无 delta specs：跳过 Step 13 的 delta 对话时，可用 `--skip-specs`；若有 delta 需合并则去掉该 flag）：
        ```bash
-       mkdir -p openspec/changes/archive
-       mv openspec/changes/fix-cr-<type> openspec/changes/archive/YYYY-MM-DD-fix-cr-<type>
+       bash opsx-dev-pipeline/scripts/opsx-archive.sh "fix-cr-<type>" -y --skip-specs
        ```
+       **等价**：`openspec archive "fix-cr-<type>" -y --skip-specs`；失败时再用 `mkdir` + `mv` 手动归档（同 Phase 4 降级说明）。
     f. 重新执行 Step 9-11（代码审查），进入下一轮
     g. 如果 3 轮后仍有严重问题，强制暂停并提示用户手动介入，展示恢复指引后退出
 

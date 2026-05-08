@@ -5,7 +5,7 @@
 在任何决策点选择"终止流程"或"暂停流水线"时，展示：
 - change 名称、中断阶段、中断原因
 - 各 Phase 完成状态清单（`[x]` 已完成 / `[ ]` 未完成）
-- 恢复指引：重新运行此技能传入 change 名称从断点继续，或使用单独技能（`openspec-apply-change`、`git-code-review`、`openspec-archive-change`、`git-commit-push`、`git-merge-branch`）手动完成
+- 恢复指引：重新运行此技能传入 change 名称从断点继续；或按需手动执行：**Phase 3**（`phase-3-review.md`）、**Phase 4**（`phase-4-archive.md`）、**Phase 5**（`phase-5-merge-push.md`）中的 Git 命令与决策流；Openspec 部分亦可对照 **Phase 1 / 2 / 4** 与等价 `openspec` CLI。
 
 ---
 
@@ -24,10 +24,9 @@
 |--------|----------------------|
 | `openspec-propose` | Phase 1，`phase-1-propose.md`（步骤 3–4） |
 | `openspec-apply-change` | Phase 2，`phase-2-apply.md`（步骤 5–7） |
-| `git-code-review` | Phase 3，`phase-3-review.md` 步骤 10；若工作区存在 `git-code-review` skill 可作补充阅读，**不替代** Phase 3 |
 | `openspec-archive-change` | Phase 4，`phase-4-archive.md`（步骤 12–15） |
-| `git-commit-push` | Phase 5，`phase-5-merge-push.md` 步骤 16–18 |
-| `git-merge-branch` | Phase 5，`phase-5-merge-push.md` 步骤 19–20 |
+
+**Git（审查 / 提交 / 合并）**：不依赖任何独立的 `git-*` skill；一律见 **Phase 3**（审查与报告）、**Phase 5**（暂存提交、推送、合并策略与冲突处理）。
 
 Phase 3 **fix-cr** 子流程写明的「调用 `openspec-propose` / `openspec-apply-change`」：在本仓库内改为按 **Phase 1 / Phase 2** 对应小节执行（使用 fix change 名称），无需加载外部 skill。
 
@@ -43,7 +42,7 @@ Phase 3 **fix-cr** 子流程写明的「调用 `openspec-propose` / `openspec-ap
 
 **Guardrails**
 
-- 本技能内联了各子技能（`openspec-propose`、`openspec-apply-change`、`git-code-review`、`git-commit-push`、`git-merge-branch`）的核心逻辑以保证流水线连贯性；若子技能有更新，应同步校验本技能 `references/`。**执行时**若子技能不可用，按上文 **子技能缺失时的 fallback 对照表** 执行，不要求单独安装子技能。
+- 本流水线在 **Phase 3 / Phase 5** 内联了代码审查、提交推送与分支合并的完整步骤；**Openspec** 类子技能（`openspec-propose`、`openspec-apply-change`、`openspec-archive-change`）的等价流程在 **Phase 1 / 2 / 4**。若单独 skill 有更新，应同步校验本技能 `references/`。**执行时**仅需本技能 Phase 文档与上文 **子技能缺失时的 fallback 对照表**，无需单独的 Git 审查/提交/合并类 skill。
 - 每个决策点必须向用户提供**明确可选路径**；**首选** AskQuestion tool；**若不可用**则按 **兼容性与降级** →「AskQuestion 不可用」用编号列表代替。决策点之间的非决策步骤自动连续执行。
 - **提案确认门禁**：未经决策点 1 中用户明确选择「确认提案，开始实施」，不得进入 Phase 2；用户提出修改时以对话澄清并改制品，循环直至确认或终止
 - 需要自由文本输入时（如用户描述需求、提案修改意见、自定义提交信息），直接通过文本消息询问，不使用 AskQuestion tool
@@ -74,7 +73,7 @@ Phase 3 **fix-cr** 子流程写明的「调用 `openspec-propose` / `openspec-ap
 | 推送失败 | 提供 pull --rebase 重试或终止选项 |
 | 合并冲突 | 展示冲突文件，提供中止/theirs/ours/手动解决选项 |
 | 审查报告目录创建失败 | 提示错误，报告仅输出到对话 |
-| 归档目标已存在 | 追加 `-N` 后缀 |
+| 归档目标已存在 | 使用 `openspec archive` / `opsx-archive.sh` 时由 CLI 处理；手动 `mv` 时追加 `-N` 后缀 |
 | openspec 命令执行失败或返回非预期格式 | 展示错误输出；询问（首选 AskQuestion；否则编号选项）：重试 / 跳过当前步骤 / 终止流程 |
 | openspec 命令超时（>30s 无响应） | 终止命令，提示可能原因（网络、配置），提供重试或终止选项 |
 

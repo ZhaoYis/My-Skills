@@ -3,8 +3,10 @@
 5. **获取实施指令并读取上下文**
 
    ```bash
-   openspec instructions apply --change "<name>" --json
+   bash opsx-dev-pipeline/scripts/opsx-instructions-apply.sh "<name>"
    ```
+
+   **等价**：`openspec instructions apply --change "<name>" --json`
 
    **处理返回状态：**
    - `state: "blocked"`（缺少制品）→ 使用 **AskQuestion tool** 询问：

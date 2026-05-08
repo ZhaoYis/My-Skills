@@ -2,23 +2,27 @@
 
 3. **创建 change 并生成制品**
 
-   **a. 如果是从 Phase 0 Step 2a 续接已有 change**：跳过创建，直接执行 `openspec status --change "<name>" --json`，仅对未完成的制品执行生成流程。
+   **a. 如果是从 Phase 0 Step 2a 续接已有 change**：跳过创建，直接执行 `bash opsx-dev-pipeline/scripts/opsx-change-status.sh "<name>"`（或 `openspec status --change "<name>" --json`），仅对未完成的制品执行生成流程。
 
    **b. 如果是新建 change**：
 
    ```bash
-   openspec new change "<name>"
+   bash opsx-dev-pipeline/scripts/opsx-new-change.sh "<name>"
    ```
+
+   **等价**：`openspec new change "<name>"`
 
    **如果 change 名称已存在**：使用 **AskQuestion tool** 询问：
    - `在已有 change 上继续` - 按 3a 路径处理（跳过创建，续接制品生成）
    - `创建新名称` - 向用户发送文本消息询问新名称，获取后重新创建
 
    ```bash
-   openspec status --change "<name>" --json
+   bash opsx-dev-pipeline/scripts/opsx-change-status.sh "<name>"
    ```
 
-   按依赖顺序创建制品：对每个 `ready` 状态的制品，运行 `openspec instructions <artifact-id> --change "<name>" --json` 获取指令，读取依赖制品，按 `template` 结构创建文件。已完成的制品保持不变。循环直到所有 `applyRequires` 制品完成。
+   **等价**：`openspec status --change "<name>" --json`
+
+   按依赖顺序创建制品：对每个 `ready` 状态的制品，运行 `bash opsx-dev-pipeline/scripts/opsx-instructions.sh "<name>" <artifact-id>`（或 `openspec instructions <artifact-id> --change "<name>" --json`）获取指令，读取依赖制品，按 `template` 结构创建文件。已完成的制品保持不变。循环直到所有 `applyRequires` 制品完成。（可选：在 **决策点 1** 之前增加 `bash opsx-dev-pipeline/scripts/opsx-validate-change.sh "<name>"` 做结构校验。）
 
    使用 **TodoWrite tool** 跟踪各制品进度。
 

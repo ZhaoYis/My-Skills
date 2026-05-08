@@ -3,8 +3,12 @@
 12. **Check artifacts and tasks**
 
     ```bash
-    openspec status --change "<name>" --json
+    bash opsx-dev-pipeline-en/scripts/opsx-change-status.sh "<name>"
     ```
+
+    **Equivalent**: `openspec status --change "<name>" --json`
+
+    (Recommended) then `bash opsx-dev-pipeline-en/scripts/opsx-validate-change.sh "<name>"` to surface structural issues before archive.
 
     Read `tasks.md` for unfinished items.
 
@@ -20,20 +24,28 @@
     **If delta specs exist**:
     - Compare to main specs (`openspec/specs/<capability>/spec.md`), show delta summary.
     - **AskQuestion**:
-      - `Sync to main specs (recommended)` — perform sync.
-      - `Skip sync; archive only` — no sync.
+      - `Sync to main specs (recommended)` — in Step 14 run `bash opsx-dev-pipeline-en/scripts/opsx-archive.sh "<name>" -y` (**without** `--skip-specs`): OpenSpec merges deltas into `openspec/specs/` and archives; no manual copy.
+      - `Skip sync; archive only` — in Step 14 run `bash opsx-dev-pipeline-en/scripts/opsx-archive.sh "<name>" -y --skip-specs`: do not update main specs.
 
 14. **Archive**
 
-    ```bash
-    mkdir -p openspec/changes/archive
-    ```
+    **Recommended (OpenSpec CLI)**: after Step 13, use official archive so main specs merge and the change moves under `openspec/changes/archive/`.
 
-    Target folder name `YYYY-MM-DD-<change-name>`. If it exists, append `-N`.
+    - If Step 13 chose **sync delta to main specs** (update `openspec/specs/`):
 
-    ```bash
-    mv openspec/changes/<name> openspec/changes/archive/YYYY-MM-DD-<name>
-    ```
+      ```bash
+      bash opsx-dev-pipeline-en/scripts/opsx-archive.sh "<name>" -y
+      ```
+
+    - If Step 13 chose **skip main spec updates** (tooling/docs-only style):
+
+      ```bash
+      bash opsx-dev-pipeline-en/scripts/opsx-archive.sh "<name>" -y --skip-specs
+      ```
+
+    **Equivalent**: `openspec archive "<name>" -y` (add `--skip-specs` when appropriate). The CLI validates, merges when not skipped, and picks the dated archive folder name.
+
+    **Fallback**: if `openspec archive` fails or is unavailable, use manual `mkdir -p openspec/changes/archive`, pick `YYYY-MM-DD-<change-name>` (append `-N` on clash), then `mv openspec/changes/<name> openspec/changes/archive/<target>` (no automatic spec merge — must match Step 13 intent).
 
 15. **[Decision 4] After archive**
 

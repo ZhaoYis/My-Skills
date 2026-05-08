@@ -2,10 +2,10 @@
 name: opsx-dev-pipeline-en
 description: End-to-end requirement-driven development pipeline — openspec + git preflight (Phase 0), resume Phase 1/2/3 or new proposal by entry type (opsx-propose), align proposal with requirements gate, apply (opsx-apply), review-and-fix loop (incl. fix-cr subflow), archive (opsx-archive), then push-only or push-and-merge per decision 4. User decisions at key points.
 license: MIT
-compatibility: Requires openspec CLI and git CLI. Strongly recommended in Cursor — AskQuestion tool; child skills (openspec-propose, openspec-apply-change, git-code-review, git-commit-push, git-merge-branch) optional when following this skill’s `references/` (see appendix).
+compatibility: Requires openspec CLI and git CLI. Strongly recommended in Cursor — AskQuestion tool. Optional child skills: `openspec-propose`, `openspec-apply-change`, `openspec-archive-change` for extra on-disk notes; code review, commit/push, and merge are fully specified in this skill’s `references/` (Phase 3 & 5).
 metadata:
   author: zhaoyi
-  version: "1.8"
+  version: "2.0"
 ---
 
 # End-to-end requirement development pipeline
@@ -13,6 +13,25 @@ metadata:
 ## How to run
 
 **Frontmatter and this page take precedence**; Phase steps and options are authoritative in `references/`.
+
+### Scripts (optional speed-up)
+
+Run from the **target git repo root**. Scripts for this skill live under `opsx-dev-pipeline-en/scripts/` (independent from the Chinese `opsx-dev-pipeline` copy). If only your app workspace is open, use an absolute path to this skill directory, or run the equivalent `openspec` commands noted in each script.
+
+| Phase / use | Script | Notes |
+|-------------|--------|------|
+| 0 preflight | `opsx-preflight.sh` | `openspec --version` + git repo check |
+| 0 / 1 / 4 | `opsx-change-status.sh <name>` | `openspec status --change <name> --json` |
+| 0 / 1 | `opsx-list-changes.sh` | `openspec list --json` (pass extra `openspec list` flags if needed) |
+| 1 create | `opsx-new-change.sh <name>` | `openspec new change <name>` |
+| 1 artifacts | `opsx-instructions.sh <name> [artifact]` | `openspec instructions … --json`; omit `artifact` to use first **ready** artifact from `openspec status` (needs local `python3`) |
+| 1 gate (optional) | `opsx-validate-change.sh <name>` | structural validate before decision 1 |
+| 2 Apply | `opsx-instructions-apply.sh <name>` | `openspec instructions apply --change <name> --json` |
+| 4 archive | `opsx-archive.sh <name> …` | wraps `openspec archive` (`-y`; `--skip-specs` when main specs must not change) |
+| CI / bulk | `opsx-validate-all.sh` | `openspec validate --all --json --no-interactive` |
+| Self-test | `opsx-selftest.sh` | Runs other `opsx-*.sh` in a temp repo (needs `git`, `openspec`, `python3`) |
+
+**Convention**: when executing the pipeline, **prefer** a single script invocation per step (fewer missed flags, consistent `--json`). If scripts are unavailable, follow the raw CLI in each `references/phase-*.md`.
 
 **Flow overview** (main line `phase-0`–`phase-5`): Mermaid is a summary; `opsx-*` are aliases only; unresolved branches follow the Phase reference files.
 
@@ -96,5 +115,5 @@ Phase files use continuous step numbers **1–21**. Use this table to see where 
 
 - **Hard prerequisites**: openspec CLI, git, working inside a git repo; if not met, follow Phase 0 / appendix **Error Handling** and stop.
 - **AskQuestion**: **Preferred** in Cursor; if the tool is missing, use **numbered lists** with the **same option labels** as the phase files — see appendix **Compatibility & degradation**.
-- **Child skills** (`openspec-propose`, `openspec-apply-change`, `git-code-review`, `git-commit-push`, `git-merge-branch`, `openspec-archive-change`): you do **not** need to invoke them separately; equivalent steps are inlined under `references/`. If a child skill is not installed, **follow the matching Phase file in this skill**; optional on-disk skill files may be read for extra checklists, but **`references/` steps take precedence**.
+- **Child skills** (`openspec-propose`, `openspec-apply-change`, `openspec-archive-change`): you do **not** need to invoke them separately; propose / apply / archive equivalents live in `references/`. **Code review, commit/push, and branch merge** are defined inline in **Phase 3 / Phase 5** — **no** separate `git-*` skills required. If an openspec-named skill is missing, **follow this skill’s Phase files**; optional on-disk copies are secondary — **`references/` wins**.
 - **Full rules and mapping table**: `references/recovery-guardrails-appendix.md` → **Compatibility & degradation**.

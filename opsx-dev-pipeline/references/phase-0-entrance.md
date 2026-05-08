@@ -2,6 +2,14 @@
 
 1. **环境预检**
 
+   **优先（一键）**（在目标仓库根目录，路径按技能所在位置调整）：
+
+   ```bash
+   bash opsx-dev-pipeline/scripts/opsx-preflight.sh
+   ```
+
+   **等价**（无脚本时）：
+
    ```bash
    openspec --version
    git rev-parse --is-inside-work-tree
@@ -13,8 +21,8 @@
 2. **判断入口类型**
 
    **a. 用户提供了已有 change 名称：**
-   - 运行 `openspec status --change "<name>" --json` 检查 change 状态
-   - 如果 change 不存在：提示名称错误，运行 `openspec list --json` 展示可用 change，让用户重新选择
+   - 运行 `bash opsx-dev-pipeline/scripts/opsx-change-status.sh "<name>"`（或 `openspec status --change "<name>" --json`）检查 change 状态
+   - 如果 change 不存在：提示名称错误，运行 `bash opsx-dev-pipeline/scripts/opsx-list-changes.sh`（或 `openspec list --json`）展示可用 change，让用户重新选择
    - 如果 change 存在，根据制品和任务状态判断应从哪个阶段继续：
      - `applyRequires` 制品未全部完成 → 从 **Phase 1 Step 3** 继续（检查哪些制品处于 `ready` 状态，仅对未完成的制品执行生成流程，已完成的制品保持不变）
      - 制品已完成但任务未全部完成 → 从 **Phase 2** 继续实施
