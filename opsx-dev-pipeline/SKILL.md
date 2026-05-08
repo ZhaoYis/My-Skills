@@ -78,5 +78,3 @@ flowchart TD
 | 4 | 提案归档 (Archive) | `references/phase-4-archive.md` |
 | 5 | 提交合并推送 (Merge & Push) | `references/phase-5-merge-push.md` |
 | — | 中断恢复、护栏、错误处理、决策点总览 | `references/recovery-guardrails-appendix.md` |
-
-`references/…` 相对于本技能根目录 `opsx-dev-pipeline/`。
