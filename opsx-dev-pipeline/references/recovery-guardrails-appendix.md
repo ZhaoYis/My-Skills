@@ -1,4 +1,4 @@
-**流水线中断与恢复**
+## 1 流水线中断与恢复
 
 多轮澄清或长对话不构成自动退出理由；非正常结束全流程须征得用户同意，见下文 **Guardrails**「退出须用户同意」。
 
@@ -9,14 +9,14 @@
 
 ---
 
-**兼容性与降级**
+## 2 兼容性与降级
 
-### AskQuestion 不可用
+### 2.1 AskQuestion 不可用
 
 当运行环境**没有** AskQuestion 工具（或非 Cursor）时：在每个决策点用**编号列表**列出与当前 Phase 的 `phase-*.md` 中**完全一致**的选项标签；请用户回复**序号**或**复制选项关键词**，并将选择映射为与原 AskQuestion 相同的下一步。要求自由文本的场景（需求描述、提案修改、自定义提交信息等）仍只通过普通消息收集，不使用编号决策列表。  
 **Error Handling** 表中凡写「使用 AskQuestion 询问」的，均改为：**先展示与表中语义一致的编号选项，再等待用户选择**。
 
-### 子技能缺失时的 fallback 对照表
+### 2.2 子技能缺失时的 fallback 对照表
 
 不要求单独加载或 invoke 下列子技能。若子技能未安装、不在技能列表中或无法调用，**直接执行本技能下列等价流程**（权威步骤始终在 `references/phase-*.md`）：
 
@@ -30,17 +30,17 @@
 
 Phase 3 **fix-cr** 子流程：创建 `openspec/changes/fix-cr-*/` 并**必经** `phase-1-propose.md` **决策点 1** 后，再按 `phase-2-apply.md` 实施；**禁止**跳过提案门禁直接改业务代码。等价流程即 **Phase 1 / Phase 2**（fix change 名称），无需加载任何外部 openspec 子技能。
 
-### Openspec / Git 版本
+### 2.3 Openspec / Git 版本
 
 本流水线**不锁定** openspec 次版本；若 CLI 子命令或 JSON 字段与文档示例不一致，以实际 `openspec --help` 与命令输出为准。项目描述可能位于 **`openspec/project.md`**（旧版/并存）或 **`openspec/config.yaml`**（新版常见），以仓库实际文件为准，并优先走 **Error Handling** 表。
 
-### 代码与测试风格（项目内）
+### 2.4 代码与测试风格（项目内）
 
 编写或修改实现代码、测试代码时：**不**引用或依赖任何外部的「框架专用代码生成」类技能。以 **`openspec/project.md` / `openspec/config.yaml` / `CLAUDE.md`**（加载顺序同 Phase 3 步骤 8）为规范来源，并对照**本仓库已有实现与单测**保持风格一致。
 
 ---
 
-**Guardrails**
+## 3 Guardrails
 
 - 本流水线在 **Phase 3 / Phase 5 / Phase 6** 内联了代码审查、提交前单测、提交推送与分支合并的完整步骤；**Openspec** 类子技能（`openspec-propose`、`openspec-apply-change`、`openspec-archive-change`）的等价流程在 **Phase 1 / 2 / 4**。若单独 skill 有更新，应同步校验本技能 `references/`。**执行时**仅需本技能 Phase 文档与上文 **子技能缺失时的 fallback 对照表**，无需单独的 Git 审查/提交/合并类 skill。
 - 每个决策点必须向用户提供**明确可选路径**；**首选** AskQuestion tool；**若不可用**则按 **兼容性与降级** →「AskQuestion 不可用」用编号列表代替。决策点之间的非决策步骤自动连续执行。
@@ -61,7 +61,7 @@ Phase 3 **fix-cr** 子流程：创建 `openspec/changes/fix-cr-*/` 并**必经**
 - 最终摘要根据实际执行路径动态生成，跳过的阶段标记为"已跳过"
 - 多轮审查报告使用 `-round-N` 后缀避免覆盖
 
-**Error Handling**
+### 3.1 Error Handling
 
 | 场景 | 处理方式 |
 |------|----------|
@@ -78,7 +78,7 @@ Phase 3 **fix-cr** 子流程：创建 `openspec/changes/fix-cr-*/` 并**必经**
 | openspec 命令执行失败或返回非预期格式 | 展示错误输出；询问（首选 AskQuestion；否则编号选项）：重试 / 跳过当前步骤 / 终止流程 |
 | openspec 命令超时（>30s 无响应） | 终止命令，提示可能原因（网络、配置），提供重试或终止选项 |
 
-**决策点总览**
+### 3.2 决策点总览
 
 | # | 阶段 | 决策内容 | 选项 |
 |---|------|----------|------|
