@@ -9,7 +9,7 @@ compatibility: 需要 openspec CLI、git；编写代码时以当前仓库的项�
 5. **获取实施指令并读取上下文**
 
    ```bash
-   bash opsx-dev-pipeline/scripts/opsx-instructions-apply.sh "<name>"
+   bash <SKILL_ROOT>/scripts/opsx-instructions-apply.sh "<name>"
    ```
 
    **等价**：`openspec instructions apply --change "<name>" --json`

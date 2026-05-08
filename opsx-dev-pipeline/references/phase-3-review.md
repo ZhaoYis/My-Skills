@@ -117,7 +117,7 @@ compatibility: 需要 git；项目规范来自 `openspec/project.md` 或新版�
        仅当步骤 c 已选「确认提案，开始实施」后：对 change **`fix-cr-<type>`** 执行 `phase-2-apply.md` **步骤 5–7**（`opsx-instructions-apply.sh "<name>"` / 等价 `openspec instructions apply`），按 `tasks.md` 勾选任务；**禁止**跳过步骤 b–c 直接改业务代码。
     e. 归档修复 change（修复类 change 通常无 delta specs：跳过 Step 13 的 delta 对话时，可用 `--skip-specs`；若有 delta 需合并则去掉该 flag）：
        ```bash
-       bash opsx-dev-pipeline/scripts/opsx-archive.sh "fix-cr-<type>" -y --skip-specs
+       bash <SKILL_ROOT>/scripts/opsx-archive.sh "fix-cr-<type>" -y --skip-specs
        ```
        **等价**：`openspec archive "fix-cr-<type>" -y --skip-specs`；失败时再用 `mkdir` + `mv` 手动归档（同 Phase 4 降级说明）。
     f. 重新执行 Step 9-11（代码审查），进入下一轮

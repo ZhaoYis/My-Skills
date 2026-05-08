@@ -37,11 +37,13 @@ compatibility: 需要 git、可访问的 remote（推送/拉取）；Cursor 中�
 
     排除不应提交的文件（编译产物 `target/`、IDE 配置 `.idea/`、日志 `*.log`），用 `git reset HEAD <file>` 移除。始终包含 openspec 文件（archive、specs、review）。
 
-    根据变更含义选择 **conventional commit** 类型（示例）：`feat`、`fix`、`perf`、`refactor`、`docs`、`test`、`chore`、`style`、`ci`；单行描述简明；可多行正文。默认附带：
+    根据变更含义选择 **conventional commit** 类型（示例）：`feat`、`fix`、`perf`、`refactor`、`docs`、`test`、`chore`、`style`、`ci`；单行描述简明；可多行正文。若目标仓库的 `CONTRIBUTING` / `CLAUDE.md` / 团队模板另有格式，从其规定。**默认**可在正文附带：
 
     ```
     Co-Authored-By: Claude <noreply@anthropic.com>
     ```
+
+    （若团队禁用 Co-Authored-By 或改用其他署名方式，按仓库约定调整。）
 
     展示提交信息，使用 **AskQuestion tool** 询问：
 

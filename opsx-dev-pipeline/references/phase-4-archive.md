@@ -9,12 +9,12 @@ compatibility: 需要 openspec CLI、git；归档推荐 opsx-archive.sh 或等�
 12. **检查制品和任务完成状态**
 
     ```bash
-    bash opsx-dev-pipeline/scripts/opsx-change-status.sh "<name>"
+    bash <SKILL_ROOT>/scripts/opsx-change-status.sh "<name>"
     ```
 
     **等价**：`openspec status --change "<name>" --json`
 
-    （推荐）随后执行 `bash opsx-dev-pipeline/scripts/opsx-validate-change.sh "<name>"`，将结构问题在归档前暴露。
+    （推荐）随后执行 `bash <SKILL_ROOT>/scripts/opsx-validate-change.sh "<name>"`，将结构问题在归档前暴露。
 
     读取 tasks.md 检查未完成任务数量。
 
@@ -40,13 +40,13 @@ compatibility: 需要 openspec CLI、git；归档推荐 opsx-archive.sh 或等�
     - 若 Step 13 选择 **同步 delta 到主 specs**（需要更新 `openspec/specs/`）：  
 
       ```bash
-      bash opsx-dev-pipeline/scripts/opsx-archive.sh "<name>" -y
+      bash <SKILL_ROOT>/scripts/opsx-archive.sh "<name>" -y
       ```
 
     - 若选择 **不更新主 specs**（工具链/文档类等）：  
 
       ```bash
-      bash opsx-dev-pipeline/scripts/opsx-archive.sh "<name>" -y --skip-specs
+      bash <SKILL_ROOT>/scripts/opsx-archive.sh "<name>" -y --skip-specs
       ```
 
     **等价**：`openspec archive "<name>" -y`（及必要时 `--skip-specs`）。CLI 会自动校验并将目录移到 `openspec/changes/archive/`，归档名含日期前缀。

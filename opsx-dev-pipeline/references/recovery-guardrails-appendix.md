@@ -11,6 +11,10 @@
 
 ## 2 兼容性与降级
 
+### 2.0 技能脚本路径 `<SKILL_ROOT>`
+
+各 `phase-*.md` 中出现的 `bash <SKILL_ROOT>/scripts/…` 表示：将 `<SKILL_ROOT>` 替换为**本技能安装根目录**的绝对路径（该目录内含 `scripts/` 与 `references/`），在**目标 git 仓库根目录**作为工作目录执行命令。勿假设技能文件夹名为 `opsx-dev-pipeline`。权威说明见仓库根目录 `SKILL.md`「脚本（可选）」。
+
 ### 2.1 AskQuestion 不可用
 
 当运行环境**没有** AskQuestion 工具（或非 Cursor）时：在每个决策点用**编号列表**列出与当前 Phase 的 `phase-*.md` 中**完全一致**的选项标签；请用户回复**序号**或**复制选项关键词**，并将选择映射为与原 AskQuestion 相同的下一步。要求自由文本的场景（需求描述、提案修改、自定义提交信息等）仍只通过普通消息收集，不使用编号决策列表。  
@@ -53,8 +57,8 @@ Phase 3 **fix-cr** 子流程：创建 `openspec/changes/fix-cr-*/` 并**必经**
 - 提案修改以用户确认「与原始需求一致」为终止条件，不设固定次数上限；多轮仍无法对齐时须建议暂停/拆分并由用户决定是否终止
 - 编写代码时：按 **代码与测试风格（项目内）** 一节的约定对齐当前仓库，禁止依赖外部代码生成类技能
 - **提交前单元测试（Phase 5 步骤 16 / 决策点 4b）**：用户于决策点 4 选择进入提交流程后，须先完成本环节并由用户确认是否编写/补充单测；不得未经 AskQuestion（或附录编号选项）默认跳过。规程全文见 `references/phase-5-unit-tests.md`。
-- 始终在提交时包含 openspec 相关文件
-- 提交信息使用 conventional commit 格式，包含 Co-Authored-By
+- **默认**在提交中包含与本 change 相关的 openspec 产物；若目标仓库的 `CONTRIBUTING`、`CLAUDE.md` 或团队约定另有要求则从仓库
+- **默认**提交信息使用 conventional commit 格式并包含 Co-Authored-By；若仓库或团队另有提交模板则从之
 - 合并后始终切回源分支（除非用户选择删除源分支）
 - 敏感文件检测到时必须警告并确认
 - 不使用 `--no-verify` 或 `--force` 除非用户明确要求

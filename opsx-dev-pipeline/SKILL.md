@@ -5,7 +5,7 @@ license: MIT
 compatibility: 需安装 openspec 与 git CLI；建议在 Cursor 中配合 AskQuestion。审查、单测门禁、提交与合并在本技能 `references/`（Phase 3/5/6）中定义；`openspec-propose`、`openspec-apply-change`、`openspec-archive-change` 可选，仅作本地清单补充。
 metadata:
   author: zhaoyi
-  version: "2.0"
+  version: "2.1"
 ---
 
 # 需求开发全流程流水线
@@ -37,7 +37,7 @@ metadata:
 
 ### 全局步骤索引（跨 Phase 连续编号）
 
-各 `references/phase-*.md` 内沿用步骤编号 **1–22**；下表用于快速定位当前进度（决策点见附录 **决策点总览**）。
+各 `references/phase-*.md` 内沿用步骤编号 **1–22**；下表用于快速定位当前进度。**条件触发**的子决策点（如 2a/2b、4a、5a/5b/5c、6a/6b）不在下表逐条展开；完整编号、语义与选项见 `references/recovery-guardrails-appendix.md` **§3.2 决策点总览**。
 
 | Step | Phase | 摘要 | 引用文件 |
 |:----:|:-----:|------|----------|
@@ -66,11 +66,13 @@ metadata:
 
 **代码规范**：凡涉及编写或修改实现/测试代码的 Phase，均以**目标仓库**的 **项目基准**（`openspec/project.md` → `openspec/config.yaml` → `CLAUDE.md`，与 Phase 3 步骤 8 一致）及**既有代码与单测风格**为准；细则见 `references/phase-2-apply.md` 与附录「代码与测试风格（项目内）」。
 
+**进度跟踪**：Phase 1 等多制品阶段推荐使用 **TodoWrite** 跟踪制品与任务进度（与 `references/phase-1-propose.md` 等处一致），降低遗漏。
+
 ### 脚本（可选）
 
-在**目标 git 仓库根目录**执行；若工作区仅有业务项目、技能在其它目录，请换为技能实际绝对路径，或直接运行各脚本内注释的等价 `openspec` 命令。
+**路径约定 `<SKILL_ROOT>`**：本技能**安装根目录**（内含 `scripts/`、`references/`）。各 `references/phase-*.md` 中的命令写为 `bash <SKILL_ROOT>/scripts/…`：执行前将 `<SKILL_ROOT>` 换为实际绝对路径；工作目录仍以**目标 git 仓库根目录**为准（便于 `openspec` / `git` 解析项目）。勿假设技能文件夹名为 `opsx-dev-pipeline`。若不便使用脚本，可直接运行各 Phase 给出的等价 `openspec` CLI。
 
-| Phase / 用途 | 脚本 | 说明 |
+| Phase / 用途 | 脚本（位于 `<SKILL_ROOT>/scripts/`） | 说明 |
 |----------------|------|------|
 | 0 预检 | `opsx-preflight.sh` | `openspec --version` + git 仓库检测 |
 | 0 / 1 / 4 | `opsx-change-status.sh <name>` | `openspec status --change <name> --json` |
@@ -85,7 +87,7 @@ metadata:
 
 **约定**：执行流水线步骤时**优先**一条命令跑完上述脚本（减少漏参、统一 `--json`）；若脚本不存在或环境限制，按各 `references/phase-*.md` 内原样 CLI 执行即可。
 
-**流程概览**（`phase-0`～`phase-6` 主干）：Mermaid 为摘要；`opsx-*` 仅为别名；未尽分支以 Phase 引用文件为准。
+**流程概览**（`phase-0`～`phase-6` 主干）：Mermaid 仅示意主干顺序；图中 **Phase N** 文案为方便阅读的**阶段昵称**，**不是** `openspec` 子命令名，也不一定对应某个脚本文件名；未尽分支以 Phase 引用文件为准。
 
 ```mermaid
 flowchart TD
@@ -97,7 +99,7 @@ flowchart TD
   GIT_WARN --> ENDNODE
   GIT -->|是| P0["Phase 0 入口 → 需求 / 已有 change / 无输入"]
   P0 -->|终止| ENDNODE
-  P0 -->|需求描述·新建| P1["Phase 1 → 提案与制品 → opsx-propose"]
+  P0 -->|需求描述·新建| P1["Phase 1：提案与制品"]
   P0 -->|已有change·续接Phase 1| P1
   P0 -->|已有change·从头新建change| P1
   P0 -->|已有change·续接Phase 2| APPLY
@@ -105,23 +107,24 @@ flowchart TD
   P0 -->|已有change·续接Phase 4| ARCHIVE
   P0 -->|已有change·续接Phase 5/6| UT
   P1 --> ALIGN{"决策点 1 → 提案与原始需求一致?"}
-  ALIGN -->|确认·开始实施| APPLY["Phase 2 → opsx-apply"]
+  ALIGN -->|确认·开始实施| APPLY["Phase 2：按提案实施 Apply"]
   ALIGN -->|补充/修改·对话澄清| P1
   APPLY --> D2{"Phase 2 决策点 2"}
-  D2 -->|进入代码审查| REVIEW["Phase 3 → CodeReview"]
+  D2 -->|进入代码审查| REVIEW["Phase 3：代码审查"]
   D2 -->|跳过审查·直接归档| ARCHIVE
   D2 -->|暂停/终止| ENDNODE
   REVIEW --> R3["决策点 3 → 归档 / 修复回路 / 暂停"]
   R3 -->|修复回路未结束| REVIEW
-  R3 -->|进入归档| ARCHIVE["Phase 4 → opsx-archive"]
+  R3 -->|进入归档| ARCHIVE["Phase 4：归档 Archive"]
   ARCHIVE --> D4{"Phase 4 决策点 4"}
   D4 -->|终止流程| ENDNODE
-  D4 -->|仅提交并推送| UT["Phase 5：提交前单测, 决策点4b"]
+  D4 -->|仅提交并推送| UT["Phase 5：单测门禁 决策点4b"]
   D4 -->|提交代码并合并| UT
-  UT --> P6["Phase 6：预检→提交→推送→合并"]
-  P6 --> MERGECHK{"决策点4 曾选合并?"}
-  MERGECHK -->|仅推送| ENDNODE
-  MERGECHK -->|合并| MERGE["Phase 6 决策点 6"]
+  UT --> P6PRE["Phase 6：步骤17–18 预提交与提交"]
+  P6PRE --> P6PUSH["Phase 6：步骤19 推送"]
+  P6PUSH --> MERGECHK{"决策点 4 是否选了合并?"}
+  MERGECHK -->|否（仅推送）| ENDNODE
+  MERGECHK -->|是| MERGE["决策点 6（步骤20）：合并分支"]
   MERGE --> ENDNODE
 ```
 
@@ -131,4 +134,5 @@ flowchart TD
 2. **入口（Phase 0）**：无输入则文本询问；需求描述则推导 change 名并进入 Phase 1；**已有 change** 则 `openspec status`，按制品/任务/归档/提交状态判断续接 **Phase 1 Step 3 / Phase 2 / Phase 3 / Phase 4 / Phase 5 / Phase 6**，并由用户确认「从 Phase X 继续 / 从头新建 / 终止」——**不是**一律先进入 Phase 1 门禁。
 3. **提案与门禁（Phase 1）**：进入 Phase 2 前须过**决策点 1**。用户修改需求时以文本改制品并回到该决策点；澄清可与 Phase 1 合并。
 4. **实施与审查（Phase 2～3）**：**决策点 2** 可暂停、跳过审查直接归档或终止（`phase-2-apply.md`）。审查未过：**fix-cr**、直接修复再审、暂停等（`phase-3-review.md`）；图中 `R3`→`REVIEW` 表示修复回路。
-5. **归档与 Git（Phase 4～6）**：**决策点 4**：终止 / 仅推送 / 提交并合并。进入 **Phase 5** 后**须先经决策点 4b**（是否编写/补充单元测试并运行通过，或跳过/暂停），再在 **Phase 6** 执行预检与提交；选「提交并合并」时在推送后进入**决策点 6**；「仅推送」则不再合并。
+5. **归档与 Git（Phase 4～6）**：**决策点 4**：终止 / 仅推送 / 提交并合并。进入 **Phase 5** 后**须先经决策点 4b**（是否编写/补充单元测试并运行通过，或跳过/暂停），再进入 **Phase 6**。Phase 6 **内部顺序**以 `phase-6-merge-push.md` 为准：**步骤 17** 预提交检查 → **步骤 18** 暂存与提交 → **步骤 19** 推送 → 若决策点 4 选了「提交代码并合并」则进入 **步骤 20 决策点 6（合并）**；若选了「仅提交并推送」则跳过合并。流程图中将「步骤 17–18」「步骤 19」「合并」拆开，是为对齐上述顺序。
+6. **图示与命令**：Mermaid 中节点文案（如「Phase 1：提案与制品」）仅标识阶段；**实际执行的脚本名**见本节「脚本」表与 `<SKILL_ROOT>/scripts/`；**openspec / git** 命令以各 Phase 引用文件为准。

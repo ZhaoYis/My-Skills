@@ -6,12 +6,14 @@ compatibility: 需要 openspec CLI 与 git；在 git 仓库根目录执行。
 
 ## Phase 0: 入口判断
 
+**`<SKILL_ROOT>`**：本技能安装根目录（内含 `scripts/`）。下文命令中的占位符须替换为实际绝对路径（与业务仓库路径无关）。**执行 `openspec` / `git` / 下文流水线命令时，当前工作目录仍应为目标 git 仓库根目录**，除非某一步另有说明。
+
 1. **环境预检**
 
-   **优先（一键）**（在目标仓库根目录，路径按技能所在位置调整）：
+   **优先（一键）**（在目标仓库根目录执行；脚本路径替换 `<SKILL_ROOT>`）：
 
    ```bash
-   bash opsx-dev-pipeline/scripts/opsx-preflight.sh
+   bash <SKILL_ROOT>/scripts/opsx-preflight.sh
    ```
 
    **等价**（无脚本时）：
@@ -27,8 +29,8 @@ compatibility: 需要 openspec CLI 与 git；在 git 仓库根目录执行。
 2. **判断入口类型**
 
    **a. 用户提供了已有 change 名称：**
-   - 运行 `bash opsx-dev-pipeline/scripts/opsx-change-status.sh "<name>"`（或 `openspec status --change "<name>" --json`）检查 change 状态
-   - 如果 change 不存在：提示名称错误，运行 `bash opsx-dev-pipeline/scripts/opsx-list-changes.sh`（或 `openspec list --json`）展示可用 change，让用户重新选择
+   - 运行 `bash <SKILL_ROOT>/scripts/opsx-change-status.sh "<name>"`（或 `openspec status --change "<name>" --json`）检查 change 状态
+   - 如果 change 不存在：提示名称错误，运行 `bash <SKILL_ROOT>/scripts/opsx-list-changes.sh`（或 `openspec list --json`）展示可用 change，让用户重新选择
    - 如果 change 存在，根据制品和任务状态判断应从哪个阶段继续：
       - `applyRequires` 制品未全部完成 → 从 **Phase 1 Step 3** 继续（检查哪些制品处于 `ready` 状态，仅对未完成的制品执行生成流程，已完成的制品保持不变）
       - 制品已完成但任务未全部完成 → 从 **Phase 2** 继续实施
