@@ -1,5 +1,5 @@
 ---
-name: opsx-dev-pipeline
+name: opsx-dev-pipeline-en
 description: End-to-end requirement-driven development pipeline — openspec + git preflight (Phase 0), resume Phase 1/2/3 or new proposal by entry type (opsx-propose), align proposal with requirements gate, apply (opsx-apply), review-and-fix loop (incl. fix-cr subflow), archive (opsx-archive), then push-only or push-and-merge per decision 4. User decisions at key points.
 license: MIT
 compatibility: Requires openspec CLI and git CLI.
