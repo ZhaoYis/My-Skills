@@ -1,9 +1,8 @@
 ---
-
-## name: phase-3-review
-
+name: phase-3-review
 description: 全局步骤 8–11，含决策点 3。「生成修复提案并应用」细则见 phase-3.1-fix-review.md。进入归档路径后执行 phase-4-archive.md 步骤 12。
 compatibility: 需要 git；项目规范来自 `openspec/project.md` 或新版的 `openspec/config.yaml`，否则 CLAUDE.md；Cursor 中推荐 AskQuestion。
+---
 
 ## Phase 3: 代码审查 (Review)
 
