@@ -29,7 +29,7 @@ compatibility: 需要 git、openspec；与 phase-3-review.md 步骤 8–10 产�
 - 未选「确认提案，开始实施」→ **不得**进入 **步骤 d**
 - 选「终止流程」→ 按该决策点语义退出；若用户要放弃已创建的 `fix-cr-*`，清理对应目录后再结束
 - **禁止**用本节旧文案「确认提案，开始修复」等**替代** Phase 1 决策点 1 的三选项（避免跳过正式提案确认）
-- 若用户决定**不再走 fix change、直接归档原来的需求 change**：选「终止流程」，删除已创建的 `openspec/changes/fix-cr-<type>/`（若存在），并提示用户以**原 change 名称**从 `phase-4-archive.md` 续跑（本 fix 子流程结束；**不**在此路径内执行针对 `fix-cr-*` 的归档，除非用户明确要继续完成 fix）
+- 若用户决定**不再走 fix change、直接归档原来的需求 change**：选「终止流程」，删除已创建的 `openspec/changes/fix-cr-<type>/`（若存在），并提示用户以**原 change 名称**从 `phase-5-unit-tests.md` 续跑（完成后再进入 `phase-4-archive.md`；本 fix 子流程结束；**不**在此路径内执行针对 `fix-cr-*` 的归档，除非用户明确要继续完成 fix）
 
 ### d. 逐任务实施修复（等价 Phase 2）
 
@@ -37,7 +37,7 @@ compatibility: 需要 git、openspec；与 phase-3-review.md 步骤 8–10 产�
 
 ### e. 归档修复 change
 
-修复类 change 通常无 delta specs：**跳过 Phase 4 步骤 13** 的 delta 对话时，可用 `--skip-specs`；若有 delta 需合并则去掉该 flag。
+修复类 change 通常无 delta specs：**跳过 Phase 4 步骤 14** 的 delta 对话时，可用 `--skip-specs`；若有 delta 需合并则去掉该 flag。
 
 ```bash
 bash <SKILL_ROOT>/scripts/opsx-archive.sh "fix-cr-<type>" -y --skip-specs

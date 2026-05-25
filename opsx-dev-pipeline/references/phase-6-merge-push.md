@@ -1,12 +1,12 @@
 ---
 name: phase-6-merge-push
-description: 全局步骤 17–22（预提交 5a/5b、提交决策点 5、推送 5c、合并决策点 6、合并后、最终摘要）。须先完成 phase-5-unit-tests.md 步骤 16；步骤 22 后主干结束。
+description: 全局步骤 17–22（预提交 5a/5b、提交决策点 5、推送 5c、合并决策点 6、合并后、最终摘要）。须先完成 phase-5-unit-tests.md 步骤 16 与 phase-4-archive.md 步骤 12–16；步骤 22 后主干结束。
 compatibility: 需要 git、可访问的 remote（推送/拉取）；Cursor 中推荐 AskQuestion。
 ---
 
 ## Phase 6: 提交合并推送 (Merge & Push)
 
-本 Phase 对应全局 **步骤 17–22**。须先完成 `phase-5-unit-tests.md` **步骤 16**。
+本 Phase 对应全局 **步骤 17–22**。须先完成 `phase-5-unit-tests.md` **步骤 16** 与 `phase-4-archive.md` **步骤 12–16**。
 
 ### 步骤 17：预提交检查
 

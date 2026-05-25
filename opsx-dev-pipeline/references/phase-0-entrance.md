@@ -54,8 +54,8 @@ compatibility: 需要 openspec CLI 与 git；在 git 仓库根目录执行。
     - `applyRequires` 制品未全部完成 → 从 **Phase 1 Step 3** 继续（检查哪些制品处于 `ready` 状态，仅对未完成的制品执行生成流程，已完成的制品保持不变）
     - 制品已完成但任务未全部完成 → 从 **Phase 2** 继续实施
     - 任务已全部完成且 `openspec/review/` 下无该分支审查报告 → 从 **Phase 3** 开始审查
-    - 任务已全部完成且已有审查报告，但 change 尚未归档（仍在 `openspec/changes/<name>/` 下） → 从 **Phase 4** 开始归档
-    - change 已归档（在 `openspec/changes/archive/` 下）且有未提交变更（`git status` 非 clean） → 从 **Phase 5** 开始（提交前单测）
+    - 任务已全部完成且已有审查报告，但 change 尚未归档（仍在 `openspec/changes/<name>/` 下） → 从 **Phase 5** 开始（审查后单元测试门禁），完成后进入 **Phase 4** 归档
+    - change 已归档（在 `openspec/changes/archive/` 下）且有未提交变更（`git status` 非 clean） → 从 **Phase 6** 开始（预提交检查 / 提交 / 推送 / 合并）
     - change 已归档且变更已提交但未推送（`git log origin/<branch>..HEAD` 有提交） → 从 **Phase 6 Step 19** 推送
 
 3. **使用 AskQuestion tool 确认**

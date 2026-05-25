@@ -65,5 +65,5 @@ compatibility: 需要 openspec CLI、git；编写代码时以当前仓库的项�
 
 - `进入代码审查` — 进入 Phase 3
 - `暂停流水线，手动调整后继续` — 展示恢复指引后退出；用户调整完后重新触发 pipeline 并传入 change 名称即可从 Phase 3 继续
-- `跳过审查，直接归档` — 跳到 Phase 4
+- `跳过审查，继续后续流程` — 跳到 Phase 5；Phase 5 完成后再进入 Phase 4
 - `终止流程` — 退出流水线

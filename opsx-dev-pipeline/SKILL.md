@@ -1,6 +1,6 @@
 ---
 name: opsx-dev-pipeline
-description: OpenSpec + Git 需求开发全流程：预检与提案 → 应用 → 审查（含 fix-cr）→ 归档 → 提交前单测 → 推送/合并；关键步骤用户决策，细则以 `references/` 为准。
+description: OpenSpec + Git 需求开发全流程：预检与提案 → 应用 → 审查（含 fix-cr）→ 单测门禁 → 归档 → 提交前检查/推送/合并；关键步骤用户决策，细则以 `references/` 为准。
 license: MIT
 compatibility: 需安装 openspec 与 git CLI；建议在 Cursor 中配合 AskQuestion。审查、单测门禁、提交与合并在本技能 `references/`（Phase 3/5/6）中定义；默认兼容 OpenSpec 默认 schema，并优先支持 `openspec/config.yaml` 中声明的自定义 schema（当前重点为 `yzw-workflow`）；`openspec-propose`、`openspec-apply-change`、`openspec-archive-change` 可选，仅作本地清单补充。
 metadata:
@@ -47,7 +47,7 @@ metadata:
 | 2 | 提案应用 (Apply) | `references/phase-2-apply.md` |
 | 3 | 代码审查 (Review) | `references/phase-3-review.md`；「生成修复提案并应用」见 `references/phase-3.1-fix-review.md` |
 | 4 | 提案归档 (Archive) | `references/phase-4-archive.md` |
-| 5 | 提交前单元测试 | `references/phase-5-unit-tests.md` |
+| 5 | 审查后单元测试门禁 | `references/phase-5-unit-tests.md` |
 | 6 | 提交合并推送 (Merge & Push) | `references/phase-6-merge-push.md` |
 | — | 中断恢复、护栏、错误处理、决策点总览 | `references/recovery-guardrails-appendix.md` |
 
@@ -61,8 +61,8 @@ metadata:
 | 3–4 | 1 | 创建 change / 生成制品；**决策点 1**（提案门禁） | `phase-1-propose.md` |
 | 5–7 | 2 | 获取 apply 上下文、按任务实施；**决策点 2** | `phase-2-apply.md` |
 | 8–11 | 3 | 约定与 diff、审查、**决策点 3**（含 fix-cr 子流程） | `phase-3-review.md`，`phase-3.1-fix-review.md` |
-| 12–15 | 4 | 归档前检查、delta 同步、执行归档；**决策点 4** | `phase-4-archive.md` |
-| 16 | 5 | **决策点 4b**、单测子流程 | `phase-5-unit-tests.md` |
+| 12 | 5 | **决策点 4b**、单测子流程 | `phase-5-unit-tests.md` |
+| 13–16 | 4 | 归档前检查、verify、delta 同步、执行归档；**决策点 4** | `phase-4-archive.md` |
 | 17–22 | 6 | 预提交（**5a/5b**）、暂存提交（**决策点 5**）、推送（**5c**）、合并（**决策点 6**）、合并后分支、最终摘要 | `phase-6-merge-push.md` |
 
 ## 兼容性、降级与子技能 fallback（摘要）
@@ -138,14 +138,14 @@ flowchart TD
   D2 -->|进入代码审查| REVIEW["Phase 3：代码审查"]
   D2 -->|跳过审查·直接归档| ARCHIVE
   D2 -->|暂停/终止| ENDNODE
-  REVIEW --> R3["决策点 3 → 归档 / 修复回路 / 暂停"]
+  REVIEW --> R3["决策点 3 → 单测 / 修复回路 / 暂停"]
   R3 -->|修复回路未结束| REVIEW
-  R3 -->|进入归档| ARCHIVE["Phase 4：归档 Archive"]
+  R3 -->|进入单元测试| UT["Phase 5：单测门禁 · 决策点 4b"]
+  UT --> ARCHIVE["Phase 4：归档 Archive"]
   ARCHIVE --> D4{"Phase 4 决策点 4"}
   D4 -->|终止流程| ENDNODE
-  D4 -->|仅提交并推送| UT["Phase 5：单测门禁 · 决策点 4b"]
-  D4 -->|提交代码并合并| UT
-  UT --> P6PRE["Phase 6：步骤 17–18 预提交与提交"]
+  D4 -->|仅提交并推送| P6PRE["Phase 6：步骤 17–18 预提交与提交"]
+  D4 -->|提交代码并合并| P6PRE
   P6PRE --> P6PUSH["Phase 6：步骤 19 推送"]
   P6PUSH --> MERGECHK{"决策点 4 是否选了合并?"}
   MERGECHK -->|否（仅推送）| ENDNODE
@@ -159,5 +159,5 @@ flowchart TD
 2. **入口（Phase 0）**：无输入则文本询问；需求描述则推导 change 名并进入 Phase 1；**已有 change** 则 `openspec status`，按制品/任务/归档/提交状态判断续接 **Phase 1 步骤 3 / Phase 2 / Phase 3 / Phase 4 / Phase 5 / Phase 6**，并由用户确认「从 Phase X 继续 / 从头新建 / 终止」——**不是**一律先进入 Phase 1 门禁
 3. **提案与门禁（Phase 1）**：进入 Phase 2 前须过**决策点 1**。用户修改需求时以文本改制品并回到该决策点；澄清可与 Phase 1 合并
 4. **实施与审查（Phase 2～3）**：**决策点 2** 可暂停、跳过审查直接归档或终止（`phase-2-apply.md`）。审查未过：**fix-cr**、直接修复再审、暂停等（`phase-3-review.md`）；图中 `R3`→`REVIEW` 表示修复回路
-5. **归档与 Git（Phase 4～6）**：**决策点 4**：终止 / 仅推送 / 提交并合并。进入 **Phase 5** 后**须先经决策点 4b**（是否编写/补充单元测试并运行通过，或跳过/暂停），再进入 **Phase 6**。Phase 6 **内部顺序**以 `phase-6-merge-push.md` 为准：**步骤 17** 预提交检查 → **步骤 18** 暂存与提交 → **步骤 19** 推送 → 若决策点 4 选了「提交代码并合并」则进入 **步骤 20 决策点 6（合并）**；若选了「仅提交并推送」则跳过合并。流程图中将「步骤 17–18」「步骤 19」「合并」拆开，是为对齐上述顺序
-6. **图示与命令**：Mermaid 中节点文案（如「Phase 1：提案与制品」）仅标识阶段；**实际执行的脚本名**见本节「脚本」表与 `<SKILL_ROOT>/scripts/`；**openspec / git** 命令以各 Phase 引用文件为准
+5. **审查、单测与归档（Phase 3 / 5 / 4）**：**决策点 3** 后先进入 **Phase 5** 单元测试门禁，可暂停、跳过或补充测试；其后进入 **Phase 4** 执行 verify 与 archive；fix-cr / 直接修复等回路仍按 `phase-3-review.md` 执行
+6. **归档后 Git（Phase 4 / 6）**：**决策点 4**：终止 / 仅推送 / 提交并合并。归档完成后进入 **Phase 6**。Phase 6 **内部顺序**以 `phase-6-merge-push.md` 为准：**步骤 17** 预提交检查 → **步骤 18** 暂存与提交 → **步骤 19** 推送 → 若决策点 4 选了「提交代码并合并」则进入 **步骤 20 决策点 6（合并）**；若选了「仅提交并推送」则跳过合并。流程图中将「步骤 17–18」「步骤 19」「合并」拆开，是为对齐上述顺序

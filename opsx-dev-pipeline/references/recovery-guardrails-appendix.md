@@ -47,7 +47,7 @@ description: 流水线中断与恢复、兼容性与降级（含 AskQuestion fal
 | `openspec-apply-change` | Phase 2，`phase-2-apply.md`（步骤 5–7） |
 | `openspec-archive-change` | Phase 4，`phase-4-archive.md`（步骤 12–15） |
 
-**Git（审查 / 提交 / 合并）**：不依赖任何独立的 `git-*` skill；见 **Phase 3**（审查与报告）、**Phase 5**（提交前单测）、**Phase 6**（暂存提交、推送、合并与冲突处理）。
+**Git（审查 / 提交 / 合并）**：不依赖任何独立的 `git-*` skill；见 **Phase 3**（审查与报告）、**Phase 5**（审查后单元测试门禁）、**Phase 6**（暂存提交、推送、合并与冲突处理）。
 
 **Phase 3 `fix-cr` 子流程**：创建 `openspec/changes/fix-cr-*/` 并**必经** `phase-1-propose.md` **决策点 1** 后，再按 `phase-2-apply.md` 实施；**禁止**跳过提案门禁直接改业务代码。等价流程即 **Phase 1 / Phase 2**（fix change 名称），无需加载任何外部 openspec 子技能。
 
@@ -77,9 +77,9 @@ description: 流水线中断与恢复、兼容性与降级（含 AskQuestion fal
 
 ## 3. Guardrails
 
-- 本流水线在 **Phase 3 / Phase 5 / Phase 6** 内联了代码审查、提交前单测、提交推送与分支合并的完整步骤；**Openspec** 类子技能（`openspec-propose`、`openspec-apply-change`、`openspec-archive-change`）的等价流程在 **Phase 1 / 2 / 4**。若单独 skill 有更新，应同步校验本技能 `references/`。**执行时**仅需本技能 Phase 文档与上文 **子技能缺失时的 fallback 对照表**，无需单独的 Git 审查/提交/合并类 skill。
+- 本流水线在 **Phase 3 / Phase 5 / Phase 6** 内联了代码审查、审查后单元测试门禁、提交推送与分支合并的完整步骤；**Openspec** 类子技能（`openspec-propose`、`openspec-apply-change`、`openspec-archive-change`）的等价流程在 **Phase 1 / 2 / 4**。若单独 skill 有更新，应同步校验本技能 `references/`。**执行时**仅需本技能 Phase 文档与上文 **子技能缺失时的 fallback 对照表**，无需单独的 Git 审查/提交/合并类 skill。
 
-- **schema-aware 规则**：若 `schema = yzw-workflow`，则以 `references/schema-adapter.md` 为差异权威来源；Phase 0 负责识别 schema / `stacks`，Phase 1 负责补齐 `.openspec.yaml`，Phase 4 负责 verify-before-archive，Phase 5 负责提交前单元测试，二者不得混淆。
+- **schema-aware 规则**：若 `schema = yzw-workflow`，则以 `references/schema-adapter.md` 为差异权威来源；Phase 0 负责识别 schema / `stacks`，Phase 1 负责补齐 `.openspec.yaml`，Phase 5 负责审查后单元测试门禁，Phase 4 负责 verify-before-archive，二者不得混淆。
 
 - 每个决策点必须向用户提供**明确可选路径**；**首选** AskQuestion tool；**若不可用**则按 **§2.1 AskQuestion 不可用**用编号列表代替。决策点之间的非决策步骤自动连续执行。
 
@@ -106,9 +106,9 @@ description: 流水线中断与恢复、兼容性与降级（含 AskQuestion fal
 
 - 编写代码时：按 **§2.4 代码与测试风格（项目内）** 的约定对齐当前仓库，禁止依赖外部代码生成类技能。
 
-- **提交前单元测试（Phase 5 步骤 16 / 决策点 4b）**：用户于决策点 4 选择进入提交流程后，须先完成本环节并由用户确认是否编写/补充单测；不得未经 AskQuestion（或附录编号选项）默认跳过。规程全文见 `references/phase-5-unit-tests.md`。
+- **审查后单元测试（Phase 5 步骤 16 / 决策点 4b）**：Review 完成并准备进入 Archive 前，须先完成本环节并由用户确认是否编写/补充单测；不得未经 AskQuestion（或附录编号选项）默认跳过。规程全文见 `references/phase-5-unit-tests.md`。
 
-- **verify 与单测的边界**：若 `schema = yzw-workflow`，archive 前 verify 属于 **Phase 4** 的 schema / workflow 门禁；即便 verify 已通过，也不得默认跳过 **Phase 5** 的单元测试决策点 4b。
+- **verify 与单测的边界**：若 `schema = yzw-workflow`，Phase 5 的单元测试在前，Phase 4 的 verify 在后；verify 仍属于 **Phase 4** 的 schema / workflow 门禁。即便 Phase 5 已跳过或已通过单元测试，也不得默认跳过 **Phase 4** 的 verify。
 
 - **默认**在提交中包含与本 change 相关的 openspec 产物；若目标仓库的 `CONTRIBUTING`、`CLAUDE.md` 或团队约定另有要求，则从仓库约定。
 
@@ -135,7 +135,7 @@ description: 流水线中断与恢复、兼容性与降级（含 AskQuestion fal
 | schema 无法识别 | 警告并按默认 schema 路径继续 |
 | change 名称冲突 | 询问复用还是创建新名称 |
 | change 不存在 | 列出可用 change 让用户选择 |
-| 审查时无变更可审 | 提示并跳到 Phase 4 |
+| 审查时无变更可审 | 提示并进入 Phase 5；Phase 5 完成后再进入 Phase 4 |
 | 推送失败 | 提供 pull --rebase 重试或终止选项 |
 | 合并冲突 | 展示冲突文件，提供中止/theirs/ours/手动解决选项 |
 | 审查报告目录创建失败 | 提示错误，报告仅输出到对话 |
@@ -158,7 +158,7 @@ description: 流水线中断与恢复、兼容性与降级（含 AskQuestion fal
 | 3a | Review 子流程 | 修复提案确认 | 确认修复 / 修改提案 / 放弃修复（清理 change） |
 | 4a | Archive | 未完成项处理 | 继续归档 / 回到实施 / 终止 |
 | 4 | Archive | 归档后操作 | 提交并合并 / 仅提交推送 / 终止 |
-| 4b | Phase 5 | 提交前是否编写/补充单元测试（步骤 16） | 需要（编写并运行通过）/ 不需要（跳过）/ 暂停流水线 |
+| 4b | Phase 5 | Archive 前是否编写/补充单元测试（步骤 16） | 需要（编写并运行通过）/ 不需要（跳过）/ 暂停流水线 |
 | 5a | Commit | 分支落后/分叉 | pull --rebase / 忽略 / 终止 |
 | 5b | Commit | 敏感文件检测 | 排除后继续 / 包含继续 / 终止 |
 | 5 | Commit | 确认提交信息 | 确认 / 修改（文本输入）/ 取消（退出） |
@@ -167,4 +167,4 @@ description: 流水线中断与恢复、兼容性与降级（含 AskQuestion fal
 | 6a | Merge | 合并冲突 | 中止 / theirs / ours / 暂停手动解决 |
 | 6b | Merge | 合并后操作 | 保留源分支 / 删除源分支 |
 
-> **注**：编号带字母后缀的为条件触发决策点，仅在对应条件满足时出现。决策点 3a 在每轮修复循环中触发。**决策点 4b** 在用户于决策点 4 选择进入提交流程后、**Phase 6 步骤 17**（预提交检查）之前必经；规程全文见 `references/phase-5-unit-tests.md`；若用户选「暂停」，从 Phase 5 **步骤 16** 续跑。
+> **注**：编号带字母后缀的为条件触发决策点，仅在对应条件满足时出现。决策点 3a 在每轮修复循环中触发。**决策点 4b** 在 Review 完成后、进入 Archive 前必经；规程全文见 `references/phase-5-unit-tests.md`；若用户选「暂停」，从 Phase 5 **步骤 16** 续跑。

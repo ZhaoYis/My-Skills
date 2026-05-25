@@ -30,8 +30,8 @@ compatibility: 需要 git；项目规范按 `openspec/config.yaml` → `AGENTS.m
 
     - **若远程跟踪分支存在**：运行 `git log origin/<current-branch>..HEAD --oneline` 检查未推送提交
         - 有未推送提交：使用 `git diff origin/<current-branch>..HEAD` 审查
-        - 无未推送提交：提示「没有需要审查的变更」，跳到 Phase 4
-    - **若远程跟踪分支不存在**（分支从未推送过）：使用 `git log --oneline -20` 列出近 20 条提交供参考，提示「当前分支尚未推送到远程，建议先完成提交推送后再审查」，跳到 Phase 4
+        - 无未推送提交：提示「没有需要审查的变更」，进入 Phase 5
+    - **若远程跟踪分支不存在**（分支从未推送过）：使用 `git log --oneline -20` 列出近 20 条提交供参考，提示「当前分支尚未推送到远程，建议先完成提交推送后再审查」，进入 Phase 5
 
 ### 步骤 10：执行代码审查
 
@@ -105,7 +105,7 @@ compatibility: 需要 git；项目规范按 `openspec/config.yaml` → `AGENTS.m
 
 - `暂停流水线，手动修复后继续` — 展示恢复指引后退出；用户修复完后重新触发 pipeline 并传入 change 名称
 
-- `忽略问题，继续归档` — 跳过修复，进入 Phase 4
+- `忽略问题，继续后续流程` — 跳过修复，进入 Phase 5（完成后再进入 Phase 4）
 
 - `终止流程` — 退出流水线
 
@@ -115,11 +115,11 @@ compatibility: 需要 git；项目规范按 `openspec/config.yaml` → `AGENTS.m
 
 **选项：**
 
-- `继续归档` — 进入 Phase 4
+- `继续后续流程` — 进入 Phase 5（完成后再进入 Phase 4）
 - `生成修复提案并应用` — 基于 CR 结果走完整 propose → apply → 归档修复 change → 重新审查
 - `暂停流水线，手动调整后继续` — 展示恢复指引后退出
 - `终止流程` — 退出流水线
 
 #### 11.c 审查无问题（0 个问题）
 
-直接进入 Phase 4，不询问。
+直接进入 Phase 5；Phase 5 完成后继续进入 Phase 4。

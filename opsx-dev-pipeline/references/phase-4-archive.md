@@ -1,6 +1,6 @@
 ---
 name: phase-4-archive
-description: 全局步骤 12–15，含决策点 4。选择提交/推送类选项后进入 phase-5-unit-tests.md 步骤 16（决策点 4b）；终止则不进入 Phase 5/6。
+description: 全局步骤 12–15，含决策点 4。本阶段在 phase-5-unit-tests.md 步骤 16 完成后执行；归档完成后按决策点 4 进入 Phase 6 或终止。
 compatibility: 需要 openspec CLI、git；归档推荐 opsx-archive.sh 或等价 openspec archive。
 ---
 
@@ -95,8 +95,8 @@ compatibility: 需要 openspec CLI、git；归档推荐 opsx-archive.sh 或等�
 
 **选项：**
 
-- `提交代码并合并到目标分支` — 进入 **Phase 5、Phase 6** 完整流程（单测见 `phase-5-unit-tests.md`，提交/推送/合并见 `phase-6-merge-push.md`）
+- `提交代码并合并到目标分支` — 进入 **Phase 6** 完整流程（提交/推送/合并见 `phase-6-merge-push.md`）
 
-- `仅提交并推送（不合并）` — 进入 **Phase 5、Phase 6**，执行 commit + push 后结束（同上两文件）
+- `仅提交并推送（不合并）` — 进入 **Phase 6**，执行 commit + push 后结束（同上文件）
 
 - `终止流程` — 退出流水线（提供恢复指引）
