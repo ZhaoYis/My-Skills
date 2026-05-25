@@ -51,6 +51,34 @@ The change SHALL satisfy automated opsx-selftest validation.
 SPECEOF
 }
 
+write_yzw_config() {
+  mkdir -p openspec
+  cat > "openspec/config.yaml" <<'CFGEOF'
+schema: yzw-workflow
+shared:
+  context: |
+    Shared guidance for all changes.
+    Standards: docs/shared.md
+  rules:
+    apply:
+      - Follow shared workflow.
+backend:
+  context: |
+    Backend implementation guidance.
+    Standards: docs/backend.md
+  rules:
+    apply:
+      - Keep service boundaries clear.
+frontend:
+  context: |
+    Frontend implementation guidance.
+    Standards: docs/frontend.md
+  rules:
+    apply:
+      - Keep UI states explicit.
+CFGEOF
+}
+
 expect_ok() {
   local desc="$1"
   shift
@@ -93,6 +121,16 @@ expect_stdout_contains "opsx-list-changes.sh 透传 --sort name" "$CHANGE_NAME" 
 
 expect_stdout_contains "opsx-change-status.sh JSON" "\"changeName\"" "${SCRIPT_DIR}/opsx-change-status.sh" "$CHANGE_NAME"
 
+expect_stdout_contains "opsx-detect-schema.sh 默认 schema" '"schema": "spec-driven"' "${SCRIPT_DIR}/opsx-detect-schema.sh" "$CHANGE_NAME"
+
+expect_stdout_contains "opsx-ensure-change-meta.sh 写入 stacks" 'stacks: [backend]' "${SCRIPT_DIR}/opsx-ensure-change-meta.sh" "$CHANGE_NAME" backend
+
+expect_stdout_contains "opsx-detect-schema.sh 识别 .openspec.yaml" '"changeHasOpenSpecYaml": true' "${SCRIPT_DIR}/opsx-detect-schema.sh" "$CHANGE_NAME"
+
+expect_stdout_contains "opsx-change-context.sh 默认 schema 摘要" '"schema": "spec-driven"' "${SCRIPT_DIR}/opsx-change-context.sh" "$CHANGE_NAME"
+
+expect_stdout_contains "opsx-resolve-verify.sh 默认 schema 无命令" '"command": null' "${SCRIPT_DIR}/opsx-resolve-verify.sh" "$CHANGE_NAME"
+
 expect_stdout_contains "opsx-instructions.sh 无 artifact（ready 推断）" "\"artifactId\"" "${SCRIPT_DIR}/opsx-instructions.sh" "$CHANGE_NAME"
 
 expect_stdout_contains "opsx-instructions.sh proposal" "\"artifactId\"" "${SCRIPT_DIR}/opsx-instructions.sh" "$CHANGE_NAME" proposal
@@ -110,5 +148,26 @@ expect_stdout_contains "opsx-validate-all.sh 透传 --strict" '"summary"' "${SCR
 
 expect_stdout_contains "opsx-archive.sh -y 归档成功" "archived" "${SCRIPT_DIR}/opsx-archive.sh" "$CHANGE_NAME" -y
 
+write_yzw_config
+expect_stdout_contains "opsx-detect-schema.sh 识别 yzw-workflow" '"schema": "yzw-workflow"' "${SCRIPT_DIR}/opsx-detect-schema.sh" "$CHANGE_NAME"
+expect_stdout_contains "opsx-detect-schema.sh yzw-workflow 支持 stacks" '"supportsStacks": true' "${SCRIPT_DIR}/opsx-detect-schema.sh" "$CHANGE_NAME"
+expect_stdout_contains "opsx-ensure-change-meta.sh 写入 frontend stacks" 'stacks: [frontend]' "${SCRIPT_DIR}/opsx-ensure-change-meta.sh" "$CHANGE_NAME" frontend
+expect_stdout_contains "opsx-change-context.sh 包含 frontend context" 'Frontend implementation guidance.' "${SCRIPT_DIR}/opsx-change-context.sh" "$CHANGE_NAME"
+expect_stdout_contains "opsx-change-context.sh 包含 frontend standards" 'docs/frontend.md' "${SCRIPT_DIR}/opsx-change-context.sh" "$CHANGE_NAME"
+expect_stdout_contains "opsx-resolve-verify.sh frontend 命令" '"command": "./scripts/validate.sh frontend"' "${SCRIPT_DIR}/opsx-resolve-verify.sh" "$CHANGE_NAME"
+expect_stdout_contains "opsx-ensure-change-meta.sh 写入双栈 stacks" 'stacks: [backend, frontend]' "${SCRIPT_DIR}/opsx-ensure-change-meta.sh" "$CHANGE_NAME" backend,frontend
+expect_stdout_contains "opsx-change-context.sh 合并 shared 与 backend" 'Shared guidance for all changes.' "${SCRIPT_DIR}/opsx-change-context.sh" "$CHANGE_NAME"
+expect_stdout_contains "opsx-change-context.sh 合并 backend standards" 'docs/backend.md' "${SCRIPT_DIR}/opsx-change-context.sh" "$CHANGE_NAME"
+cat > Makefile <<'MAKEEOF'
+validate:
+	@true
+MAKEEOF
+expect_stdout_contains "opsx-resolve-verify.sh 双栈优先 make validate" '"command": "make validate"' "${SCRIPT_DIR}/opsx-resolve-verify.sh" "$CHANGE_NAME"
+rm -f Makefile
+expect_stdout_contains "opsx-resolve-verify.sh 双栈回退 all" '"command": "./scripts/validate.sh all"' "${SCRIPT_DIR}/opsx-resolve-verify.sh" "$CHANGE_NAME"
+expect_stdout_contains "opsx-ensure-change-meta.sh 写入 backend stacks" 'stacks: [backend]' "${SCRIPT_DIR}/opsx-ensure-change-meta.sh" "$CHANGE_NAME" backend
+expect_stdout_contains "opsx-resolve-verify.sh backend 命令" '"command": "./scripts/validate.sh backend"' "${SCRIPT_DIR}/opsx-resolve-verify.sh" "$CHANGE_NAME"
+
+
 echo ""
-echo "opsx-selftest: 全部通过（本目录除 $SELF_BASENAME 外每条 opsx-*.sh 均已执行且符合预期）。"
+echo "opsx-selftest: 全部通过（默认 schema 路径与 schema-aware 辅助脚本均符合预期）。"

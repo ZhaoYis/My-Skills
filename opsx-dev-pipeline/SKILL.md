@@ -2,7 +2,7 @@
 name: opsx-dev-pipeline
 description: OpenSpec + Git 需求开发全流程：预检与提案 → 应用 → 审查（含 fix-cr）→ 归档 → 提交前单测 → 推送/合并；关键步骤用户决策，细则以 `references/` 为准。
 license: MIT
-compatibility: 需安装 openspec 与 git CLI；建议在 Cursor 中配合 AskQuestion。审查、单测门禁、提交与合并在本技能 `references/`（Phase 3/5/6）中定义；`openspec-propose`、`openspec-apply-change`、`openspec-archive-change` 可选，仅作本地清单补充。
+compatibility: 需安装 openspec 与 git CLI；建议在 Cursor 中配合 AskQuestion。审查、单测门禁、提交与合并在本技能 `references/`（Phase 3/5/6）中定义；默认兼容 OpenSpec 默认 schema，并优先支持 `openspec/config.yaml` 中声明的自定义 schema（当前重点为 `yzw-workflow`）；`openspec-propose`、`openspec-apply-change`、`openspec-archive-change` 可选，仅作本地清单补充。
 metadata:
   author: zhaoyi
   version: "2.1"
@@ -78,7 +78,7 @@ metadata:
 
 **元数据与本页正文优先**；各 Phase 步骤与选项以 `references/` 为准。
 
-**代码规范**：凡涉及编写或修改实现/测试代码的 Phase，均以**目标仓库**的 **项目基准**（`openspec/project.md` → `openspec/config.yaml` → `CLAUDE.md`，与 Phase 3 **步骤 8** 一致）及**既有代码与单测风格**为准；细则见 `references/phase-2-apply.md` 与附录 **§2.4 代码与测试风格（项目内）**。
+**代码规范**：凡涉及编写或修改实现/测试代码的 Phase，均以**目标仓库**的 **项目基准**（默认 `openspec/config.yaml` → `AGENTS.md` → `CLAUDE.md`；若 schema 为 `yzw-workflow`，则以 `openspec/config.yaml` 中 `shared` / `stacks` 上下文与对应 standards 为增强基准，`AGENTS.md` / `CLAUDE.md` 仅作不冲突的补充约束，详见 `references/schema-adapter.md` 与 Phase 3 **步骤 8**）及**既有代码与单测风格**为准；细则见 `references/phase-2-apply.md` 与附录 **§2.4 代码与测试风格（项目内）**。
 
 **进度跟踪**：Phase 1 等多制品阶段推荐使用 **TodoWrite** 跟踪制品与任务进度（与 `references/phase-1-propose.md` 等处一致），降低遗漏。
 
@@ -94,15 +94,19 @@ metadata:
 | Phase / 用途 | 脚本（位于 `<SKILL_ROOT>/scripts/`） | 说明 |
 |----------------|--------------------------------------|------|
 | 0 预检 | `opsx-preflight.sh` | `openspec --version` + git 仓库检测 |
+| 0 schema 探测 | `opsx-detect-schema.sh [name]` | 识别 `openspec/config.yaml` 中的 schema、`.openspec.yaml` 与 `stacks` |
 | 0 / 1 / 4 | `opsx-change-status.sh <name>` | `openspec status --change <name> --json` |
 | 0 / 1 | `opsx-list-changes.sh` | `openspec list --json`（可跟 `openspec list` 的其它参数） |
 | 1 新建 | `opsx-new-change.sh <name>` | `openspec new change <name>` |
+| 1 change 元数据 | `opsx-ensure-change-meta.sh <name> [stacks]` | 补齐/更新 `.openspec.yaml`，供 `yzw-workflow` 等 schema 记录 `stacks` |
 | 1 制品 | `opsx-instructions.sh <name> [artifact]` | `openspec instructions … --json`；省略 `artifact` 时用 `openspec status` 中第一件 **ready** 制品（需本机 `python3`） |
 | 1 门禁（可选） | `opsx-validate-change.sh <name>` | 提案确认前结构校验 |
 | 2 Apply | `opsx-instructions-apply.sh <name>` | `openspec instructions apply --change <name> --json` |
+| 2 / 3 / 5 上下文 | `opsx-change-context.sh <name>` | 汇总 schema、`stacks`、merged context、standards 与规则摘要 |
+| 4 verify 解析 | `opsx-resolve-verify.sh <name>` | 基于 schema / `stacks` 推导 archive 前 verify 命令 |
 | 4 归档 | `opsx-archive.sh <name> …` | 封装 `openspec archive`（推荐 `-y`；不更新主 specs 时用 `--skip-specs`） |
 | CI / 批处理 | `opsx-validate-all.sh` | `openspec validate --all --json --no-interactive` |
-| 自检 | `opsx-selftest.sh` | 临时仓库中依次跑通本目录其余 `opsx-*.sh`（需 `git` + `openspec` + `python3`） |
+| 自检 | `opsx-selftest.sh` | 临时仓库中依次跑通本目录其余 `opsx-*.sh` 并覆盖 schema-aware 路径（需 `git` + `openspec` + `python3`） |
 
 **约定**：执行流水线步骤时**优先**一条命令跑完上述脚本（减少漏参、统一 `--json`）；若脚本不存在或环境限制，按各 `references/phase-*.md` 内原样 CLI 执行即可。
 

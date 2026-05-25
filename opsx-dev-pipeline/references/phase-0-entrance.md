@@ -10,7 +10,7 @@ compatibility: 需要 openspec CLI 与 git；在 git 仓库根目录执行。
 
 **执行 `openspec` / `git` / 下文流水线命令时，当前工作目录仍应为目标 git 仓库根目录**，除非某一步另有说明。
 
-### 步骤 1：环境预检
+### 步骤 1：环境预检与 schema 识别
 
 1. **优先（一键）**（在目标仓库根目录执行；脚本路径替换 `<SKILL_ROOT>`）：
 
@@ -29,6 +29,16 @@ compatibility: 需要 openspec CLI 与 git；在 git 仓库根目录执行。
 
     - 如果 openspec CLI 不可用：提示安装方式并退出
     - 如果不在 git 仓库中：提示 `git init` 并退出
+
+4. **schema 识别**
+
+    - 运行 `bash <SKILL_ROOT>/scripts/opsx-detect-schema.sh [<name>]`，识别：
+        - 当前 `schema`
+        - 是否存在 `openspec/config.yaml`
+        - change 下是否已有 `.openspec.yaml`
+        - change 的 `stacks`
+    - 若 `schema = yzw-workflow`：后续 **Phase 1 / 2 / 3 / 4 / 5** 均按 `references/schema-adapter.md` 启用 schema-aware 增强路径
+    - 若 schema 无法识别或未声明：按默认 schema 路径继续，不阻断主流程
 
 ### 步骤 2：判断入口类型
 

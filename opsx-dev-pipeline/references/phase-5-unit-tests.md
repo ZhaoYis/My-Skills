@@ -11,7 +11,13 @@ compatibility: 依赖项目栈的可执行单元测试命令；决断需 AskQues
 
 ### 步骤 16.1：识别测试方式
 
-结合 **项目基准**（`openspec/project.md` 或 `openspec/config.yaml`，或降级为 `CLAUDE.md`）、仓库根目录常见约定（如 `package.json`、`pom.xml`、`pyproject.toml`、`go.mod`、`Cargo.toml` 等），给出**推荐的单元测试命令**（示例：`mvn test`、`npm test`、`pytest`、`go test ./...`、`cargo test`）。
+结合 **项目基准**（`openspec/config.yaml`，其次 `AGENTS.md`，再次 `CLAUDE.md`）、schema / `stacks`、以及仓库根目录常见约定（如 `package.json`、`pom.xml`、`pyproject.toml`、`go.mod`、`Cargo.toml` 等），给出**推荐的单元测试命令**。
+
+推荐优先级如下：
+
+1. `schema = yzw-workflow` 时，优先依据 `bash <SKILL_ROOT>/scripts/opsx-change-context.sh "<name>"` 与 `stacks` 推导测试/验证路径
+2. 其次读取 `openspec/config.yaml` 中显式约定的验证与测试规则
+3. 最后再使用仓库构建文件启发式推导（示例：`mvn test`、`npm test`、`pytest`、`go test ./...`、`cargo test`）
 
 - 若无法唯一确定：**列出 2–3 个候选命令**，并在 **AskQuestion** 或自由文本中请用户选定一种；用户也可直接回复惯用命令
 
@@ -31,13 +37,18 @@ compatibility: 依赖项目栈的可执行单元测试命令；决断需 AskQues
 
 2. 编写或修改单元测试代码（仅自动化单测，不含手工 E2E；若项目将部分集成测试也归为同一命令，随项目惯例）
 
-3. 执行 **步骤 16.1** 中已确认的测试命令（可加项目常用参数，如 `--batch-mode`、`-q`，以项目基准 `project.md` / `config.yaml` 中若有的约定为准）
+3. 执行 **步骤 16.1** 中已确认的测试命令（可加项目常用参数，如 `--batch-mode`、`-q`，以项目基准 `config.yaml` 中若有的约定为准）
 
 4. **若测试失败**：输出失败摘要（命令、片段日志、相关路径），**AskQuestion**：
     - `修复代码或测试后重试` — 修补后回到 **子流程 A 步骤 3** 重新执行测试命令
     - `终止流程` — 退出并给恢复指引
 
 5. **若测试通过**：**进入 `phase-6-merge-push.md` 步骤 17**
+
+### verify 与单元测试的边界
+
+- **verify**：指 schema / workflow 级门禁；若 `schema = yzw-workflow`，已在 **Phase 4 步骤 13** 作为归档前前置条件执行
+- **单元测试**：指进入 Git 提交流程前的测试门禁；即便 verify 已通过，也不得默认跳过本 Phase 的决策点 4b
 
 ### 执行纪律
 

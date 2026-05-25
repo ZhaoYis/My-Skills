@@ -29,7 +29,34 @@ compatibility: 需要 openspec CLI、git；归档推荐 opsx-archive.sh 或等�
         - `回到实施阶段` — 回到 Phase 2 继续实施
         - `终止流程` — 退出
 
-### 步骤 13：Delta spec 同步检查
+### 步骤 13：archive 前 verify 门禁
+
+1. **解析 verify 命令**
+
+    - 若 `schema = yzw-workflow`：运行 `bash <SKILL_ROOT>/scripts/opsx-resolve-verify.sh "<name>"`，根据 change 的 `stacks` 推导 verify 命令
+    - 解析结果至少应确认：`schema`、`stacks`、`command`
+    - 推荐映射：
+        - `stacks = [backend]` → `./scripts/validate.sh backend`
+        - `stacks = [frontend]` → `./scripts/validate.sh frontend`
+        - `stacks = [backend, frontend]` → 优先 `make validate`，若仓库无 `Makefile` 再回退 `./scripts/validate.sh all`
+    - 默认 schema 若未声明 verify 规则：可跳过本步骤，继续后续 archive 检查
+
+2. **执行 verify**
+
+    - 若已解析出 verify 命令：执行该命令并记录结果
+    - 记录内容至少包含：执行命令、退出码、失败时的关键日志片段
+    - 若 verify 失败：使用 **AskQuestion tool**：
+        - `修复后重试 verify` — 修复后回到本步骤
+        - `暂停流水线` — 展示恢复指引后退出
+        - `终止流程` — 退出
+
+3. **门禁**
+
+    - 若 `schema = yzw-workflow` 且 verify 未通过：**禁止**进入归档步骤
+    - 若 `schema = yzw-workflow` 但无法解析 verify 命令：按附录 Error Handling 处理，在用户手动确认前不得宣称满足 verify-before-archive
+    - verify 通过后，继续 **步骤 14**
+
+### 步骤 14：Delta spec 同步检查
 
 1. **检查**
 
@@ -42,7 +69,7 @@ compatibility: 需要 openspec CLI、git；归档推荐 opsx-archive.sh 或等�
         - `同步到主 specs（推荐）` — 在 **步骤 14** 使用 `opsx-archive.sh "<name>" -y`（**无** `--skip-specs`）：由 OpenSpec 将 delta 合并进 `openspec/specs/` 并归档，无需手动拷贝
         - `不同步，直接归档` — 在 **步骤 14** 使用 `opsx-archive.sh "<name>" -y --skip-specs`：跳过对主 specs 的更新
 
-### 步骤 14：执行归档
+### 步骤 15：执行归档
 
 **推荐（与 OpenSpec CLI 一致）**：在用户完成 **步骤 13** 关于 delta 的选择后，用官方归档合并主 specs 并移动目录。
 
@@ -62,7 +89,7 @@ compatibility: 需要 openspec CLI、git；归档推荐 opsx-archive.sh 或等�
 
 **降级**：若 `openspec archive` 不可用或失败，可退回手动流程：`mkdir -p openspec/changes/archive`，生成 `YYYY-MM-DD-<change-name>`（冲突则追加 `-N`），再 `mv openspec/changes/<name> openspec/changes/archive/<目标目录>`（**不**含自动合并 specs，须与 **步骤 13** 用户意图一致）。
 
-### 步骤 15：[决策点 4] 归档后操作
+### 步骤 16：[决策点 4] 归档后操作
 
 使用 **AskQuestion tool**。
 

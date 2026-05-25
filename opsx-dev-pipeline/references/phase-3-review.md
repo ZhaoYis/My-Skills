@@ -1,20 +1,21 @@
 ---
 name: phase-3-review
 description: 全局步骤 8–11，含决策点 3。「生成修复提案并应用」细则见 phase-3.1-fix-review.md。进入归档路径后执行 phase-4-archive.md 步骤 12。
-compatibility: 需要 git；项目规范来自 `openspec/project.md` 或新版的 `openspec/config.yaml`，否则 CLAUDE.md；Cursor 中推荐 AskQuestion。
+compatibility: 需要 git；项目规范按 `openspec/config.yaml` → `AGENTS.md` → `CLAUDE.md` 的顺序加载；Cursor 中推荐 AskQuestion。
 ---
 
 ## Phase 3: 代码审查 (Review)
 
 ### 步骤 8：加载项目规范
 
-**项目信息来源**（兼容不同 OpenSpec 版本）：
+**项目信息来源**：
 
-- **若存在 `openspec/project.md`**：优先读取（技术栈、架构规则、命名规范等）
-- **否则若存在 `openspec/config.yaml`**：读取并解析 YAML（新版本 OpenSpec 常以该文件承载项目信息；字段名以仓库内实际内容及 `openspec` 文档为准）
-- **若两者均不存在**：输出警告「未找到 openspec/project.md 与 openspec/config.yaml，将使用 CLAUDE.md 中的默认规范」，改用 CLAUDE.md
+- **若存在 `openspec/config.yaml`**：读取并解析 YAML（技术栈、架构规则、命名规范、schema、工具链等；字段名以仓库内实际内容及 `openspec` 文档为准）
+- **若存在 `AGENTS.md`**：将其作为通用 agent 协作规范补充，仅吸收与 `openspec/config.yaml` 不冲突的执行约束、风格和目录约定
+- **若存在 `CLAUDE.md`**：将其作为 Claude 场景补充规范，仅在前两者未覆盖且内容不冲突时使用
+- **若三者均不存在**：输出警告“未找到 openspec/config.yaml、AGENTS.md、CLAUDE.md，将回退为读取仓库现有代码、测试与构建文件进行启发式判断”
 
-**若两者同时存在**：以 `project.md` 为规范叙述的首要依据；`config.yaml` 可作补充（如 schema、工具链），不与 `project.md` 明显冲突即可一并纳入审查基准。
+**若 `schema = yzw-workflow`**：除上述基准外，再执行 `bash <SKILL_ROOT>/scripts/opsx-change-context.sh "<name>"`，将 `shared` / `stacks` 上下文、对应 standards 与 rules 一并纳入审查基准；Review 时按 `backend` / `frontend` / 双栈差异化审查相关实现与测试。
 
 下文将 **步骤 8** 加载结果统称为 **项目基准**。
 
@@ -42,7 +43,7 @@ compatibility: 需要 git；项目规范来自 `openspec/project.md` 或新版�
 
 #### 10.2 规范基准
 
-以 **步骤 8** 的 **项目基准** 为准（`project.md` / `config.yaml` 以及必要时 **CLAUDE.md**）：技术栈、分层、命名、风格、约束；凡基准中写明的内容，须在 diff 上逐条对照。
+以 **步骤 8** 的 **项目基准** 为准（`config.yaml`，其次 `AGENTS.md`，以及必要时 **CLAUDE.md**）：技术栈、分层、命名、风格、约束；凡基准中写明的内容，须在 diff 上逐条对照。
 
 #### 10.3 通用审查维度（在基准文档未展开的缺口上补充）
 
@@ -69,7 +70,7 @@ compatibility: 需要 git；项目规范来自 `openspec/project.md` 或新版�
 
 #### 10.7 报告语言与落盘要求
 
-- **语言**：**步骤 8** 的 **项目基准**（`project.md` / `config.yaml`）及本步中与用户交互的说明
+- **语言**：**步骤 8** 的 **项目基准**（`config.yaml`）及本步中与用户交互的说明
 - **落盘**：报告须写入对话并保存到文件（目录不存在则 `mkdir -p openspec/review`）
 - **建议结构**：**概要**（文件数、增删行、问题分级统计）、**严重 / 重要 / 一般 / 建议**、**规范违规表**（对照项目基准）、**已审查文件列表**、**敏感信息扫描结果**、**与上次审查对比**（若有）、**修复建议**、**亮点**
 

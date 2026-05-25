@@ -51,19 +51,35 @@ description: 流水线中断与恢复、兼容性与降级（含 AskQuestion fal
 
 **Phase 3 `fix-cr` 子流程**：创建 `openspec/changes/fix-cr-*/` 并**必经** `phase-1-propose.md` **决策点 1** 后，再按 `phase-2-apply.md` 实施；**禁止**跳过提案门禁直接改业务代码。等价流程即 **Phase 1 / Phase 2**（fix change 名称），无需加载任何外部 openspec 子技能。
 
-### 2.3 Openspec / Git 版本
+### 2.3 Schema 识别与适配
+
+- Phase 0 预检通过后，可运行 `bash <SKILL_ROOT>/scripts/opsx-detect-schema.sh [<name>]` 识别：
+    - 当前 `schema`
+    - 是否存在 `openspec/config.yaml`
+    - 当前 change 是否已有 `.openspec.yaml`
+    - `stacks`
+- 若 `schema = yzw-workflow`：按 `references/schema-adapter.md` 启用 schema-aware 增强路径：
+    - expected artifacts 按 `proposal / adr / specs / design / tasks` 处理
+    - `.openspec.yaml` 中应声明 `stacks`
+    - Apply / Review / Phase 5 使用 `shared` / `stacks` merged context
+    - Archive 前必须先解析并执行 verify
+- 若 schema 无法识别：按默认 schema 路径继续，不阻断主流程
+
+### 2.4 Openspec / Git 版本
 
 本流水线**不锁定** openspec 次版本；若 CLI 子命令或 JSON 字段与文档示例不一致，以实际 `openspec --help` 与命令输出为准。
 
-项目描述可能位于 **`openspec/project.md`**（旧版/并存）或 **`openspec/config.yaml`**（新版常见），以仓库实际文件为准，并优先走 **Error Handling** 表。
+`openspec/config.yaml` 是项目描述与 schema 配置的首选来源；若缺失，则依次降级使用 `AGENTS.md`、`CLAUDE.md`；若三者都不存在，则回退为读取仓库现有代码、测试与构建文件做启发式判断，并优先走 **Error Handling** 表。
 
-### 2.4 代码与测试风格（项目内）
+### 2.5 代码与测试风格（项目内）
 
-编写或修改实现代码、测试代码时：**不**引用或依赖任何外部的「框架专用代码生成」类技能。以 **`openspec/project.md` / `openspec/config.yaml` / `CLAUDE.md`**（加载顺序同 Phase 3 **步骤 8**）为规范来源，并对照**本仓库已有实现与单测**保持风格一致。
+编写或修改实现代码、测试代码时：**不**引用或依赖任何外部的「框架专用代码生成」类技能。以 **`openspec/config.yaml` / `AGENTS.md` / `CLAUDE.md`**（加载顺序同 Phase 3 **步骤 8**）为规范来源，并对照**本仓库已有实现与单测**保持风格一致。
 
 ## 3. Guardrails
 
 - 本流水线在 **Phase 3 / Phase 5 / Phase 6** 内联了代码审查、提交前单测、提交推送与分支合并的完整步骤；**Openspec** 类子技能（`openspec-propose`、`openspec-apply-change`、`openspec-archive-change`）的等价流程在 **Phase 1 / 2 / 4**。若单独 skill 有更新，应同步校验本技能 `references/`。**执行时**仅需本技能 Phase 文档与上文 **子技能缺失时的 fallback 对照表**，无需单独的 Git 审查/提交/合并类 skill。
+
+- **schema-aware 规则**：若 `schema = yzw-workflow`，则以 `references/schema-adapter.md` 为差异权威来源；Phase 0 负责识别 schema / `stacks`，Phase 1 负责补齐 `.openspec.yaml`，Phase 4 负责 verify-before-archive，Phase 5 负责提交前单元测试，二者不得混淆。
 
 - 每个决策点必须向用户提供**明确可选路径**；**首选** AskQuestion tool；**若不可用**则按 **§2.1 AskQuestion 不可用**用编号列表代替。决策点之间的非决策步骤自动连续执行。
 
@@ -92,6 +108,8 @@ description: 流水线中断与恢复、兼容性与降级（含 AskQuestion fal
 
 - **提交前单元测试（Phase 5 步骤 16 / 决策点 4b）**：用户于决策点 4 选择进入提交流程后，须先完成本环节并由用户确认是否编写/补充单测；不得未经 AskQuestion（或附录编号选项）默认跳过。规程全文见 `references/phase-5-unit-tests.md`。
 
+- **verify 与单测的边界**：若 `schema = yzw-workflow`，archive 前 verify 属于 **Phase 4** 的 schema / workflow 门禁；即便 verify 已通过，也不得默认跳过 **Phase 5** 的单元测试决策点 4b。
+
 - **默认**在提交中包含与本 change 相关的 openspec 产物；若目标仓库的 `CONTRIBUTING`、`CLAUDE.md` 或团队约定另有要求，则从仓库约定。
 
 - **默认**提交信息使用 conventional commit 格式并包含 Co-Authored-By；若仓库或团队另有提交模板则从之。
@@ -112,7 +130,9 @@ description: 流水线中断与恢复、兼容性与降级（含 AskQuestion fal
 |------|----------|
 | openspec CLI 不可用 | 提示安装并退出 |
 | 不在 git 仓库中 | 提示初始化并退出 |
-| `openspec/project.md` 与 `openspec/config.yaml` 均不存在 | 警告并使用 CLAUDE.md 默认规范继续 |
+| `openspec/config.yaml`、`AGENTS.md`、`CLAUDE.md` 均不存在 | 警告并回退为读取仓库现有代码、测试与构建文件做启发式判断 |
+| `schema = yzw-workflow` 但缺失 `.openspec.yaml` 或 `stacks` | 在 Phase 1 补齐 `.openspec.yaml`，由用户确认 `stacks` 后继续 |
+| schema 无法识别 | 警告并按默认 schema 路径继续 |
 | change 名称冲突 | 询问复用还是创建新名称 |
 | change 不存在 | 列出可用 change 让用户选择 |
 | 审查时无变更可审 | 提示并跳到 Phase 4 |
@@ -121,6 +141,7 @@ description: 流水线中断与恢复、兼容性与降级（含 AskQuestion fal
 | 审查报告目录创建失败 | 提示错误，报告仅输出到对话 |
 | 归档目标已存在 | 使用 `openspec archive` / `opsx-archive.sh` 时由 CLI 处理；手动 `mv` 时追加 `-N` 后缀 |
 | openspec 命令执行失败或返回非预期格式 | 展示错误输出；询问（首选 AskQuestion；否则编号选项）：重试 / 跳过当前步骤 / 终止流程 |
+| 无法解析 verify 命令 | 先查 `make validate`，再查 `./scripts/validate.sh all`，仍无法确定则询问用户手动确认；未确认前不得宣称满足 verify-before-archive |
 | openspec 命令超时（>30s 无响应） | 终止命令，提示可能原因（网络、配置），提供重试或终止选项 |
 
 ### 3.2 决策点总览
