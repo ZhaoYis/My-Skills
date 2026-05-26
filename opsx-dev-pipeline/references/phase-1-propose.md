@@ -50,7 +50,7 @@ compatibility: 需要 openspec CLI、git 与已初始化 OpenSpec 的项目；Cu
 
 5. **追踪**
 
-    - 使用 **TodoWrite tool** 跟踪各制品进度
+    - 使用 **TaskCreate / TaskUpdate / TaskList** 跟踪各制品进度
 
 ### 步骤 4：[决策点 1] 确认提案（Apply 前置门禁，必过）
 

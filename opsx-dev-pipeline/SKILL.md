@@ -80,7 +80,7 @@ metadata:
 
 **代码规范**：凡涉及编写或修改实现/测试代码的 Phase，均以**目标仓库**的 **项目基准**（默认 `openspec/config.yaml` → `AGENTS.md` → `CLAUDE.md`；若 schema 为 `yzw-workflow`，则以 `openspec/config.yaml` 中 `shared` / `stacks` 上下文与对应 standards 为增强基准，`AGENTS.md` / `CLAUDE.md` 仅作不冲突的补充约束，详见 `references/schema-adapter.md` 与 Phase 3 **步骤 8**）及**既有代码与单测风格**为准；细则见 `references/phase-2-apply.md` 与附录 **§2.4 代码与测试风格（项目内）**。
 
-**进度跟踪**：Phase 1 等多制品阶段推荐使用 **TodoWrite** 跟踪制品与任务进度（与 `references/phase-1-propose.md` 等处一致），降低遗漏。
+**进度跟踪**：Phase 1 等多制品阶段推荐使用 **TaskCreate / TaskUpdate / TaskList** 跟踪制品与任务进度（与 `references/phase-1-propose.md` 等处一致），降低遗漏。
 
 ### 脚本（可选）
 
