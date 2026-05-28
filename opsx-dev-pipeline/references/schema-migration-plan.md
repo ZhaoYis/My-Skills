@@ -1,16 +1,16 @@
-# 基于 `yzw-workflow` 的 schema-aware 流水线重构实施方案
+# 基于自定义 schema 的 schema-aware 流水线重构实施方案
 
 ## 1. 目标与范围
 
 ### 1.1 重构目标
 
-将当前 `opsx-dev-pipeline` 从“默认 OpenSpec schema 的流程包装器”升级为“**schema-aware 的流程编排技能**”，优先支持 `yzw-workflow`，并保留对默认 schema 的兼容与降级路径。
+将当前 `opsx-dev-pipeline` 从”默认 OpenSpec schema 的流程包装器”升级为”**schema-aware 的流程编排技能**”，优先支持自定义 schema，并保留对默认 schema 的兼容与降级路径。
 
 ### 1.2 设计原则
 
 - **流程编排留在 skill**：Phase 0–6、决策点、暂停/恢复、review/fix-cr、unit test、commit/push/merge 仍由 skill 控制
 - **制品与上下文规则下沉到 schema**：artifact 集合、依赖、模板、apply context、stack rules、verify 命令映射优先由 schema / `openspec/config.yaml` 驱动
-- **兼容优先**：不改成仅支持 `yzw-workflow`，而是实现 `default schema + yzw-workflow enhanced path`
+- **兼容优先**：不改成仅支持特定 schema，而是实现 `default schema + custom schema enhanced path`
 - **避免双写规则**：`references/` 仅保留流程规则；artifact/rules/context/verify 规则尽量引用 schema/config，不在文档中复制一份
 
 ### 1.3 不纳入本次重构的范围
@@ -27,8 +27,6 @@
 
 ## 2. 现状与问题
 
-## 2.1 当前 skill 的主要耦合点
-
 当前 skill 对 OpenSpec 默认 schema 的耦合主要体现在：
 
 1. **默认 artifact 集合假设**
@@ -37,28 +35,28 @@
 
 2. **项目规范来源较弱**
    - 当前主要依赖 `openspec/config.yaml -> AGENTS.md -> CLAUDE.md`
-   - 尚未把 `config.yaml` 中更细粒度的 stack-aware context/rules 作为一等输入
+   - 尚未把 `config.yaml` 中更细粒度的 schema-aware context/rules 作为一等输入
 
 3. **verify / archive 门禁未与 schema 对齐**
    - 当前归档阶段主要关注 status / delta specs / archive
-   - `yzw-workflow` 中已定义的 verify 前置规则尚未纳入主流程
+   - 自定义 schema 中已定义的 verify 前置规则尚未纳入主流程
 
 4. **测试命令解析偏仓库启发式**
    - 当前 Phase 5 优先通过 `package.json / pom.xml / go.mod ...` 猜测命令
-   - 尚未优先基于 schema 的 stack 映射推导验证/测试命令
+   - 尚未优先基于 schema 的元数据映射推导验证/测试命令
 
-## 2.2 `yzw-workflow` 已具备的基础能力
+## 2.2 自定义 schema 已具备的基础能力
 
-`yzw-workflow` 已经提供：
+自定义 schema 已经提供：
 
-- artifact 定义：`proposal / adr / specs / design / tasks`
+- artifact 定义：如 `proposal / adr / specs / design / tasks`
 - artifact 依赖关系：`tasks` 依赖 `specs + design`
-- apply 阶段 context 合并策略：`shared + stacks`
-- stack 维度规则：`backend / frontend`
+- apply 阶段 context 合并策略：如 `shared + stacks`
+- schema 维度规则：如 `backend / frontend`
 - verify 命令映射：backend / frontend / all
 - 流程性约束：测试前置、全部任务完成后 verify，再 archive
 
-结论：`yzw-workflow` 已足以作为 skill 重构的规则源。
+结论：自定义 schema 已足以作为 skill 重构的规则源。
 
 ---
 
@@ -113,7 +111,7 @@
 
 ### 目标
 
-让 skill 能识别当前项目是否使用 `yzw-workflow`，并把 schema 识别结果带入后续 Phase。
+让 skill 能识别当前项目是否使用自定义 schema，并把 schema 识别结果带入后续 Phase。
 
 ### 涉及文件
 
@@ -136,18 +134,18 @@
   - `hasConfigYaml`
   - `supportsStacks`
   - `changeHasOpenSpecYaml`
-  - `stacks`
+  - `metadata`
 
 建议输出示例：
 
 ```json
 {
-  "schema": "yzw-workflow",
+  "schema": "custom",
   "hasProjectMd": false,
   "hasConfigYaml": true,
   "supportsStacks": true,
   "changeHasOpenSpecYaml": true,
-  "stacks": ["backend", "frontend"]
+  "metadata": ["backend", "frontend"]
 }
 ```
 
@@ -156,16 +154,16 @@
 在 `phase-0-entrance.md` 增加：
 
 - preflight 后读取 schema
-- 若 schema=`yzw-workflow`：
+- 若使用自定义 schema：
   - 标记当前 change 是否包含 `.openspec.yaml`
-  - 标记是否已有 `stacks`
+  - 标记是否已有元数据
 - 将该信息纳入后续续跑判断与摘要输出
 
 #### 4.1.3 新增 `references/schema-adapter.md`
 
 内容建议包括：
 
-- 默认 schema 与 `yzw-workflow` 的差异矩阵
+- 默认 schema 与自定义 schema 的差异矩阵
 - artifact 集合对照
 - baseline/context/verify/archive 差异
 - 降级策略
@@ -173,7 +171,7 @@
 ### 验收标准
 
 - skill 能在 Phase 0 确认当前 schema
-- skill 文档明确说明 `yzw-workflow` 的增强路径
+- skill 文档明确说明自定义 schema 的增强路径
 - 默认 schema 项目不受影响
 
 ---
@@ -182,7 +180,7 @@
 
 ### 目标
 
-让 Propose / Apply 不再依赖默认 artifact 集合，而是按 schema 动态工作，特别是支持 `adr` 与 stack-aware context。
+让 Propose / Apply 不再依赖默认 artifact 集合，而是按 schema 动态工作，特别是支持 `adr` 与 schema-aware context。
 
 ### 涉及文件
 
@@ -210,7 +208,7 @@
 应改为：
 
 - 根据 `listExpectedArtifacts(change)` 动态展示
-- 对 `yzw-workflow`，展示：
+- 对自定义 schema，展示：
   - proposal
   - adr
   - specs
@@ -219,25 +217,25 @@
 
 #### 4.2.2 决策点 1 的门禁改造
 
-在用户选择“确认提案，开始实施”前：
+在用户选择”确认提案，开始实施”前：
 
 - 除已有规则外，再校验 schema-required artifacts 是否齐全
-- 对 `yzw-workflow`，至少应校验：
+- 对自定义 schema，至少应校验：
   - proposal 已完成
   - specs 已完成
   - design 已完成（若 schema/项目要求）
   - tasks 已完成
   - adr 的要求以 schema 定义为准
 
-#### 4.2.3 引入 `.openspec.yaml` / `stacks`
+#### 4.2.3 引入 `.openspec.yaml` / 元数据
 
 新增 `scripts/opsx-ensure-change-meta.sh`：
 
 职责：
 
 - 检查 `openspec/changes/<name>/.openspec.yaml`
-- 若 schema=`yzw-workflow` 且未声明 `stacks`：
-  - 让用户选择 backend / frontend / both
+- 若使用自定义 schema 且未声明元数据：
+  - 让用户选择相应配置
   - 将结果写入 `.openspec.yaml`
 
 建议最晚在 Phase 1 Step 3 完成该动作。
@@ -251,8 +249,8 @@
 - 读取 `openspec/config.yaml`
 - 读取 change 下 `.openspec.yaml`
 - 合并：
-  - `shared.context`
-  - 选中 stack 的 context
+  - schema context
+  - 选中 metadata 的 context
   - 相关 rules
   - standards 文档清单
   - AGENTS.md / CLAUDE.md 兜底信息
@@ -262,17 +260,17 @@
 
 在 `phase-2-apply.md` 中加入：
 
-- 若 schema=`yzw-workflow`：
+- 若使用自定义 schema：
   - Apply 除读取 OpenSpec `contextFiles` 外
-  - 还需读取 stack-aware context 与 rules
-  - 代码实现需对齐所选 stack 的 standards 文档
+  - 还需读取 schema-aware context 与 rules
+  - 代码实现需对齐所选 metadata 的 standards 文档
 
 ### 验收标准
 
-- `yzw-workflow` 项目能正确展示 `adr`
+- 自定义 schema 项目能正确展示 `adr`
 - Phase 1 不再默认写死 artifact 集合
 - change 可在早期补齐 `.openspec.yaml`
-- Apply 可按 backend/frontend/fullstack 获得差异化上下文
+- Apply 可按 schema 要求获得差异化上下文
 
 ---
 
@@ -280,7 +278,7 @@
 
 ### 目标
 
-把 `yzw-workflow` 中“全部 tasks 完成 -> verify -> archive”的规则纳入主流程，而不是只在文档里提及。
+把自定义 schema 中”全部 tasks 完成 -> verify -> archive”的规则纳入主流程，而不是只在文档里提及。
 
 ### 涉及文件
 
@@ -297,13 +295,11 @@
 职责：
 
 - 输入：change 名称
-- 输出：基于 schema/stacks 解析出的 verify 命令
+- 输出：基于 schema/metadata 解析出的 verify 命令
 
 规则建议：
 
-- only backend -> `./scripts/validate.sh backend`
-- only frontend -> `./scripts/validate.sh frontend`
-- backend + frontend -> `make validate` 或 `./scripts/validate.sh all`
+- 基于 schema 定义 -> 对应的验证命令
 - 默认 schema -> 回退到仓库启发式或无 verify 定义
 
 #### 4.3.2 调整 Phase 4 结构
@@ -318,7 +314,7 @@
 
 #### 4.3.3 verify gate 行为
 
-若 schema=`yzw-workflow`：
+若使用自定义 schema：
 
 - 未完成 tasks -> 不允许直接 archive
 - verify 未通过 -> 不允许 archive
@@ -336,7 +332,7 @@
 
 ### 验收标准
 
-- `yzw-workflow` 下，未 verify 成功不能 archive
+- 自定义 schema 下，未 verify 成功不能 archive
 - verify 失败流程有明确恢复路径
 - 默认 schema 仍支持原有 archive 流程
 
@@ -361,26 +357,26 @@
 
 #### 4.4.1 Review 基准增强
 
-当 schema=`yzw-workflow` 时：
+当使用自定义 schema 时：
 
 review baseline =
 
-- `shared.context`
-- stack.context
+- schema.context
+- metadata.context
 - 对应 standards 文档
 - AGENTS.md / CLAUDE.md 补充规则
 
 重点检查方向：
 
-- backend：API 设计、数据库、命名、事务、测试规范
-- frontend：组件结构、状态管理、TS 风格、测试规范
-- fullstack：两者叠加 + 跨端契约一致性
+- 根据 schema 定义：API 设计、数据库、命名、事务、测试规范
+- 根据 metadata 定义：组件结构、状态管理、TS 风格、测试规范
+- 根据 schema 和 metadata 定义：两者叠加 + 跨端契约一致性
 
 #### 4.4.2 Phase 5 测试命令优先级调整
 
 测试命令解析优先级建议改为：
 
-1. schema/stacks 派生的验证或测试命令
+1. schema/metadata 派生的验证或测试命令
 2. `openspec/config.yaml` 明示规则
 3. 仓库构建文件推导
 4. 让用户确认
@@ -392,7 +388,7 @@ review baseline =
 
 ### 验收标准
 
-- backend/frontend/fullstack 的 review 关注点可区分
+- 自定义 schema 的 review 关注点可区分
 - 单测命令不再完全依赖仓库启发式猜测
 
 ---
@@ -527,18 +523,18 @@ review baseline =
    - 新建 change
    - propose -> apply -> archive
 
-2. `yzw-workflow` + backend：
+2. 自定义 schema 项目：
    - 自动识别 schema
    - 补 `.openspec.yaml`
-   - 得到 backend verify 命令
+   - 得到对应的 verify 命令
 
-3. `yzw-workflow` + frontend：
-   - apply context 含 frontend standards
-   - Phase 5 测试命令优先按 frontend 路径推导
+3. 自定义 schema 项目：
+   - apply context 包含 schema 定义的 standards
+   - Phase 5 测试命令优先按 schema 路径推导
 
-4. `yzw-workflow` + fullstack：
-   - shared + backend + frontend context 合并
-   - verify 命令映射为 all / make validate
+4. 自定义 schema 项目：
+   - 合并 schema 定义的 context
+   - verify 命令映射为相应的验证方式
 
 5. archive 前 verify 失败：
    - 不允许直接 archive
@@ -566,7 +562,7 @@ review baseline =
 
 - schema 探测
 - 支持 `adr`
-- 补齐 `.openspec.yaml` / `stacks`
+- 补齐 `.openspec.yaml` / metadata
 - apply context 合并
 - archive 前 verify gate
 - test 命令优先按 schema 推导
@@ -579,7 +575,7 @@ review baseline =
 
 结论：
 
-v1 的目标是“**支持 `yzw-workflow` 的 schema-aware pipeline**”，不是“一次性做成完全通用的 schema framework”。
+v1 的目标是”**支持自定义 schema 的 schema-aware pipeline**”，不是”一次性做成完全通用的 schema framework”。
 
 ---
 

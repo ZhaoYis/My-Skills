@@ -33,12 +33,9 @@ compatibility: 需要 openspec CLI、git；归档推荐 opsx-archive.sh 或等�
 
 1. **解析 verify 命令**
 
-    - 若 `schema = yzw-workflow`：运行 `bash <SKILL_ROOT>/scripts/opsx-resolve-verify.sh "<name>"`，根据 change 的 `stacks` 推导 verify 命令
-    - 解析结果至少应确认：`schema`、`stacks`、`command`
-    - 推荐映射：
-        - `stacks = [backend]` → `./scripts/validate.sh backend`
-        - `stacks = [frontend]` → `./scripts/validate.sh frontend`
-        - `stacks = [backend, frontend]` → 优先 `make validate`，若仓库无 `Makefile` 再回退 `./scripts/validate.sh all`
+    - 若检测到自定义 schema：运行 `bash <SKILL_ROOT>/scripts/opsx-change-context.sh "<name>"` 或 `bash <SKILL_ROOT>/scripts/opsx-resolve-verify.sh "<name>"`，根据 change 的元数据推导 verify 命令
+    - 解析结果至少应确认：`schema`、`metadata`、`command`
+    - 根据 schema 定义确定具体的 verify 规则
     - 默认 schema 若未声明 verify 规则：可跳过本步骤，继续后续 archive 检查
 
 2. **执行 verify**
@@ -52,8 +49,8 @@ compatibility: 需要 openspec CLI、git；归档推荐 opsx-archive.sh 或等�
 
 3. **门禁**
 
-    - 若 `schema = yzw-workflow` 且 verify 未通过：**禁止**进入归档步骤
-    - 若 `schema = yzw-workflow` 但无法解析 verify 命令：按附录 Error Handling 处理，在用户手动确认前不得宣称满足 verify-before-archive
+    - 若使用自定义 schema 且 verify 未通过：**禁止**进入归档步骤
+    - 若使用自定义 schema 但无法解析 verify 命令：按附录 Error Handling 处理，在用户手动确认前不得宣称满足 verify-before-archive
     - verify 通过后，继续 **步骤 14**
 
 ### 步骤 14：Delta spec 同步检查

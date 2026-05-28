@@ -51,10 +51,10 @@ The change SHALL satisfy automated opsx-selftest validation.
 SPECEOF
 }
 
-write_yzw_config() {
+write_custom_schema_config() {
   mkdir -p openspec
   cat > "openspec/config.yaml" <<'CFGEOF'
-schema: yzw-workflow
+schema: custom
 shared:
   context: |
     Shared guidance for all changes.
@@ -148,9 +148,9 @@ expect_stdout_contains "opsx-validate-all.sh 透传 --strict" '"summary"' "${SCR
 
 expect_stdout_contains "opsx-archive.sh -y 归档成功" "archived" "${SCRIPT_DIR}/opsx-archive.sh" "$CHANGE_NAME" -y
 
-write_yzw_config
-expect_stdout_contains "opsx-detect-schema.sh 识别 yzw-workflow" '"schema": "yzw-workflow"' "${SCRIPT_DIR}/opsx-detect-schema.sh" "$CHANGE_NAME"
-expect_stdout_contains "opsx-detect-schema.sh yzw-workflow 支持 stacks" '"supportsStacks": true' "${SCRIPT_DIR}/opsx-detect-schema.sh" "$CHANGE_NAME"
+write_custom_schema_config
+expect_stdout_contains "opsx-detect-schema.sh 识别 custom schema" '"schema": "custom"' "${SCRIPT_DIR}/opsx-detect-schema.sh" "$CHANGE_NAME"
+expect_stdout_contains "opsx-detect-schema.sh custom schema 支持元数据" '"supportsStacks": true' "${SCRIPT_DIR}/opsx-detect-schema.sh" "$CHANGE_NAME"
 expect_stdout_contains "opsx-ensure-change-meta.sh 写入 frontend stacks" 'stacks: [frontend]' "${SCRIPT_DIR}/opsx-ensure-change-meta.sh" "$CHANGE_NAME" frontend
 expect_stdout_contains "opsx-change-context.sh 包含 frontend context" 'Frontend implementation guidance.' "${SCRIPT_DIR}/opsx-change-context.sh" "$CHANGE_NAME"
 expect_stdout_contains "opsx-change-context.sh 包含 frontend standards" 'docs/frontend.md' "${SCRIPT_DIR}/opsx-change-context.sh" "$CHANGE_NAME"

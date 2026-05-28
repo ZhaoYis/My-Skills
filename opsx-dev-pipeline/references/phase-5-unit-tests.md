@@ -15,7 +15,7 @@ compatibility: 依赖项目栈的可执行单元测试命令；决断需 AskQues
 
 推荐优先级如下：
 
-1. `schema = yzw-workflow` 时，优先依据 `bash <SKILL_ROOT>/scripts/opsx-change-context.sh "<name>"` 与 `stacks` 推导测试/验证路径
+1. `schema = custom` 时，优先依据 `bash <SKILL_ROOT>/scripts/opsx-change-context.sh "<name>"` 与元数据推导测试/验证路径
 2. 其次读取 `openspec/config.yaml` 中显式约定的验证与测试规则
 3. 最后再使用仓库构建文件启发式推导（示例：`mvn test`、`npm test`、`pytest`、`go test ./...`、`cargo test`）
 
@@ -48,7 +48,7 @@ compatibility: 依赖项目栈的可执行单元测试命令；决断需 AskQues
 ### verify 与单元测试的边界
 
 - **单元测试**：指 Review 完成后、进入 Archive 前的代码质量门禁；是否编写/补充单测，仍由本 Phase 的决策点 4b 明确决定
-- **verify**：指 schema / workflow 级门禁；若 `schema = yzw-workflow`，仍在 **Phase 4 步骤 13** 作为 archive 前前置条件执行
+- **verify**：指 schema / workflow 级门禁；若使用自定义 schema，仍在 **Phase 4 步骤 13** 作为 archive 前前置条件执行
 - 单元测试先于 verify，但二者职责不同；即便本 Phase 已跳过或已通过单元测试，也不得默认跳过 **Phase 4 步骤 13** 的 verify
 
 ### 执行纪律

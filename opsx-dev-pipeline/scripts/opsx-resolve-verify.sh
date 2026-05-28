@@ -36,7 +36,9 @@ if meta_path.exists():
             break
 
 command = None
-if schema == "yzw-workflow":
+if schema != "default" and schema != "spec-driven":
+    # 处理自定义 schema 的验证命令
+    # 读取 change 元数据以获取 stacks 或其他相关信息
     normalized = set(stacks)
     if normalized == {"backend"}:
         command = "./scripts/validate.sh backend"
@@ -47,6 +49,7 @@ if schema == "yzw-workflow":
             command = "make validate"
         else:
             command = "./scripts/validate.sh all"
+    # 可根据需要添加更多自定义 schema 的处理逻辑
 
 print(json.dumps({
     "schema": schema,

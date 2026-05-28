@@ -23,7 +23,8 @@ if config_path.exists():
         if stripped.startswith("schema:"):
             schema = stripped.split(":", 1)[1].strip()
             break
-    if schema == "yzw-workflow":
+    # 保留对 stacks 支持的检测，但不针对特定 schema
+    if schema and schema != "spec-driven":
         supports_stacks = True
 
 if change:

@@ -1,0 +1,49 @@
+开始全面管道测试 Thu May 28 19:59:40 CST 2026
+========================================
+
+[SCRIPTS-EXIST] 验证所有必需脚本是否存在
+----------------------------------------
+[PASS] SCRIPTS-EXIST
+
+[PREFLIGHT-OK] 验证预检脚本能正常运行
+----------------------------------------
+[PASS] PREFLIGHT-OK
+
+[DETECT-DEFAULT-SCHEMA] 验证能检测默认 schema
+----------------------------------------
+[PASS] DETECT-DEFAULT-SCHEMA
+
+[PROP-NEW-CHANGE] 验证能创建新 change
+----------------------------------------
+[PASS] PROP-NEW-CHANGE
+
+[SCRIPT-OUTPUTS] 验证各种脚本有合理输出
+----------------------------------------
+[PASS] SCRIPT-OUTPUTS
+
+[INST-SCRIPT] 验证指令脚本正常运行
+----------------------------------------
+[PASS] INST-SCRIPT
+
+[APPLY-INST] 验证 Apply 指令脚本正常运行
+----------------------------------------
+[PASS] APPLY-INST
+
+[CHANGE-CONTEXT] 验证 Change 上下文脚本正常运行
+----------------------------------------
+[PASS] CHANGE-CONTEXT
+
+[RESOLVE-VERIFY] 验证 Verify 解析脚本正常运行
+----------------------------------------
+[PASS] RESOLVE-VERIFY
+
+[VALIDATE-CHANGE] 验证 Change 验证脚本正常运行
+----------------------------------------
+[PASS] VALIDATE-CHANGE
+
+========================================
+测试总结：
+通过: 10
+失败: 1
+总测试数: 11
+完成时间: Thu May 28 20:00:13 CST 2026

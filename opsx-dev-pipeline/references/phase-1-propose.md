@@ -42,10 +42,10 @@ compatibility: 需要 openspec CLI、git 与已初始化 OpenSpec 的项目；Cu
     - 对每个 `ready` 状态的制品，运行 `bash <SKILL_ROOT>/scripts/opsx-instructions.sh "<name>" <artifact-id>`（或 `openspec instructions <artifact-id> --change "<name>" --json`）获取指令，读取依赖制品，按 `template` 结构创建文件
     - 已完成的制品保持不变
     - 循环直到所有 `applyRequires` 制品完成
-    - 若 `schema = yzw-workflow`：
-        - 按 schema 定义将 `proposal / adr / specs / design / tasks` 视为 expected artifacts
-        - 最晚在此步骤执行 `bash <SKILL_ROOT>/scripts/opsx-ensure-change-meta.sh "<name>" [backend|frontend|backend,frontend]`，补齐 `.openspec.yaml` 与 `stacks`
-        - `tasks` 应建立在 `specs` 与 `design` 已完成的前提上，不得跳过其依赖直接生成
+    - 若检测到自定义 schema：
+        - 按 schema 定义的 expected artifacts 进行处理
+        - 如需要，执行 `bash <SKILL_ROOT>/scripts/opsx-ensure-change-meta.sh "<name>"`，补齐 `.openspec.yaml` 与相应的元数据
+        - 根据 schema 定义的依赖关系处理制品生成顺序
     （可选：在 **决策点 1** 之前增加 `bash <SKILL_ROOT>/scripts/opsx-validate-change.sh "<name>"` 做结构校验）
 
 5. **追踪**
@@ -59,8 +59,8 @@ compatibility: 需要 openspec CLI、git 与已初始化 OpenSpec 的项目；Cu
 #### 展示内容（须覆盖「是否做对事」而不仅是「生成了哪些文件」）
 
 - 用简短条目 **对照用户原始需求**：范围（接口/模块/数据）、关键行为、非目标与假设
-- 再按**当前 schema 的 expected artifacts** 展示各制品摘要；默认 schema 通常为 `proposal.md` / `design.md` / delta `specs` / `tasks.md`，若 `schema = yzw-workflow` 则应覆盖 `proposal` / `adr` / `specs` / `design` / `tasks`
-- 若 `schema = yzw-workflow`：一并展示当前 change 的 `.openspec.yaml` 与 `stacks`；若尚未声明，则在本步骤补齐后再进入本决策点
+- 再按**当前 schema 的 expected artifacts** 展示各制品摘要；默认 schema 通常为 `proposal.md` / `design.md` / delta `specs` / `tasks.md`，若使用自定义 schema 则应按 schema 定义展示相应的制品
+- 若使用自定义 schema：一并展示当前 change 的 `.openspec.yaml` 与相应的元数据；若尚未声明，则在本步骤补齐后再进入本决策点
 
 #### 交互：先使用 AskQuestion tool
 

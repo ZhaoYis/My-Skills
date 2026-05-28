@@ -1,12 +1,12 @@
 ---
-name: opsx-dev-pipeline
-description: OpenSpec + Git 需求开发全流程：预检与提案 → 应用 → 审查（含 fix-cr）→ 单测门禁 → 归档 → 提交前检查/推送/合并；关键步骤用户决策，细则以 `references/` 为准。
-license: MIT
-compatibility: 需安装 openspec 与 git CLI；建议在 Cursor 中配合 AskQuestion。审查、单测门禁、提交与合并在本技能 `references/`（Phase 3/5/6）中定义；默认兼容 OpenSpec 默认 schema，并优先支持 `openspec/config.yaml` 中声明的自定义 schema（当前重点为 `yzw-workflow`）；`openspec-propose`、`openspec-apply-change`、`openspec-archive-change` 可选，仅作本地清单补充。
-metadata:
-  author: zhaoyi
+
+## name: opsx-dev-pipeline  
+description: OpenSpec + Git 需求开发全流程。  
+license: MIT  
+compatibility: 需安装 openspec 与 git CLI；建议在 Cursor 中配合 AskQuestion。默认兼容 OpenSpec 默认 schema，并优先支持 `openspec/config.yaml` 中声明的自定义 schema。  
+metadata:  
+  author: zhaoyi  
   version: "2.1"
----
 
 # 需求开发全流程流水线
 
@@ -40,30 +40,34 @@ metadata:
 
 按下表顺序阅读并遵循各 Phase 文件中的步骤与决策点：
 
-| Phase | 说明 | 引用文件 |
-|-------|------|----------|
-| 0 | 入口判断 | `references/phase-0-entrance.md` |
-| 1 | 提案编写 (Propose) | `references/phase-1-propose.md` |
-| 2 | 提案应用 (Apply) | `references/phase-2-apply.md` |
-| 3 | 代码审查 (Review) | `references/phase-3-review.md`；「生成修复提案并应用」见 `references/phase-3.1-fix-review.md` |
-| 4 | 提案归档 (Archive) | `references/phase-4-archive.md` |
-| 5 | 审查后单元测试门禁 | `references/phase-5-unit-tests.md` |
-| 6 | 提交合并推送 (Merge & Push) | `references/phase-6-merge-push.md` |
-| — | 中断恢复、护栏、错误处理、决策点总览 | `references/recovery-guardrails-appendix.md` |
+
+| Phase | 说明                    | 引用文件                                                                             |
+| ----- | --------------------- | -------------------------------------------------------------------------------- |
+| 0     | 入口判断                  | `references/phase-0-entrance.md`                                                 |
+| 1     | 提案编写 (Propose)        | `references/phase-1-propose.md`                                                  |
+| 2     | 提案应用 (Apply)          | `references/phase-2-apply.md`                                                    |
+| 3     | 代码审查 (Review)         | `references/phase-3-review.md`；「生成修复提案并应用」见 `references/phase-3.1-fix-review.md` |
+| 4     | 提案归档 (Archive)        | `references/phase-4-archive.md`                                                  |
+| 5     | 审查后单元测试门禁             | `references/phase-5-unit-tests.md`                                               |
+| 6     | 提交合并推送 (Merge & Push) | `references/phase-6-merge-push.md`                                               |
+| —     | 中断恢复、护栏、错误处理、决策点总览    | `references/recovery-guardrails-appendix.md`                                     |
+
 
 ### 全局步骤索引（跨 Phase 连续编号）
 
 各 `references/phase-*.md` 内沿用步骤编号 **1–22**；下表用于快速定位当前进度。**条件触发**的子决策点（如 2a/2b、4a、5a/5b/5c、6a/6b）不在下表逐条展开；完整编号、语义与选项见 `references/recovery-guardrails-appendix.md` **§3.2 决策点总览**。
 
-| 步骤 | Phase | 摘要 | 引用文件 |
-|:----:|:-----:|------|----------|
-| 1–2 | 0 | 环境预检、入口类型与续接确认 | `phase-0-entrance.md` |
-| 3–4 | 1 | 创建 change / 生成制品；**决策点 1**（提案门禁） | `phase-1-propose.md` |
-| 5–7 | 2 | 获取 apply 上下文、按任务实施；**决策点 2** | `phase-2-apply.md` |
-| 8–11 | 3 | 约定与 diff、审查、**决策点 3**（含 fix-cr 子流程） | `phase-3-review.md`，`phase-3.1-fix-review.md` |
-| 12 | 5 | **决策点 4b**、单测子流程 | `phase-5-unit-tests.md` |
-| 13–16 | 4 | 归档前检查、verify、delta 同步、执行归档；**决策点 4** | `phase-4-archive.md` |
-| 17–22 | 6 | 预提交（**5a/5b**）、暂存提交（**决策点 5**）、推送（**5c**）、合并（**决策点 6**）、合并后分支、最终摘要 | `phase-6-merge-push.md` |
+
+| 步骤    | Phase | 摘要                                                                 | 引用文件                                          |
+| ----- | ----- | ------------------------------------------------------------------ | --------------------------------------------- |
+| 1–2   | 0     | 环境预检、入口类型与续接确认                                                     | `phase-0-entrance.md`                         |
+| 3–4   | 1     | 创建 change / 生成制品；**决策点 1**（提案门禁）                                   | `phase-1-propose.md`                          |
+| 5–7   | 2     | 获取 apply 上下文、按任务实施；**决策点 2**                                       | `phase-2-apply.md`                            |
+| 8–11  | 3     | 约定与 diff、审查、**决策点 3**（含 fix-cr 子流程）                                | `phase-3-review.md`，`phase-3.1-fix-review.md` |
+| 12    | 5     | **决策点 4b**、单测子流程                                                   | `phase-5-unit-tests.md`                       |
+| 13–16 | 4     | 归档前检查、verify、delta 同步、执行归档；**决策点 4**                               | `phase-4-archive.md`                          |
+| 17–22 | 6     | 预提交（**5a/5b**）、暂存提交（**决策点 5**）、推送（**5c**）、合并（**决策点 6**）、合并后分支、最终摘要 | `phase-6-merge-push.md`                       |
+
 
 ## 兼容性、降级与子技能 fallback（摘要）
 
@@ -78,7 +82,7 @@ metadata:
 
 **元数据与本页正文优先**；各 Phase 步骤与选项以 `references/` 为准。
 
-**代码规范**：凡涉及编写或修改实现/测试代码的 Phase，均以**目标仓库**的 **项目基准**（默认 `openspec/config.yaml` → `AGENTS.md` → `CLAUDE.md`；若 schema 为 `yzw-workflow`，则以 `openspec/config.yaml` 中 `shared` / `stacks` 上下文与对应 standards 为增强基准，`AGENTS.md` / `CLAUDE.md` 仅作不冲突的补充约束，详见 `references/schema-adapter.md` 与 Phase 3 **步骤 8**）及**既有代码与单测风格**为准；细则见 `references/phase-2-apply.md` 与附录 **§2.4 代码与测试风格（项目内）**。
+**代码规范**：凡涉及编写或修改实现/测试代码的 Phase，均以**目标仓库**的 **项目基准**（默认 `openspec/config.yaml` → `AGENTS.md` → `CLAUDE.md`；若 schema 为自定义 schema，则以 `openspec/config.yaml` 中定义的上下文与对应 standards 为增强基准，`AGENTS.md` / `CLAUDE.md` 仅作不冲突的补充约束，详见 `references/schema-adapter.md` 与 Phase 3 **步骤 8**）及**既有代码与单测风格**为准；细则见 `references/phase-2-apply.md` 与附录 **§2.4 代码与测试风格（项目内）**。
 
 **进度跟踪**：Phase 1 等多制品阶段推荐使用 **TaskCreate / TaskUpdate / TaskList** 跟踪制品与任务进度（与 `references/phase-1-propose.md` 等处一致），降低遗漏。
 
@@ -91,22 +95,24 @@ metadata:
 - 勿假设技能文件夹名为 `opsx-dev-pipeline`
 - 若不便使用脚本，可直接运行各 Phase 给出的等价 `openspec` CLI
 
-| Phase / 用途 | 脚本（位于 `<SKILL_ROOT>/scripts/`） | 说明 |
-|----------------|--------------------------------------|------|
-| 0 预检 | `opsx-preflight.sh` | `openspec --version` + git 仓库检测 |
-| 0 schema 探测 | `opsx-detect-schema.sh [name]` | 识别 `openspec/config.yaml` 中的 schema、`.openspec.yaml` 与 `stacks` |
-| 0 / 1 / 4 | `opsx-change-status.sh <name>` | `openspec status --change <name> --json` |
-| 0 / 1 | `opsx-list-changes.sh` | `openspec list --json`（可跟 `openspec list` 的其它参数） |
-| 1 新建 | `opsx-new-change.sh <name>` | `openspec new change <name>` |
-| 1 change 元数据 | `opsx-ensure-change-meta.sh <name> [stacks]` | 补齐/更新 `.openspec.yaml`，供 `yzw-workflow` 等 schema 记录 `stacks` |
-| 1 制品 | `opsx-instructions.sh <name> [artifact]` | `openspec instructions … --json`；省略 `artifact` 时用 `openspec status` 中第一件 **ready** 制品（需本机 `python3`） |
-| 1 门禁（可选） | `opsx-validate-change.sh <name>` | 提案确认前结构校验 |
-| 2 Apply | `opsx-instructions-apply.sh <name>` | `openspec instructions apply --change <name> --json` |
-| 2 / 3 / 5 上下文 | `opsx-change-context.sh <name>` | 汇总 schema、`stacks`、merged context、standards 与规则摘要 |
-| 4 verify 解析 | `opsx-resolve-verify.sh <name>` | 基于 schema / `stacks` 推导 archive 前 verify 命令 |
-| 4 归档 | `opsx-archive.sh <name> …` | 封装 `openspec archive`（推荐 `-y`；不更新主 specs 时用 `--skip-specs`） |
-| CI / 批处理 | `opsx-validate-all.sh` | `openspec validate --all --json --no-interactive` |
-| 自检 | `opsx-selftest.sh` | 临时仓库中依次跑通本目录其余 `opsx-*.sh` 并覆盖 schema-aware 路径（需 `git` + `openspec` + `python3`） |
+
+| Phase / 用途    | 脚本（位于 `<SKILL_ROOT>/scripts/`）               | 说明                                                                                                   |
+| ------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| 0 预检          | `opsx-preflight.sh`                          | `openspec --version` + git 仓库检测                                                                      |
+| 0 schema 探测   | `opsx-detect-schema.sh [name]`               | 识别 `openspec/config.yaml` 中的 schema、`.openspec.yaml` 与 `stacks`                                      |
+| 0 / 1 / 4     | `opsx-change-status.sh <name>`               | `openspec status --change <name> --json`                                                             |
+| 0 / 1         | `opsx-list-changes.sh`                       | `openspec list --json`（可跟 `openspec list` 的其它参数）                                                     |
+| 1 新建          | `opsx-new-change.sh <name>`                  | `openspec new change <name>`                                                                         |
+| 1 change 元数据  | `opsx-ensure-change-meta.sh <name> [stacks]` | 补齐/更新 `.openspec.yaml`，供自定义 schema 记录元数据                                                             |
+| 1 制品          | `opsx-instructions.sh <name> [artifact]`     | `openspec instructions … --json`；省略 `artifact` 时用 `openspec status` 中第一件 **ready** 制品（需本机 `python3`） |
+| 1 门禁（可选）      | `opsx-validate-change.sh <name>`             | 提案确认前结构校验                                                                                            |
+| 2 Apply       | `opsx-instructions-apply.sh <name>`          | `openspec instructions apply --change <name> --json`                                                 |
+| 2 / 3 / 5 上下文 | `opsx-change-context.sh <name>`              | 汇总 schema、`stacks`、merged context、standards 与规则摘要                                                    |
+| 4 verify 解析   | `opsx-resolve-verify.sh <name>`              | 基于 schema / `stacks` 推导 archive 前 verify 命令                                                          |
+| 4 归档          | `opsx-archive.sh <name> …`                   | 封装 `openspec archive`（推荐 `-y`；不更新主 specs 时用 `--skip-specs`）                                          |
+| CI / 批处理      | `opsx-validate-all.sh`                       | `openspec validate --all --json --no-interactive`                                                    |
+| 自检            | `opsx-selftest.sh`                           | 临时仓库中依次跑通本目录其余 `opsx-*.sh` 并覆盖 schema-aware 路径（需 `git` + `openspec` + `python3`）                     |
+
 
 **约定**：执行流水线步骤时**优先**一条命令跑完上述脚本（减少漏参、统一 `--json`）；若脚本不存在或环境限制，按各 `references/phase-*.md` 内原样 CLI 执行即可。
 
@@ -153,6 +159,8 @@ flowchart TD
   MERGE --> ENDNODE
 ```
 
+
+
 ### 要点（与引用文件同序）
 
 1. **环境预检（Phase 0）**：`openspec` 不可用 → 提示安装后结束；不在 git 仓库 → 提示初始化或进入仓库后结束
@@ -161,3 +169,4 @@ flowchart TD
 4. **实施与审查（Phase 2～3）**：**决策点 2** 可暂停、跳过审查直接归档或终止（`phase-2-apply.md`）。审查未过：**fix-cr**、直接修复再审、暂停等（`phase-3-review.md`）；图中 `R3`→`REVIEW` 表示修复回路
 5. **审查、单测与归档（Phase 3 / 5 / 4）**：**决策点 3** 后先进入 **Phase 5** 单元测试门禁，可暂停、跳过或补充测试；其后进入 **Phase 4** 执行 verify 与 archive；fix-cr / 直接修复等回路仍按 `phase-3-review.md` 执行
 6. **归档后 Git（Phase 4 / 6）**：**决策点 4**：终止 / 仅推送 / 提交并合并。归档完成后进入 **Phase 6**。Phase 6 **内部顺序**以 `phase-6-merge-push.md` 为准：**步骤 17** 预提交检查 → **步骤 18** 暂存与提交 → **步骤 19** 推送 → 若决策点 4 选了「提交代码并合并」则进入 **步骤 20 决策点 6（合并）**；若选了「仅提交并推送」则跳过合并。流程图中将「步骤 17–18」「步骤 19」「合并」拆开，是为对齐上述顺序
+

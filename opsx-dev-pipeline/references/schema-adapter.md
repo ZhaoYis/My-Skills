@@ -1,6 +1,6 @@
 ---
 name: schema-adapter
-description: 定义默认 OpenSpec schema 与 yzw-workflow 的适配差异、上下文来源、verify 解析与降级策略。
+description: 定义默认 OpenSpec schema 与自定义 schema 的适配差异、上下文来源、verify 解析与降级策略。
 ---
 
 ## 1. 目标
@@ -10,7 +10,7 @@ description: 定义默认 OpenSpec schema 与 yzw-workflow 的适配差异、上
 当前支持两类路径：
 
 - **默认 schema**：沿用 OpenSpec 默认 artifact / apply / archive 行为
-- **`yzw-workflow`**：启用 stack-aware 上下文、schema-defined artifacts、verify-before-archive 增强规则
+- **特定 schema**：启用自定义上下文、schema-defined artifacts、verify-before-archive 增强规则
 
 ## 2. 适配原则
 
@@ -20,52 +20,31 @@ description: 定义默认 OpenSpec schema 与 yzw-workflow 的适配差异、上
 
 ## 3. 差异矩阵
 
-| 能力 | 默认 schema | `yzw-workflow` |
-|------|-------------|----------------|
-| schema 识别 | 无显式 schema 或非 `yzw-workflow` | `openspec/config.yaml` 中 `schema: yzw-workflow` |
-| 预期 artifacts | 以 OpenSpec 默认 status / instructions 为准 | `proposal / adr / specs / design / tasks` |
-| change 元数据 | 无强制 `.openspec.yaml` | `.openspec.yaml` 应声明 `stacks` |
-| apply 上下文 | `openspec instructions apply` 返回的 `contextFiles` | `contextFiles` + `shared` + 选中 `stacks` 的 context/rules |
-| review 基准 | `config.yaml -> AGENTS.md -> CLAUDE.md` | 上述基准 + shared/stack context + standards |
-| archive 前 verify | 无统一前置门禁 | 必须先解析并执行 verify，成功后才归档 |
-| Phase 5 测试推荐 | 仓库构建文件启发式优先 | schema/stacks 优先，其次仓库启发式 |
 
-## 4. `yzw-workflow` 适配规则
+| 能力               | 默认 schema                                        | 特定 schema                            |
+| ---------------- | ------------------------------------------------ | ------------------------------------ |
+| schema 识别        | 无显式 schema 或非特定 schema                           | `openspec/config.yaml` 中声明的特定 schema |
+| 预期 artifacts     | 以 OpenSpec 默认 status / instructions 为准           | 根据具体 schema 定义的 artifacts            |
+| change 元数据       | 无强制 `.openspec.yaml`                             | 根据具体 schema 要求声明元数据                  |
+| apply 上下文        | `openspec instructions apply` 返回的 `contextFiles` | 根据具体 schema 和元数据扩展 context           |
+| review 基准        | `config.yaml -> AGENTS.md -> CLAUDE.md`          | 上述基准 + schema 定义的标准                  |
+| archive 前 verify | 无统一前置门禁                                          | 根据具体 schema 要求执行 verify              |
+| Phase 5 测试推荐     | 仓库构建文件启发式优先                                      | 根据具体 schema 优先，其次仓库启发式               |
 
-### 4.1 artifact 集合
 
-以 schema 定义为准：
+## 4. 通用适配规则
 
-- `proposal`
-- `adr`
-- `specs`
-- `design`
-- `tasks`
+### 4.1 schema 处理
 
-其中：
+对于任意特定 schema（非 spec-driven 默认情况）：
 
-- `tasks` 依赖 `specs` 与 `design`
-- Phase 1 展示与门禁按该集合执行，不再写死为固定四件套
+1. 检测 `openspec/config.yaml` 中的 `schema` 字段
+2. 根据具体 schema 类型加载对应的 artifacts、stacks、context 等配置
+3. 执行 schema 对应的特殊逻辑（如 verify 命令等）
 
-### 4.2 stacks 元数据
+### 4.2 元数据处理
 
-change 目录下 `.openspec.yaml` 期望包含：
-
-```yaml
-stacks: [backend]
-```
-
-或：
-
-```yaml
-stacks: [frontend]
-```
-
-或：
-
-```yaml
-stacks: [backend, frontend]
-```
+根据具体 schema 要求，在 change 目录下的 `.openspec.yaml` 中声明相应的元数据。
 
 若缺失：
 
@@ -74,35 +53,19 @@ stacks: [backend, frontend]
 
 ### 4.3 apply context 合并
 
-对 `yzw-workflow`：
+对于特定 schema：
 
-1. 读取 `openspec/config.yaml` 中：
-   - `shared.context`
-   - `backend.context`
-   - `frontend.context`
-2. 读取 change 下 `.openspec.yaml` 中 `stacks`
-3. 合并 context：
-   - `shared.context` + 各选中 stack 的 context
-4. 合并 rules：
-   - 同 artifact ID 的 rules 按 `shared -> stacks` 顺序追加
-5. 将 standards 与 `AGENTS.md` / `CLAUDE.md` 等路径一并提供给 Apply / Review / Test 阶段；若内容冲突，以 `openspec/config.yaml` 与 schema 规则为准
-
-### 4.4 verify 命令解析
-
-默认映射：
-
-- `backend` -> `./scripts/validate.sh backend`
-- `frontend` -> `./scripts/validate.sh frontend`
-- `backend + frontend` -> `make validate`，若不存在则回退 `./scripts/validate.sh all`
-
-若仓库已有更明确约定，以仓库实际脚本为准。
+1. 读取 `openspec/config.yaml` 中根据 schema 定义的相关配置
+2. 读取 change 下 `.openspec.yaml` 中的元数据
+3. 合并 context 和 rules
+4. 将标准与其他规范路径一同提供给各阶段
 
 ## 5. 适配层输出
 
 建议通过脚本统一输出以下能力：
 
 - 当前 `schema`
-- 当前 change 的 `stacks`
+- 当前 change 的元数据（根据 schema 类型）
 - 当前 change 的 expected artifacts
 - merged context / rules / standards
 - verify command
@@ -129,18 +92,11 @@ stacks: [backend, frontend]
 - 视为默认 schema
 - 不阻断主流程
 
-### 6.3 `yzw-workflow` 但缺失 `.openspec.yaml`
+### 6.3 特定 schema 但缺失元数据文件
 
-- 在 Phase 1 创建 `.openspec.yaml`
-- 由用户确认 `stacks`
+- 在 Phase 1 创建必要的元数据文件
+- 由用户确认相关的配置项
 - 若用户暂不能确认，可暂停或以推荐值临时写入后继续
-
-### 6.4 无法解析 verify 命令
-
-- 先查 `make validate`
-- 再查 `./scripts/validate.sh all`
-- 再降级为提示用户手动确认命令
-- 在未确认前，不自动宣称满足 verify-before-archive 门禁
 
 ## 7. 与 Phase 的关系
 
@@ -150,3 +106,4 @@ stacks: [backend, frontend]
 - **Phase 3**：使用 stack-aware review baseline
 - **Phase 4**：执行 verify-before-archive
 - **Phase 5**：schema-aware 测试命令推荐
+

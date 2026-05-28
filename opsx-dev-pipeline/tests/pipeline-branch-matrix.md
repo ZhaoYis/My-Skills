@@ -6,8 +6,8 @@ description: 全流程分支覆盖矩阵，用于验证阶段跳转、决策点�
 ## 模拟需求
 
 - 场景：为用户资料页新增头像上传，并同步后端接口校验与前端预览
-- schema：`yzw-workflow`
-- stacks：`[backend, frontend]`
+- schema：自定义 schema
+- 元数据：`[backend, frontend]`
 
 ## 分支覆盖矩阵
 
@@ -20,7 +20,7 @@ description: 全流程分支覆盖矩阵，用于验证阶段跳转、决策点�
 | P0-INPUT-CHANGE | Phase 0 | 输入已有 change | 进入续跑判断 |
 | P0-INPUT-EMPTY | Phase 0 | 无输入 | 询问后再分流 |
 | P0-SCHEMA-DEFAULT | Phase 0 | 默认 schema | 走默认路径 |
-| P0-SCHEMA-YZW | Phase 0 | `yzw-workflow` | 启用 schema-aware 增强 |
+| P0-SCHEMA-CUSTOM | Phase 0 | 自定义 schema | 启用 schema-aware 增强 |
 | P0-SCHEMA-UNKNOWN | Phase 0 | schema 无法识别 | 警告并降级继续 |
 | P0-RESUME-P1 | Phase 0 | 制品不完整 | 从 Phase 1 Step 3 续跑 |
 | P0-RESUME-P2 | Phase 0 | 制品完成、任务未完成 | 从 Phase 2 续跑 |
@@ -35,8 +35,8 @@ description: 全流程分支覆盖矩阵，用于验证阶段跳转、决策点�
 | P1-NAME-CONFLICT-REUSE | Phase 1 | 名称冲突并复用 | 走 3.a |
 | P1-NAME-CONFLICT-RENAME | Phase 1 | 名称冲突并改名 | 重新创建 |
 | P1-ARTIFACTS-DEFAULT | Phase 1 | 默认 schema 制品 | proposal/design/specs/tasks |
-| P1-ARTIFACTS-YZW | Phase 1 | `yzw-workflow` 制品 | proposal/adr/specs/design/tasks |
-| P1-META-STACKS | Phase 1 | `.openspec.yaml` 缺失 | 补齐 stacks |
+| P1-ARTIFACTS-CUSTOM | Phase 1 | 自定义 schema 制品 | proposal/adr/specs/design/tasks |
+| P1-META-GENERIC | Phase 1 | `.openspec.yaml` 缺失 | 补齐元数据 |
 | P1-GATE-CONFIRM | Phase 1 | 确认提案 | 进入 Phase 2 |
 | P1-GATE-REVISE | Phase 1 | 修改提案 | 循环至重新确认 |
 | P1-GATE-TERMINATE | Phase 1 | 终止流程 | 退出 |

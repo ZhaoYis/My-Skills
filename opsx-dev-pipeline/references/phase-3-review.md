@@ -15,7 +15,7 @@ compatibility: 需要 git；项目规范按 `openspec/config.yaml` → `AGENTS.m
 - **若存在 `CLAUDE.md`**：将其作为 Claude 场景补充规范，仅在前两者未覆盖且内容不冲突时使用
 - **若三者均不存在**：输出警告“未找到 openspec/config.yaml、AGENTS.md、CLAUDE.md，将回退为读取仓库现有代码、测试与构建文件进行启发式判断”
 
-**若 `schema = yzw-workflow`**：除上述基准外，再执行 `bash <SKILL_ROOT>/scripts/opsx-change-context.sh "<name>"`，将 `shared` / `stacks` 上下文、对应 standards 与 rules 一并纳入审查基准；Review 时按 `backend` / `frontend` / 双栈差异化审查相关实现与测试。
+**若使用自定义 schema**：除上述基准外，再执行 `bash <SKILL_ROOT>/scripts/opsx-change-context.sh "<name>"`，将 schema 定义的上下文、对应 standards 与 rules 一并纳入审查基准；根据 schema 定义差异化审查相关实现与测试。
 
 下文将 **步骤 8** 加载结果统称为 **项目基准**。
 

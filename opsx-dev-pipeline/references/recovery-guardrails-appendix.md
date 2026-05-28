@@ -58,10 +58,10 @@ description: 流水线中断与恢复、兼容性与降级（含 AskQuestion fal
     - 是否存在 `openspec/config.yaml`
     - 当前 change 是否已有 `.openspec.yaml`
     - `stacks`
-- 若 `schema = yzw-workflow`：按 `references/schema-adapter.md` 启用 schema-aware 增强路径：
-    - expected artifacts 按 `proposal / adr / specs / design / tasks` 处理
-    - `.openspec.yaml` 中应声明 `stacks`
-    - Apply / Review / Phase 5 使用 `shared` / `stacks` merged context
+- 若 `schema = custom`：按 `references/schema-adapter.md` 启用 schema-aware 增强路径：
+    - expected artifacts 按 schema 定义处理
+    - change 的 `.openspec.yaml` 中应声明相应的元数据
+    - Apply / Review / Phase 5 使用 schema 定义的 merged context
     - Archive 前必须先解析并执行 verify
 - 若 schema 无法识别：按默认 schema 路径继续，不阻断主流程
 
@@ -79,7 +79,7 @@ description: 流水线中断与恢复、兼容性与降级（含 AskQuestion fal
 
 - 本流水线在 **Phase 3 / Phase 5 / Phase 6** 内联了代码审查、审查后单元测试门禁、提交推送与分支合并的完整步骤；**Openspec** 类子技能（`openspec-propose`、`openspec-apply-change`、`openspec-archive-change`）的等价流程在 **Phase 1 / 2 / 4**。若单独 skill 有更新，应同步校验本技能 `references/`。**执行时**仅需本技能 Phase 文档与上文 **子技能缺失时的 fallback 对照表**，无需单独的 Git 审查/提交/合并类 skill。
 
-- **schema-aware 规则**：若 `schema = yzw-workflow`，则以 `references/schema-adapter.md` 为差异权威来源；Phase 0 负责识别 schema / `stacks`，Phase 1 负责补齐 `.openspec.yaml`，Phase 5 负责审查后单元测试门禁，Phase 4 负责 verify-before-archive，二者不得混淆。
+- **schema-aware 规则**：若使用自定义 schema，则以 `references/schema-adapter.md` 为差异权威来源；Phase 0 负责识别 schema / 元数据，Phase 1 负责补齐 `.openspec.yaml`，Phase 5 负责审查后单元测试门禁，Phase 4 负责 verify-before-archive，二者不得混淆。
 
 - 每个决策点必须向用户提供**明确可选路径**；**首选** AskQuestion tool；**若不可用**则按 **§2.1 AskQuestion 不可用**用编号列表代替。决策点之间的非决策步骤自动连续执行。
 
@@ -108,7 +108,7 @@ description: 流水线中断与恢复、兼容性与降级（含 AskQuestion fal
 
 - **审查后单元测试（Phase 5 步骤 16 / 决策点 4b）**：Review 完成并准备进入 Archive 前，须先完成本环节并由用户确认是否编写/补充单测；不得未经 AskQuestion（或附录编号选项）默认跳过。规程全文见 `references/phase-5-unit-tests.md`。
 
-- **verify 与单测的边界**：若 `schema = yzw-workflow`，Phase 5 的单元测试在前，Phase 4 的 verify 在后；verify 仍属于 **Phase 4** 的 schema / workflow 门禁。即便 Phase 5 已跳过或已通过单元测试，也不得默认跳过 **Phase 4** 的 verify。
+- **verify 与单测的边界**：若使用自定义 schema，Phase 5 的单元测试在前，Phase 4 的 verify 在后；verify 仍属于 **Phase 4** 的 schema / workflow 门禁。即便 Phase 5 已跳过或已通过单元测试，也不得默认跳过 **Phase 4** 的 verify。
 
 - **默认**在提交中包含与本 change 相关的 openspec 产物；若目标仓库的 `CONTRIBUTING`、`CLAUDE.md` 或团队约定另有要求，则从仓库约定。
 
@@ -131,7 +131,7 @@ description: 流水线中断与恢复、兼容性与降级（含 AskQuestion fal
 | openspec CLI 不可用 | 提示安装并退出 |
 | 不在 git 仓库中 | 提示初始化并退出 |
 | `openspec/config.yaml`、`AGENTS.md`、`CLAUDE.md` 均不存在 | 警告并回退为读取仓库现有代码、测试与构建文件做启发式判断 |
-| `schema = yzw-workflow` 但缺失 `.openspec.yaml` 或 `stacks` | 在 Phase 1 补齐 `.openspec.yaml`，由用户确认 `stacks` 后继续 |
+| `schema = custom` 但缺失 `.openspec.yaml` 或元数据 | 在 Phase 1 补齐 `.openspec.yaml`，由用户确认元数据后继续 |
 | schema 无法识别 | 警告并按默认 schema 路径继续 |
 | change 名称冲突 | 询问复用还是创建新名称 |
 | change 不存在 | 列出可用 change 让用户选择 |
