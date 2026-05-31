@@ -4,8 +4,10 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="../scripts"
-RESULTS_FILE="branch-coverage-test-results.log"
+TEST_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$TEST_SCRIPT_DIR/../.." && pwd)"
+SCRIPT_DIR="$REPO_ROOT/scripts"
+RESULTS_FILE="$REPO_ROOT/branch-coverage-test-results.log"
 
 # 清空结果文件
 > "$RESULTS_FILE"
@@ -56,7 +58,7 @@ phase_docs=(
 
 missing_phases=()
 for doc in "${phase_docs[@]}"; do
-    if [[ ! -f "../references/$doc" ]]; then
+    if [[ ! -f "$REPO_ROOT/references/$doc" ]]; then
         missing_phases+=("$doc")
     fi
 done
@@ -114,8 +116,8 @@ fi
 
 # 4. 验证 SKILL.md 文档完整性
 echo "验证 SKILL.md 完整性..."
-if [[ -f "../SKILL.md" ]]; then
-    skill_doc_content=$(cat "../SKILL.md")
+if [[ -f "$REPO_ROOT/SKILL.md" ]]; then
+    skill_doc_content=$(cat "$REPO_ROOT/SKILL.md")
 
     # 检查是否包含关键部分
     has_input=$(echo "$skill_doc_content" | grep -c "Input")
@@ -151,14 +153,14 @@ fi
 
 # 6. 验证测试文件存在
 echo "验证测试文件..."
-if [[ -f "../tests/pipeline-branch-matrix.md" ]]; then
+if [[ -f "$REPO_ROOT/tests/pipeline-test/pipeline-branch-matrix.md" ]]; then
     log_result "TEST-MATRIX" "PASS" "测试分支矩阵存在"
 else
     log_result "TEST-MATRIX" "FAIL" "测试分支矩阵不存在"
 fi
 
 # 7. 检查是否所有测试用例都被覆盖
-matrix_content=$(cat ../tests/pipeline-branch-matrix.md 2>/dev/null || echo "")
+matrix_content=$(cat "$REPO_ROOT/tests/pipeline-test/pipeline-branch-matrix.md" 2>/dev/null || echo "")
 if [[ -n "$matrix_content" ]]; then
     total_branches=$(echo "$matrix_content" | grep -c "| P[0-9]")
     if [[ $total_branches -ge 20 ]]; then  # 至少应有 20 多个分支
@@ -186,7 +188,7 @@ ref_files=(
 )
 
 for ref_file in "${ref_files[@]}"; do
-    if [[ ! -f "../$ref_file" ]]; then
+    if [[ ! -f "$REPO_ROOT/$ref_file" ]]; then
         ((missing_refs++))
     fi
 done
