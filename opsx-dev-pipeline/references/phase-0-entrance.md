@@ -29,7 +29,7 @@ description: 全局步骤 1–2（环境预检、入口类型与续接确认）�
   - 是否存在 `openspec/config.yaml`
   - change 下是否已有 `.openspec.yaml`
   - 根据 schema 类型确定特定配置
-    - 若检测到特定 schema（非默认的 spec-driven）：后续 **Phase 1 / 2 / 3 / 4 / 5** 均按 `references/schema-adapter.md` 启用 schema-aware 增强路径
+    - 若检测到特定 schema（非默认的 spec-driven）：后续 **Phase 1 / 2 / 3 / 4 / 5** 均按 `assets/schema-adapter-summary.md` 启用 schema-aware 增强路径
     - 若 schema 无法识别或未声明：按默认 schema 路径继续，不阻断主流程
   - **复用约定**：Phase 0 已拿到的 `schema` / `stacks` / `.openspec.yaml` 存在性信息，应作为后续主路径的首份事实来源；后续 Phase 仅在需要补充 merged context、standards、rulesSummary、verify 命令，或 Phase 1 刚更新 `.openspec.yaml` / change 元数据时，才重新调用相关脚本，而不重复做同类探测
 

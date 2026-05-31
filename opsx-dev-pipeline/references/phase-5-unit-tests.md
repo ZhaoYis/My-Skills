@@ -55,4 +55,4 @@ compatibility: 依赖项目栈的可执行单元测试命令；决断需 AskQues
 ### 执行纪律
 
 - 若用户曾选 `不需要` 但后来在工作区增加了须验证的行为，可在 **步骤 12**（`phase-4-archive.md` 起点）之前自行要求重新回到 **步骤 16**（本文件）；执行方**不得**在未询问的情况下默认跳过 **决策点 4b**
-- 护栏摘要亦见 `recovery-guardrails-appendix.md` → **Guardrails**（审查后单元测试门禁）
+- 护栏摘要亦见 `assets/failure-recovery-index.md` → **Guardrails**（审查后单元测试门禁）

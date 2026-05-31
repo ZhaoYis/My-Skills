@@ -22,9 +22,9 @@
 #### 文档文件
 - `SKILL.md` - 更新兼容性说明，移除特定 schema 依赖
 - `references/phase-*.md` - 所有 Phase 文档均已更新为通用 schema 支持
-- `references/schema-adapter.md` - 更新为通用 schema 适配说明
+- `assets/schema-adapter-summary.md` - 更新为通用 schema 适配说明
 - `references/recovery-guardrails-appendix.md` - 更新恢复护栏中的 schema 相关说明
-- `tests/pipeline-branch-matrix.md` - 更新测试矩阵
+- `tests/pipeline-test/pipeline-branch-matrix.md` - 更新测试矩阵
 - `scripts/opsx-selftest.sh` - 更新自测试脚本
 - `openspec/changes/add-avatar-upload-feature/.openspec.yaml` - 更新示例配置
 

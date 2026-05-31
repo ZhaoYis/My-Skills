@@ -83,7 +83,7 @@ description: 流水线中断与恢复、兼容性与降级（含 AskQuestion fal
     - 是否存在 `openspec/config.yaml`
     - 当前 change 是否已有 `.openspec.yaml`
     - `stacks`
-- 若 `schema = custom`：按 `references/schema-adapter.md` 启用 schema-aware 增强路径：
+- 若 `schema = custom`：按 `assets/schema-adapter-summary.md` 启用 schema-aware 增强路径：
     - expected artifacts 按 schema 定义处理
     - change 的 `.openspec.yaml` 中应声明相应的元数据
     - Apply / Review / Phase 5 使用 schema 定义的 merged context
@@ -104,7 +104,7 @@ description: 流水线中断与恢复、兼容性与降级（含 AskQuestion fal
 
 - 本流水线在 **Phase 3 / Phase 5 / Phase 6** 内联了代码审查、审查后单元测试门禁、提交推送与分支合并的完整步骤；**Openspec** 类子技能（`openspec-propose`、`openspec-apply-change`、`openspec-archive-change`）的等价流程在 **Phase 1 / 2 / 4**。若单独 skill 有更新，应同步校验本技能 `references/`。**执行时**仅需本技能 Phase 文档与上文 **子技能缺失时的 fallback 对照表**，无需单独的 Git 审查/提交/合并类 skill。
 
-- **schema-aware 规则**：若使用自定义 schema，则以 `references/schema-adapter.md` 为差异权威来源；Phase 0 负责识别 schema / 元数据，Phase 1 负责补齐 `.openspec.yaml`，Phase 5 负责审查后单元测试门禁，Phase 4 负责 verify-before-archive，二者不得混淆。
+- **schema-aware 规则**：若使用自定义 schema，则以 `assets/schema-adapter-summary.md` 为差异权威来源；Phase 0 负责识别 schema / 元数据，Phase 1 负责补齐 `.openspec.yaml`，Phase 5 负责审查后单元测试门禁，Phase 4 负责 verify-before-archive，二者不得混淆。
 
 - 每个决策点必须向用户提供**明确可选路径**；**首选** AskQuestion tool；**若不可用**则按 **§2.1 AskQuestion 不可用**用编号列表代替。决策点之间的非决策步骤自动连续执行。
 

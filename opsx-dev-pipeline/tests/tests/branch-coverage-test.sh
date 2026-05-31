@@ -51,7 +51,7 @@ phase_docs=(
     "phase-5-unit-tests.md"
     "phase-6-merge-push.md"
     "recovery-guardrails-appendix.md"
-    "schema-adapter.md"
+    "../assets/schema-adapter-summary.md"
 )
 
 missing_phases=()
@@ -182,7 +182,7 @@ ref_files=(
     "references/phase-5-unit-tests.md"
     "references/phase-6-merge-push.md"
     "references/recovery-guardrails-appendix.md"
-    "references/schema-adapter.md"
+    "assets/schema-adapter-summary.md"
 )
 
 for ref_file in "${ref_files[@]}"; do
