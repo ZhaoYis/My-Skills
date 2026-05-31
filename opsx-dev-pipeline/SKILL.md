@@ -1,12 +1,13 @@
 ---
 
-## name: opsx-dev-pipeline  
+## name: opsx-dev-pipeline
+
 description: OpenSpec + Git 需求开发全流程。  
 license: MIT  
 compatibility: 需安装 openspec 与 git CLI；建议在 Cursor 中配合 AskQuestion。默认兼容 OpenSpec 默认 schema，并优先支持 `openspec/config.yaml` 中声明的自定义 schema。  
 metadata:  
   author: zhaoyi  
-  version: "2.1"
+  version: "2.2"
 
 # 需求开发全流程流水线
 
@@ -36,6 +37,12 @@ metadata:
 
 **例外**：附录 **Error Handling** 中环境与前置失败；用户在决策点或「暂停流水线」已选终止/暂停的，从其选项。
 
+### 决策点默认规则（摘要）
+
+- 高风险决策必须显式确认；推荐项不等于自动代选
+- 仅低风险、可逆、非门禁细节允许采用默认或保守假设
+- 具体分级（A 类必须确认 / B 类可推荐不可静默默认 / C 类低风险默认）以 `references/recovery-guardrails-appendix.md` **§3.2 决策点总览** 为准
+
 ## Phase 引用表
 
 按下表顺序阅读并遵循各 Phase 文件中的步骤与决策点：
@@ -58,15 +65,15 @@ metadata:
 各 `references/phase-*.md` 内沿用步骤编号 **1–22**；下表用于快速定位当前进度。**条件触发**的子决策点（如 2a/2b、4a、5a/5b/5c、6a/6b）不在下表逐条展开；完整编号、语义与选项见 `references/recovery-guardrails-appendix.md` **§3.2 决策点总览**。
 
 
-| 步骤    | Phase | 摘要                                                                 | 引用文件                                          |
-| ----- | ----- | ------------------------------------------------------------------ | --------------------------------------------- |
-| 1–2   | 0     | 环境预检、入口类型与续接确认                                                     | `phase-0-entrance.md`                         |
-| 3–4   | 1     | 创建 change / 生成制品；**决策点 1**（提案门禁）                                   | `phase-1-propose.md`                          |
-| 5–7   | 2     | 获取 apply 上下文、按任务实施；**决策点 2**                                       | `phase-2-apply.md`                            |
-| 8–11  | 3     | 约定与 diff、审查、**决策点 3**（含 fix-cr 子流程）                                | `phase-3-review.md`，`phase-3.1-fix-review.md` |
-| 12    | 5     | **决策点 4b**、单测子流程                                                   | `phase-5-unit-tests.md`                       |
-| 13–16 | 4     | 归档前检查、verify、delta 同步、执行归档；**决策点 4**                               | `phase-4-archive.md`                          |
-| 17–22 | 6     | 预提交（**5a/5b**）、暂存提交（**决策点 5**）、推送（**5c**）、合并（**决策点 6**）、合并后分支、最终摘要 | `phase-6-merge-push.md`                       |
+| 步骤    | Phase | 摘要                                                                         | 引用文件                                          |
+| ----- | ----- | -------------------------------------------------------------------------- | --------------------------------------------- |
+| 1–2   | 0     | 环境预检、入口类型与续接确认                                                             | `phase-0-entrance.md`                         |
+| 3–4   | 1     | 创建 change / 生成制品；**决策点 1**（提案门禁）                                           | `phase-1-propose.md`                          |
+| 5–7   | 2     | 获取 apply 上下文、按任务实施；**决策点 2**                                               | `phase-2-apply.md`                            |
+| 8–11  | 3     | 约定与 diff、审查、**决策点 3**（含 fix-cr 子流程）                                        | `phase-3-review.md`，`phase-3.1-fix-review.md` |
+| 16    | 5     | **决策点 4b**、单测子流程                                                           | `phase-5-unit-tests.md`                       |
+| 12–16 | 4     | 归档前检查、verify、delta 同步、执行归档、归档后操作；**决策点 4 / 4a**                            | `phase-4-archive.md`                          |
+| 17–22 | 6     | 预提交（**决策点 5a/5b**）、暂存提交（**决策点 5**）、推送（**决策点 5c**）、合并（**决策点 6**）、合并后分支、最终摘要 | `phase-6-merge-push.md`                       |
 
 
 ## 兼容性、降级与子技能 fallback（摘要）
@@ -85,6 +92,8 @@ metadata:
 **代码规范**：凡涉及编写或修改实现/测试代码的 Phase，均以**目标仓库**的 **项目基准**（默认 `openspec/config.yaml` → `AGENTS.md` → `CLAUDE.md`；若 schema 为自定义 schema，则以 `openspec/config.yaml` 中定义的上下文与对应 standards 为增强基准，`AGENTS.md` / `CLAUDE.md` 仅作不冲突的补充约束，详见 `references/schema-adapter.md` 与 Phase 3 **步骤 8**）及**既有代码与单测风格**为准；细则见 `references/phase-2-apply.md` 与附录 **§2.4 代码与测试风格（项目内）**。
 
 **进度跟踪**：Phase 1 等多制品阶段推荐使用 **TaskCreate / TaskUpdate / TaskList** 跟踪制品与任务进度（与 `references/phase-1-propose.md` 等处一致），降低遗漏。
+
+**用户提示格式**：进入新 Phase、从暂停点恢复、或用户补充自由文本后，优先使用简短结构化提示：`Phase` / `change` / `当前步骤` / `已知状态` / `下一动作`。术语解释仅在首次出现或当前决策点直接依赖时补一行短说明，避免重复复述历史上下文；具体模板见 `references/recovery-guardrails-appendix.md` **§1.1–1.2**。
 
 ### 脚本（可选）
 
@@ -142,7 +151,7 @@ flowchart TD
   ALIGN -->|补充/修改·对话澄清| P1
   APPLY --> D2{"Phase 2 决策点 2"}
   D2 -->|进入代码审查| REVIEW["Phase 3：代码审查"]
-  D2 -->|跳过审查·直接归档| ARCHIVE
+  D2 -->|跳过审查·先过单测门禁| UT["Phase 5：单测门禁 · 决策点 4b"]
   D2 -->|暂停/终止| ENDNODE
   REVIEW --> R3["决策点 3 → 单测 / 修复回路 / 暂停"]
   R3 -->|修复回路未结束| REVIEW
@@ -164,9 +173,9 @@ flowchart TD
 ### 要点（与引用文件同序）
 
 1. **环境预检（Phase 0）**：`openspec` 不可用 → 提示安装后结束；不在 git 仓库 → 提示初始化或进入仓库后结束
-2. **入口（Phase 0）**：无输入则文本询问；需求描述则推导 change 名并进入 Phase 1；**已有 change** 则 `openspec status`，按制品/任务/归档/提交状态判断续接 **Phase 1 步骤 3 / Phase 2 / Phase 3 / Phase 4 / Phase 5 / Phase 6**，并由用户确认「从 Phase X 继续 / 从头新建 / 终止」——**不是**一律先进入 Phase 1 门禁
+2. **入口（Phase 0）**：无输入则文本询问；需求描述则推导 change 名并进入 Phase 1；**已有 change** 则 `openspec status`，并按“最早一个尚未完成的主干阶段或质量门禁优先”的顺序判断续接点：制品未完成 → **Phase 1 步骤 3**；制品已完成但任务未完成 → **Phase 2**；任务已完成且无审查报告 → **Phase 3**；已有审查报告但未完成审查后测试/归档链路 → **Phase 5**（完成后进入 **Phase 4**）；已归档后再根据 git 状态续接 **Phase 6** 对应步骤。若状态不完整或冲突，则以较早阶段作为**保守恢复推荐**并由用户确认；**不是**一律先进入 Phase 1，也**不是**一律直接进入 Phase 4
 3. **提案与门禁（Phase 1）**：进入 Phase 2 前须过**决策点 1**。用户修改需求时以文本改制品并回到该决策点；澄清可与 Phase 1 合并
-4. **实施与审查（Phase 2～3）**：**决策点 2** 可暂停、跳过审查直接归档或终止（`phase-2-apply.md`）。审查未过：**fix-cr**、直接修复再审、暂停等（`phase-3-review.md`）；图中 `R3`→`REVIEW` 表示修复回路
+4. **实施与审查（Phase 2～3）**：**决策点 2** 可暂停、跳过审查并转入 **Phase 5** 单测门禁或终止（`phase-2-apply.md`）。审查未过：**fix-cr**、直接修复再审、暂停等（`phase-3-review.md`）；图中 `R3`→`REVIEW` 表示修复回路
 5. **审查、单测与归档（Phase 3 / 5 / 4）**：**决策点 3** 后先进入 **Phase 5** 单元测试门禁，可暂停、跳过或补充测试；其后进入 **Phase 4** 执行 verify 与 archive；fix-cr / 直接修复等回路仍按 `phase-3-review.md` 执行
 6. **归档后 Git（Phase 4 / 6）**：**决策点 4**：终止 / 仅推送 / 提交并合并。归档完成后进入 **Phase 6**。Phase 6 **内部顺序**以 `phase-6-merge-push.md` 为准：**步骤 17** 预提交检查 → **步骤 18** 暂存与提交 → **步骤 19** 推送 → 若决策点 4 选了「提交代码并合并」则进入 **步骤 20 决策点 6（合并）**；若选了「仅提交并推送」则跳过合并。流程图中将「步骤 17–18」「步骤 19」「合并」拆开，是为对齐上述顺序
 

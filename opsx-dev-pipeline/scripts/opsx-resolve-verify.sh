@@ -52,6 +52,9 @@ if schema != "default" and schema != "spec-driven":
     # 可根据需要添加更多自定义 schema 的处理逻辑
 
 print(json.dumps({
+    "status": "ok" if command else "warning",
+    "reason": "verify-command-resolved" if command else "verify-command-missing",
+    "nextAction": "run-verify-command" if command else "confirm-verify-command-manually",
     "schema": schema,
     "stacks": stacks,
     "command": command,

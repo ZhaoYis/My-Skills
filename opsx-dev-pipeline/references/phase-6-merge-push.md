@@ -25,8 +25,8 @@ compatibility: 需要 git、可访问的 remote（推送/拉取）；Cursor 中�
 
     - 依据 `git status` 对比远程
     - **若落后远程或分支分叉**：使用 **AskQuestion tool**：
-        - `执行 git pull --rebase 后继续` — 运行 `git pull --rebase origin <branch>`；若 rebase 产生冲突则提示冲突文件，使用 AskQuestion：`手动解决后继续` / `git rebase --abort 并终止`
-        - `忽略，直接提交（推送时可能失败）` — 继续提交流程
+        - `执行 git pull --rebase 后继续` — 运行 `git pull --rebase origin <branch>`；若 rebase 产生冲突则提示冲突文件，使用 AskQuestion：`暂停流水线，手动调整后继续` / `git rebase --abort 并终止`
+        - `继续后续流程（不先 rebase）` — 继续提交流程，并提示推送阶段可能失败
         - `终止流程` — 退出
 
 3. **敏感路径 / 文件名扫描**
@@ -37,8 +37,8 @@ compatibility: 需要 git、可访问的 remote（推送/拉取）；Cursor 中�
 4. **若检测到敏感文件**
 
     - 列出文件并使用 **AskQuestion tool**：
-        - `排除敏感文件后继续` — 使用 `git reset HEAD <敏感文件>` 从暂存区移除后提交
-        - `包含敏感文件继续提交` — 用户确认风险后继续
+        - `排除敏感文件后继续后续流程` — 使用 `git reset HEAD <敏感文件>` 从暂存区移除后提交
+        - `继续后续流程（包含敏感文件）` — 用户确认风险后继续
         - `终止流程` — 退出
 
 ### 步骤 18：暂存变更并提交
@@ -71,7 +71,7 @@ compatibility: 需要 git、可访问的 remote（推送/拉取）；Cursor 中�
 
     - `确认提交` — 使用生成的信息提交
     - `修改提交信息` — 通过文本消息向用户询问自定义提交信息（不使用 AskQuestion tool），等待用户回复后使用其输入的信息提交
-    - `取消提交` — 不提交，展示恢复指引后退出（用户可稍后**从 Phase 5 `phase-5-unit-tests.md` 步骤 16 或本 Phase 步骤 17 起**自行执行单测确认、暂存、提交与推送）
+    - `终止流程` — 不提交，展示恢复指引后退出（用户可稍后**从 Phase 5 `phase-5-unit-tests.md` 步骤 16 或本 Phase 步骤 17 起**自行执行单测确认、暂存、提交与推送）
 
 5. **若无任何可提交变更**（已无 diff、且工作区干净）
 
@@ -93,7 +93,7 @@ git push origin <current-branch>
 ```
 
 - **若推送失败**：使用 **AskQuestion tool**：
-    - `执行 pull --rebase 后重试` — 运行 `git pull --rebase origin <branch>`；若 rebase 产生冲突，提示冲突文件并使用 AskQuestion：`手动解决后继续`（用户解决后运行 `git rebase --continue` + 重新 push）/ `git rebase --abort 并终止`；若 rebase 成功，重新 push
+    - `执行 pull --rebase 后重试` — 运行 `git pull --rebase origin <branch>`；若 rebase 产生冲突，提示冲突文件并使用 AskQuestion：`暂停流水线，手动调整后继续`（用户解决后运行 `git rebase --continue` + 重新 push）/ `git rebase --abort 并终止`；若 rebase 成功，重新 push
     - `终止流程` — 退出（提示：提交若已保存在本地，可稍后执行 `git push origin <branch>`，步骤同本 Phase **步骤 19**）
 
 ### 步骤 20：[决策点 6] 合并分支
@@ -102,7 +102,7 @@ git push origin <current-branch>
 
 #### 合并前自检（对齐内联合并流程）
 
-- 运行 `git status`：须无未暂存/未提交变更（除非当前流程与用户选择明确允许留有 WIP）；若有，**AskQuestion**：`先 stash 再继续` / `先提交再继续` / `终止流程`
+- 运行 `git status`：须无未暂存/未提交变更（除非当前流程与用户选择明确允许留有 WIP）；若有，**AskQuestion**：`先 stash 再继续` / `先提交再继续` / `终止流程`；若用户不希望在此阶段处理，则应结束当前尝试并保留恢复指引
 - 记录源分支名 `<source-branch>`（当前分支）
 - **若**存在 `origin/<source-branch>`：**建议** `git log origin/<source-branch>..HEAD --oneline` 无未推送提交再合并；若有未推送提交，**AskQuestion** 是否在合并前补跑 **步骤 19** 推送或仍继续（并说明风险）
 - 在满足 **步骤 19** **门禁**前提下再执行后续步骤：进入本步前应尽量保证 **步骤 19** 已成功 push；若仅因网络未完成 push，应先处理或由用户确认再继续
@@ -120,9 +120,11 @@ git push origin <current-branch>
     - `其他（手动输入）`
 
 - 使用 **AskQuestion tool** 询问合并策略：
-    - `Standard merge` — 标准合并（默认）
+    - `Standard merge` — 标准合并（推荐默认）
     - `Squash merge` — 压缩合并
     - `No-ff merge` — 非快进合并
+
+  合并策略选择属于附录定义的 **A 类：必须用户确认**；`Standard merge` 仅为推荐项，不得静默代选。
 
 #### 更新目标分支并合并
 
@@ -148,18 +150,20 @@ git checkout <source-branch>
 #### 若出现冲突
 
 - 先运行 `git diff --name-only --diff-filter=U` 列出冲突文件
-- 使用 **AskQuestion tool**：
+- 使用 **AskQuestion tool**：该分支属于附录定义的 **A 类：必须用户确认**；`theirs` / `ours` / `中止合并` 均不得默认执行
     - `中止合并` — 执行 `git merge --abort` + `git checkout <source-branch>`，展示恢复指引后退出
     - `使用对方版本 (theirs)` — 执行 `git checkout --theirs .` + `git add .` 后继续 push
     - `使用我方版本 (ours)` — 执行 `git checkout --ours .` + `git add .` 后继续 push
-    - `暂停，手动解决` — 展示冲突文件列表，提示用户手动解决后执行 `git add .` → `git commit` → `git push origin <target-branch>` → `git checkout <source-branch>`，然后退出
+    - `暂停，手动解决` — 展示冲突文件列表，提示用户手动解决后执行 `git add .` → `git commit` → `git push origin <target-branch>` → `git checkout <source-branch>`，然后退出；用户后续可从 **步骤 20** 继续
 
 ### 步骤 21：合并后操作
 
 合并成功后，使用 **AskQuestion tool**：
 
-- `保留源分支（默认）` — 不做额外操作
+- `保留源分支（推荐默认）` — 不做额外操作
 - `删除本地和远程源分支` — 执行 `git branch -d <source>` + `git push origin --delete <source>`，并留在目标分支
+
+该决策点属于附录定义的 **A 类：必须用户确认**；保留源分支只作为推荐项，删除分支不得默认。
 
 ### 步骤 22：展示最终摘要
 

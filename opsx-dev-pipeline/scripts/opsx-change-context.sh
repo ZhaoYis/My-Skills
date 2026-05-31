@@ -15,6 +15,9 @@ meta_path = root / "openspec" / "changes" / change / ".openspec.yaml"
 
 if not config_path.exists():
     print(json.dumps({
+        "status": "warning",
+        "reason": "config-yaml-missing",
+        "nextAction": "continue-with-default-context",
         "schema": "spec-driven",
         "stacks": [],
         "contexts": [],
@@ -105,6 +108,9 @@ for key in selected:
             rules_summary[artifact].append({"section": key, "rule": stripped[1:].strip()})
 
 result = {
+    "status": "ok",
+    "reason": "context-resolved",
+    "nextAction": "use-context-for-current-phase",
     "schema": schema,
     "stacks": stacks,
     "contexts": contexts,

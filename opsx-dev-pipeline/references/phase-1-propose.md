@@ -10,7 +10,8 @@ compatibility: 需要 openspec CLI、git 与已初始化 OpenSpec 的项目；Cu
 
 #### 3.a 从 Phase 0 Step 2a 续接已有 change
 
-- 跳过创建，直接执行 `bash <SKILL_ROOT>/scripts/opsx-change-status.sh "<name>"`（或 `openspec status --change "<name>" --json`），仅对未完成的制品执行生成流程
+- 跳过创建，优先复用 **Phase 0 Step 2a** 已获取的 `openspec status` 结果，仅对其中未完成的制品执行生成流程；只有在入口结果缺失、用户在进入 Phase 1 前后已修改制品，或需要刷新 `ready` 状态时，才重新执行 `bash <SKILL_ROOT>/scripts/opsx-change-status.sh "<name>"`（或 `openspec status --change "<name>" --json`）
+- 此处的 status 查询目的，是在**已确定进入 Phase 1**后定位未完成制品，属于 **Phase 1 的阶段内复核**；若结果与 Phase 0 的入口判定冲突，不应静默改判到更晚阶段，而应按 `recovery-guardrails-appendix.md` 的保守恢复规则处理
 
 #### 3.b 新建 change
 
@@ -58,6 +59,12 @@ compatibility: 需要 openspec CLI、git 与已初始化 OpenSpec 的项目；Cu
 
 #### 展示内容（须覆盖「是否做对事」而不仅是「生成了哪些文件」）
 
+- 建议先用短格式提示当前阶段信息：
+  - `Phase：Phase 1 提案编写`
+  - `change：<name>`
+  - `当前步骤：步骤 4（决策点 1）`
+  - `已知状态：提案制品已生成，等待确认是否进入实施`
+  - `下一动作：先展示提案摘要，再进入决策点 1`
 - 用简短条目 **对照用户原始需求**：范围（接口/模块/数据）、关键行为、非目标与假设
 - 再按**当前 schema 的 expected artifacts** 展示各制品摘要；默认 schema 通常为 `proposal.md` / `design.md` / delta `specs` / `tasks.md`，若使用自定义 schema 则应按 schema 定义展示相应的制品
 - 若使用自定义 schema：一并展示当前 change 的 `.openspec.yaml` 与相应的元数据；若尚未声明，则在本步骤补齐后再进入本决策点

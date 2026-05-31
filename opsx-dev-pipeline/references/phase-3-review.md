@@ -15,7 +15,7 @@ compatibility: 需要 git；项目规范按 `openspec/config.yaml` → `AGENTS.m
 - **若存在 `CLAUDE.md`**：将其作为 Claude 场景补充规范，仅在前两者未覆盖且内容不冲突时使用
 - **若三者均不存在**：输出警告“未找到 openspec/config.yaml、AGENTS.md、CLAUDE.md，将回退为读取仓库现有代码、测试与构建文件进行启发式判断”
 
-**若使用自定义 schema**：除上述基准外，再执行 `bash <SKILL_ROOT>/scripts/opsx-change-context.sh "<name>"`，将 schema 定义的上下文、对应 standards 与 rules 一并纳入审查基准；根据 schema 定义差异化审查相关实现与测试。
+**若使用自定义 schema**：除上述基准外，优先复用 **Phase 2 步骤 5** 已获取的 `opsx-change-context.sh` 结果，将其中的 schema 上下文、对应 standards 与 rules 一并纳入审查基准；仅在前序结果缺失、Phase 1 刚补齐元数据，或上下文已失效时，再执行 `bash <SKILL_ROOT>/scripts/opsx-change-context.sh "<name>"``。根据 schema 定义差异化审查相关实现与测试。
 
 下文将 **步骤 8** 加载结果统称为 **项目基准**。
 
@@ -83,7 +83,7 @@ compatibility: 需要 git；项目规范按 `openspec/config.yaml` → `AGENTS.m
 
 ### 步骤 11：[决策点 3] 审查结果处理
 
-展示审查摘要（问题统计 + 报告路径），根据审查结果提供不同路径。
+展示审查摘要（问题统计 + 报告路径），根据审查结果提供不同路径。该决策点属于附录定义的 **A 类：必须用户确认**；无论是 fix-review、直接修复还是 `继续后续流程`，都不得静默默认。
 
 #### 11.a 发现严重或重要问题
 
@@ -103,9 +103,9 @@ compatibility: 需要 git；项目规范按 `openspec/config.yaml` → `AGENTS.m
     - **循环**：重新执行 **步骤 9–11**；**最多循环 3 轮**
     - **终止**：满 3 轮后仍有严重问题则强制暂停，展示恢复指引后退出
 
-- `暂停流水线，手动修复后继续` — 展示恢复指引后退出；用户修复完后重新触发 pipeline 并传入 change 名称
+- `暂停流水线，手动调整后继续` — 展示恢复指引后退出；用户修复完后重新触发 pipeline 并传入 change 名称
 
-- `忽略问题，继续后续流程` — 跳过修复，进入 Phase 5（完成后再进入 Phase 4）
+- `继续后续流程` — 跳过修复，进入 Phase 5（完成后再进入 Phase 4）
 
 - `终止流程` — 退出流水线
 

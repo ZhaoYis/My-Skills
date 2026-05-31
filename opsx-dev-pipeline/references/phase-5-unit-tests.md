@@ -15,15 +15,16 @@ compatibility: 依赖项目栈的可执行单元测试命令；决断需 AskQues
 
 推荐优先级如下：
 
-1. `schema = custom` 时，优先依据 `bash <SKILL_ROOT>/scripts/opsx-change-context.sh "<name>"` 与元数据推导测试/验证路径
+1. `schema = custom` 时，优先复用 **Phase 2 步骤 5** 已获取的 `opsx-change-context.sh` 结果，并结合元数据推导测试/验证路径；仅在该结果缺失或元数据刚变更时，才重新执行 `bash <SKILL_ROOT>/scripts/opsx-change-context.sh "<name>"`
 2. 其次读取 `openspec/config.yaml` 中显式约定的验证与测试规则
 3. 最后再使用仓库构建文件启发式推导（示例：`mvn test`、`npm test`、`pytest`、`go test ./...`、`cargo test`）
 
 - 若无法唯一确定：**列出 2–3 个候选命令**，并在 **AskQuestion** 或自由文本中请用户选定一种；用户也可直接回复惯用命令
+- 若候选命令均不成立或信息仍不足：暂停自动猜测，要求用户提供项目实际使用的测试命令，再继续本 Phase
 
 ### 步骤 16.2：[决策点 4b] 是否需要编写或补充单元测试？
 
-使用 **AskQuestion tool** 询问（工具不可用时见 `recovery-guardrails-appendix.md` → **兼容性与降级** → 编号选项）。
+使用 **AskQuestion tool** 询问（工具不可用时见 `recovery-guardrails-appendix.md` → **兼容性与降级** → 编号选项）。该决策点属于附录定义的 **A 类：必须用户确认**，**不得默认跳过**。
 
 **选项：**
 

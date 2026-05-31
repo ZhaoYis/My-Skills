@@ -1,6 +1,6 @@
 ---
 name: phase-2-apply
-description: 全局步骤 5–7，含决策点 2。通常进入 phase-3-review.md 步骤 8；跳过审查直接归档则进入 phase-4-archive.md 步骤 12。
+description: 全局步骤 5–7，含决策点 2。通常进入 phase-3-review.md 步骤 8；若跳过审查，则先进入 phase-5-unit-tests.md 步骤 16，再进入 phase-4-archive.md 步骤 12。
 compatibility: 需要 openspec CLI、git；编写代码时以当前仓库的项目基准与既有代码风格为准（见正文）。
 ---
 
@@ -34,10 +34,11 @@ compatibility: 需要 openspec CLI、git；编写代码时以当前仓库的项�
       bash <SKILL_ROOT>/scripts/opsx-change-context.sh "<name>"
       ```
 
-    - 将输出中的 `contexts` / `standards` / `rulesSummary` 与 OpenSpec 官方 `contextFiles` 一并视为实施基准
+    - 该命令是自定义 schema 主路径中的**首选上下文快照入口**；其输出中的 `contexts` / `standards` / `rulesSummary` 应视为后续 **Phase 2 / 3 / 5 / 4** 可复用的同一份 schema-aware 基准
     - 根据 schema 定义的顺序读取上下文
     - `rulesSummary` 按 artifact 维度汇总，仅对当前正在实施的制品应用对应规则
-    - 若 change 元数据缺失：回到 Phase 1 先补齐 change 元数据，再继续 Apply
+    - 仅在以下场景重新调用：Phase 1 刚补齐 `.openspec.yaml` 或 change 元数据、用户切换 change、或现有上下文结果缺失 / 已失效；其余情况下，后续 Phase 应优先复用本次结果，而不是重复解析同类信息
+    - 若 change 元数据缺失：回到 Phase 1 先补齐 change 元数据，再继续 Apply（恢复后从 **步骤 5** 重新获取实施指令与上下文）
 
 ### 步骤 6：逐任务实施
 
@@ -59,7 +60,15 @@ compatibility: 需要 openspec CLI、git；编写代码时以当前仓库的项�
 
 ### 步骤 7：[决策点 2] 实施完成确认
 
-所有任务完成后，展示实施摘要（完成任务数、跳过任务数、变更文件列表），使用 **AskQuestion tool**。
+所有任务完成后，展示实施摘要（完成任务数、跳过任务数、变更文件列表），使用 **AskQuestion tool**。该决策点属于附录定义的 **A 类：必须用户确认**；尤其 `跳过审查，继续后续流程` 不得默认代选。
+
+建议提示格式：
+
+- `Phase：Phase 2 提案应用`
+- `change：<name>`
+- `当前步骤：步骤 7（决策点 2）`
+- `已知状态：任务已完成；<跳过任务数> 个任务被跳过；变更文件 <N> 个`
+- `下一动作：等待你选择进入审查、暂停、跳过审查或终止`
 
 **选项：**
 

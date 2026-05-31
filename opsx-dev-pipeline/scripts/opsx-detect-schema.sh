@@ -51,6 +51,9 @@ if change:
                 break
 
 print(json.dumps({
+    "status": "ok",
+    "reason": "schema-detected",
+    "nextAction": "continue-with-detected-schema",
     "schema": schema or "spec-driven",
     "hasConfigYaml": config_path.exists(),
     "supportsStacks": supports_stacks,

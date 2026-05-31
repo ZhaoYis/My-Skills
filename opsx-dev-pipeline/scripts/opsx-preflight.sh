@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Phase 0: openspec + git 仓库预检。成功 stdout 打印 ok；失败 stderr 说明原因。
+# Phase 0: openspec + git 仓库预检。成功输出 JSON；失败 stderr 说明原因并返回稳定退出码。
 set -euo pipefail
 
 if ! command -v openspec >/dev/null 2>&1; then
@@ -15,5 +15,5 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   exit 2
 fi
 
-echo "ok"
+printf '%s\n' '{"status":"ok","reason":"preflight-passed","nextAction":"continue-phase-0"}'
 exit 0
