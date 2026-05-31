@@ -98,6 +98,85 @@ description: 定义默认 OpenSpec schema 与自定义 schema 的适配差异、
 - 由用户确认相关的配置项
 - 若用户暂不能确认，可暂停或以推荐值临时写入后继续
 
+## 6.4 轻量配置适配规则
+
+在不改变主流程编排与质量门禁的前提下，允许通过轻量配置表达少量项目偏好。
+
+### 配置读取位置
+
+仅支持以下两级来源：
+
+1. repo 级：`openspec/config.yaml -> opsx`
+2. change 级：`openspec/changes/<change>/.openspec.yaml -> opsx`
+
+不引入第三类独立配置文件。
+
+### 最小配置格式
+
+`opsx` 节点下仅允许以下字段：
+
+```yaml
+opsx:
+  default_recommended_action_order: [continue, review, test, archive]
+  prompt_toggles:
+    show_phase_summary: true
+    show_term_hint: false
+  verify_command_preference: [schema, metadata, repo_heuristics]
+  schema_supplement_rules:
+    extra_context_sections: []
+    extra_standards: []
+```
+
+这些字段只能表达“推荐顺序、提示展示、verify 候选优先级、schema 加法型补充规则”，不得表达 Phase 编排、门禁放行、确认等级或恢复裁决。
+
+### 优先级链路
+
+适配层应按以下顺序消费信息：
+
+1. 用户明确确认
+2. change 级 `opsx` 配置
+3. change 元数据中的直接事实（如 stacks / schema 相关信息）
+4. repo 级 `openspec/config.yaml -> opsx`
+5. repo 级 `openspec/config.yaml` 中非 `opsx` 的 schema 事实
+6. `AGENTS.md`
+7. `CLAUDE.md`
+8. repo heuristics
+9. 保守默认值
+
+其中：
+- 配置偏好不得覆盖 schema 已声明的项目事实
+- `AGENTS.md` / `CLAUDE.md` 仅作补充说明来源，不反向覆盖 `openspec/config.yaml` 与 `.openspec.yaml`
+- repo heuristics 仅作最后兜底，不反向覆盖任何上游结果
+
+### 降级规则
+
+延续现有 schema-aware 脚本的 `warning + fallback` 风格：
+
+- 缺失 `opsx` 配置：回退默认值，不阻断主流程
+- 缺失单个字段：仅该字段回退默认值
+- 字段类型非法 / 枚举值非法：忽略该字段，保留其他合法字段
+- change 级与 repo 级冲突：优先 change 级；若触碰硬约束则丢弃该值并回退 repo/default
+- `schema_supplement_rules` 冲突：仅保留不冲突的加法项；冲突项忽略
+- 未知 `opsx` 字段：忽略并标记 warning
+
+建议沿用统一 reason 命名：
+- `opsx-config-missing`
+- `opsx-config-field-missing`
+- `opsx-config-invalid-value`
+- `opsx-config-conflict-dropped`
+- `opsx-config-fallback-applied`
+
+### 与主流程的边界
+
+轻量配置适配层不得覆盖以下硬约束：
+
+- Phase 0–6 主干顺序与阶段切换条件
+- proposal / review / tests / verify / archive / git 相关门禁
+- A / B / C 决策点分级与显式确认要求
+- 暂停 / 恢复 / 终止语义
+- 保守恢复与回到更早阶段的裁决规则
+- 关键脚本的结构化输出契约（如 `status` / `reason` / `nextAction`）
+
 ## 7. 与 Phase 的关系
 
 - **Phase 0**：识别 schema / stacks 能力
