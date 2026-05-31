@@ -1,34 +1,47 @@
-管道分支覆盖率测试 Sun May 31 21:12:36 CST 2026
+管道分支覆盖率测试 Sun May 31 21:24:16 CST 2026
 ========================
 
-[PHASE-DOCS] 所有 Phase 文档都存在
+[MATRIX-FILE] 分支矩阵存在
 Status: PASS
 
-[FUNC-INTEGRITY] 核心脚本功能完整
+[COVERAGE-MAP] 覆盖映射存在
 Status: PASS
 
-[ERROR-HANDLING] 错误处理机制完善
+[BRANCH-COUNT] 矩阵分支数与覆盖映射一致 (107)
 Status: PASS
 
-[SKILL-DOC] SKILL.md 文档结构完整
+[MISSING-BRANCHES] 所有矩阵分支都已映射
 Status: PASS
 
-[SCHEMA-AGNOSTIC] schema 无关设计正确实现
+[EXTRA-BRANCHES] 没有孤儿映射
 Status: PASS
 
-[TEST-MATRIX] 测试分支矩阵存在
+[DUPLICATE-BRANCHES] 没有重复 branchId
 Status: PASS
 
-[BRANCH-COVERAGE] 分支矩阵包含 104 个测试分支
+[ARTIFACTS] 所有测试工件都存在
 Status: PASS
 
-[REF-FILES] 所有引用文件都存在
-Status: PASS
+按 Phase 汇总:
+- Phase 0: 18
+- Phase 1: 9
+- Phase 2: 10
+- Phase 3: 13
+- Phase 3.1: 5
+- Phase 4: 18
+- Phase 5: 10
+- Phase 6: 21
+- Recovery: 3
+按 Coverage Type 汇总:
+- scenario: 91
+- script: 16
+按 Status 汇总:
+- covered: 107
 
 ========================
 分支覆盖率测试总结：
-总测试数: 8
-通过: 8
+总测试数: 7
+通过: 7
 失败: 0
 成功率: 100%
-完成时间: Sun May 31 21:12:36 CST 2026
+完成时间: Sun May 31 21:24:16 CST 2026

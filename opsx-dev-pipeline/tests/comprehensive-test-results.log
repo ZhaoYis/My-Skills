@@ -1,49 +1,226 @@
-开始全面管道测试 Sun May 31 21:12:36 CST 2026
+开始全面管道测试 Sun May 31 21:23:32 CST 2026
 ========================================
 
 [SCRIPTS-EXIST] 验证所有必需脚本是否存在
 ----------------------------------------
 [PASS] SCRIPTS-EXIST
 
-[PREFLIGHT-OK] 验证预检脚本能正常运行
+[SELFTEST] 验证 helper/CLI 契约测试
 ----------------------------------------
-[PASS] PREFLIGHT-OK
+== opsx-new-change.sh ==
+- Creating change 'opsx-selftest-change'...
+✔ Created change 'opsx-selftest-change' at openspec/changes/opsx-selftest-change/ (schema: spec-driven)
+   [ok] opsx-new-change.sh
+   [ok] opsx-preflight.sh 输出 status
+   [ok] opsx-preflight.sh 输出 reason
+   [ok] opsx-preflight.sh 缺少 openspec
+   [ok] opsx-list-changes.sh 含 change 名
+   [ok] opsx-list-changes.sh 透传 --sort name
+   [ok] opsx-change-status.sh JSON
+   [ok] opsx-change-status.sh 无效 change 名
+   [ok] 已有 change 初始续接点应为 Phase 1
+   [ok] opsx-detect-schema.sh 默认 schema
+   [ok] opsx-detect-schema.sh 默认 reason
+   [ok] opsx-ensure-change-meta.sh 写入 stacks
+   [ok] opsx-detect-schema.sh 识别 .openspec.yaml
+   [ok] opsx-change-context.sh 默认 schema 摘要
+   [ok] opsx-change-context.sh config 缺失告警
+   [ok] opsx-change-context.sh config 缺失 nextAction
+   [ok] opsx-detect-schema.sh 默认 schema（重建后）
+   [ok] opsx-resolve-verify.sh 默认 schema 无命令
+   [ok] opsx-resolve-verify.sh 默认 schema warning
+   [ok] opsx-resolve-verify.sh 默认 schema reason
+   [ok] opsx-instructions.sh 无 artifact（ready 推断）
+   [ok] opsx-instructions.sh proposal
+   [ok] opsx-instructions-apply.sh
+   [ok] opsx-instructions-apply.sh 初始进入应提示缺制品
+   [ok] opsx-instructions-apply.sh fix review change 可续接实施
+   [ok] opsx-instructions.sh fix review proposal 可续接
+   [ok] opsx-validate-change.sh 通过
+   [ok] opsx-validate-change.sh 透传 --strict
+   [ok] 已有 change 提案完成后 apply 已完成实施
+   [ok] 已有审查报告后状态查询仍可执行
+   [ok] 默认 schema 在跳过审查后仍提示手动确认 verify
+   [ok] 跳过审查后 Phase 5 / 4 给出 verify 缺失原因
+   [ok] 跳过审查场景保留审查报告供 Phase 5 续接
+   [ok] opsx-validate-all.sh JSON 摘要
+   [ok] opsx-validate-all.sh 透传 --strict
+   [ok] 直接归档场景在 Phase 5 后归档成功
+   [ok] 直接归档后 active change 状态不可再查询
+   [ok] 直接归档后仍能识别 archived change schema
+   [ok] 暂停恢复场景下可继续 Phase 6 前置检查
+   [ok] 暂停恢复场景下已归档 change 不再位于 active changes
+   [ok] opsx-detect-schema.sh 识别 custom schema
+   [ok] opsx-detect-schema.sh custom schema 支持元数据
+   [ok] opsx-ensure-change-meta.sh 写入 frontend stacks
+   [ok] opsx-change-context.sh 包含 frontend context
+   [ok] opsx-change-context.sh 包含 frontend standards
+   [ok] opsx-resolve-verify.sh frontend 命令
+   [ok] opsx-ensure-change-meta.sh 写入双栈 stacks
+   [ok] opsx-change-context.sh 合并 shared 与 backend
+   [ok] opsx-change-context.sh 合并 backend standards
+   [ok] opsx-resolve-verify.sh 双栈优先 make validate
+   [ok] opsx-resolve-verify.sh 双栈回退 all
+   [ok] opsx-ensure-change-meta.sh 写入 backend stacks
+   [ok] opsx-resolve-verify.sh backend 命令
+   [ok] 调用次数基线：opsx-detect-schema.sh
+   [ok] 调用次数基线：opsx-change-status.sh
+   [ok] 调用次数基线：opsx-change-context.sh
+   [ok] 调用次数基线：opsx-resolve-verify.sh
 
-[DETECT-DEFAULT-SCHEMA] 验证能检测默认 schema
-----------------------------------------
-[PASS] DETECT-DEFAULT-SCHEMA
+opsx-selftest: 全部通过（默认 schema 路径、Phase B 回归样例与 schema-aware 辅助脚本均符合预期）。
+[PASS] SELFTEST
 
-[PROP-NEW-CHANGE] 验证能创建新 change
+[BRANCH-COVERAGE] 验证矩阵与覆盖台账一致性
 ----------------------------------------
-[PASS] PROP-NEW-CHANGE
+开始矩阵覆盖校验...
+MATRIX-FILE: PASS
+COVERAGE-MAP: PASS
+BRANCH-COUNT: PASS
+MISSING-BRANCHES: PASS
+EXTRA-BRANCHES: PASS
+DUPLICATE-BRANCHES: PASS
+ARTIFACTS: PASS
 
-[SCRIPT-OUTPUTS] 验证各种脚本有合理输出
-----------------------------------------
-[PASS] SCRIPT-OUTPUTS
+分支覆盖率测试完成！
+总测试数: 7
+通过: 7
+失败: 0
+✅ 矩阵覆盖校验通过。
+查看详细结果: /Users/mrzhaoyi/Workspace/LLM/My-Skills/opsx-dev-pipeline/branch-coverage-test-results.log
+[PASS] BRANCH-COVERAGE
 
-[INST-SCRIPT] 验证指令脚本正常运行
+[PHASE0-SCENARIOS] 验证 Phase 0 场景分支
 ----------------------------------------
-[PASS] INST-SCRIPT
+[PASS] P0-ENV-NO-GIT routing
+[PASS] P0-ENV-NO-GIT hint
+[PASS] P0-INPUT-REQ routing
+[PASS] P0-INPUT-CHANGE routing
+[PASS] P0-INPUT-EMPTY routing
+[PASS] P0-SCHEMA-UNKNOWN routing
+[PASS] P0-RESUME-P1 resume
+[PASS] P0-RESUME-P2 resume
+[PASS] P0-RESUME-P3 resume
+[PASS] P0-RESUME-P5 resume
+[PASS] P0-RESUME-P6-DIRTY gitState
+[PASS] P0-RESUME-P6-PUSH resume
+[PASS] P0-CONFIRM-CONTINUE decision
+[PASS] P0-CONFIRM-RESTART routing
+[PASS] P0-CONFIRM-TERMINATE routing
 
-[APPLY-INST] 验证 Apply 指令脚本正常运行
-----------------------------------------
-[PASS] APPLY-INST
+Scenario summary: pass=15 fail=0
+[PASS] PHASE0-SCENARIOS
 
-[CHANGE-CONTEXT] 验证 Change 上下文脚本正常运行
+[CORE-SCENARIOS] 验证 P1/P2/P31/P4 场景分支
 ----------------------------------------
-[PASS] CHANGE-CONTEXT
+[PASS] P1-NAME-CONFLICT-REUSE
+[PASS] P1-NAME-CONFLICT-RENAME
+[PASS] P1-ARTIFACTS-CUSTOM
+[PASS] P1-GATE-CONFIRM
+[PASS] P1-GATE-REVISE
+[PASS] P1-GATE-TERMINATE
+[PASS] P2-BLOCKED-TERM
+[PASS] P2-TASK-CLARIFY
+[PASS] P2-TASK-SKIP
+[PASS] P2-TASK-TERM
+[PASS] P2-DONE-REVIEW
+[PASS] P2-DONE-PAUSE
+[PASS] P2-DONE-SKIP-REVIEW
+[PASS] P2-DONE-TERM
+[PASS] P31-CONFIRM
+[PASS] P31-REVISE
+[PASS] P31-ABANDON
+[PASS] P31-ARCHIVE-MERGE-SPECS
+[PASS] P4-UNFINISHED-CONTINUE
+[PASS] P4-UNFINISHED-BACK
+[PASS] P4-UNFINISHED-TERM
+[PASS] P4-VERIFY-UNRESOLVED
+[PASS] P4-VERIFY-FAIL-RETRY
+[PASS] P4-VERIFY-FAIL-PAUSE
+[PASS] P4-VERIFY-FAIL-TERM
+[PASS] P4-DELTA-SYNC
+[PASS] P4-DELTA-SKIP
+[PASS] P4-ARCHIVE-FALLBACK
+[PASS] P4-POST-MERGE
+[PASS] P4-POST-PUSH
+[PASS] P4-POST-TERM
 
-[RESOLVE-VERIFY] 验证 Verify 解析脚本正常运行
-----------------------------------------
-[PASS] RESOLVE-VERIFY
+Scenario summary: pass=31 fail=0
+[PASS] CORE-SCENARIOS
 
-[VALIDATE-CHANGE] 验证 Change 验证脚本正常运行
+[PHASE3-SCENARIOS] 验证 Phase 3 场景分支
 ----------------------------------------
-[PASS] VALIDATE-CHANGE
+[PASS] P3-NO-DIFF
+[PASS] P3-NO-REMOTE
+[PASS] P3-SEVERE-FIX-CR
+[PASS] P3-SEVERE-DIRECT-FIX
+[PASS] P3-SEVERE-PAUSE
+[PASS] P3-SEVERE-IGNORE
+[PASS] P3-SEVERE-TERM
+[PASS] P3-MINOR-CONTINUE
+[PASS] P3-MINOR-FIX-CR
+[PASS] P3-MINOR-PAUSE
+[PASS] P3-MINOR-TERM
+[PASS] P3-ZERO
+[PASS] P3-DIRECT-FIX-LIMIT
+
+Scenario summary: pass=13 fail=0
+[PASS] PHASE3-SCENARIOS
+
+[PHASE5-SCENARIOS] 验证 Phase 5 场景分支
+----------------------------------------
+[PASS] P5-NEED
+[PASS] P5-SKIP
+[PASS] P5-PAUSE
+[PASS] P5-CMD-SCHEMA
+[PASS] P5-CMD-CONFIG
+[PASS] P5-CMD-HEURISTIC
+[PASS] P5-CMD-ASK
+[PASS] P5-FAIL-RETRY
+[PASS] P5-FAIL-TERM
+[PASS] P5-PASS
+
+Scenario summary: pass=10 fail=0
+[PASS] PHASE5-SCENARIOS
+
+[PHASE6-SCENARIOS] 验证 Phase 6 场景分支
+----------------------------------------
+[PASS] P6-DIVERGED-REBASE
+[PASS] P6-DIVERGED-IGNORE
+[PASS] P6-DIVERGED-TERM
+[PASS] P6-SENSITIVE-EXCLUDE
+[PASS] P6-SENSITIVE-INCLUDE
+[PASS] P6-SENSITIVE-TERM
+[PASS] P6-COMMIT-CONFIRM
+[PASS] P6-COMMIT-EDIT
+[PASS] P6-COMMIT-CANCEL
+[PASS] P6-NO-DIFF
+[PASS] P6-PUSH-OK
+[PASS] P6-PUSH-RETRY
+[PASS] P6-PUSH-TERM
+[PASS] P6-MERGE-TARGET
+[PASS] P6-MERGE-STRATEGY
+[PASS] P6-MERGE-ABORT
+[PASS] P6-MERGE-THEIRS
+[PASS] P6-MERGE-OURS
+[PASS] P6-MERGE-MANUAL
+[PASS] P6-BRANCH-KEEP
+[PASS] P6-BRANCH-DELETE
+
+Scenario summary: pass=21 fail=0
+[PASS] PHASE6-SCENARIOS
+
+[RECOVERY-SCENARIOS] 验证 Recovery 场景分支
+----------------------------------------
+[PASS] R-ASK-FALLBACK
+[PASS] R-FORCED-EXIT
+
+Scenario summary: pass=2 fail=0
+[PASS] RECOVERY-SCENARIOS
 
 ========================================
 测试总结：
-通过: 10
-失败: 1
-总测试数: 11
-完成时间: Sun May 31 21:13:23 CST 2026
+通过: 9
+失败: 0
+总测试数: 9
+完成时间: Sun May 31 21:24:16 CST 2026
