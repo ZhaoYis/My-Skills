@@ -95,7 +95,7 @@ metadata:
 
 **用户提示格式**：进入新 Phase、从暂停点恢复、或用户补充自由文本后，优先使用简短结构化提示：`Phase` / `change` / `当前步骤` / `已知状态` / `下一动作`。术语解释仅在首次出现或当前决策点直接依赖时补一行短说明，避免重复复述历史上下文；具体模板见 `references/recovery-guardrails-appendix.md` **§1.1–1.2**。
 
-**维护入口**：维护 `SKILL.md`、`references/`、`scripts/` 的对应关系与联动检查时，先看 `assets/maintenance-mapping.md`；决策点语义以 `assets/decision-point-inventory.md` 为准，脚本输出契约以 `assets/script-output-conventions.md` 为准，恢复与异常路径以 `assets/failure-recovery-matrix.md` 为准。
+**维护入口**：维护 `SKILL.md`、`references/`、`scripts/` 的对应关系与联动检查时，先看 `assets/maintenance-index.md`；决策点语义以 `assets/decision-point-index.md` 为准，脚本输出契约以 `assets/script-io-conventions.md` 为准，恢复与异常路径以 `assets/failure-recovery-index.md` 为准。
 
 ### 脚本（可选）
 
@@ -127,7 +127,7 @@ metadata:
 
 **约定**：执行流水线步骤时**优先**一条命令跑完上述脚本（减少漏参、统一 `--json`）；若脚本不存在或环境限制，按各 `references/phase-*.md` 内原样 CLI 执行即可。
 
-**逐脚本 I/O**：关键脚本的输入参数、stdout / stderr、exit code、透传 / 包装边界见 `assets/script-output-conventions.md`。
+**逐脚本 I/O**：关键脚本的输入参数、stdout / stderr、exit code、透传 / 包装边界见 `assets/script-io-conventions.md`。
 
 ### 流程概览（Mermaid）
 

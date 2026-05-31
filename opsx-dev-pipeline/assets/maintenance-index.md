@@ -4,9 +4,9 @@
 
 使用原则：
 - 先在本页定位受影响范围，再去改具体文件
-- 决策点语义以 `assets/decision-point-inventory.md` 为准
-- 脚本输出契约以 `assets/script-output-conventions.md` 为准
-- 恢复与异常路径以 `assets/failure-recovery-matrix.md` 为准
+- 决策点语义以 `assets/decision-point-index.md` 为准
+- 脚本输出契约以 `assets/script-io-conventions.md` 为准
+- 恢复与异常路径以 `assets/failure-recovery-index.md` 为准
 - 回归入口优先使用 `scripts/opsx-selftest.sh` 与 `tests/*.sh`
 
 ## 1. Phase / reference / script 主映射表
@@ -39,16 +39,16 @@
 | 修改对象 | 需要同步检查的文件 | 检查内容 | 建议验证命令/测试 |
 | --- | --- | --- | --- |
 | 新增 / 删除 `scripts/opsx-*.sh` | `SKILL.md`、对应 `references/phase-*.md`、本页 | 脚本表是否同步、Phase 是否新增/删除调用、映射表是否补全 | `bash scripts/opsx-selftest.sh`、`tests/integrity-check.sh` |
-| 脚本参数、输出字段或退出码变化 | `assets/script-output-conventions.md`、消费该脚本的 Phase 文档、附录、本页 | 参数说明、`status/reason/nextAction` 契约、逐脚本 I/O 分节、调用方文案与判断是否仍一致 | `bash scripts/opsx-selftest.sh`、`bash -n scripts/opsx-preflight.sh scripts/opsx-detect-schema.sh scripts/opsx-change-context.sh scripts/opsx-resolve-verify.sh scripts/opsx-selftest.sh` |
-| Phase 步骤顺序、决策点或门禁调整 | `SKILL.md`、`references/recovery-guardrails-appendix.md`、`assets/decision-point-inventory.md`、本页 | Phase 引用表、步骤索引、流程图、附录决策点总览是否同步 | `tests/comprehensive-pipeline-test.sh`、`tests/final-validation.sh` |
+| 脚本参数、输出字段或退出码变化 | `assets/script-io-conventions.md`、消费该脚本的 Phase 文档、附录、本页 | 参数说明、`status/reason/nextAction` 契约、逐脚本 I/O 分节、调用方文案与判断是否仍一致 | `bash scripts/opsx-selftest.sh`、`bash -n scripts/opsx-preflight.sh scripts/opsx-detect-schema.sh scripts/opsx-change-context.sh scripts/opsx-resolve-verify.sh scripts/opsx-selftest.sh` |
+| Phase 步骤顺序、决策点或门禁调整 | `SKILL.md`、`references/recovery-guardrails-appendix.md`、`assets/decision-point-index.md`、本页 | Phase 引用表、步骤索引、流程图、附录决策点总览是否同步 | `tests/comprehensive-pipeline-test.sh`、`tests/final-validation.sh` |
 | 高复用脚本改动 | 所有引用该脚本的 `references/phase-*.md`、`SKILL.md`、本页 | 复用场景是否仍成立、调用性质是否变化、回退路径是否受影响 | `bash scripts/opsx-selftest.sh`、相关 Phase 流程测试 |
-| 新增 schema / custom schema 分支或 verify/context 规则调整 | `assets/schema-adapter.md`、`phase-2-apply.md`、`phase-4-archive.md`、`phase-5-unit-tests.md`、`assets/failure-recovery-matrix.md`、本页 | schema-aware 上下文、verify 解析、恢复路径、降级规则是否同步 | `bash scripts/opsx-selftest.sh`、schema 相关集成测试 |
+| 新增 schema / custom schema 分支或 verify/context 规则调整 | `assets/schema-adapter-summary.md`、`phase-2-apply.md`、`phase-4-archive.md`、`phase-5-unit-tests.md`、`assets/failure-recovery-index.md`、本页 | schema-aware 上下文、verify 解析、恢复路径、降级规则是否同步 | `bash scripts/opsx-selftest.sh`、schema 相关集成测试 |
 
 ## 4. 维护时优先复用的资料
 
-- 决策点与确认等级：`assets/decision-point-inventory.md`
-- 脚本输出约定：`assets/script-output-conventions.md`
-- 恢复与异常路径：`assets/failure-recovery-matrix.md`
+- 决策点与确认等级：`assets/decision-point-index.md`
+- 脚本输出约定：`assets/script-io-conventions.md`
+- 恢复与异常路径：`assets/failure-recovery-index.md`
 - 脚本自检入口：`scripts/opsx-selftest.sh`
 - 流程完整性与综合回归：
   - `tests/integrity-check.sh`
@@ -79,4 +79,4 @@
 样例来源优先级：
 1. `scripts/opsx-selftest.sh`
 2. `tests/pipeline-test/pipeline-branch-matrix.md`
-3. `assets/failure-recovery-matrix.md`
+3. `assets/failure-recovery-index.md`
