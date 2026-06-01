@@ -4,11 +4,15 @@
 
 set -euo pipefail
 
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SCRIPTS_DIR="$ROOT_DIR/scripts"
+REFERENCES_DIR="$ROOT_DIR/references"
+
 echo "执行最终验证..."
 
 # 1. 检查是否还存在 yzw-workflow 引用（排除测试文件本身）
 echo "1/5. 检查 yzw-workflow 硬编码残留..."
-remaining_refs=$(find .. \( -name "*.md" -o -name "*.sh" -o -name "*.yaml" -o -name "*.yml" \) -not -path "../*/comprehensive-pipeline-test*" -not -path "../*/advanced-pipeline-test*" -not -path "../*/simplified-pipeline-test*" -not -path "../*/integrity-check*" -not -path "../*/branch-coverage-test*" -not -path "../*FINAL_TEST_REPORT*" -not -path "../*final-validation*" | xargs grep -l "yzw-workflow" 2>/dev/null || true)
+remaining_refs=$(find "$ROOT_DIR" \( -name "*.md" -o -name "*.sh" -o -name "*.yaml" -o -name "*.yml" \) -not -path "*/comprehensive-pipeline-test*" -not -path "*/advanced-pipeline-test*" -not -path "*/simplified-pipeline-test*" -not -path "*/integrity-check*" -not -path "*/branch-coverage-test*" -not -path "*/FINAL_TEST_REPORT*" -not -path "*/final-validation*" | xargs grep -l "yzw-workflow" 2>/dev/null || true)
 
 if [[ -z "$remaining_refs" ]]; then
     echo "✅ 未发现 yzw-workflow 硬编码残留"
@@ -20,8 +24,8 @@ fi
 
 # 2. 检查 schema 检测脚本是否已更新
 echo "2/5. 验证 schema 检测脚本更新..."
-if [[ -f "../scripts/opsx-detect-schema.sh" ]]; then
-    schema_logic=$(grep -c "schema.*!=.*spec-driven\|custom.*schema" "../scripts/opsx-detect-schema.sh" || echo 0)
+if [[ -f "$SCRIPTS_DIR/opsx-detect-schema.sh" ]]; then
+    schema_logic=$(grep -c "schema.*!=.*spec-driven\|custom.*schema" "$SCRIPTS_DIR/opsx-detect-schema.sh" || echo 0)
     if [[ $schema_logic -gt 0 ]]; then
         echo "✅ schema 检测脚本已更新为通用逻辑"
         schema_check="PASS"
@@ -36,8 +40,8 @@ fi
 
 # 3. 检查 Phase 0 文档是否已更新
 echo "3/5. 验证 Phase 0 文档更新..."
-if [[ -f "../references/phase-0-entrance.md" ]]; then
-    phase0_content=$(cat "../references/phase-0-entrance.md")
+if [[ -f "$REFERENCES_DIR/phase-0-entrance.md" ]]; then
+    phase0_content=$(cat "$REFERENCES_DIR/phase-0-entrance.md")
     has_generic_schema=$(echo "$phase0_content" | grep -c "检测到特定 schema\|自定义 schema")
 
     if [[ $has_generic_schema -gt 0 ]]; then
@@ -54,8 +58,8 @@ fi
 
 # 4. 检查 SKILL.md 是否已更新
 echo "4/5. 验证 SKILL.md 更新..."
-if [[ -f "../SKILL.md" ]]; then
-    skill_content=$(cat "../SKILL.md")
+if [[ -f "$ROOT_DIR/SKILL.md" ]]; then
+    skill_content=$(cat "$ROOT_DIR/SKILL.md")
     has_generic_schema_ref=$(echo "$skill_content" | grep -c "自定义 schema\|schema.*aware\|schema.*agnostic")
 
     if [[ $has_generic_schema_ref -gt 0 ]]; then
@@ -76,11 +80,11 @@ critical_scripts=("opsx-detect-schema.sh" "opsx-preflight.sh" "opsx-new-change.s
 all_exist=true
 
 for script in "${critical_scripts[@]}"; do
-    if [[ ! -f "../scripts/$script" ]]; then
+    if [[ ! -f "$SCRIPTS_DIR/$script" ]]; then
         echo "❌ 关键脚本 $script 不存在"
         all_exist=false
         break
-    elif [[ ! -x "../scripts/$script" ]]; then
+    elif [[ ! -x "$SCRIPTS_DIR/$script" ]]; then
         echo "❌ 关键脚本 $script 无执行权限"
         all_exist=false
         break

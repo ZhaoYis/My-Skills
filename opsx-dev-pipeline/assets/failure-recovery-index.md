@@ -1,58 +1,52 @@
 # opsx 失败恢复矩阵
 
-本文件只保留当前 skill 仍需要的失败场景、恢复动作与恢复续接点。
+本文件只保留当前 skill 仍需要的失败场景、恢复动作、恢复续接点与权威来源，用于快速导航到恢复正文；恢复规则正文以 `references/recovery-guardrails-appendix.md` 与相关 `references/phase-*.md` 为准。
 
 ## 1. 使用原则
 
-- 失败场景以当前 Phase 的正文语义为准
-- 本矩阵用于统一恢复动作与恢复续接点
+- 失败场景的规则正文以当前 Phase 与 `references/recovery-guardrails-appendix.md` 为准
+- 本矩阵只用于统一恢复动作、恢复续接点与定位权威来源
 - 恢复时优先回答三件事：现象、恢复动作、从哪里继续
 - 可恢复异常优先引导恢复，不直接结束流程
 
 ## 2. 失败场景矩阵
 
-| ID | Phase | 场景 | 触发信号 | 推荐恢复动作 | 是否需要用户确认 | 恢复续接点 | 备注 |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| R0-1 | Phase 0 | `openspec` 不可用 | `openspec --version` 失败 | 提示安装或修复环境后重试 | 否 | 无 | 硬前置失败 |
-| R0-2 | Phase 0 | 当前目录不在 git 仓库中 | `git rev-parse --show-toplevel` 失败 | 提示进入 git 仓库或初始化仓库后重试 | 否 | 无 | 硬前置失败 |
-| R0-3 | Phase 0 | change 不存在 | `openspec status --change` 失败 | 列出可用 change，要求用户重新选择 | 是 | Phase 0 | 不应自动新建同名 change |
-| R0-4 | Phase 0 | change 状态不完整或冲突 | `openspec status` 与本地 git / 文件状态无法一致解释 | 推荐回到较早 Phase 恢复，并由用户确认 | 是 | 由保守恢复判断决定 | 保守恢复优先 |
-| R0-5 | Phase 0 | custom schema 缺少 change 元数据 | `changeHasOpenSpecYaml=false` 或 metadata 缺失 | 回到 Phase 1 补齐 `.openspec.yaml` 与元数据 | 是 | Phase 1 | 进入 Apply 前应补齐 |
-| R1-1 | Phase 1 | change 名称冲突 | `openspec new change` 返回冲突 | 提示在已有 change 上继续或创建新名称 | 是 | Phase 1 | 不自动覆盖已有 change |
-| R1-2 | Phase 1 | 制品未生成完整 | `applyRequires` 未完成；instructions 无法产出完整制品 | 补充缺失制品，必要时继续循环生成 | 否 | Phase 1 | 未过提案门禁前不得进入 Phase 2 |
-| R1-3 | Phase 1 | 提案与需求不一致 | 用户明确提出仍需修改 | 通过自由文本补充/修改，更新制品后回到决策点 1 | 是 | Phase 1 | 高频循环场景 |
-| R2-1 | Phase 2 | apply 返回 blocked | `state: blocked` | 回到 Phase 1 补制品，或终止流程 | 是 | Phase 1 | 典型可恢复异常 |
-| R2-2 | Phase 2 | 单个任务实施遇阻塞 | 任务不明确、上下文不足、设计不清 | 用户补充说明 / 跳过此任务 / 终止流程 | 是 | 当前任务或下一个任务 | 局部阻塞 |
-| R3-1 | Phase 3 | 无变更可审 | `git diff HEAD` 为空且无未推送提交 | 提示没有可审查变更，进入 Phase 5 | 否 | Phase 5 | 空路径处理 |
-| R3-2 | Phase 3 | 审查不通过 | 审查结论需要修复 | 生成修复提案并应用 / 直接修复并重新审查 / 暂停 / 终止 | 是 | Phase 3 或 3.1 | 主修复回环 |
-| R3-3 | Phase 3.1 | fix change 提案不符合预期 | 用户要求修改 fix 提案 | 在 fix change 内补充/修改后回到 fix 决策点 | 是 | Phase 3.1 | 复用 Phase 1 语义 |
-| R3-4 | Phase 3.1 | 放弃继续 fix 子流程 | 用户不再走 fix-cr 子流程 | 结束 fix 子流程，回原 change 的 Phase 5 | 是 | 原 change 的 Phase 5 | 特殊恢复路径 |
-| R4-1 | Phase 4 | 归档前发现未完成任务 | 任务状态未完成 | 继续归档 / 回到 Phase 2 / 终止流程 | 是 | Phase 2 或当前 Phase 4 | 高风险分支 |
-| R4-2 | Phase 4 | verify 命令无法解析 | `opsx-resolve-verify.sh` 返回 `command=null` 或信息不足 | 先查默认候选，仍无法确定则要求用户确认 | 是 | Phase 4 | custom schema 下不得默认跳过 |
-| R4-3 | Phase 4 | verify 执行失败 | 验证命令返回非 0 | 修复后重试 / 暂停流水线 / 终止流程 | 是 | Phase 4 | custom schema 下为硬门禁 |
-| R4-4 | Phase 4 | `openspec archive` 失败 | `opsx-archive.sh` / `openspec archive` 返回失败 | 优先重试；必要时降级为手动归档 | 是 | Phase 4 | 手动归档须保持与用户选择一致 |
-| R4-5 | Phase 4 | 归档目标冲突 | archive 目录同名已存在 | 使用 CLI 自动处理；手动归档时追加 `-N` 后缀 | 否 | Phase 4 | 非阻断性处理 |
-| R5-1 | Phase 5 | 无法唯一确定测试命令 | 多个候选命令都合理 | 列出候选命令，请用户选择或输入惯用命令 | 是 | Phase 5 | 不应擅自猜测 |
-| R5-2 | Phase 5 | 单元测试失败 | 测试命令返回非 0 | 修复后重试 / 跳过单测 / 暂停流水线 | 是 | Phase 5 | 是否允许跳过取决于当前门禁 |
-| R5-3 | Phase 5 | 用户选择暂停 | 用户暂不处理单测 | 展示恢复指引，稍后续跑 | 是 | Phase 5 | 暂停类标准处理 |
-| R6-1 | Phase 6 | 分支落后或分叉 | `git status` / `git fetch` 显示落后或 diverged | pull --rebase 后继续 / 继续后续流程 / 终止流程 | 是 | Phase 6 | 继续后续流程需显式提示风险 |
-| R6-2 | Phase 6 | rebase 冲突 | `git pull --rebase` 发生冲突 | 暂停流水线，手动调整后继续 / `git rebase --abort` 并终止 | 是 | Phase 6 | 需展示冲突文件 |
-| R6-3 | Phase 6 | 检测到敏感文件 | 暂存区含 `.env`、密钥、凭据等 | 排除敏感文件后继续 / 明知风险继续 / 终止流程 | 是 | Phase 6 | 必须显式警告 |
-| R6-4 | Phase 6 | commit 失败 | `git commit` 返回非 0 | 修改提交信息 / 处理 hook 或工作区问题后重试 / 终止流程 | 是 | Phase 6 | 不应跳过 hook |
-| R6-5 | Phase 6 | 推送失败 | `git push` 失败 | pull --rebase 后重试 / 终止流程 | 是 | Phase 6 | 保留本地提交 |
-| R6-6 | Phase 6 | 合并前工作区不干净 | `git status` 发现未提交或未暂存变更 | 先 stash / 先提交 / 终止流程 | 是 | Phase 6 | 合并前门禁 |
-| R6-7 | Phase 6 | 合并冲突 | `git merge` 冲突 | 中止合并 / theirs / ours / 暂停手动解决 | 是 | Phase 6 | 需列出冲突文件 |
-| R6-8 | Phase 6 | 合并后分支清理失败 | 删除本地或远程分支失败 | 提示失败，但不回滚已完成合并 | 否 | 当前 Phase 结束 | 收尾性异常 |
+| ID | Phase | 场景 | 触发信号 | 推荐恢复动作 | 是否需要用户确认 | 恢复续接点 | 权威来源 | 备注 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| R0-1 | Phase 0 | `openspec` 不可用 | `openspec --version` 失败 | 提示安装或修复环境后重试 | 否 | 无 | `references/recovery-guardrails-appendix.md` §3.1 | 硬前置失败 |
+| R0-2 | Phase 0 | 当前目录不在 git 仓库中 | `git rev-parse --show-toplevel` 失败 | 提示进入 git 仓库或初始化仓库后重试 | 否 | 无 | `references/recovery-guardrails-appendix.md` §3.1 | 硬前置失败 |
+| R0-3 | Phase 0 | change 不存在 | `openspec status --change` 失败 | 列出可用 change，要求用户重新选择 | 是 | Phase 0 | `references/recovery-guardrails-appendix.md` §3.1；`references/phase-0-entrance.md` | 不应自动新建同名 change |
+| R0-4 | Phase 0 | change 状态不完整或冲突 | `openspec status` 与本地 git / 文件状态无法一致解释 | 推荐回到较早 Phase 恢复，并由用户确认 | 是 | 由保守恢复判断决定 | `references/recovery-guardrails-appendix.md` §3.1、§3.2；`references/phase-0-entrance.md` | 保守恢复优先 |
+| R0-5 | Phase 0 | custom schema 缺少 change 元数据 | `changeHasOpenSpecYaml=false` 或 metadata 缺失 | 回到 Phase 1 补齐 `.openspec.yaml` 与元数据 | 是 | Phase 1 | `references/recovery-guardrails-appendix.md` §2.3、§3.1；`references/phase-1-propose.md` | 进入 Apply 前应补齐 |
+| R1-1 | Phase 1 | change 名称冲突 | `openspec new change` 返回冲突 | 提示在已有 change 上继续或创建新名称 | 是 | Phase 1 | `references/recovery-guardrails-appendix.md` §3.1；`references/phase-1-propose.md` | 不自动覆盖已有 change |
+| R1-2 | Phase 1 | 制品未生成完整 | `applyRequires` 未完成；instructions 无法产出完整制品 | 补充缺失制品，必要时继续循环生成 | 否 | Phase 1 | `references/phase-1-propose.md` | 未过提案门禁前不得进入 Phase 2 |
+| R1-3 | Phase 1 | 提案与需求不一致 | 用户明确提出仍需修改 | 通过自由文本补充/修改，更新制品后回到决策点 1 | 是 | Phase 1 | `references/phase-1-propose.md`；`references/recovery-guardrails-appendix.md` §3 | 高频循环场景 |
+| R2-1 | Phase 2 | apply 返回 blocked | `state: blocked` | 回到 Phase 1 补制品，或终止流程 | 是 | Phase 1 | `references/recovery-guardrails-appendix.md` §3.1；`references/phase-2-apply.md` | 典型可恢复异常 |
+| R2-2 | Phase 2 | 单个任务实施遇阻塞 | 任务不明确、上下文不足、设计不清 | 用户补充说明 / 跳过此任务 / 终止流程 | 是 | 当前任务或下一个任务 | `references/phase-2-apply.md` | 局部阻塞 |
+| R3-1 | Phase 3 | 无变更可审 | `git diff HEAD` 为空且无未推送提交 | 提示没有可审查变更，进入 Phase 5 | 否 | Phase 5 | `references/recovery-guardrails-appendix.md` §3.1；`references/phase-3-review.md` | 空路径处理 |
+| R3-2 | Phase 3 | 审查不通过 | 审查结论需要修复 | 生成修复提案并应用 / 直接修复并重新审查 / 暂停 / 终止 | 是 | Phase 3 或 3.1 | `references/phase-3-review.md`；`references/recovery-guardrails-appendix.md` §3 | 主修复回环 |
+| R3-3 | Phase 3.1 | fix change 提案不符合预期 | 用户要求修改 fix 提案 | 在 fix change 内补充/修改后回到 fix 决策点 | 是 | Phase 3.1 | `references/phase-3.1-fix-review.md` | 复用 Phase 1 语义 |
+| R3-4 | Phase 3.1 | 放弃继续 fix 子流程 | 用户不再走 fix-cr 子流程 | 结束 fix 子流程，回原 change 的 Phase 5 | 是 | 原 change 的 Phase 5 | `references/phase-3.1-fix-review.md` | 特殊恢复路径 |
+| R4-1 | Phase 4 | 归档前发现未完成任务 | 任务状态未完成 | 继续归档 / 回到 Phase 2 / 终止流程 | 是 | Phase 2 或当前 Phase 4 | `references/phase-4-archive.md`；`references/recovery-guardrails-appendix.md` §3.2 | 高风险分支 |
+| R4-2 | Phase 4 | verify 命令无法解析 | `opsx-resolve-verify.sh` 返回 `command=null` 或信息不足 | 先查默认候选，仍无法确定则要求用户确认 | 是 | Phase 4 | `references/recovery-guardrails-appendix.md` §3.1；`references/phase-4-archive.md` | custom schema 下不得默认跳过 |
+| R4-3 | Phase 4 | verify 执行失败 | 验证命令返回非 0 | 修复后重试 / 暂停流水线 / 终止流程 | 是 | Phase 4 | `references/recovery-guardrails-appendix.md` §3.1；`references/phase-4-archive.md` | custom schema 下为硬门禁 |
+| R4-4 | Phase 4 | `openspec archive` 失败 | `opsx-archive.sh` / `openspec archive` 返回失败 | 优先重试；必要时降级为手动归档 | 是 | Phase 4 | `references/recovery-guardrails-appendix.md` §3.1；`references/phase-4-archive.md` | 手动归档须保持与用户选择一致 |
+| R4-5 | Phase 4 | 归档目标冲突 | archive 目录同名已存在 | 使用 CLI 自动处理；手动归档时追加 `-N` 后缀 | 否 | Phase 4 | `references/recovery-guardrails-appendix.md` §3.1；`references/phase-4-archive.md` | 非阻断性处理 |
+| R5-1 | Phase 5 | 无法唯一确定测试命令 | 多个候选命令都合理 | 列出候选命令，请用户选择或输入惯用命令 | 是 | Phase 5 | `references/recovery-guardrails-appendix.md` §3.1；`references/phase-5-unit-tests.md` | 不应擅自猜测 |
+| R5-2 | Phase 5 | 单元测试失败 | 测试命令返回非 0 | 修复后重试 / 跳过单测 / 暂停流水线 | 是 | Phase 5 | `references/recovery-guardrails-appendix.md` §3.1；`references/phase-5-unit-tests.md` | 是否允许跳过取决于当前门禁 |
+| R5-3 | Phase 5 | 用户选择暂停 | 用户暂不处理单测 | 展示恢复指引，稍后续跑 | 是 | Phase 5 | `references/phase-5-unit-tests.md`；`references/recovery-guardrails-appendix.md` §1 | 暂停类标准处理 |
+| R6-1 | Phase 6 | 分支落后或分叉 | `git status` / `git fetch` 显示落后或 diverged | pull --rebase 后继续 / 继续后续流程 / 终止流程 | 是 | Phase 6 | `references/recovery-guardrails-appendix.md` §3.1；`references/phase-6-merge-push.md` | 继续后续流程需显式提示风险 |
+| R6-2 | Phase 6 | rebase 冲突 | `git pull --rebase` 发生冲突 | 暂停流水线，手动调整后继续 / `git rebase --abort` 并终止 | 是 | Phase 6 | `references/recovery-guardrails-appendix.md` §3.1；`references/phase-6-merge-push.md` | 需展示冲突文件 |
+| R6-3 | Phase 6 | 检测到敏感文件 | 暂存区含 `.env`、密钥、凭据等 | 排除敏感文件后继续 / 明知风险继续 / 终止流程 | 是 | Phase 6 | `references/recovery-guardrails-appendix.md` §3.1；`references/phase-6-merge-push.md` | 必须显式警告 |
+| R6-4 | Phase 6 | commit 失败 | `git commit` 返回非 0 | 修改提交信息 / 处理 hook 或工作区问题后重试 / 终止流程 | 是 | Phase 6 | `references/phase-6-merge-push.md` | 不应跳过 hook |
+| R6-5 | Phase 6 | 推送失败 | `git push` 失败 | pull --rebase 后重试 / 终止流程 | 是 | Phase 6 | `references/recovery-guardrails-appendix.md` §3.1；`references/phase-6-merge-push.md` | 保留本地提交 |
+| R6-6 | Phase 6 | 合并前工作区不干净 | `git status` 发现未提交或未暂存变更 | 先 stash / 先提交 / 终止流程 | 是 | Phase 6 | `references/recovery-guardrails-appendix.md` §3.1；`references/phase-6-merge-push.md` | 合并前门禁 |
+| R6-7 | Phase 6 | 合并冲突 | `git merge` 冲突 | 中止合并 / theirs / ours / 暂停手动解决 | 是 | Phase 6 | `references/recovery-guardrails-appendix.md` §3.1；`references/phase-6-merge-push.md` | 需列出冲突文件 |
+| R6-8 | Phase 6 | 合并后分支清理失败 | 删除本地或远程分支失败 | 提示失败，但不回滚已完成合并 | 否 | 当前 Phase 结束 | `references/phase-6-merge-push.md` | 收尾性异常 |
 
-## 3. 恢复判断原则
-
-- 硬前置失败可直接结束当前回合
-- 状态不一致时优先采用保守恢复，回到更早 Phase 由用户确认
-- 自定义 schema 下，verify 失败或信息不足不应静默跳过
-- 已归档后的恢复需要额外结合 git 状态继续判断
-
-## 4. 维护入口
+## 3. 维护入口
 
 - 流程入口：`SKILL.md`
 - Phase 正文：`references/phase-*.md`
-- 恢复总览：`references/recovery-guardrails-appendix.md`
+- 恢复总览与规则正文：`references/recovery-guardrails-appendix.md`
+- 脚本输出契约：`assets/script-io-conventions.md`

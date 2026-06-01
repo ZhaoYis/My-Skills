@@ -3,8 +3,11 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="../scripts"
-RESULTS_FILE="integrity-test-results.log"
+SCRIPT_DIR="$(cd "$(dirname "$0")/../scripts" && pwd)"
+REFERENCE_DIR="$(cd "$(dirname "$0")/../references" && pwd)"
+ASSET_DIR="$(cd "$(dirname "$0")/../assets" && pwd)"
+TEST_ROOT="$(cd "$(dirname "$0")" && pwd)"
+RESULTS_FILE="$TEST_ROOT/integrity-test-results.log"
 
 # 清空结果文件
 > "$RESULTS_FILE"
@@ -126,12 +129,16 @@ required_docs=(
     "phase-5-unit-tests.md"
     "phase-6-merge-push.md"
     "recovery-guardrails-appendix.md"
-    "schema-adapter.md"
+    "../assets/schema-adapter-summary.md"
 )
 
 missing_docs=()
 for doc in "${required_docs[@]}"; do
-    if [[ ! -f "../references/$doc" ]]; then
+    if [[ "$doc" == ../assets/* ]]; then
+        if [[ ! -f "$TEST_ROOT/$doc" ]]; then
+            missing_docs+=("${doc#../}")
+        fi
+    elif [[ ! -f "$REFERENCE_DIR/$doc" ]]; then
         missing_docs+=("$doc")
     fi
 done
@@ -143,7 +150,7 @@ else
 fi
 
 # 5. 验证测试目录中的测试文档
-if [[ -f "../tests/pipeline-branch-matrix.md" ]]; then
+if [[ -f "$TEST_ROOT/pipeline-test/pipeline-branch-matrix.md" ]]; then
     log_result "TEST-MATRIX" "PASS" "测试分支矩阵存在"
 else
     log_result "TEST-MATRIX" "FAIL" "测试分支矩阵不存在"
@@ -152,7 +159,7 @@ fi
 # 6. 检查自定义 schema 功能是否已移除硬编码引用
 echo "验证 yzw-workflow 硬编码移除..."
 # 排除当前测试脚本自身
-yzw_refs=$(find .. \( -name "*.md" -o -name "*.sh" -o -name "*.yaml" -o -name "*.yml" \) -not -path "*integrity-check*" | xargs grep -l "yzw-workflow" 2>/dev/null || true)
+yzw_refs=$(find "$(cd "$TEST_ROOT/.." && pwd)" \( -name "*.md" -o -name "*.sh" -o -name "*.yaml" -o -name "*.yml" \) -not -path "*integrity-check*" -not -path "*final-validation*" -not -path "*FINAL_TEST_REPORT*" | xargs grep -l "yzw-workflow" 2>/dev/null || true)
 
 if [[ -z "$yzw_refs" ]]; then
     log_result "NO-HARD-YZW" "PASS" "没有发现 yzw-workflow 硬编码引用"
