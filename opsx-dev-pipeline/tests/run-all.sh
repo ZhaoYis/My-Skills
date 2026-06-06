@@ -18,6 +18,8 @@
 set -euo pipefail
 
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/log-time.sh
+source "$TEST_DIR/lib/log-time.sh"
 REPO_ROOT="$(cd "$TEST_DIR/.." && pwd)"
 SCRIPT_DIR="$REPO_ROOT/scripts"
 LOGS_DIR="$TEST_DIR/logs"
@@ -112,20 +114,20 @@ run_suite() {
   {
     echo ""
     echo "[$name] $desc"
-    echo "开始: $(date)"
+    echo "开始: $(log_timestamp)"
   } >> "$SUMMARY_FILE"
 
   if "$@"; then
     ((PASSED_SUITES+=1))
     echo "[PASS] $name"
-    echo "结果: PASS ($(date))" >> "$SUMMARY_FILE"
+    echo "结果: PASS ($(log_timestamp))" >> "$SUMMARY_FILE"
     return 0
   fi
 
   ((FAILED_SUITES+=1))
   FAILED_SUITE_NAMES+=("$name")
   echo "[FAIL] $name"
-  echo "结果: FAIL ($(date))" >> "$SUMMARY_FILE"
+  echo "结果: FAIL ($(log_timestamp))" >> "$SUMMARY_FILE"
   return 1
 }
 
@@ -232,7 +234,7 @@ main() {
   parse_args "$@"
 
   > "$SUMMARY_FILE"
-  echo "统一测试入口 $(date)" >> "$SUMMARY_FILE"
+  echo "统一测试入口 $(log_timestamp)" >> "$SUMMARY_FILE"
   echo "仓库: $REPO_ROOT" >> "$SUMMARY_FILE"
 
   echo "opsx-dev-pipeline 统一测试"
@@ -254,7 +256,7 @@ main() {
   echo "通过: $PASSED_SUITES" >> "$SUMMARY_FILE"
   echo "失败: $FAILED_SUITES" >> "$SUMMARY_FILE"
   echo "跳过: $SKIPPED_SUITES" >> "$SUMMARY_FILE"
-  echo "完成: $(date)" >> "$SUMMARY_FILE"
+  echo "完成: $(log_timestamp)" >> "$SUMMARY_FILE"
 
   echo ""
   echo "========================================"

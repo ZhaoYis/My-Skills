@@ -3,6 +3,8 @@
 set -euo pipefail
 
 TEST_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/log-time.sh
+source "$TEST_SCRIPT_DIR/lib/log-time.sh"
 REPO_ROOT="$(cd "$TEST_SCRIPT_DIR/.." && pwd)"
 LOGS_DIR="$TEST_SCRIPT_DIR/logs"
 MATRIX_FILE="$REPO_ROOT/tests/pipeline-test/pipeline-branch-matrix.md"
@@ -12,7 +14,7 @@ RESULTS_FILE="$LOGS_DIR/branch-coverage-test-results.log"
 mkdir -p "$LOGS_DIR"
 > "$RESULTS_FILE"
 
-echo "管道分支覆盖率测试 $(date)" > "$RESULTS_FILE"
+echo "管道分支覆盖率测试 $(log_timestamp)" > "$RESULTS_FILE"
 echo "========================" >> "$RESULTS_FILE"
 
 total_tests=0
@@ -151,7 +153,7 @@ echo "失败: $fail_count" >> "$RESULTS_FILE"
 if [[ $total_tests -gt 0 ]]; then
   echo "成功率: $((pass_count * 100 / total_tests))%" >> "$RESULTS_FILE"
 fi
-echo "完成时间: $(date)" >> "$RESULTS_FILE"
+echo "完成时间: $(log_timestamp)" >> "$RESULTS_FILE"
 
 echo ""
 echo "分支覆盖率测试完成！"

@@ -12,6 +12,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")/../scripts" && pwd)"
 REFERENCE_DIR="$(cd "$(dirname "$0")/../references" && pwd)"
 ASSET_DIR="$(cd "$(dirname "$0")/../assets" && pwd)"
 TEST_ROOT="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/log-time.sh
+source "$TEST_ROOT/lib/log-time.sh"
 LOGS_DIR="$TEST_ROOT/logs"
 RESULTS_FILE="$LOGS_DIR/integrity-test-results.log"
 
@@ -19,7 +21,7 @@ mkdir -p "$LOGS_DIR"
 # 清空结果文件
 > "$RESULTS_FILE"
 
-echo "管道完整性测试 $(date)" > "$RESULTS_FILE"
+echo "管道完整性测试 $(log_timestamp)" > "$RESULTS_FILE"
 echo "========================" >> "$RESULTS_FILE"
 
 # 计数器
@@ -185,7 +187,7 @@ echo "失败: $fail_count" >> "$RESULTS_FILE"
 if [[ $total_tests -gt 0 ]]; then
     echo "成功率: $((pass_count * 100 / total_tests))%" >> "$RESULTS_FILE"
 fi
-echo "完成时间: $(date)" >> "$RESULTS_FILE"
+echo "完成时间: $(log_timestamp)" >> "$RESULTS_FILE"
 
 echo ""
 echo "测试完成！"

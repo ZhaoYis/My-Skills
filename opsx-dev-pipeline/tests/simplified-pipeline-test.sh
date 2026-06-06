@@ -6,6 +6,8 @@
 set -euo pipefail
 
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/log-time.sh
+source "$TEST_DIR/lib/log-time.sh"
 SCRIPT_DIR="$(cd "$TEST_DIR/../scripts" && pwd)"
 LOGS_DIR="$TEST_DIR/logs"
 RESULTS_FILE="$LOGS_DIR/simplified-test-results.log"
@@ -14,7 +16,7 @@ mkdir -p "$LOGS_DIR"
 # 清空结果文件
 > "$RESULTS_FILE"
 
-echo "简化版管道测试 $(date)" >> "$RESULTS_FILE"
+echo "简化版管道测试 $(log_timestamp)" >> "$RESULTS_FILE"
 echo "============================" >> "$RESULTS_FILE"
 
 # 计数器
@@ -95,7 +97,7 @@ echo "失败: $fail_count" >> "$RESULTS_FILE"
 if [[ $total_tests -gt 0 ]]; then
     echo "成功率: $((pass_count * 100 / total_tests))%" >> "$RESULTS_FILE"
 fi
-echo "完成时间: $(date)" >> "$RESULTS_FILE"
+echo "完成时间: $(log_timestamp)" >> "$RESULTS_FILE"
 
 echo ""
 echo "测试完成！"

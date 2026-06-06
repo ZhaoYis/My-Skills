@@ -7,6 +7,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../scripts" && pwd)"
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/log-time.sh
+source "$TEST_DIR/lib/log-time.sh"
 LOGS_DIR="$TEST_DIR/logs"
 RESULTS_FILE="$LOGS_DIR/advanced-pipeline-test-results.log"
 
@@ -14,7 +16,7 @@ mkdir -p "$LOGS_DIR"
 # 清空结果文件
 > "$RESULTS_FILE"
 
-echo "高级管道功能测试 $(date)" >> "$RESULTS_FILE"
+echo "高级管道功能测试 $(log_timestamp)" >> "$RESULTS_FILE"
 echo "===========================================" >> "$RESULTS_FILE"
 
 # 测试结果计数器
@@ -425,7 +427,7 @@ echo "失败: $FAILED_TESTS" >> "$RESULTS_FILE"
 if [[ $TOTAL_TESTS -gt 0 ]]; then
     echo "成功率: $((PASSED_TESTS * 100 / TOTAL_TESTS))%" >> "$RESULTS_FILE"
 fi
-echo "完成时间: $(date)" >> "$RESULTS_FILE"
+echo "完成时间: $(log_timestamp)" >> "$RESULTS_FILE"
 
 echo ""
 echo "高级管道测试完成！"

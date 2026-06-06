@@ -1,25 +1,17 @@
-统一测试入口 Sat Jun  6 17:30:04 CST 2026
+统一测试入口 2026-06-06 17:33:09
 仓库: /Users/mrzhaoyi/Workspace/LLM/My-Skills/opsx-dev-pipeline
 
 [integrity] 仓库结构与文档完整性
-开始: Sat Jun  6 17:30:04 CST 2026
-结果: PASS (Sat Jun  6 17:30:04 CST 2026)
+开始: 2026-06-06 17:33:09
+结果: PASS (2026-06-06 17:33:09)
 
 [coverage] 分支矩阵覆盖校验
-开始: Sat Jun  6 17:30:04 CST 2026
-结果: PASS (Sat Jun  6 17:30:04 CST 2026)
-
-[regression] 契约自检与场景分支回归
-开始: Sat Jun  6 17:30:04 CST 2026
-结果: PASS (Sat Jun  6 17:30:57 CST 2026)
-
-[validation] schema 迁移与文档终检
-开始: Sat Jun  6 17:30:57 CST 2026
-结果: PASS (Sat Jun  6 17:30:57 CST 2026)
+开始: 2026-06-06 17:33:09
+结果: PASS (2026-06-06 17:33:09)
 
 ========================================
-套件总数: 4
-通过: 4
+套件总数: 2
+通过: 2
 失败: 0
-跳过: 2
-完成: Sat Jun  6 17:30:57 CST 2026
+跳过: 4
+完成: 2026-06-06 17:33:09
