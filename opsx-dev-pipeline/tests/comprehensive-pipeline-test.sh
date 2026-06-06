@@ -5,8 +5,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../scripts" && pwd)"
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$TEST_DIR/.." && pwd)"
-LOG_FILE="$TEST_DIR/comprehensive-test-results.log"
+LOGS_DIR="$TEST_DIR/logs"
+LOG_FILE="$LOGS_DIR/comprehensive-test-results.log"
 
+mkdir -p "$LOGS_DIR"
 > "$LOG_FILE"
 
 echo "开始全面管道测试 $(date)" >> "$LOG_FILE"
@@ -48,7 +50,7 @@ test_selftest() {
 }
 
 test_branch_coverage() {
-  bash "$REPO_ROOT/tests/tests/branch-coverage-test.sh"
+  bash "$REPO_ROOT/tests/branch-coverage-test.sh"
 }
 
 test_phase0_scenarios() {

@@ -3,11 +3,13 @@
 set -euo pipefail
 
 TEST_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$TEST_SCRIPT_DIR/../.." && pwd)"
+REPO_ROOT="$(cd "$TEST_SCRIPT_DIR/.." && pwd)"
+LOGS_DIR="$TEST_SCRIPT_DIR/logs"
 MATRIX_FILE="$REPO_ROOT/tests/pipeline-test/pipeline-branch-matrix.md"
 COVERAGE_MAP="$REPO_ROOT/tests/pipeline-test/branch-coverage-map.json"
-RESULTS_FILE="$REPO_ROOT/branch-coverage-test-results.log"
+RESULTS_FILE="$LOGS_DIR/branch-coverage-test-results.log"
 
+mkdir -p "$LOGS_DIR"
 > "$RESULTS_FILE"
 
 echo "管道分支覆盖率测试 $(date)" > "$RESULTS_FILE"

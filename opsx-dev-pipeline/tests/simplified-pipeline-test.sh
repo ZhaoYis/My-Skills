@@ -3,10 +3,12 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="../scripts"
-TEST_DIR="."
-RESULTS_FILE="simplified-test-results.log"
+TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$TEST_DIR/../scripts" && pwd)"
+LOGS_DIR="$TEST_DIR/logs"
+RESULTS_FILE="$LOGS_DIR/simplified-test-results.log"
 
+mkdir -p "$LOGS_DIR"
 # 清空结果文件
 > "$RESULTS_FILE"
 

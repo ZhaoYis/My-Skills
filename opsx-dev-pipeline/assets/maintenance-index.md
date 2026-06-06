@@ -18,7 +18,7 @@
 | 正文文档 | `references/phase-*.md`、`references/recovery-guardrails-appendix.md` | 执行步骤、命令、阶段内决策点、跨阶段规则、Error Handling | 历史测试记录、仅维护用途的索引矩阵 |
 | 索引文档 | `assets/decision-point-index.md`、`assets/failure-recovery-index.md`、`assets/maintenance-index.md` | 导航、矩阵、反查关系、维护说明 | 第二份规则正文、与正文冲突的解释段 |
 | 专题文档 | `assets/schema-adapter-summary.md`、`assets/script-io-conventions.md` | schema 差异、脚本 I/O 契约、专题约束 | 与 Phase 正文冲突的流程主线定义 |
-| 历史记录 / 测试输出 | `tests/*.log` | 测试结果、历史结论、归档记录 | 当前规范权威、自动检查的唯一事实来源 |
+| 历史记录 / 测试输出 | `tests/logs/*.log` | 测试结果、历史结论、归档记录 | 当前规范权威、自动检查的唯一事实来源 |
 
 维护约束：
 - 历史记录不得充当规则权威来源
@@ -82,7 +82,7 @@
 在做完整性扫描、grep 残留检查、结构校验时，应优先区分“当前规范”与“历史输出”：
 
 - 通常应排除：
-  - `tests/*.log`
+  - `tests/logs/*.log`
   - 仅用于记录历史结论的 markdown
 - 若扫描目标是“规范残留”或“硬编码残留”，历史测试输出默认不作为权威输入
 - 若扫描目标是“用户可见说明”或“对外文档”，可按需要把历史 markdown 纳入结果

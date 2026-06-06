@@ -6,8 +6,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../scripts" && pwd)"
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-RESULTS_FILE="$TEST_DIR/advanced-pipeline-test-results.log"
+LOGS_DIR="$TEST_DIR/logs"
+RESULTS_FILE="$LOGS_DIR/advanced-pipeline-test-results.log"
 
+mkdir -p "$LOGS_DIR"
 # 清空结果文件
 > "$RESULTS_FILE"
 

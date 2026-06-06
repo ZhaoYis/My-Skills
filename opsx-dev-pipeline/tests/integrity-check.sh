@@ -12,8 +12,10 @@ SCRIPT_DIR="$(cd "$(dirname "$0")/../scripts" && pwd)"
 REFERENCE_DIR="$(cd "$(dirname "$0")/../references" && pwd)"
 ASSET_DIR="$(cd "$(dirname "$0")/../assets" && pwd)"
 TEST_ROOT="$(cd "$(dirname "$0")" && pwd)"
-RESULTS_FILE="$TEST_ROOT/integrity-test-results.log"
+LOGS_DIR="$TEST_ROOT/logs"
+RESULTS_FILE="$LOGS_DIR/integrity-test-results.log"
 
+mkdir -p "$LOGS_DIR"
 # 清空结果文件
 > "$RESULTS_FILE"
 
