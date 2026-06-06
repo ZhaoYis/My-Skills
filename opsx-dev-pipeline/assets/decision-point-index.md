@@ -1,6 +1,6 @@
 # opsx-dev-pipeline 决策点索引
 
-> 本文件仅作决策点导航索引，不是规则正文；统一动作语义、保守恢复原则与跨阶段规则以 `references/recovery-guardrails-appendix.md` 与相关 `references/phase-*.md` 为准。
+> 本文件仅作决策点导航索引，不是规则正文；统一动作语义、保守恢复原则与跨阶段规则以 `assets/recovery-guardrails-appendix.md` 与相关 `references/phase-*.md` 为准。
 
 本文件只保留当前 skill 仍需要的决策点索引与统一语义，不再保留历史梳理步骤。
 
@@ -9,7 +9,7 @@
 为避免摘要层与执行层不一致，决策点信息遵循以下优先级：
 
 1. `references/phase-*.md` 正文优先
-2. `references/recovery-guardrails-appendix.md` 负责跨阶段总览、恢复说明与降级规则
+2. `assets/recovery-guardrails-appendix.md` 负责跨阶段总览、恢复说明与降级规则
 3. `SKILL.md` 只负责摘要、索引与入口说明，不单独定义新的执行语义
 
 ## 2. 决策点总表
@@ -37,7 +37,7 @@
 
 ## 3. 统一动作语义
 
-本节仅保留索引级术语对照；统一动作语义的规则正文以 `references/recovery-guardrails-appendix.md` **§3.2** 为准。
+本节仅保留索引级术语对照；统一动作语义的规则正文以 `assets/recovery-guardrails-appendix.md` **§3.2** 为准。
 
 - 优先使用 `继续后续流程`
 - 优先使用 `暂停流水线，手动调整后继续`
@@ -47,7 +47,7 @@
 
 ## 4. 关键续接规则
 
-本节仅保留导航摘要；已有 change 的续接与保守恢复原则以 `references/recovery-guardrails-appendix.md` **§3.2** 与 `references/phase-0-entrance.md` 为准。
+本节仅保留导航摘要；已有 change 的续接与保守恢复原则以 `assets/recovery-guardrails-appendix.md` **§3.2** 与 `references/phase-0-entrance.md` 为准。
 
 - 制品未完成 → Phase 1
 - 制品已完成但任务未完成 → Phase 2
@@ -59,4 +59,4 @@
 
 - 流程入口：`SKILL.md`
 - Phase 正文：`references/phase-*.md`
-- 恢复与总览：`references/recovery-guardrails-appendix.md`
+- 恢复与总览：`assets/recovery-guardrails-appendix.md`

@@ -4,7 +4,7 @@
 
 使用原则：
 - 先在本页定位受影响范围，再去改具体文件
-- Phase 与跨阶段规则正文分别以 `references/phase-*.md` 与 `references/recovery-guardrails-appendix.md` 为准
+- Phase 与跨阶段规则正文分别以 `references/phase-*.md` 与 `assets/recovery-guardrails-appendix.md` 为准
 - 决策点索引以 `assets/decision-point-index.md` 为准
 - 脚本输出契约以 `assets/script-io-conventions.md` 为准
 - 恢复与异常导航以 `assets/failure-recovery-index.md` 为准
@@ -15,7 +15,7 @@
 | 文档类型 | 文件 | 允许承载的内容 | 禁止承载的内容 |
 | --- | --- | --- | --- |
 | 入口文档 | `SKILL.md` | 入口摘要、阅读顺序、Phase 导航、权威来源地图 | 长规则正文、第二份决策规则、第二份恢复总则 |
-| 正文文档 | `references/phase-*.md`、`references/recovery-guardrails-appendix.md` | 执行步骤、命令、阶段内决策点、跨阶段规则、Error Handling | 历史测试记录、仅维护用途的索引矩阵 |
+| 正文文档 | `references/phase-*.md`、`assets/recovery-guardrails-appendix.md` | 执行步骤、命令、阶段内决策点、跨阶段规则、Error Handling | 历史测试记录、仅维护用途的索引矩阵 |
 | 索引文档 | `assets/decision-point-index.md`、`assets/failure-recovery-index.md`、`assets/maintenance-index.md` | 导航、矩阵、反查关系、维护说明 | 第二份规则正文、与正文冲突的解释段 |
 | 专题文档 | `assets/schema-adapter-summary.md`、`assets/script-io-conventions.md` | schema 差异、脚本 I/O 契约、专题约束 | 与 Phase 正文冲突的流程主线定义 |
 | 历史记录 / 测试输出 | `tests/logs/*.log` | 测试结果、历史结论、归档记录 | 当前规范权威、自动检查的唯一事实来源 |
@@ -24,7 +24,7 @@
 - 历史记录不得充当规则权威来源
 - 索引文档不得重新发明规则正文
 - 入口文档不得扩写成长规则说明
-- 如需新增规则，优先判断应写入 `references/phase-*.md` 还是 `references/recovery-guardrails-appendix.md`
+- 如需新增规则，优先判断应写入 `references/phase-*.md` 还是 `assets/recovery-guardrails-appendix.md`
 
 ## 3. plan-first 维护流程
 
@@ -40,11 +40,11 @@
 | 变更类型 | 主权威文件 | 次级索引 / 维护文件 | 入口摘要文件 | 必查脚本 / 测试 |
 | --- | --- | --- | --- | --- |
 | 决策点选项变化 | `references/phase-*.md` | `assets/decision-point-index.md`、`assets/maintenance-index.md` | `SKILL.md` | `tests/comprehensive-pipeline-test.sh`、`tests/final-validation.sh` |
-| 决策自动化分级变化 | `references/recovery-guardrails-appendix.md` | `assets/decision-point-index.md`、`assets/maintenance-index.md` | `SKILL.md` | `tests/final-validation.sh` |
-| 已有 change 续接规则变化 | `references/phase-0-entrance.md`、`references/recovery-guardrails-appendix.md` | `assets/decision-point-index.md`、`assets/failure-recovery-index.md`、本页 | `SKILL.md` | `tests/comprehensive-pipeline-test.sh`、`tests/final-validation.sh` |
-| AskQuestion fallback 变化 | `references/recovery-guardrails-appendix.md` | `assets/decision-point-index.md`、本页 | `SKILL.md` | `tests/final-validation.sh` |
-| Error Handling 变化 | `references/recovery-guardrails-appendix.md` | `assets/failure-recovery-index.md`、本页 | `SKILL.md` | `tests/integrity-check.sh`、`tests/final-validation.sh` |
-| schema-aware 规则变化 | `assets/schema-adapter-summary.md`、`references/recovery-guardrails-appendix.md` | `assets/failure-recovery-index.md`、本页 | `SKILL.md` | `bash scripts/opsx-selftest.sh`、schema 相关流程测试 |
+| 决策自动化分级变化 | `assets/recovery-guardrails-appendix.md` | `assets/decision-point-index.md`、`assets/maintenance-index.md` | `SKILL.md` | `tests/final-validation.sh` |
+| 已有 change 续接规则变化 | `references/phase-0-entrance.md`、`assets/recovery-guardrails-appendix.md` | `assets/decision-point-index.md`、`assets/failure-recovery-index.md`、本页 | `SKILL.md` | `tests/comprehensive-pipeline-test.sh`、`tests/final-validation.sh` |
+| AskQuestion fallback 变化 | `assets/recovery-guardrails-appendix.md` | `assets/decision-point-index.md`、本页 | `SKILL.md` | `tests/final-validation.sh` |
+| Error Handling 变化 | `assets/recovery-guardrails-appendix.md` | `assets/failure-recovery-index.md`、本页 | `SKILL.md` | `tests/integrity-check.sh`、`tests/final-validation.sh` |
+| schema-aware 规则变化 | `assets/schema-adapter-summary.md`、`assets/recovery-guardrails-appendix.md` | `assets/failure-recovery-index.md`、本页 | `SKILL.md` | `bash scripts/opsx-selftest.sh`、schema 相关流程测试 |
 | verify 解析规则变化 | `references/phase-4-archive.md`、`assets/script-io-conventions.md` | `assets/failure-recovery-index.md`、本页 | `SKILL.md` | `bash scripts/opsx-selftest.sh`、`tests/integrity-check.sh` |
 | 脚本 I/O 变化 | `assets/script-io-conventions.md` | 所有关联 `references/phase-*.md`、本页 | `SKILL.md` | `bash scripts/opsx-selftest.sh`、`bash -n scripts/*.sh` |
 | Phase 门禁 / 顺序变化 | 对应 `references/phase-*.md` | `assets/decision-point-index.md`、`assets/failure-recovery-index.md`、本页 | `SKILL.md` | `tests/comprehensive-pipeline-test.sh`、`tests/final-validation.sh` |
@@ -54,10 +54,10 @@
 | 变更类型 | 必须同步检查的文件 | 同步重点 |
 | --- | --- | --- |
 | 决策点选项变化 | `SKILL.md`、`assets/decision-point-index.md`、相关 `references/phase-*.md`、本页 | 入口摘要、索引表、阶段正文是否一致 |
-| 决策自动化分级变化 | `SKILL.md`、`assets/decision-point-index.md`、`references/recovery-guardrails-appendix.md`、本页 | 摘要描述、索引术语、唯一正文位置 |
-| 已有 change 续接规则变化 | `SKILL.md`、`references/phase-0-entrance.md`、`references/recovery-guardrails-appendix.md`、`assets/decision-point-index.md`、`assets/failure-recovery-index.md`、本页 | 入口判断、保守恢复、索引摘要 |
-| AskQuestion fallback 变化 | `SKILL.md`、`references/recovery-guardrails-appendix.md`、相关 phase 文件、`assets/decision-point-index.md` | 所有决策点降级文案 |
-| Error Handling 变化 | `SKILL.md`、`references/recovery-guardrails-appendix.md`、`assets/failure-recovery-index.md`、相关 phase 文件 | 异常场景与恢复动作 |
+| 决策自动化分级变化 | `SKILL.md`、`assets/decision-point-index.md`、`assets/recovery-guardrails-appendix.md`、本页 | 摘要描述、索引术语、唯一正文位置 |
+| 已有 change 续接规则变化 | `SKILL.md`、`references/phase-0-entrance.md`、`assets/recovery-guardrails-appendix.md`、`assets/decision-point-index.md`、`assets/failure-recovery-index.md`、本页 | 入口判断、保守恢复、索引摘要 |
+| AskQuestion fallback 变化 | `SKILL.md`、`assets/recovery-guardrails-appendix.md`、相关 phase 文件、`assets/decision-point-index.md` | 所有决策点降级文案 |
+| Error Handling 变化 | `SKILL.md`、`assets/recovery-guardrails-appendix.md`、`assets/failure-recovery-index.md`、相关 phase 文件 | 异常场景与恢复动作 |
 | schema-aware 规则变化 | `SKILL.md`、`assets/schema-adapter-summary.md`、`references/phase-2-apply.md`、`references/phase-4-archive.md`、`references/phase-5-unit-tests.md`、`assets/failure-recovery-index.md` | custom schema 路径与门禁边界 |
 | verify 解析规则变化 | `assets/script-io-conventions.md`、`references/phase-4-archive.md`、`assets/failure-recovery-index.md`、本页 | verify 候选、失败恢复、脚本契约 |
 | 脚本 I/O 变化 | `assets/script-io-conventions.md`、所有消费该脚本的 phase 文档、`SKILL.md`、本页 | 参数、字段、退出码、调用方假设 |
@@ -90,7 +90,7 @@
 
 ## 7. 常见遗漏点清单
 
-- 改了 `references/recovery-guardrails-appendix.md`，没同步 `assets/decision-point-index.md`
+- 改了 `assets/recovery-guardrails-appendix.md`，没同步 `assets/decision-point-index.md`
 - 改了脚本字段或退出码，没同步 `assets/script-io-conventions.md`
 - 改了已有 change 续接规则，没同步 `SKILL.md` 与 `assets/failure-recovery-index.md`
 - 改了 verify 逻辑，没同步 `references/phase-4-archive.md` 与 `assets/failure-recovery-index.md`
@@ -110,7 +110,7 @@
 | 4 | 12–16 | `references/phase-4-archive.md` | `opsx-change-status.sh`、`opsx-resolve-verify.sh`、`opsx-archive.sh` | `opsx-validate-change.sh`、`opsx-change-context.sh` | 归档决策、归档后 git 选择 | `opsx-change-context.sh` 在 verify 解析失败时作回退补充 |
 | 5 | 16 | `references/phase-5-unit-tests.md` | - | `opsx-change-context.sh` | 测试命令确认、门禁选择 | 主要复用 schema-aware 上下文 |
 | 6 | 17–22 | `references/phase-6-merge-push.md` | - | - | 预提交、提交、推送、合并、删分支 | 主要是内联 git 流程 |
-| 附录 | 跨阶段 | `references/recovery-guardrails-appendix.md` | 说明性引用：`opsx-detect-schema.sh`、`opsx-archive.sh` | - | AskQuestion fallback、恢复、错误处理 | 规则汇总，不是主执行入口 |
+| 附录 | 跨阶段 | `assets/recovery-guardrails-appendix.md` | 说明性引用：`opsx-detect-schema.sh`、`opsx-archive.sh` | - | AskQuestion fallback、恢复、错误处理 | 规则汇总，不是主执行入口 |
 
 ## 9. 高复用脚本反向影响表
 

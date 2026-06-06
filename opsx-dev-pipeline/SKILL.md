@@ -22,13 +22,13 @@ metadata:
 - 除用户在决策点明确选择「终止流程」或「暂停流水线」外，不得单方结束全流程；如必须结束，须先说明原因并征得同意。
 - 高风险决策必须显式确认；推荐项不等于自动代选。
 - AskQuestion **首选**用于决策点；若不可用则使用与对应 Phase 文案一致的编号选项。
-- 详细的 guardrails、恢复规则、AskQuestion fallback、Error Handling 与决策自动化分级，以 `references/recovery-guardrails-appendix.md` 为准。
+- 详细的 guardrails、恢复规则、AskQuestion fallback、Error Handling 与决策自动化分级，以 `assets/recovery-guardrails-appendix.md` 为准。
 
 ## 阅读顺序（精简版）
 
 1. 先阅读本页的 **最小执行约束摘要** 与 **Phase 引用表**
 2. 再进入当前所处 Phase 的 `references/phase-*.md`
-3. 遇到跨阶段规则、恢复、降级、决策自动化分级时，统一查阅 `references/recovery-guardrails-appendix.md`
+3. 遇到跨阶段规则、恢复、降级、决策自动化分级时，统一查阅 `assets/recovery-guardrails-appendix.md`
 4. 维护 skill 本身时，先看 `assets/maintenance-index.md`
 
 ## Phase 引用表
@@ -44,12 +44,12 @@ metadata:
 | 4 | 提案归档 (Archive) | `references/phase-4-archive.md` |
 | 5 | 审查后单元测试门禁 | `references/phase-5-unit-tests.md` |
 | 6 | 提交合并推送 (Merge & Push) | `references/phase-6-merge-push.md` |
-| — | 中断恢复、护栏、错误处理、决策点总览 | `references/recovery-guardrails-appendix.md` |
+| — | 中断恢复、护栏、错误处理、决策点总览 | `assets/recovery-guardrails-appendix.md` |
 
 ## 权威来源地图
 
 - **Phase 执行正文**：`references/phase-*.md`
-- **跨阶段规则 / 恢复 / 降级 / Error Handling / 决策自动化分级**：`references/recovery-guardrails-appendix.md`
+- **跨阶段规则 / 恢复 / 降级 / Error Handling / 决策自动化分级**：`assets/recovery-guardrails-appendix.md`
 - **决策点导航索引**：`assets/decision-point-index.md`
 - **失败恢复导航索引**：`assets/failure-recovery-index.md`
 - **schema-aware 差异专题**：`assets/schema-adapter-summary.md`
@@ -59,14 +59,14 @@ metadata:
 ## 执行说明
 
 - **阅读顺序**：本页只负责入口、导航与最小约束；具体执行步骤与命令以各 `references/phase-*.md` 为准。
-- **代码规范**：凡涉及编写或修改实现/测试代码的 Phase，均以目标仓库的项目基准（默认 `openspec/config.yaml` → `AGENTS.md` → `CLAUDE.md`；自定义 schema 时优先结合 `openspec/config.yaml` 中的 schema 上下文）及既有代码与单测风格为准。详见 `references/phase-2-apply.md` 与 `references/recovery-guardrails-appendix.md` **§2.5**。
+- **代码规范**：凡涉及编写或修改实现/测试代码的 Phase，均以目标仓库的项目基准（默认 `openspec/config.yaml` → `AGENTS.md` → `CLAUDE.md`；自定义 schema 时优先结合 `openspec/config.yaml` 中的 schema 上下文）及既有代码与单测风格为准。详见 `references/phase-2-apply.md` 与 `assets/recovery-guardrails-appendix.md` **§2.5**。
 - **进度跟踪**：Phase 1 等多制品阶段推荐使用 **TaskCreate / TaskUpdate / TaskList** 跟踪制品与任务进度。
 - **用户提示格式**：进入新 Phase、从暂停点恢复或用户补充自由文本后，优先使用 `Phase / change / 当前步骤 / 已知状态 / 下一动作` 的短格式，模板见附录 **§1.1–1.2**。
 - **维护入口**：维护 `SKILL.md`、`references/`、`scripts/` 与 `assets/` 的联动关系时，先看 `assets/maintenance-index.md`。
 
 ## 流程概览（Mermaid）
 
-**说明**：下图仅示意主干顺序；图中 **Phase N** 为方便阅读的阶段昵称，**不是** `openspec` 子命令名，也不一定对应某个脚本文件名。完整步骤、命令、决策点与例外路径以 `references/phase-*.md` 与 `references/recovery-guardrails-appendix.md` 为准。
+**说明**：下图仅示意主干顺序；图中 **Phase N** 为方便阅读的阶段昵称，**不是** `openspec` 子命令名，也不一定对应某个脚本文件名。完整步骤、命令、决策点与例外路径以 `references/phase-*.md` 与 `assets/recovery-guardrails-appendix.md` 为准。
 
 ```mermaid
 flowchart TD
