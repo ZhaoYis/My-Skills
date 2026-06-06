@@ -1,13 +1,12 @@
 ---
-
-## name: opsx-dev-pipeline
-
+name: opsx-dev-pipeline
 description: OpenSpec + Git 需求开发全流程。  
 license: MIT  
 compatibility: 需安装 openspec 与 git CLI；建议在 Cursor 中配合 AskQuestion。默认兼容 OpenSpec 默认 schema，并优先支持 `openspec/config.yaml` 中声明的自定义 schema。  
 metadata:  
   author: zhaoyi  
   version: "2.2"
+---
 
 # 需求开发全流程流水线
 
