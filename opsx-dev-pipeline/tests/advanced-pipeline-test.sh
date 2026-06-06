@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# 高级管道测试脚本，验证核心功能和分支覆盖
-# 基于 pipeline-branch-matrix.md 中定义的关键路径
+# [可选套件 integration] OpenSpec 临时目录集成测试（较慢，需 openspec CLI）
+# 默认请使用: bash tests/run-all.sh
+# 单独运行: bash tests/run-all.sh --only integration
 
 set -euo pipefail
 

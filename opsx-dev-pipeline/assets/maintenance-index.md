@@ -8,7 +8,7 @@
 - 决策点索引以 `assets/decision-point-index.md` 为准
 - 脚本输出契约以 `assets/script-io-conventions.md` 为准
 - 恢复与异常导航以 `assets/failure-recovery-index.md` 为准
-- 回归入口优先使用 `scripts/opsx-selftest.sh` 与 `tests/*.sh`
+- 回归入口优先使用 `bash tests/run-all.sh`（统一入口）；快速契约自检可用 `scripts/opsx-selftest.sh`
 
 ## 2. 文档类型分层与约束
 
@@ -130,9 +130,9 @@
 - 恢复与异常路径：`assets/failure-recovery-index.md`
 - 脚本自检入口：`scripts/opsx-selftest.sh`
 - 流程完整性与综合回归：
-  - `tests/integrity-check.sh`
-  - `tests/comprehensive-pipeline-test.sh`
-  - `tests/final-validation.sh`
+  - `tests/run-all.sh`（统一入口，默认跑 integrity + coverage + regression + validation）
+  - `tests/integrity-check.sh`、`tests/final-validation.sh`（可由 run-all 单独调用：`--only integrity` / `--only validation`）
+  - `tests/comprehensive-pipeline-test.sh`（兼容别名，等同 `--only regression`）
 
 ## 11. 回归基线资料入口
 

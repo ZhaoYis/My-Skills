@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# 简化的测试脚本，验证管道的关键分支和门禁
+# [可选套件 smoke] 轻量冒烟：脚本存在 + preflight/list 可调用
+# 默认请使用: bash tests/run-all.sh
+# 单独运行: bash tests/run-all.sh --only smoke
 
 set -euo pipefail
 
