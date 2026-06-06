@@ -47,7 +47,7 @@ opsx-dev-pipeline 统一测试入口
   -h, --help          显示帮助
 
 可用套件:
-  integrity     仓库结构、文档、脚本权限、yzw-workflow 残留检查
+  integrity     仓库结构、文档、脚本权限
   coverage      分支矩阵与 branch-coverage-map.json 一致性
   regression    opsx-selftest + pipeline-test 场景分支断言
   validation    schema 迁移与 SKILL/Phase 文档终检

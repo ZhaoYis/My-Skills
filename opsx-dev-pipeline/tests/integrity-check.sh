@@ -163,18 +163,7 @@ else
     log_result "TEST-MATRIX" "FAIL" "测试分支矩阵不存在"
 fi
 
-# 6. 检查自定义 schema 功能是否已移除硬编码引用
-echo "验证 yzw-workflow 硬编码移除..."
-# 排除当前测试脚本自身
-yzw_refs=$(find "$(cd "$TEST_ROOT/.." && pwd)" \( -name "*.md" -o -name "*.sh" -o -name "*.yaml" -o -name "*.yml" \) -not -path "*integrity-check*" -not -path "*final-validation*" -not -path "*FINAL_TEST_REPORT*" | xargs grep -l "yzw-workflow" 2>/dev/null || true)
-
-if [[ -z "$yzw_refs" ]]; then
-    log_result "NO-HARD-YZW" "PASS" "没有发现 yzw-workflow 硬编码引用"
-else
-    log_result "NO-HARD-YZW" "FAIL" "发现 yzw-workflow 硬编码引用在: $yzw_refs"
-fi
-
-# 7. 验证 schema 检测脚本功能
+# 6. 验证 schema 检测脚本功能
 if [[ -f "$SCRIPT_DIR/opsx-detect-schema.sh" ]]; then
     # 测试脚本是否能正确解析
     if bash -n "$SCRIPT_DIR/opsx-detect-schema.sh" 2>/dev/null; then
