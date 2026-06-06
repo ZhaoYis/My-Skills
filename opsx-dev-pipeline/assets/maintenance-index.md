@@ -10,7 +10,23 @@
 - 恢复与异常导航以 `assets/failure-recovery-index.md` 为准
 - 回归入口优先使用 `scripts/opsx-selftest.sh` 与 `tests/*.sh`
 
-## 1. plan-first 维护流程
+## 2. 文档类型分层与约束
+
+| 文档类型 | 文件 | 允许承载的内容 | 禁止承载的内容 |
+| --- | --- | --- | --- |
+| 入口文档 | `SKILL.md` | 入口摘要、阅读顺序、Phase 导航、权威来源地图 | 长规则正文、第二份决策规则、第二份恢复总则 |
+| 正文文档 | `references/phase-*.md`、`references/recovery-guardrails-appendix.md` | 执行步骤、命令、阶段内决策点、跨阶段规则、Error Handling | 历史测试记录、仅维护用途的索引矩阵 |
+| 索引文档 | `assets/decision-point-index.md`、`assets/failure-recovery-index.md`、`assets/maintenance-index.md` | 导航、矩阵、反查关系、维护说明 | 第二份规则正文、与正文冲突的解释段 |
+| 专题文档 | `assets/schema-adapter-summary.md`、`assets/script-io-conventions.md` | schema 差异、脚本 I/O 契约、专题约束 | 与 Phase 正文冲突的流程主线定义 |
+| 历史记录 / 测试输出 | `tests/*.log` | 测试结果、历史结论、归档记录 | 当前规范权威、自动检查的唯一事实来源 |
+
+维护约束：
+- 历史记录不得充当规则权威来源
+- 索引文档不得重新发明规则正文
+- 入口文档不得扩写成长规则说明
+- 如需新增规则，优先判断应写入 `references/phase-*.md` 还是 `references/recovery-guardrails-appendix.md`
+
+## 3. plan-first 维护流程
 
 1. 先识别本次改动类型
 2. 定位主权威文件
@@ -61,7 +77,18 @@
 | 脚本 I/O 变化 | `bash scripts/opsx-selftest.sh`、`bash -n scripts/opsx-preflight.sh scripts/opsx-detect-schema.sh scripts/opsx-change-context.sh scripts/opsx-resolve-verify.sh scripts/opsx-selftest.sh` | 核对调用文档是否引用了最新字段 |
 | Phase 门禁 / 顺序变化 | `tests/comprehensive-pipeline-test.sh`、`tests/final-validation.sh` | 检查流程图、Phase 表与 phase 正文是否一致 |
 
-## 5. 常见遗漏点清单
+## 6. 自动检查排除策略
+
+在做完整性扫描、grep 残留检查、结构校验时，应优先区分“当前规范”与“历史输出”：
+
+- 通常应排除：
+  - `tests/*.log`
+  - 仅用于记录历史结论的 markdown
+- 若扫描目标是“规范残留”或“硬编码残留”，历史测试输出默认不作为权威输入
+- 若扫描目标是“用户可见说明”或“对外文档”，可按需要把历史 markdown 纳入结果
+- 验证脚本中的排除规则若依赖当前目录结构，改动结构时必须同步更新 `tests/integrity-check.sh` 与 `tests/final-validation.sh`
+
+## 7. 常见遗漏点清单
 
 - 改了 `references/recovery-guardrails-appendix.md`，没同步 `assets/decision-point-index.md`
 - 改了脚本字段或退出码，没同步 `assets/script-io-conventions.md`
@@ -71,7 +98,7 @@
 - 改了 schema-aware 规则，没同步 `assets/schema-adapter-summary.md`
 - 改了索引文档后，又在其中重新写回第二份规则正文
 
-## 6. Phase / reference / script 主映射表
+## 8. Phase / reference / script 主映射表
 
 | Phase | 步骤范围 | 主 references 文件 | 直接调用脚本 | 复用脚本 | 无脚本/人工步骤 | 备注 |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -85,7 +112,7 @@
 | 6 | 17–22 | `references/phase-6-merge-push.md` | - | - | 预提交、提交、推送、合并、删分支 | 主要是内联 git 流程 |
 | 附录 | 跨阶段 | `references/recovery-guardrails-appendix.md` | 说明性引用：`opsx-detect-schema.sh`、`opsx-archive.sh` | - | AskQuestion fallback、恢复、错误处理 | 规则汇总，不是主执行入口 |
 
-## 7. 高复用脚本反向影响表
+## 9. 高复用脚本反向影响表
 
 | 脚本名 | 被哪些 Phase 使用 | 关联 references | 调用性质 | 变更后必查项 |
 | --- | --- | --- | --- | --- |
@@ -96,7 +123,7 @@
 | `scripts/opsx-detect-schema.sh` | 0、附录 | `phase-0-entrance.md`、`recovery-guardrails-appendix.md` | 首选 | schema 探测说明、custom schema 分支、archived change 探测、自测中的 schema 断言 |
 | `scripts/opsx-resolve-verify.sh` | 4 | `phase-4-archive.md` | 首选 | verify 解析优先级、warning/fallback 语义、Phase 5→4 交接、自测中的 verify 命令断言 |
 
-## 8. 维护时优先复用的资料
+## 10. 维护时优先复用的资料
 
 - 决策点与确认等级：`assets/decision-point-index.md`
 - 脚本输出约定：`assets/script-io-conventions.md`
@@ -107,7 +134,7 @@
   - `tests/comprehensive-pipeline-test.sh`
   - `tests/final-validation.sh`
 
-## 9. 回归基线资料入口
+## 11. 回归基线资料入口
 
 后续修改关键脚本、Phase 判路规则或恢复语义时，优先回查以下基线样例：
 

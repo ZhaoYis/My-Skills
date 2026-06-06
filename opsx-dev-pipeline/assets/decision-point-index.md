@@ -1,5 +1,7 @@
 # opsx-dev-pipeline 决策点索引
 
+> 本文件仅作决策点导航索引，不是规则正文；统一动作语义、保守恢复原则与跨阶段规则以 `references/recovery-guardrails-appendix.md` 与相关 `references/phase-*.md` 为准。
+
 本文件只保留当前 skill 仍需要的决策点索引与统一语义，不再保留历史梳理步骤。
 
 ## 1. 权威来源规则

@@ -336,6 +336,26 @@
 
 ---
 
+## 已实施项
+
+- 已完成第一轮结构优化：`SKILL.md` 入口瘦身、appendix 收权、索引降重、维护矩阵升级
+- 已修复并跑通：`scripts/opsx-selftest.sh`、`tests/integrity-check.sh`、`tests/comprehensive-pipeline-test.sh`、`tests/final-validation.sh`
+- 已完成的详细勾选项见下方检查表
+
+## 待实施项
+
+- 当前无阻塞性的第一轮待实施项；如后续新增结构调整，应继续沿用本文件的变更顺序与验证动作
+
+## 下一轮候选优化项
+
+- 在 `assets/maintenance-index.md` 中持续强化文档类型分层与自动检查排除策略
+- 进一步收窄 `assets/decision-point-index.md` 的解释性文字，使其更接近纯导航索引
+- 继续模板化 `assets/failure-recovery-index.md` 中的恢复动作描述，降低自然语言漂移
+- 为验证脚本补充当前 repo 结构依赖注释，降低未来结构调整后的脚本漂移风险
+- 对历史测试产物与当前规范文档做更明确分层，避免自动检查误报
+
+---
+
 ## 推荐执行顺序
 
 1. `references/recovery-guardrails-appendix.md`

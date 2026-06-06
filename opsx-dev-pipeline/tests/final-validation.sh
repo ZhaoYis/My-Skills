@@ -1,6 +1,10 @@
 #!/bin/bash
 # 最终验证脚本：确认 yzw-workflow 硬编码已完全移除
 # 并验证所有修改都正确应用
+# 结构约束：
+# - 通过脚本位置反推仓库根目录
+# - 根目录必须包含 SKILL.md
+# - references/ 与 scripts/ 位于仓库根目录下
 
 set -euo pipefail
 

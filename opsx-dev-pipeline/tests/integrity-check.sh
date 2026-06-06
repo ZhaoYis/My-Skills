@@ -1,5 +1,10 @@
 #!/bin/bash
 # 管道完整性测试脚本
+# 结构约束：默认从 tests/ 目录内或仓库根目录调用。
+# 当前 repo 结构假设：
+# - 根目录存在 SKILL.md
+# - schema 适配摘要位于 assets/schema-adapter-summary.md
+# - 测试矩阵位于 tests/pipeline-test/pipeline-branch-matrix.md
 
 set -euo pipefail
 
