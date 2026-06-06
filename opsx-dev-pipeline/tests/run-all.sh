@@ -120,14 +120,14 @@ run_suite() {
   if "$@"; then
     ((PASSED_SUITES+=1))
     echo "[PASS] $name"
-    echo "结果: PASS ($(log_timestamp))" >> "$SUMMARY_FILE"
+    echo "结果: PASS" >> "$SUMMARY_FILE"
     return 0
   fi
 
   ((FAILED_SUITES+=1))
   FAILED_SUITE_NAMES+=("$name")
   echo "[FAIL] $name"
-  echo "结果: FAIL ($(log_timestamp))" >> "$SUMMARY_FILE"
+  echo "结果: FAIL" >> "$SUMMARY_FILE"
   return 1
 }
 
@@ -235,10 +235,8 @@ main() {
 
   > "$SUMMARY_FILE"
   echo "统一测试入口 $(log_timestamp)" >> "$SUMMARY_FILE"
-  echo "仓库: $REPO_ROOT" >> "$SUMMARY_FILE"
 
   echo "opsx-dev-pipeline 统一测试"
-  echo "仓库: $REPO_ROOT"
   echo "日志: $SUMMARY_FILE"
 
   local exit_code=0
