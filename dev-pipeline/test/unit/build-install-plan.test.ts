@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { buildInstallPlan } from '../../src/core/init/buildInstallPlan.js';
 import type { ToolAdapter, ToolId } from '../../src/core/adapters/types.js';
 import type { ManagedAssetRecord } from '../../src/core/manifest/types.js';
-import { MANIFEST_FILE } from '../../src/core/runtime/meta.js';
 
 function createAdapter(id: ToolId, skills: string, commands: string, displayName: string): ToolAdapter {
   return {
@@ -67,7 +66,6 @@ describe('buildInstallPlan', () => {
       registry
     });
 
-    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', MANIFEST_FILE))).toBe(true);
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', docsPath))).toBe(true);
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-dev-pipeline', 'SKILL.md'))).toBe(true);
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-dev-pipeline', 'references', 'phase-0-entrance.md'))).toBe(true);
@@ -138,7 +136,6 @@ describe('buildInstallPlan', () => {
   it('limits sync plans to manifest-managed assets', async () => {
     const managedAssets: ManagedAssetRecord[] = [
       { id: 'common-readme', destination: 'README.md' },
-      { id: 'common-metadata', destination: MANIFEST_FILE },
       { id: 'opsx-learn-command', destination: '.claude/commands/opsx-learn.md' },
       { id: 'opsx-learn-skill-bundle:SKILL.md.hbs', destination: '.claude/skills/opsx-learn/SKILL.md' }
     ];
@@ -149,7 +146,6 @@ describe('buildInstallPlan', () => {
     });
 
     expect(plan.files.map((file) => file.assetId).sort()).toEqual([
-      'common-metadata',
       'common-readme',
       'opsx-learn-command',
       'opsx-learn-skill-bundle:SKILL.md.hbs'

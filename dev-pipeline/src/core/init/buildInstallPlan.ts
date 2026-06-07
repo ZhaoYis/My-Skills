@@ -4,7 +4,7 @@ import { getToolAdapter } from '../adapters/registry.js';
 import type { FeatureId, ToolId } from '../adapters/types.js';
 import { assetManifest } from '../assets/manifest.js';
 import type { AssetDefinition, InstallFile } from '../assets/types.js';
-import { MANIFEST_FILE, PACKAGE_NAME, TEMPLATE_VERSION } from '../runtime/meta.js';
+import { PACKAGE_NAME, TEMPLATE_VERSION } from '../runtime/meta.js';
 import type { ManagedAssetRecord } from '../manifest/types.js';
 import { renderString } from './renderTemplates.js';
 import { isAppendableInstallFile } from './isAppendableInstallFile.js';
@@ -60,7 +60,6 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
     toolId: input.tool,
     toolName: adapter.definition.displayName,
     packageName: PACKAGE_NAME,
-    manifestFile: MANIFEST_FILE,
     skillsDir: adapter.getDestination('skills'),
     commandsDir: adapter.getDestination('commands'),
     features: input.features,

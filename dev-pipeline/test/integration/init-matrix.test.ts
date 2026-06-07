@@ -6,7 +6,8 @@ import { runDoctorCommand } from '../../src/cli/commands/doctor.js';
 import { runSyncCommand } from '../../src/cli/commands/sync.js';
 import { runUpgradeCommand } from '../../src/cli/commands/upgrade.js';
 import { runInit } from '../../src/core/init/runInit.js';
-import { MANIFEST_FILE } from '../../src/core/runtime/meta.js';
+import { MANIFEST_FILE, MANIFEST_PACKAGE_JSON_KEY, PACKAGE_JSON_FILE } from '../../src/core/runtime/meta.js';
+import { readManifest as readStoredManifest } from '../../src/core/manifest/io.js';
 import type { PipelineManifest } from '../../src/core/manifest/types.js';
 
 const createdDirs: string[] = [];
@@ -16,7 +17,12 @@ afterEach(async () => {
 });
 
 async function readManifest(dir: string): Promise<PipelineManifest> {
-  return fs.readJson(path.join(dir, MANIFEST_FILE)) as Promise<PipelineManifest>;
+  const result = await readStoredManifest(dir);
+  if (!result) {
+    throw new Error('Manifest not found');
+  }
+
+  return result.manifest;
 }
 
 const toolExpectations = {
@@ -141,6 +147,24 @@ describe('tool matrix', () => {
 
     expect(await fs.pathExists(path.join(dir, MANIFEST_FILE))).toBe(true);
     expect(await fs.pathExists(path.join(dir, expectedFiles[1].split('/').slice(0, -1).join('/'), 'tests'))).toBe(false);
+  });
+
+  it('embeds manifest in package.json when package.json exists', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-package-json-'));
+    createdDirs.push(dir);
+
+    await fs.writeJson(path.join(dir, PACKAGE_JSON_FILE), {
+      name: 'demo-app',
+      version: '1.0.0'
+    });
+
+    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
+
+    expect(await fs.pathExists(path.join(dir, MANIFEST_FILE))).toBe(false);
+
+    const pkg = await fs.readJson(path.join(dir, PACKAGE_JSON_FILE));
+    expect(pkg[MANIFEST_PACKAGE_JSON_KEY].tool).toBe('claude');
+    expect(pkg[MANIFEST_PACKAGE_JSON_KEY].managedAssets.length).toBeGreaterThan(0);
   });
 
   it('supports dry-run without writing files', async () => {

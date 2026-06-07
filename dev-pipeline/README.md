@@ -1,6 +1,6 @@
 # opsx-dev-pipeline
 
-`opsx-dev-pipeline` 是一个用于初始化 AI 开发工作流模板的 CLI。它会根据你选择的 AI 工具，在项目中生成对应的 skills、commands、rules、prompts 和 manifest 文件。
+`opsx-dev-pipeline` 是一个用于初始化 AI 开发工作流模板的 CLI。它会根据你选择的 AI 工具，在项目中生成对应的 skills、commands、rules、prompts。
 
 ## Quick Start
 
@@ -44,11 +44,13 @@ npx opsx-dev-pipeline init --tool claude --yes --dry-run
 - `review`：通用代码审查入口
 
 其中 `opsx-learn` 的默认使用方式为：
+
 - 先运行预检脚本，检查仓库上下文与知识库目录建议
 - 首次使用且仓库中没有明显知识目录时，明确提示用户确认知识库存放位置
 - 若无既有约定，默认使用 `.knowledge/`
 
 其中 `opsx-analysis` 的默认使用方式为：
+
 - 先运行预检脚本，检查知识库、README/CLAUDE.md/AGENTS.md 与其他上下文入口
 - 先明确需求目标与边界，再执行一轮探索上下文流程
 - 默认继续完成：功能点拆解、影响面分析与结构化分析输出
@@ -65,6 +67,7 @@ npx opsx-dev-pipeline init --tool claude --yes --dry-run
 | `doctor`     | `npx opsx-dev-pipeline doctor`                   | 检查当前目录的 manifest 和初始化状态 |
 | `sync`       | `npx opsx-dev-pipeline sync --dry-run`           | 根据 manifest 重新渲染托管文件    |
 | `upgrade`    | `npx opsx-dev-pipeline upgrade --dry-run`        | 使用当前包内模板执行升级入口          |
+
 
 > 提示：`init` 完成后，你可以在生成的 commands / skills 目录里直接使用 `opsx-learn`，把现有仓库知识逐步沉淀到知识库中。
 

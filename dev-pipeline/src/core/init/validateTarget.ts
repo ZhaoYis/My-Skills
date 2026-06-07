@@ -2,7 +2,7 @@ import fs from 'fs-extra';
 import path from 'node:path';
 import type { ToolAdapter, ToolId } from '../adapters/types.js';
 
-const SAFE_FILES = new Set(['.git', '.gitignore', 'README.md']);
+const SAFE_FILES = new Set(['.git', '.gitignore', 'README.md', 'package.json', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'bun.lockb']);
 
 export interface TargetValidation {
   existingEntries: string[];

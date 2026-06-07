@@ -1,4 +1,3 @@
-import { MANIFEST_FILE } from '../runtime/meta.js';
 import type { AssetDefinition } from './types.js';
 
 export const assetManifest: AssetDefinition[] = [
@@ -17,14 +16,6 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'base',
     source: 'templates/common/base/gitignore',
     destination: '.gitignore'
-  },
-  {
-    id: 'common-metadata',
-    kind: 'template',
-    scope: 'common',
-    feature: 'base',
-    source: 'templates/common/base/opsx-dev-pipeline.json.hbs',
-    destination: MANIFEST_FILE
   },
   {
     id: 'opsx-dev-pipeline-skill-bundle',
