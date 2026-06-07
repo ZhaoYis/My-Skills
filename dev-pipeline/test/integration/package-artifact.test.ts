@@ -51,6 +51,9 @@ describe('packaged artifact', () => {
 
     const pkg = await fs.readJson(path.join(targetDir, 'package.json'));
     expect(pkg.opsxDevPipeline.tool).toBe('cursor');
+    expect(await fs.pathExists(path.join(targetDir, '.knowledge/README.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.knowledge/INDEX.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.knowledge/tech/development-experience.md'))).toBe(true);
     expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-dev-pipeline.mdc'))).toBe(true);
     expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-learn/SKILL.md'))).toBe(true);
     expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-learn/scripts/opsx-learn-preflight.sh'))).toBe(true);

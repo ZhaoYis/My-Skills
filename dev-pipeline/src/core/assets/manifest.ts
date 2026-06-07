@@ -18,6 +18,16 @@ export const assetManifest: AssetDefinition[] = [
     destination: '.gitignore'
   },
   {
+    id: 'common-knowledge-skeleton',
+    kind: 'bundle',
+    scope: 'common',
+    feature: 'base',
+    source: 'templates/common/knowledge',
+    destination: '.knowledge',
+    includeExtensions: ['.md', '.hbs'],
+    adoptOnUpgrade: true
+  },
+  {
     id: 'opsx-dev-pipeline-skill-bundle',
     kind: 'bundle',
     scope: 'common',

@@ -14,6 +14,7 @@ export interface AssetDefinition {
   includeExtensions?: string[];
   templateFiles?: string[];
   excludePatterns?: string[];
+  adoptOnUpgrade?: boolean;
 }
 
 export type InstallConflictResolution = 'none' | 'overwrite' | 'append' | 'skip' | 'unresolved';

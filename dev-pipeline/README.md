@@ -46,8 +46,9 @@ npx opsx-dev-pipeline init --tool claude --yes --dry-run
 其中 `opsx-learn` 的默认使用方式为：
 
 - 先运行预检脚本，检查仓库上下文与知识库目录建议
-- 首次使用且仓库中没有明显知识目录时，明确提示用户确认知识库存放位置
-- 若无既有约定，默认使用 `.knowledge/`
+- 新通过 `opsx-dev-pipeline` 初始化的项目会默认生成 `.knowledge/` 骨架
+- 首次使用时若仓库中已有其他明显知识目录，则优先复用该位置
+- 若无既有约定且未生成骨架，再明确提示用户确认知识库存放位置
 
 其中 `opsx-analysis` 的默认使用方式为：
 
@@ -64,7 +65,7 @@ npx opsx-dev-pipeline init --tool claude --yes --dry-run
 | ------------ | ------------------------------------------------ | ----------------------- |
 | `init`       | `npx opsx-dev-pipeline init --tool claude --yes` | 初始化当前目录的模板文件            |
 | `list-tools` | `npx opsx-dev-pipeline list-tools`               | 查看当前内置支持的 AI 工具适配器      |
-| `doctor`     | `npx opsx-dev-pipeline doctor`                   | 检查当前目录的 manifest 和初始化状态 |
+| `doctor`     | `npx opsx-dev-pipeline doctor --json`            | 检查当前目录的 manifest、知识库骨架与索引健康 |
 | `sync`       | `npx opsx-dev-pipeline sync --dry-run`           | 根据 manifest 重新渲染托管文件    |
 | `upgrade`    | `npx opsx-dev-pipeline upgrade --dry-run`        | 使用当前包内模板执行升级入口          |
 

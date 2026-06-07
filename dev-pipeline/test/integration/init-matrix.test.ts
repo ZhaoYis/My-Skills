@@ -1,7 +1,7 @@
 import fs from 'fs-extra';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { runDoctorCommand } from '../../src/cli/commands/doctor.js';
 import { runSyncCommand } from '../../src/cli/commands/sync.js';
 import { runUpgradeCommand } from '../../src/cli/commands/upgrade.js';
@@ -28,6 +28,9 @@ async function readManifest(dir: string): Promise<PipelineManifest> {
 const toolExpectations = {
   claude: [
     'CLAUDE.md',
+    '.knowledge/README.md',
+    '.knowledge/INDEX.md',
+    '.knowledge/tech/development-experience.md',
     '.claude/skills/opsx-dev-pipeline/SKILL.md',
     '.claude/skills/opsx-dev-pipeline/references/phase-0-entrance.md',
     '.claude/skills/opsx-dev-pipeline/assets/decision-point-index.md',
@@ -35,6 +38,7 @@ const toolExpectations = {
     '.claude/skills/opsx-learn/SKILL.md',
     '.claude/skills/opsx-learn/references/phase-1-understand-goal.md',
     '.claude/skills/opsx-learn/assets/write-targets.md',
+    '.claude/skills/opsx-learn/assets/preflight-json-contract.md',
     '.claude/skills/opsx-learn/scripts/opsx-learn-preflight.sh',
     '.claude/skills/opsx-analysis/SKILL.md',
     '.claude/skills/opsx-analysis/references/phase-1-clarify-requirement.md',
@@ -54,6 +58,9 @@ const toolExpectations = {
   ],
   cursor: [
     '.cursor/rules/opsx-dev-pipeline.mdc',
+    '.knowledge/README.md',
+    '.knowledge/INDEX.md',
+    '.knowledge/tech/development-experience.md',
     '.cursor/rules/opsx-dev-pipeline/SKILL.md',
     '.cursor/rules/opsx-dev-pipeline/references/phase-0-entrance.md',
     '.cursor/rules/opsx-dev-pipeline/assets/decision-point-index.md',
@@ -61,6 +68,7 @@ const toolExpectations = {
     '.cursor/rules/opsx-learn/SKILL.md',
     '.cursor/rules/opsx-learn/references/phase-1-understand-goal.md',
     '.cursor/rules/opsx-learn/assets/write-targets.md',
+    '.cursor/rules/opsx-learn/assets/preflight-json-contract.md',
     '.cursor/rules/opsx-learn/scripts/opsx-learn-preflight.sh',
     '.cursor/rules/opsx-analysis/SKILL.md',
     '.cursor/rules/opsx-analysis/references/phase-1-clarify-requirement.md',
@@ -81,6 +89,9 @@ const toolExpectations = {
   ],
   codex: [
     '.codex/prompts/opsx-dev-pipeline.md',
+    '.knowledge/README.md',
+    '.knowledge/INDEX.md',
+    '.knowledge/tech/development-experience.md',
     '.codex/prompts/opsx-dev-pipeline/SKILL.md',
     '.codex/prompts/opsx-dev-pipeline/references/phase-0-entrance.md',
     '.codex/prompts/opsx-dev-pipeline/assets/decision-point-index.md',
@@ -88,6 +99,7 @@ const toolExpectations = {
     '.codex/prompts/opsx-learn/SKILL.md',
     '.codex/prompts/opsx-learn/references/phase-1-understand-goal.md',
     '.codex/prompts/opsx-learn/assets/write-targets.md',
+    '.codex/prompts/opsx-learn/assets/preflight-json-contract.md',
     '.codex/prompts/opsx-learn/scripts/opsx-learn-preflight.sh',
     '.codex/prompts/opsx-analysis/SKILL.md',
     '.codex/prompts/opsx-analysis/references/phase-1-clarify-requirement.md',
@@ -108,6 +120,9 @@ const toolExpectations = {
   ],
   generic: [
     '.ai/README.md',
+    '.knowledge/README.md',
+    '.knowledge/INDEX.md',
+    '.knowledge/tech/development-experience.md',
     '.ai/skills/opsx-dev-pipeline/SKILL.md',
     '.ai/skills/opsx-dev-pipeline/references/phase-0-entrance.md',
     '.ai/skills/opsx-dev-pipeline/assets/decision-point-index.md',
@@ -115,6 +130,7 @@ const toolExpectations = {
     '.ai/skills/opsx-learn/SKILL.md',
     '.ai/skills/opsx-learn/references/phase-1-understand-goal.md',
     '.ai/skills/opsx-learn/assets/write-targets.md',
+    '.ai/skills/opsx-learn/assets/preflight-json-contract.md',
     '.ai/skills/opsx-learn/scripts/opsx-learn-preflight.sh',
     '.ai/skills/opsx-analysis/SKILL.md',
     '.ai/skills/opsx-analysis/references/phase-1-clarify-requirement.md',
@@ -185,6 +201,46 @@ describe('tool matrix', () => {
     await runUpgradeCommand({ dir, force: true, dryRun: false });
 
     expect(await fs.pathExists(path.join(dir, MANIFEST_FILE))).toBe(true);
+  });
+
+  it('doctor supports json output with knowledge report', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-doctor-json-'));
+    createdDirs.push(dir);
+
+    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
+
+    const skillContent = await fs.readFile(path.join(dir, '.claude/skills/opsx-learn/SKILL.md'), 'utf8');
+    const preflightContent = await fs.readFile(path.join(dir, '.claude/skills/opsx-learn/scripts/opsx-learn-preflight.sh'), 'utf8');
+    const phaseFiveContent = await fs.readFile(path.join(dir, '.claude/skills/opsx-learn/references/phase-5-review-and-write.md'), 'utf8');
+    const writeTargetsContent = await fs.readFile(path.join(dir, '.claude/skills/opsx-learn/assets/write-targets.md'), 'utf8');
+    const maintenanceContent = await fs.readFile(path.join(dir, '.claude/skills/opsx-learn/assets/maintenance-index.md'), 'utf8');
+    const contractContent = await fs.readFile(path.join(dir, '.claude/skills/opsx-learn/assets/preflight-json-contract.md'), 'utf8');
+
+    expect(skillContent).toContain('knowledgeHealth');
+    expect(preflightContent).toContain('opsx-dev-pipeline doctor --json');
+    expect(preflightContent).toContain('knowledgeHealthStatus');
+    expect(preflightContent).toContain('knowledgeHealthSummary');
+    expect(preflightContent).toContain('knowledgeHealthHighlights');
+    expect(phaseFiveContent).toContain('knowledgeHealthSummary');
+    expect(writeTargetsContent).toContain('knowledgeHealthSummary');
+    expect(writeTargetsContent).toContain('knowledgeHealthHighlights');
+    expect(maintenanceContent).toContain('先看 `knowledgeHealthSummary`');
+    expect(maintenanceContent).toContain('assets/preflight-json-contract.md');
+    expect(contractContent).toContain('## 顶层字段');
+    expect(contractContent).toContain('knowledgeHealthAvailable');
+    expect(contractContent).toContain('## 降级语义');
+
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await runDoctorCommand(dir, true);
+
+    const payload = spy.mock.calls.map(([value]) => String(value)).join('\n');
+    spy.mockRestore();
+
+    const parsed = JSON.parse(payload);
+    expect(parsed.knowledge).toBeDefined();
+    expect(['ok', 'warn']).toContain(parsed.knowledge.status);
+    expect(parsed.manifest.status).toBe('ok');
   });
 
   it('writes a concise root README for new projects', async () => {
@@ -316,6 +372,41 @@ describe('tool matrix', () => {
 
     await runSyncCommand({ dir, force: true, dryRun: false });
     expect(await fs.readFile(path.join(dir, 'CLAUDE.md'), 'utf8')).not.toBe('custom\n');
+  });
+
+  it('upgrade adopts the knowledge skeleton for legacy projects without existing knowledge directories', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-upgrade-knowledge-adopt-'));
+    createdDirs.push(dir);
+
+    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
+    await fs.remove(path.join(dir, '.knowledge'));
+
+    const manifest = await readManifest(dir);
+    manifest.managedAssets = manifest.managedAssets.filter((asset) => !asset.id.startsWith('common-knowledge-skeleton:'));
+    await fs.writeJson(path.join(dir, MANIFEST_FILE), manifest, { spaces: 2 });
+
+    await runUpgradeCommand({ dir, yes: true, force: false, dryRun: false });
+
+    expect(await fs.pathExists(path.join(dir, '.knowledge/README.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(dir, '.knowledge/INDEX.md'))).toBe(true);
+  });
+
+  it('upgrade skips knowledge skeleton adoption when another knowledge directory already exists', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-upgrade-knowledge-skip-'));
+    createdDirs.push(dir);
+
+    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
+    await fs.remove(path.join(dir, '.knowledge'));
+    await fs.ensureDir(path.join(dir, 'docs/knowledge'));
+
+    const manifest = await readManifest(dir);
+    manifest.managedAssets = manifest.managedAssets.filter((asset) => !asset.id.startsWith('common-knowledge-skeleton:'));
+    await fs.writeJson(path.join(dir, MANIFEST_FILE), manifest, { spaces: 2 });
+
+    await runUpgradeCommand({ dir, yes: true, force: false, dryRun: false });
+
+    expect(await fs.pathExists(path.join(dir, '.knowledge/README.md'))).toBe(false);
+    expect(await fs.pathExists(path.join(dir, 'docs/knowledge'))).toBe(true);
   });
 
   it('upgrade inherits sync conflict behavior when yes is enabled', async () => {

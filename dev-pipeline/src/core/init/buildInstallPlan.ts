@@ -18,8 +18,9 @@ export interface BuildInstallPlanInput {
   features: FeatureId[];
   dryRun: boolean;
   force: boolean;
-  mode: 'init' | 'sync';
+  mode: 'init' | 'sync' | 'upgrade';
   managedAssets?: ManagedAssetRecord[];
+  allowUpgradeAdoption?: boolean;
   registry: Parameters<typeof getToolAdapter>[0];
 }
 
@@ -92,13 +93,45 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
     })
   );
 
+  const selectedAssetIds = new Set(
+    selectedAssets
+      .filter((asset) => input.mode !== 'upgrade' || (input.allowUpgradeAdoption && asset.adoptOnUpgrade) || managedAssetIds?.has(asset.id))
+      .map((asset) => asset.id)
+  );
+
   const files = await Promise.all(
     expandedFiles
       .flat()
-      .filter((file) => input.mode !== 'sync' || !managedAssetIds || managedAssetIds.has(file.assetId))
+      .filter((file) => {
+        if (input.mode === 'init') {
+          return true;
+        }
+
+        if (managedAssetIds?.has(file.assetId)) {
+          return true;
+        }
+
+        if (input.mode === 'upgrade' && input.allowUpgradeAdoption) {
+          const assetId = file.assetId.split(':')[0] ?? file.assetId;
+          return selectedAssetIds.has(assetId);
+        }
+
+        return false;
+      })
       .map(async (file) => {
         const exists = await fs.pathExists(file.destinationPath);
         const appendable = isAppendableInstallFile(file);
+        const isManaged = managedAssetIds?.has(file.assetId) ?? false;
+        const allowAdoption = input.mode === 'upgrade' && input.allowUpgradeAdoption && !isManaged;
+
+        if (exists && allowAdoption) {
+          return {
+            ...file,
+            exists,
+            appendable,
+            resolution: 'skip'
+          } satisfies InstallFile;
+        }
 
         return {
           ...file,

@@ -47,10 +47,11 @@ export async function runCli(argv: string[]): Promise<void> {
     });
 
   cli
-    .command('doctor', 'Inspect current directory for opsx-dev-pipeline metadata')
+    .command('doctor', 'Inspect current directory for opsx-dev-pipeline metadata and .knowledge health')
+    .option('--json', 'Print doctor report as JSON')
     .option(...dirOption)
     .action(async (options) => {
-      await runDoctorCommand(options.dir);
+      await runDoctorCommand(options.dir, Boolean(options.json));
     });
 
   cli.help();

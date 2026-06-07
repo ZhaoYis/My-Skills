@@ -14,8 +14,11 @@
   - 去重与合并约束
 - `assets/knowledge-entry-templates.md`
   - 标准化知识条目格式
+- `assets/preflight-json-contract.md`
+  - 预检 JSON 输出字段、使用顺序与降级语义约定
 - `scripts/opsx-learn-preflight.sh`
   - 预检仓库上下文、已有知识目录与默认建议写入位置
+  - 若可用，也返回 `knowledgeHealthSummary`、`knowledgeHealthHighlights` 与原始 `knowledgeHealth`
 
 ## 常见联动
 
@@ -27,6 +30,17 @@
   - `assets/dedup-rules.md`
   - `references/phase-5-review-and-write.md`
   - `scripts/opsx-learn-preflight.sh`
+- 修改预检输出字段或知识健康提示策略时，同时更新：
+  - `SKILL.md.hbs`
+  - `references/phase-5-review-and-write.md`
+  - `assets/write-targets.md`
+  - `assets/preflight-json-contract.md`
+  - `scripts/opsx-learn-preflight.sh`
+- 修改索引维护规则时，同时更新：
+  - `.knowledge/INDEX.md` 模板
+  - `references/phase-4-draft-knowledge.md`
+  - `references/phase-5-review-and-write.md`
+  - `assets/write-targets.md`
 - 修改条目格式时，同时更新：
   - `assets/knowledge-entry-templates.md`
   - `references/phase-4-draft-knowledge.md`
@@ -35,8 +49,10 @@
 
 - 是否仍要求中文输出
 - 是否仍保留“先预检、后分析、再确认、最后落盘”
+- 预检健康提示是否仍遵循“先看 `knowledgeHealthSummary`，再看 `knowledgeHealthHighlights`，最后才展开 `knowledgeHealth`”
 - 是否仍保留“首次使用默认 `.knowledge/`”
 - 是否仍保持仓库无关 / 技术栈无关
 - 是否有残留的特定项目目录假设
 - 命令模板与 skill 入口路径是否一致
 - knowledge templates 是否仍覆盖常见知识类型
+- 是否明确要求在新增 API / 功能域 / 数据模型 / 外部服务 / 风险主题时检查索引更新

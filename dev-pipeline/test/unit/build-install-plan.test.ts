@@ -67,6 +67,9 @@ describe('buildInstallPlan', () => {
     });
 
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', docsPath))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', '.knowledge', 'README.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', '.knowledge', 'INDEX.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', '.knowledge', 'tech', 'development-experience.md'))).toBe(true);
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-dev-pipeline', 'SKILL.md'))).toBe(true);
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-dev-pipeline', 'references', 'phase-0-entrance.md'))).toBe(true);
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-dev-pipeline', 'assets', 'decision-point-index.md'))).toBe(true);
@@ -150,5 +153,34 @@ describe('buildInstallPlan', () => {
       'opsx-learn-command',
       'opsx-learn-skill-bundle:SKILL.md.hbs'
     ]);
+  });
+
+  it('adopts knowledge skeleton files during upgrade when allowed', async () => {
+    const managedAssets: ManagedAssetRecord[] = [
+      { id: 'common-readme', destination: 'README.md' }
+    ];
+
+    const plan = await buildInstallPlan({
+      ...createPlanInput(managedAssets),
+      mode: 'upgrade',
+      allowUpgradeAdoption: true
+    });
+
+    expect(plan.files.some((file) => file.assetId === 'common-readme')).toBe(true);
+    expect(plan.files.some((file) => file.assetId === 'common-knowledge-skeleton:README.md.hbs')).toBe(true);
+    expect(plan.files.some((file) => file.assetId === 'common-knowledge-skeleton:INDEX.md')).toBe(true);
+  });
+
+  it('does not adopt knowledge skeleton files during sync for legacy manifests', async () => {
+    const managedAssets: ManagedAssetRecord[] = [
+      { id: 'common-readme', destination: 'README.md' }
+    ];
+
+    const plan = await buildInstallPlan({
+      ...createPlanInput(managedAssets),
+      mode: 'sync'
+    });
+
+    expect(plan.files.some((file) => file.assetId.startsWith('common-knowledge-skeleton:'))).toBe(false);
   });
 });
