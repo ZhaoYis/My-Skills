@@ -20,10 +20,10 @@ async function readManifest(dir: string): Promise<PipelineManifest> {
 }
 
 const toolExpectations = {
-  claude: ['CLAUDE.md', '.claude/skills/dev-pipeline/SKILL.md', '.claude/skills/dev-pipeline/references/phase-0-entrance.md', '.claude/skills/dev-pipeline/assets/decision-point-index.md', '.claude/skills/dev-pipeline/scripts/dev-pipeline-preflight.sh', '.claude/commands/dev-pipeline.md', '.claude/commands/review.md'],
-  cursor: ['.cursor/rules/opsx-dev-pipeline.mdc', '.cursor/rules/dev-pipeline/SKILL.md', '.cursor/rules/dev-pipeline/references/phase-0-entrance.md', '.cursor/rules/dev-pipeline/assets/decision-point-index.md', '.cursor/rules/dev-pipeline/scripts/dev-pipeline-preflight.sh', '.cursor/commands/dev-pipeline.md', '.cursor/commands/review.md', '.cursor/commands/README.md'],
-  codex: ['.codex/prompts/opsx-dev-pipeline.md', '.codex/prompts/dev-pipeline/SKILL.md', '.codex/prompts/dev-pipeline/references/phase-0-entrance.md', '.codex/prompts/dev-pipeline/assets/decision-point-index.md', '.codex/prompts/dev-pipeline/scripts/dev-pipeline-preflight.sh', '.codex/commands/dev-pipeline.md', '.codex/commands/review.md', '.codex/commands/README.md'],
-  generic: ['.ai/README.md', '.ai/skills/dev-pipeline/SKILL.md', '.ai/skills/dev-pipeline/references/phase-0-entrance.md', '.ai/skills/dev-pipeline/assets/decision-point-index.md', '.ai/skills/dev-pipeline/scripts/dev-pipeline-preflight.sh', '.ai/commands/dev-pipeline.md', '.ai/commands/review.md']
+  claude: ['CLAUDE.md', '.claude/skills/opsx-dev-pipeline/SKILL.md', '.claude/skills/opsx-dev-pipeline/references/phase-0-entrance.md', '.claude/skills/opsx-dev-pipeline/assets/decision-point-index.md', '.claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', '.claude/commands/opsx-dev-pipeline.md', '.claude/commands/review.md'],
+  cursor: ['.cursor/rules/opsx-dev-pipeline.mdc', '.cursor/rules/opsx-dev-pipeline/SKILL.md', '.cursor/rules/opsx-dev-pipeline/references/phase-0-entrance.md', '.cursor/rules/opsx-dev-pipeline/assets/decision-point-index.md', '.cursor/rules/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', '.cursor/commands/opsx-dev-pipeline.md', '.cursor/commands/review.md', '.cursor/commands/README.md'],
+  codex: ['.codex/prompts/opsx-dev-pipeline.md', '.codex/prompts/opsx-dev-pipeline/SKILL.md', '.codex/prompts/opsx-dev-pipeline/references/phase-0-entrance.md', '.codex/prompts/opsx-dev-pipeline/assets/decision-point-index.md', '.codex/prompts/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', '.codex/commands/opsx-dev-pipeline.md', '.codex/commands/review.md', '.codex/commands/README.md'],
+  generic: ['.ai/README.md', '.ai/skills/opsx-dev-pipeline/SKILL.md', '.ai/skills/opsx-dev-pipeline/references/phase-0-entrance.md', '.ai/skills/opsx-dev-pipeline/assets/decision-point-index.md', '.ai/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', '.ai/commands/opsx-dev-pipeline.md', '.ai/commands/review.md']
 } as const;
 
 describe('tool matrix', () => {
@@ -83,7 +83,7 @@ describe('tool matrix', () => {
     await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
 
     expect(await fs.readFile(existingReadme, 'utf8')).toBe(originalContent);
-    expect(await fs.pathExists(path.join(dir, '.claude/skills/dev-pipeline/SKILL.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-dev-pipeline/SKILL.md'))).toBe(true);
 
     const manifest = await readManifest(dir);
     expect(manifest.managedAssets.some((asset) => asset.id === 'common-readme')).toBe(false);

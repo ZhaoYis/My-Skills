@@ -69,10 +69,10 @@ describe('buildInstallPlan', () => {
 
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', MANIFEST_FILE))).toBe(true);
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', docsPath))).toBe(true);
-    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'dev-pipeline', 'SKILL.md'))).toBe(true);
-    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'dev-pipeline', 'references', 'phase-0-entrance.md'))).toBe(true);
-    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'dev-pipeline', 'assets', 'decision-point-index.md'))).toBe(true);
-    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'dev-pipeline', 'scripts', 'dev-pipeline-preflight.sh'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-dev-pipeline', 'SKILL.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-dev-pipeline', 'references', 'phase-0-entrance.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-dev-pipeline', 'assets', 'decision-point-index.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-dev-pipeline', 'scripts', 'dev-pipeline-preflight.sh'))).toBe(true);
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', commandsDir, 'review.md'))).toBe(true);
   });
 

@@ -1,26 +1,26 @@
-# dev-pipeline
+# opsx-dev-pipeline
 
-Use this command as the entrypoint for the bundled `dev-pipeline` skill.
+Use this command as the entrypoint for the bundled `opsx-dev-pipeline` skill.
 
 ## Intent
 
 Drive the full OpenSpec + Git development pipeline through the installed skill bundle at:
-- `{{skillsDir}}/dev-pipeline/SKILL.md`
+- `{{skillsDir}}/opsx-dev-pipeline/SKILL.md`
 
 ## Recommended flow
 
-1. Load and follow the `dev-pipeline` skill.
+1. Load and follow the `opsx-dev-pipeline` skill.
 2. Start with preflight checks.
 3. Continue phase-by-phase through propose / apply / review / archive.
 4. Reuse the bundled scripts under:
-   - `{{skillsDir}}/dev-pipeline/scripts/`
+   - `{{skillsDir}}/opsx-dev-pipeline/scripts/`
 
 ## Suggested first action
 
-Open or invoke the `dev-pipeline` skill, then begin with:
+Open or invoke the `opsx-dev-pipeline` skill, then begin with:
 
 ```bash
-bash {{skillsDir}}/dev-pipeline/scripts/dev-pipeline-preflight.sh
+bash {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh
 ```
 
 If a change name is already known, continue with the corresponding phase guidance in the skill bundle.
