@@ -28,7 +28,7 @@ export async function runInit(options: InitOptions): Promise<void> {
     registry
   );
 
-  const plan = buildInstallPlan({
+  const plan = await buildInstallPlan({
     rootDir,
     targetDir,
     projectName: answers.projectName,

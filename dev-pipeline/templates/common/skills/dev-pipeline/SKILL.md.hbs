@@ -1,0 +1,107 @@
+---
+name: dev-pipeline
+description: OpenSpec + Git 需求开发全流程。  
+license: MIT  
+compatibility: 需安装 openspec 与 git CLI；建议在 Cursor 中配合 AskQuestion。默认兼容 OpenSpec 默认 schema，并优先支持 `openspec/config.yaml` 中声明的自定义 schema。  
+metadata:  
+  author: zhaoyi  
+  version: "2.2"
+---
+
+# 需求开发全流程流水线
+
+**重要：** 所有输出使用中文。
+
+## Input
+
+用户的需求描述，或一个已有的 change 名称。
+
+## 最小执行约束摘要
+
+- 用户以文本补充需求澄清、提案修改或实施/审查/归档/提交相关说明后，必须在同一回复中同步当前 **Phase / change / 下一动作**，并推进到下一个步骤或决策点。
+- 除用户在决策点明确选择「终止流程」或「暂停流水线」外，不得单方结束全流程；如必须结束，须先说明原因并征得同意。
+- 高风险决策必须显式确认；推荐项不等于自动代选。
+- AskQuestion **首选**用于决策点；若不可用则使用与对应 Phase 文案一致的编号选项。
+- 详细的 guardrails、恢复规则、AskQuestion fallback、Error Handling 与决策自动化分级，以 `assets/recovery-guardrails-appendix.md` 为准。
+
+## 阅读顺序（精简版）
+
+1. 先阅读本页的 **最小执行约束摘要** 与 **Phase 引用表**
+2. 再进入当前所处 Phase 的 `references/phase-*.md`
+3. 遇到跨阶段规则、恢复、降级、决策自动化分级时，统一查阅 `assets/recovery-guardrails-appendix.md`
+4. 维护 skill 本身时，先看 `assets/maintenance-index.md`
+
+## Phase 引用表
+
+按下表顺序阅读并遵循各 Phase 文件中的步骤与决策点：
+
+| Phase | 说明 | 引用文件 |
+| ----- | ---- | -------- |
+| 0 | 入口判断 | `references/phase-0-entrance.md` |
+| 1 | 提案编写 (Propose) | `references/phase-1-propose.md` |
+| 2 | 提案应用 (Apply) | `references/phase-2-apply.md` |
+| 3 | 代码审查 (Review) | `references/phase-3-review.md`；「生成修复提案并应用」见 `references/phase-3.1-fix-review.md` |
+| 4 | 提案归档 (Archive) | `references/phase-4-archive.md` |
+| 5 | 审查后单元测试门禁 | `references/phase-5-unit-tests.md` |
+| 6 | 提交合并推送 (Merge & Push) | `references/phase-6-merge-push.md` |
+| — | 中断恢复、护栏、错误处理、决策点总览 | `assets/recovery-guardrails-appendix.md` |
+
+## 权威来源地图
+
+- **Phase 执行正文**：`references/phase-*.md`
+- **跨阶段规则 / 恢复 / 降级 / Error Handling / 决策自动化分级**：`assets/recovery-guardrails-appendix.md`
+- **决策点导航索引**：`assets/decision-point-index.md`
+- **失败恢复导航索引**：`assets/failure-recovery-index.md`
+- **schema-aware 差异专题**：`assets/schema-adapter-summary.md`
+- **脚本 I/O 契约**：`assets/script-io-conventions.md`
+- **维护影响矩阵与联动检查**：`assets/maintenance-index.md`
+
+## 执行说明
+
+- **阅读顺序**：本页只负责入口、导航与最小约束；具体执行步骤与命令以各 `references/phase-*.md` 为准。
+- **代码规范**：凡涉及编写或修改实现/测试代码的 Phase，均以目标仓库的项目基准（默认 `openspec/config.yaml` → `AGENTS.md` → `CLAUDE.md`；自定义 schema 时优先结合 `openspec/config.yaml` 中的 schema 上下文）及既有代码与单测风格为准。详见 `references/phase-2-apply.md` 与 `assets/recovery-guardrails-appendix.md` **§2.5**。
+- **进度跟踪**：Phase 1 等多制品阶段推荐使用 **TaskCreate / TaskUpdate / TaskList** 跟踪制品与任务进度。
+- **用户提示格式**：进入新 Phase、从暂停点恢复或用户补充自由文本后，优先使用 `Phase / change / 当前步骤 / 已知状态 / 下一动作` 的短格式，模板见附录 **§1.1–1.2**。
+- **维护入口**：维护 `SKILL.md`、`references/`、`scripts/` 与 `assets/` 的联动关系时，先看 `assets/maintenance-index.md`。
+
+## 流程概览（Mermaid）
+
+**说明**：下图仅示意主干顺序；图中 **Phase N** 为方便阅读的阶段昵称，**不是** `openspec` 子命令名，也不一定对应某个脚本文件名。完整步骤、命令、决策点与例外路径以 `references/phase-*.md` 与 `assets/recovery-guardrails-appendix.md` 为准。
+
+```mermaid
+flowchart TD
+  START(["开始"]) --> OPEN{"openspec CLI 可用?"}
+  OPEN -->|否| PROMPT["提示安装 openspec"]
+  PROMPT --> ENDNODE(["结束"])
+  OPEN -->|是| GIT{"在 git 仓库内?"}
+  GIT -->|否| GIT_WARN["提示 git init 或进入仓库"]
+  GIT_WARN --> ENDNODE
+  GIT -->|是| P0["Phase 0 入口 → 需求 / 已有 change / 无输入"]
+  P0 -->|终止| ENDNODE
+  P0 -->|需求描述·新建| P1["Phase 1：提案与制品"]
+  P0 -->|已有 change·续接 Phase 1| P1
+  P0 -->|已有 change·续接 Phase 2| APPLY
+  P0 -->|已有 change·续接 Phase 3| REVIEW
+  P0 -->|已有 change·续接 Phase 4| ARCHIVE
+  P0 -->|已有 change·续接 Phase 5/6| UT
+  P1 --> ALIGN{"决策点 1 → 提案与原始需求一致?"}
+  ALIGN -->|确认·开始实施| APPLY["Phase 2：按提案实施 Apply"]
+  ALIGN -->|补充/修改·对话澄清| P1
+  APPLY --> D2{"Phase 2 决策点 2"}
+  D2 -->|进入代码审查| REVIEW["Phase 3：代码审查"]
+  D2 -->|跳过审查·先过单测门禁| UT["Phase 5：单测门禁 · 决策点 4b"]
+  D2 -->|暂停/终止| ENDNODE
+  REVIEW --> R3["决策点 3 → 单测 / 修复回路 / 暂停"]
+  R3 -->|修复回路未结束| REVIEW
+  R3 -->|进入单元测试| UT
+  UT --> ARCHIVE["Phase 4：归档 Archive"]
+  ARCHIVE --> D4{"Phase 4 决策点 4"}
+  D4 -->|终止流程| ENDNODE
+  D4 -->|仅提交并推送| P6PRE["Phase 6：步骤 17–18 预提交与提交"]
+  D4 -->|提交代码并合并| P6PRE
+  P6PRE --> P6PUSH["Phase 6：步骤 19 推送"]
+  P6PUSH --> MERGECHK{"决策点 4 是否选了合并?"}
+  MERGECHK -->|否| ENDNODE
+  MERGECHK -->|是| MERGE["决策点 6（步骤 20）：合并分支"]
+  MERGE --> ENDNODE
+```

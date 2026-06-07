@@ -1,8 +1,9 @@
+import fs from 'fs-extra';
 import path from 'node:path';
 import { getToolAdapter } from '../adapters/registry.js';
 import type { FeatureId, ToolId } from '../adapters/types.js';
 import { assetManifest } from '../assets/manifest.js';
-import type { InstallFile } from '../assets/types.js';
+import type { AssetDefinition, InstallFile } from '../assets/types.js';
 import { MANIFEST_FILE, PACKAGE_NAME, TEMPLATE_VERSION } from '../runtime/meta.js';
 import { renderString } from './renderTemplates.js';
 import type { InstallPlan } from './types.js';
@@ -18,7 +19,34 @@ export interface BuildInstallPlanInput {
   registry: Parameters<typeof getToolAdapter>[0];
 }
 
-export function buildInstallPlan(input: BuildInstallPlanInput): InstallPlan {
+async function expandBundle(
+  asset: AssetDefinition,
+  rootDir: string,
+  targetDir: string,
+  templateContext: Record<string, unknown>
+): Promise<InstallFile[]> {
+  const sourceRoot = path.join(rootDir, asset.source);
+  const bundleDestinationRoot = path.join(targetDir, renderString(asset.destination, templateContext));
+  const files = await fs.readdir(sourceRoot, { recursive: true });
+
+  return files
+    .filter((entry): entry is string => typeof entry === 'string')
+    .filter((entry) => !asset.excludePatterns?.some((pattern) => entry.endsWith(pattern)))
+    .filter((entry) => asset.includeExtensions?.includes(path.extname(entry)) ?? true)
+    .map((entry) => {
+      const sourcePath = path.join(sourceRoot, entry);
+      const fileName = path.basename(entry);
+      const relativeDestination = entry.endsWith('.hbs') ? entry.slice(0, -4) : entry;
+      return {
+        assetId: `${asset.id}:${entry}`,
+        sourcePath,
+        destinationPath: path.join(bundleDestinationRoot, relativeDestination),
+        kind: asset.templateFiles?.includes(fileName) || entry.endsWith('.hbs') ? 'template' : 'static'
+      } satisfies InstallFile;
+    });
+}
+
+export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<InstallPlan> {
   const adapter = getToolAdapter(input.registry, input.tool);
   const templateContext = {
     projectName: input.projectName,
@@ -32,22 +60,31 @@ export function buildInstallPlan(input: BuildInstallPlanInput): InstallPlan {
     templateVersion: TEMPLATE_VERSION
   };
 
-  const files: InstallFile[] = assetManifest
+  const selectedAssets = assetManifest
     .filter((asset) => input.features.includes(asset.feature))
-    .filter((asset) => !asset.tools || asset.tools.includes(input.tool))
-    .map((asset) => ({
-      assetId: asset.id,
-      sourcePath: path.join(input.rootDir, asset.source),
-      destinationPath: path.join(input.targetDir, renderString(asset.destination, templateContext)),
-      kind: asset.kind
-    }));
+    .filter((asset) => !asset.tools || asset.tools.includes(input.tool));
+
+  const expandedFiles = await Promise.all(
+    selectedAssets.map(async (asset) => {
+      if (asset.kind === 'bundle') {
+        return expandBundle(asset, input.rootDir, input.targetDir, templateContext);
+      }
+
+      return [{
+        assetId: asset.id,
+        sourcePath: path.join(input.rootDir, asset.source),
+        destinationPath: path.join(input.targetDir, renderString(asset.destination, templateContext)),
+        kind: asset.kind
+      } satisfies InstallFile];
+    })
+  );
 
   return {
     projectName: input.projectName,
     tool: input.tool,
     features: input.features,
     adapter,
-    files,
+    files: expandedFiles.flat(),
     targetDir: input.targetDir,
     dryRun: input.dryRun,
     force: input.force

@@ -15,10 +15,10 @@ afterEach(async () => {
 });
 
 const toolExpectations = {
-  claude: ['CLAUDE.md', '.claude/skills/project-planner.md', '.claude/commands/review.md'],
-  cursor: ['.cursor/rules/opsx-dev-pipeline.mdc', '.cursor/rules/project-planner.md', '.cursor/commands/review.md', '.cursor/commands/README.md'],
-  codex: ['.codex/prompts/opsx-dev-pipeline.md', '.codex/prompts/project-planner.md', '.codex/commands/review.md', '.codex/commands/README.md'],
-  generic: ['.ai/README.md', '.ai/skills/project-planner.md', '.ai/commands/review.md']
+  claude: ['CLAUDE.md', '.claude/skills/dev-pipeline/SKILL.md', '.claude/skills/dev-pipeline/references/phase-0-entrance.md', '.claude/skills/dev-pipeline/assets/decision-point-index.md', '.claude/skills/dev-pipeline/scripts/dev-pipeline-preflight.sh', '.claude/commands/dev-pipeline.md', '.claude/commands/review.md'],
+  cursor: ['.cursor/rules/opsx-dev-pipeline.mdc', '.cursor/rules/dev-pipeline/SKILL.md', '.cursor/rules/dev-pipeline/references/phase-0-entrance.md', '.cursor/rules/dev-pipeline/assets/decision-point-index.md', '.cursor/rules/dev-pipeline/scripts/dev-pipeline-preflight.sh', '.cursor/commands/dev-pipeline.md', '.cursor/commands/review.md', '.cursor/commands/README.md'],
+  codex: ['.codex/prompts/opsx-dev-pipeline.md', '.codex/prompts/dev-pipeline/SKILL.md', '.codex/prompts/dev-pipeline/references/phase-0-entrance.md', '.codex/prompts/dev-pipeline/assets/decision-point-index.md', '.codex/prompts/dev-pipeline/scripts/dev-pipeline-preflight.sh', '.codex/commands/dev-pipeline.md', '.codex/commands/review.md', '.codex/commands/README.md'],
+  generic: ['.ai/README.md', '.ai/skills/dev-pipeline/SKILL.md', '.ai/skills/dev-pipeline/references/phase-0-entrance.md', '.ai/skills/dev-pipeline/assets/decision-point-index.md', '.ai/skills/dev-pipeline/scripts/dev-pipeline-preflight.sh', '.ai/commands/dev-pipeline.md', '.ai/commands/review.md']
 } as const;
 
 describe('tool matrix', () => {
@@ -33,6 +33,7 @@ describe('tool matrix', () => {
     }
 
     expect(await fs.pathExists(path.join(dir, MANIFEST_FILE))).toBe(true);
+    expect(await fs.pathExists(path.join(dir, expectedFiles[1].split('/').slice(0, -1).join('/'), 'tests'))).toBe(false);
   });
 
   it('supports dry-run without writing files', async () => {

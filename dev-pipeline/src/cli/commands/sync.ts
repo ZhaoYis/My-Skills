@@ -15,7 +15,7 @@ export async function runSyncCommand(options: InitOptions): Promise<void> {
 
   const rootDir = await resolvePackageRoot(import.meta.url);
   const registry = await loadToolRegistry(rootDir);
-  const plan = buildInstallPlan({
+  const plan = await buildInstallPlan({
     rootDir,
     targetDir,
     projectName: result.manifest.projectName,

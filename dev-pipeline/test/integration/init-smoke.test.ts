@@ -11,7 +11,7 @@ afterEach(async () => {
 });
 
 describe('runInit', () => {
-  it('writes claude assets in a temp directory', async () => {
+  it('writes claude bundled skill assets in a temp directory', async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-dev-pipeline-'));
     createdDirs.push(dir);
 
@@ -24,7 +24,10 @@ describe('runInit', () => {
     });
 
     expect(await fs.pathExists(path.join(dir, 'CLAUDE.md'))).toBe(true);
-    expect(await fs.pathExists(path.join(dir, '.claude/skills/project-planner.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/dev-pipeline/SKILL.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/dev-pipeline/assets/decision-point-index.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/dev-pipeline/references/phase-0-entrance.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/dev-pipeline/scripts/dev-pipeline-preflight.sh'))).toBe(true);
     expect(await fs.pathExists(path.join(dir, '.claude/commands/review.md'))).toBe(true);
     expect(await fs.pathExists(path.join(dir, 'opsx-dev-pipeline.json'))).toBe(true);
   });

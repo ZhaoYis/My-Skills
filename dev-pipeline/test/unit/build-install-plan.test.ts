@@ -32,12 +32,12 @@ describe('buildInstallPlan', () => {
     ['cursor', '.cursor/rules', '.cursor/commands', '.cursor/rules/opsx-dev-pipeline.mdc'],
     ['codex', '.codex/prompts', '.codex/commands', '.codex/prompts/opsx-dev-pipeline.md'],
     ['generic', '.ai/skills', '.ai/commands', '.ai/README.md']
-  ] as const)('maps assets for %s', (tool, skillsDir, commandsDir, docsPath) => {
+  ] as const)('maps assets for %s including bundle skill', async (tool, skillsDir, commandsDir, docsPath) => {
     const adapter = createAdapter(tool, skillsDir, commandsDir, tool);
     const registry = new Map<ToolId, ToolAdapter>([[tool, adapter]]);
 
-    const plan = buildInstallPlan({
-      rootDir: '/repo',
+    const plan = await buildInstallPlan({
+      rootDir: '/Users/mrzhaoyi/Workspace/LLM/My-Skills/dev-pipeline',
       targetDir: '/tmp/demo',
       projectName: 'demo',
       tool,
@@ -49,7 +49,10 @@ describe('buildInstallPlan', () => {
 
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', MANIFEST_FILE))).toBe(true);
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', docsPath))).toBe(true);
-    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'project-planner.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'dev-pipeline', 'SKILL.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'dev-pipeline', 'references', 'phase-0-entrance.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'dev-pipeline', 'assets', 'decision-point-index.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'dev-pipeline', 'scripts', 'dev-pipeline-preflight.sh'))).toBe(true);
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', commandsDir, 'review.md'))).toBe(true);
   });
 });

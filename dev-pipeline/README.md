@@ -4,6 +4,8 @@
 
 它的目标是：**让团队可以用一套统一的初始化方式，把 skills、commands、rules、prompts 等模板资产，按不同 AI 工具的约定目录自动落盘。**
 
+当前首个正式内置 skill 是 `dev-pipeline`，并且现在会同时安装对应的入口 command，用户安装后可以直接通过 command 来驱动这个 skill。
+
 当前版本已经支持：
 
 - 初始化新项目模板
@@ -55,8 +57,13 @@
 CLAUDE.md
 .claude/
   skills/
-    project-planner.md
+    dev-pipeline/
+      SKILL.md
+      assets/
+      references/
+      scripts/
   commands/
+    dev-pipeline.md
     review.md
 opsx-dev-pipeline.json
 README.md
@@ -106,6 +113,8 @@ npx opsx-dev-pipeline init --tool claude --yes --dry-run
 ## 常用命令
 
 ### 初始化项目
+
+安装完成后，推荐优先使用生成的 `dev-pipeline` command 作为 skill 入口。
 
 ```bash
 opsx-dev-pipeline init
@@ -256,7 +265,7 @@ npm pack --dry-run
 - `doctor` / `sync` / `upgrade` 基础生命周期命令
 - 全量自动化测试与打包验证
 
-适合作为一个 **AI 开发流水线模板初始化框架** 的基础版本继续扩展。
+适合作为一个 **内置首个正式 skill bundle（`dev-pipeline`）的 AI 开发流水线模板初始化框架** 的基础版本继续扩展。
 
 ---
 

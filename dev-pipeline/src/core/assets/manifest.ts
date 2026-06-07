@@ -27,12 +27,23 @@ export const assetManifest: AssetDefinition[] = [
     destination: MANIFEST_FILE
   },
   {
-    id: 'common-skill',
-    kind: 'template',
+    id: 'dev-pipeline-skill-bundle',
+    kind: 'bundle',
     scope: 'common',
     feature: 'skills',
-    source: 'templates/common/skills/project-planner.md.hbs',
-    destination: '{{skillsDir}}/project-planner.md'
+    source: 'templates/common/skills/dev-pipeline',
+    destination: '{{skillsDir}}/dev-pipeline',
+    includeExtensions: ['.md', '.hbs', '.sh'],
+    templateFiles: ['SKILL.md.hbs'],
+    excludePatterns: ['.gitkeep']
+  },
+  {
+    id: 'dev-pipeline-command',
+    kind: 'template',
+    scope: 'common',
+    feature: 'commands',
+    source: 'templates/common/commands/dev-pipeline.md.hbs',
+    destination: '{{commandsDir}}/dev-pipeline.md'
   },
   {
     id: 'common-command',
