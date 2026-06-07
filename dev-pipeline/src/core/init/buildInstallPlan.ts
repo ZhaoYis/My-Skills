@@ -5,6 +5,7 @@ import type { FeatureId, ToolId } from '../adapters/types.js';
 import { assetManifest } from '../assets/manifest.js';
 import type { AssetDefinition, InstallFile } from '../assets/types.js';
 import { MANIFEST_FILE, PACKAGE_NAME, TEMPLATE_VERSION } from '../runtime/meta.js';
+import type { ManagedAssetRecord } from '../manifest/types.js';
 import { renderString } from './renderTemplates.js';
 import type { InstallPlan } from './types.js';
 
@@ -16,6 +17,9 @@ export interface BuildInstallPlanInput {
   features: FeatureId[];
   dryRun: boolean;
   force: boolean;
+  mode: 'init' | 'sync';
+  hasExistingRootReadme?: boolean;
+  managedAssets?: ManagedAssetRecord[];
   registry: Parameters<typeof getToolAdapter>[0];
 }
 
@@ -62,7 +66,12 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
 
   const selectedAssets = assetManifest
     .filter((asset) => input.features.includes(asset.feature))
-    .filter((asset) => !asset.tools || asset.tools.includes(input.tool));
+    .filter((asset) => !asset.tools || asset.tools.includes(input.tool))
+    .filter((asset) => !(input.mode === 'init' && input.hasExistingRootReadme && !input.force && asset.id === 'common-readme'));
+
+  const managedAssetIds = input.managedAssets
+    ? new Set(input.managedAssets.map((asset) => asset.id))
+    : undefined;
 
   const expandedFiles = await Promise.all(
     selectedAssets.map(async (asset) => {
@@ -79,12 +88,16 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
     })
   );
 
+  const files = expandedFiles
+    .flat()
+    .filter((file) => input.mode !== 'sync' || !managedAssetIds || managedAssetIds.has(file.assetId));
+
   return {
     projectName: input.projectName,
     tool: input.tool,
     features: input.features,
     adapter,
-    files: expandedFiles.flat(),
+    files,
     targetDir: input.targetDir,
     dryRun: input.dryRun,
     force: input.force

@@ -7,12 +7,17 @@ import { runSyncCommand } from '../../src/cli/commands/sync.js';
 import { runUpgradeCommand } from '../../src/cli/commands/upgrade.js';
 import { runInit } from '../../src/core/init/runInit.js';
 import { MANIFEST_FILE } from '../../src/core/runtime/meta.js';
+import type { PipelineManifest } from '../../src/core/manifest/types.js';
 
 const createdDirs: string[] = [];
 
 afterEach(async () => {
   await Promise.all(createdDirs.splice(0).map((dir) => fs.remove(dir)));
 });
+
+async function readManifest(dir: string): Promise<PipelineManifest> {
+  return fs.readJson(path.join(dir, MANIFEST_FILE)) as Promise<PipelineManifest>;
+}
 
 const toolExpectations = {
   claude: ['CLAUDE.md', '.claude/skills/dev-pipeline/SKILL.md', '.claude/skills/dev-pipeline/references/phase-0-entrance.md', '.claude/skills/dev-pipeline/assets/decision-point-index.md', '.claude/skills/dev-pipeline/scripts/dev-pipeline-preflight.sh', '.claude/commands/dev-pipeline.md', '.claude/commands/review.md'],
@@ -54,6 +59,64 @@ describe('tool matrix', () => {
     await runUpgradeCommand({ dir, force: true, dryRun: false });
 
     expect(await fs.pathExists(path.join(dir, MANIFEST_FILE))).toBe(true);
+  });
+
+  it('writes a concise root README for new projects', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-readme-generated-'));
+    createdDirs.push(dir);
+
+    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
+
+    const readmeContent = await fs.readFile(path.join(dir, 'README.md'), 'utf8');
+    expect(readmeContent).toContain(`# ${path.basename(dir)}`);
+    expect(readmeContent).toContain('## Quick start');
+    expect(readmeContent).not.toContain('## Enabled features');
+  });
+
+  it('preserves an existing root README during init without force', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-readme-existing-'));
+    createdDirs.push(dir);
+    const existingReadme = path.join(dir, 'README.md');
+    const originalContent = '# Existing project\n';
+
+    await fs.writeFile(existingReadme, originalContent);
+    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
+
+    expect(await fs.readFile(existingReadme, 'utf8')).toBe(originalContent);
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/dev-pipeline/SKILL.md'))).toBe(true);
+
+    const manifest = await readManifest(dir);
+    expect(manifest.managedAssets.some((asset) => asset.id === 'common-readme')).toBe(false);
+  });
+
+  it('overwrites an existing root README during init with force', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-readme-force-'));
+    createdDirs.push(dir);
+    const existingReadme = path.join(dir, 'README.md');
+
+    await fs.writeFile(existingReadme, '# Existing project\n');
+    await runInit({ dir, tool: 'claude', yes: true, force: true, dryRun: false });
+
+    const readmeContent = await fs.readFile(existingReadme, 'utf8');
+    expect(readmeContent).not.toBe('# Existing project\n');
+
+    const manifest = await readManifest(dir);
+    expect(manifest.managedAssets.some((asset) => asset.id === 'common-readme')).toBe(true);
+  });
+
+  it('does not adopt a skipped root README during sync', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-readme-sync-'));
+    createdDirs.push(dir);
+    const existingReadme = path.join(dir, 'README.md');
+    const originalContent = '# Existing project\n';
+
+    await fs.writeFile(existingReadme, originalContent);
+    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
+    await runSyncCommand({ dir, force: true, dryRun: false });
+
+    expect(await fs.readFile(existingReadme, 'utf8')).toBe(originalContent);
+    const manifest = await readManifest(dir);
+    expect(manifest.managedAssets.some((asset) => asset.id === 'common-readme')).toBe(false);
   });
 
   it('rejects overwrite without force in a non-empty managed destination', async () => {

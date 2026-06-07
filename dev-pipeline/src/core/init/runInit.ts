@@ -1,3 +1,4 @@
+import fs from 'fs-extra';
 import path from 'node:path';
 import pc from 'picocolors';
 import { loadToolRegistry } from '../adapters/registry.js';
@@ -27,6 +28,7 @@ export async function runInit(options: InitOptions): Promise<void> {
     },
     registry
   );
+  const hasExistingRootReadme = await fs.pathExists(path.join(targetDir, 'README.md'));
 
   const plan = await buildInstallPlan({
     rootDir,
@@ -36,6 +38,8 @@ export async function runInit(options: InitOptions): Promise<void> {
     features: answers.features,
     dryRun: Boolean(options.dryRun),
     force: Boolean(options.force),
+    mode: 'init',
+    hasExistingRootReadme,
     registry
   });
 

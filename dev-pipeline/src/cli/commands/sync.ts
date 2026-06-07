@@ -23,6 +23,8 @@ export async function runSyncCommand(options: InitOptions): Promise<void> {
     features: result.manifest.features,
     dryRun: Boolean(options.dryRun),
     force: Boolean(options.force),
+    mode: 'sync',
+    managedAssets: result.manifest.managedAssets,
     registry
   });
 

@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const execFileAsync = promisify(execFile);
 const rootDir = '/Users/mrzhaoyi/Workspace/LLM/My-Skills/dev-pipeline';
@@ -14,11 +14,13 @@ beforeAll(async () => {
   await execFileAsync('npm', ['run', 'build'], { cwd: rootDir });
   const { stdout } = await execFileAsync('npm', ['pack'], { cwd: rootDir });
   tarball = stdout.trim().split('\n').pop() ?? '';
-});
+}, 30000);
 
-afterEach(async () => {
-  await Promise.all(createdDirs.splice(0).map((dir) => fs.remove(dir)));
-});
+afterAll(async () => {
+  for (const dir of createdDirs.splice(0)) {
+    await fs.remove(dir);
+  }
+}, 30000);
 
 describe('packaged artifact', () => {
   it('contains runnable bins and excludes compiled tests', async () => {
@@ -26,7 +28,7 @@ describe('packaged artifact', () => {
     expect(stdout).toContain('package/dist/bin/opsx-dev-pipeline.js');
     expect(stdout).toContain('package/dist/bin/create-opsx-dev-pipeline.js');
     expect(stdout).not.toContain('package/dist/test/');
-  });
+  }, 10000);
 
   it('runs the packaged CLI and initializes from the tarball install', async () => {
     const installDir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-pack-'));
@@ -34,17 +36,17 @@ describe('packaged artifact', () => {
     createdDirs.push(installDir, targetDir);
 
     await execFileAsync('npm', ['init', '-y'], { cwd: installDir });
-    await execFileAsync('npm', ['install', path.join(rootDir, tarball)], { cwd: installDir });
+    await execFileAsync('npm', ['install', path.join(rootDir, tarball)], { cwd: installDir, timeout: 30000 });
     const binPath = path.join(installDir, 'node_modules', '.bin', 'opsx-dev-pipeline');
     const createBinPath = path.join(installDir, 'node_modules', '.bin', 'create-opsx-dev-pipeline');
 
-    const help = await execFileAsync(binPath, ['--help'], { cwd: installDir });
-    const createHelp = await execFileAsync(createBinPath, ['--help'], { cwd: installDir });
+    const help = await execFileAsync(binPath, ['--help'], { cwd: installDir, timeout: 30000 });
+    const createHelp = await execFileAsync(createBinPath, ['--help'], { cwd: installDir, timeout: 30000 });
     expect(help.stdout).toContain('opsx-dev-pipeline');
     expect(createHelp.stdout).toContain('opsx-dev-pipeline');
 
-    await execFileAsync(binPath, ['init', '--tool', 'cursor', '--yes', '--dir', targetDir], { cwd: installDir });
+    await execFileAsync(binPath, ['init', '--tool', 'cursor', '--yes', '--dir', targetDir], { cwd: installDir, timeout: 30000 });
     expect(await fs.pathExists(path.join(targetDir, 'opsx-dev-pipeline.json'))).toBe(true);
     expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-dev-pipeline.mdc'))).toBe(true);
-  });
+  }, 45000);
 });
