@@ -50,6 +50,18 @@ describe('packaged artifact', () => {
     expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-dev-pipeline.mdc'))).toBe(true);
     expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-learn/SKILL.md'))).toBe(true);
     expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-learn/scripts/opsx-learn-preflight.sh'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-analysis/SKILL.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-analysis/references/phase-1-clarify-requirement.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-analysis/references/phase-2-explore-context.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-analysis/references/phase-3-split-capabilities.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-analysis/references/phase-4-assess-impact.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-analysis/references/phase-5-output-analysis.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-analysis/assets/analysis-output-template.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-analysis/assets/evidence-standards.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-analysis/assets/maintenance-index.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-analysis/assets/question-checklist.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-analysis/scripts/opsx-analysis-preflight.sh'))).toBe(true);
     expect(await fs.pathExists(path.join(targetDir, '.cursor/commands/opsx-learn.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/commands/opsx-analysis.md'))).toBe(true);
   }, 45000);
 });

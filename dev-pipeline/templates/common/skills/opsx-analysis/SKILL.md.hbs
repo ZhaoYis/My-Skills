@@ -1,0 +1,98 @@
+---
+name: opsx-analysis
+description: 基于知识库与仓库上下文的通用需求分析流程。
+license: MIT
+metadata:
+  author: zhaoyi
+  version: "1.0"
+---
+
+# 需求分析
+
+`opsx-analysis` 用于把用户需求、沉淀知识、仓库上下文与补充说明整理成结构化分析结果，帮助在实施前明确范围、影响面、风险与待确认问题。
+
+**重要：** 所有输出使用中文。
+
+## Input
+
+用户提供的任一分析入口：
+- 需求描述
+- 功能目标
+- 文档 / PRD / issue 片段
+- 业务补充说明
+- 约束条件或边界要求
+
+## 最小执行约束摘要
+
+- 先明确需求目标与范围，再进入探索与分析。
+- 先探索、后分析；不得在缺乏证据时直接输出结论。
+- 分析必须优先复用已沉淀知识、现有实现、现有文档和现有测试。
+- 默认输出为对话中的结构化分析结果，不强制写文件。
+- 明确区分：已确认事实、基于证据的推断、待用户确认的问题。
+- 默认分析维度至少覆盖：功能点拆解、影响面分析、风险与待确认项。
+- 工作量评估不是默认必选输出，除非用户额外要求。
+
+## 阅读顺序
+
+1. 先阅读本页的约束摘要与 Phase 引用表
+2. 先执行一次 `scripts/opsx-analysis-preflight.sh` 了解知识库、文档与仓库入口建议
+3. 再进入当前 Phase 对应的 `references/phase-*.md`
+4. 遇到输出结构、证据标准、澄清问题时，查阅 `assets/*.md`
+5. 维护本 skill 时，先看 `assets/maintenance-index.md`
+
+## Phase 引用表
+
+| Phase | 说明 | 引用文件 |
+| ----- | ---- | -------- |
+| 1 | 明确需求目标与边界 | `references/phase-1-clarify-requirement.md` |
+| 2 | 探索上下文（内置 `opsx-explore` 思路） | `references/phase-2-explore-context.md` |
+| 3 | 拆解功能点 / 能力点 | `references/phase-3-split-capabilities.md` |
+| 4 | 评估影响面与约束 | `references/phase-4-assess-impact.md` |
+| 5 | 输出结构化分析结果 | `references/phase-5-output-analysis.md` |
+| — | 输出模板 | `assets/analysis-output-template.md` |
+| — | 澄清问题清单 | `assets/question-checklist.md` |
+| — | 证据标准 | `assets/evidence-standards.md` |
+| — | 维护索引 | `assets/maintenance-index.md` |
+
+## 权威来源地图
+
+- **Phase 执行正文**：`references/phase-*.md`
+- **默认分析输出模板**：`assets/analysis-output-template.md`
+- **需求澄清问题清单**：`assets/question-checklist.md`
+- **证据采集与引用标准**：`assets/evidence-standards.md`
+- **维护影响矩阵**：`assets/maintenance-index.md`
+- **预检脚本**：`scripts/opsx-analysis-preflight.sh`
+
+## 通用适用范围
+
+本 skill 适用于以下类型的分析：
+- 新需求的前置分析
+- 已有需求的补充澄清
+- 功能变更前的影响面分析
+- 基于知识库与现有实现的需求对照分析
+- 实施前的风险识别与问题清单整理
+
+## 执行说明
+
+- 本 skill 适用于“分析要做什么、会影响什么、还缺什么信息”的场景，不直接替代实施流程。
+- 分析前应优先探索：知识库、README、CLAUDE.md、AGENTS.md、文档、代码、测试、配置、脚本等上下文。
+- `opsx-explore` 在这里不是独立命令依赖，而是内置的探索阶段方法论。
+- 若用户只希望快速判断范围，可输出精简分析；若用户要求完整分析，则按默认结构给出全量结果。
+- 若用户要求落盘，再单独确认目标位置与格式。
+
+## 推荐主流程
+
+1. 识别输入类型与分析目标。
+2. 运行预检并识别可用知识与上下文来源。
+3. 先执行探索上下文阶段，收集分析证据。
+4. 拆解功能点 / 能力点。
+5. 评估影响面、约束、依赖与风险。
+6. 输出结构化分析结果，并列出待确认问题。
+
+## 完成标准
+
+- 需求范围明确且边界清晰。
+- 已基于知识库、文档、代码、测试或配置收集到足够证据。
+- 已输出功能点拆解、影响面分析、风险与待确认项。
+- 输出中明确区分事实、推断与待确认问题。
+- 若未落盘，也应保证对话结果足以支持下一步决策。

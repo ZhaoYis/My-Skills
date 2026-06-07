@@ -77,7 +77,19 @@ describe('buildInstallPlan', () => {
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-learn', 'references', 'phase-1-understand-goal.md'))).toBe(true);
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-learn', 'assets', 'write-targets.md'))).toBe(true);
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-learn', 'scripts', 'opsx-learn-preflight.sh'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-analysis', 'SKILL.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-analysis', 'references', 'phase-1-clarify-requirement.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-analysis', 'references', 'phase-2-explore-context.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-analysis', 'references', 'phase-3-split-capabilities.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-analysis', 'references', 'phase-4-assess-impact.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-analysis', 'references', 'phase-5-output-analysis.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-analysis', 'assets', 'analysis-output-template.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-analysis', 'assets', 'evidence-standards.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-analysis', 'assets', 'maintenance-index.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-analysis', 'assets', 'question-checklist.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-analysis', 'scripts', 'opsx-analysis-preflight.sh'))).toBe(true);
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', commandsDir, 'opsx-learn.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', commandsDir, 'opsx-analysis.md'))).toBe(true);
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', commandsDir, 'review.md'))).toBe(true);
   });
 
