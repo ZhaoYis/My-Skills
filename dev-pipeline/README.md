@@ -34,6 +34,19 @@ npx opsx-dev-pipeline init --tool claude --yes --dry-run
 - `cursor`：Cursor，生成面向 Cursor 的 rules 和 command 模板
 - `codex`：Codex，生成面向 Codex 的 prompts 和 command 模板
 
+## Generated Integrated Commands
+
+初始化后，模板会额外安装一组面向 AI 工具的集成命令 / skill 入口。当前内置包括：
+
+- `opsx-dev-pipeline`：驱动 OpenSpec + Git 需求开发流水线
+- `opsx-learn`：面向现有仓库的渐进式知识沉淀流程，可把功能、接口、规则、FAQ、术语、配置约束、故障案例等整理进知识库
+- `review`：通用代码审查入口
+
+其中 `opsx-learn` 的默认使用方式为：
+- 先运行预检脚本，检查仓库上下文与知识库目录建议
+- 首次使用且仓库中没有明显知识目录时，明确提示用户确认知识库存放位置
+- 若无既有约定，默认使用 `.knowledge/`
+
 ## Commands
 
 
@@ -45,6 +58,7 @@ npx opsx-dev-pipeline init --tool claude --yes --dry-run
 | `sync`       | `npx opsx-dev-pipeline sync --dry-run`           | 根据 manifest 重新渲染托管文件    |
 | `upgrade`    | `npx opsx-dev-pipeline upgrade --dry-run`        | 使用当前包内模板执行升级入口          |
 
+> 提示：`init` 完成后，你可以在生成的 commands / skills 目录里直接使用 `opsx-learn`，把现有仓库知识逐步沉淀到知识库中。
 
 ## License
 

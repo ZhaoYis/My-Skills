@@ -29,6 +29,7 @@ const toolExpectations = {
     '.claude/skills/opsx-learn/SKILL.md',
     '.claude/skills/opsx-learn/references/phase-1-understand-goal.md',
     '.claude/skills/opsx-learn/assets/write-targets.md',
+    '.claude/skills/opsx-learn/scripts/opsx-learn-preflight.sh',
     '.claude/commands/opsx-dev-pipeline.md',
     '.claude/commands/opsx-learn.md',
     '.claude/commands/review.md'
@@ -42,6 +43,7 @@ const toolExpectations = {
     '.cursor/rules/opsx-learn/SKILL.md',
     '.cursor/rules/opsx-learn/references/phase-1-understand-goal.md',
     '.cursor/rules/opsx-learn/assets/write-targets.md',
+    '.cursor/rules/opsx-learn/scripts/opsx-learn-preflight.sh',
     '.cursor/commands/opsx-dev-pipeline.md',
     '.cursor/commands/opsx-learn.md',
     '.cursor/commands/review.md',
@@ -56,6 +58,7 @@ const toolExpectations = {
     '.codex/prompts/opsx-learn/SKILL.md',
     '.codex/prompts/opsx-learn/references/phase-1-understand-goal.md',
     '.codex/prompts/opsx-learn/assets/write-targets.md',
+    '.codex/prompts/opsx-learn/scripts/opsx-learn-preflight.sh',
     '.codex/commands/opsx-dev-pipeline.md',
     '.codex/commands/opsx-learn.md',
     '.codex/commands/review.md',
@@ -70,6 +73,7 @@ const toolExpectations = {
     '.ai/skills/opsx-learn/SKILL.md',
     '.ai/skills/opsx-learn/references/phase-1-understand-goal.md',
     '.ai/skills/opsx-learn/assets/write-targets.md',
+    '.ai/skills/opsx-learn/scripts/opsx-learn-preflight.sh',
     '.ai/commands/opsx-dev-pipeline.md',
     '.ai/commands/opsx-learn.md',
     '.ai/commands/review.md'

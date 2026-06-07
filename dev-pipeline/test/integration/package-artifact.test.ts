@@ -49,6 +49,7 @@ describe('packaged artifact', () => {
     expect(await fs.pathExists(path.join(targetDir, 'opsx-dev-pipeline.json'))).toBe(true);
     expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-dev-pipeline.mdc'))).toBe(true);
     expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-learn/SKILL.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-learn/scripts/opsx-learn-preflight.sh'))).toBe(true);
     expect(await fs.pathExists(path.join(targetDir, '.cursor/commands/opsx-learn.md'))).toBe(true);
   }, 45000);
 });

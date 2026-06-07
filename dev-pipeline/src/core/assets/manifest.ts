@@ -52,7 +52,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'skills',
     source: 'templates/common/skills/opsx-learn',
     destination: '{{skillsDir}}/opsx-learn',
-    includeExtensions: ['.md', '.hbs'],
+    includeExtensions: ['.md', '.hbs', '.sh'],
     templateFiles: ['SKILL.md.hbs'],
     excludePatterns: ['.gitkeep']
   },
