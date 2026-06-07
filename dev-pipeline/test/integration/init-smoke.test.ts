@@ -28,6 +28,10 @@ describe('runInit', () => {
     expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-dev-pipeline/assets/decision-point-index.md'))).toBe(true);
     expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-dev-pipeline/references/phase-0-entrance.md'))).toBe(true);
     expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh'))).toBe(true);
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-learn/SKILL.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-learn/references/phase-1-understand-goal.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-learn/assets/write-targets.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(dir, '.claude/commands/opsx-learn.md'))).toBe(true);
     expect(await fs.pathExists(path.join(dir, '.claude/commands/review.md'))).toBe(true);
     expect(await fs.pathExists(path.join(dir, 'opsx-dev-pipeline.json'))).toBe(true);
   });

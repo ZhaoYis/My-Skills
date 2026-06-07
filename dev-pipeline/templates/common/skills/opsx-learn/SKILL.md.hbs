@@ -1,0 +1,82 @@
+---
+name: opsx-learn
+description: 面向现有仓库的渐进式知识沉淀流程。
+license: MIT
+metadata:
+  author: zhaoyi
+  version: "1.0"
+---
+
+# 渐进式知识沉淀
+
+**重要：** 所有输出使用中文。
+
+## Input
+
+用户提供的任一学习入口：
+- API 路径
+- 方法 / 类 / 模块名
+- 功能描述
+- 需求文档片段
+- 业务域或知识空白点
+
+## 最小执行约束摘要
+
+- 先明确学习目标，再展开追踪；范围模糊时必须先向用户确认。
+- 先分析、后落盘；未经用户确认，不得直接写入知识库。
+- 对业务语义不猜测；事实不足时只能标记不确定项并向用户追问。
+- 知识沉淀默认采用“通用知识库”模式：优先复用项目现有知识目录，不存在时再与用户确认写入位置。
+- 写入时必须先做去重检查，优先追加或合并，不直接覆盖既有内容。
+
+## 阅读顺序
+
+1. 先阅读本页的约束摘要与 Phase 引用表
+2. 再进入当前 Phase 对应的 `references/phase-*.md`
+3. 遇到写入位置、去重、条目格式时，查阅 `assets/*.md`
+4. 维护本 skill 时，先看 `assets/maintenance-index.md`
+
+## Phase 引用表
+
+| Phase | 说明 | 引用文件 |
+| ----- | ---- | -------- |
+| 1 | 明确目标与边界 | `references/phase-1-understand-goal.md` |
+| 2 | 定位入口与上下文 | `references/phase-2-locate-entry.md` |
+| 3 | 追踪实现链路 | `references/phase-3-trace-flow.md` |
+| 4 | 提炼知识草稿 | `references/phase-4-draft-knowledge.md` |
+| 5 | 审核、确认并沉淀 | `references/phase-5-review-and-write.md` |
+| — | 写入位置规则 | `assets/write-targets.md` |
+| — | 去重规则 | `assets/dedup-rules.md` |
+| — | 知识条目模板 | `assets/knowledge-entry-templates.md` |
+| — | 维护索引 | `assets/maintenance-index.md` |
+
+## 权威来源地图
+
+- **Phase 执行正文**：`references/phase-*.md`
+- **写入位置约定**：`assets/write-targets.md`
+- **去重与合并规则**：`assets/dedup-rules.md`
+- **知识条目模板**：`assets/knowledge-entry-templates.md`
+- **维护影响矩阵**：`assets/maintenance-index.md`
+
+## 执行说明
+
+- 本 skill 适用于“从代码/文档中提炼可复用知识”的场景，不替代实现开发流程。
+- 优先复用项目现有的 README、CLAUDE.md、AGENTS.md、设计文档、ADR、知识目录等上下文。
+- 若用户只要求分析，不要求落盘，可在 Phase 5 停在“审核完成、暂不写入”。
+- 若项目已有知识目录，优先写入既有结构；若没有，先按 `assets/write-targets.md` 与用户确认目标目录。
+
+## 推荐主流程
+
+1. 识别输入类型与当前目标。
+2. 找到代码或文档中的实际入口。
+3. 顺着调用链、依赖和数据流追踪实现。
+4. 把事实整理成候选知识条目草稿。
+5. 逐条或分组让用户确认：保留 / 修改 / 跳过。
+6. 确认知识库位置后，按去重规则追加沉淀。
+
+## 完成标准
+
+- 学习范围明确且得到用户确认。
+- 关键实现链路、业务规则、依赖边界已被梳理。
+- 输出了结构化知识草稿，并明确标注来源。
+- 用户已确认要保留的条目与写入位置。
+- 沉淀结果未覆盖旧知识，且符合去重规则。

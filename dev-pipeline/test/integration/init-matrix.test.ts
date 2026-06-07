@@ -20,10 +20,60 @@ async function readManifest(dir: string): Promise<PipelineManifest> {
 }
 
 const toolExpectations = {
-  claude: ['CLAUDE.md', '.claude/skills/opsx-dev-pipeline/SKILL.md', '.claude/skills/opsx-dev-pipeline/references/phase-0-entrance.md', '.claude/skills/opsx-dev-pipeline/assets/decision-point-index.md', '.claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', '.claude/commands/opsx-dev-pipeline.md', '.claude/commands/review.md'],
-  cursor: ['.cursor/rules/opsx-dev-pipeline.mdc', '.cursor/rules/opsx-dev-pipeline/SKILL.md', '.cursor/rules/opsx-dev-pipeline/references/phase-0-entrance.md', '.cursor/rules/opsx-dev-pipeline/assets/decision-point-index.md', '.cursor/rules/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', '.cursor/commands/opsx-dev-pipeline.md', '.cursor/commands/review.md', '.cursor/commands/README.md'],
-  codex: ['.codex/prompts/opsx-dev-pipeline.md', '.codex/prompts/opsx-dev-pipeline/SKILL.md', '.codex/prompts/opsx-dev-pipeline/references/phase-0-entrance.md', '.codex/prompts/opsx-dev-pipeline/assets/decision-point-index.md', '.codex/prompts/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', '.codex/commands/opsx-dev-pipeline.md', '.codex/commands/review.md', '.codex/commands/README.md'],
-  generic: ['.ai/README.md', '.ai/skills/opsx-dev-pipeline/SKILL.md', '.ai/skills/opsx-dev-pipeline/references/phase-0-entrance.md', '.ai/skills/opsx-dev-pipeline/assets/decision-point-index.md', '.ai/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', '.ai/commands/opsx-dev-pipeline.md', '.ai/commands/review.md']
+  claude: [
+    'CLAUDE.md',
+    '.claude/skills/opsx-dev-pipeline/SKILL.md',
+    '.claude/skills/opsx-dev-pipeline/references/phase-0-entrance.md',
+    '.claude/skills/opsx-dev-pipeline/assets/decision-point-index.md',
+    '.claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh',
+    '.claude/skills/opsx-learn/SKILL.md',
+    '.claude/skills/opsx-learn/references/phase-1-understand-goal.md',
+    '.claude/skills/opsx-learn/assets/write-targets.md',
+    '.claude/commands/opsx-dev-pipeline.md',
+    '.claude/commands/opsx-learn.md',
+    '.claude/commands/review.md'
+  ],
+  cursor: [
+    '.cursor/rules/opsx-dev-pipeline.mdc',
+    '.cursor/rules/opsx-dev-pipeline/SKILL.md',
+    '.cursor/rules/opsx-dev-pipeline/references/phase-0-entrance.md',
+    '.cursor/rules/opsx-dev-pipeline/assets/decision-point-index.md',
+    '.cursor/rules/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh',
+    '.cursor/rules/opsx-learn/SKILL.md',
+    '.cursor/rules/opsx-learn/references/phase-1-understand-goal.md',
+    '.cursor/rules/opsx-learn/assets/write-targets.md',
+    '.cursor/commands/opsx-dev-pipeline.md',
+    '.cursor/commands/opsx-learn.md',
+    '.cursor/commands/review.md',
+    '.cursor/commands/README.md'
+  ],
+  codex: [
+    '.codex/prompts/opsx-dev-pipeline.md',
+    '.codex/prompts/opsx-dev-pipeline/SKILL.md',
+    '.codex/prompts/opsx-dev-pipeline/references/phase-0-entrance.md',
+    '.codex/prompts/opsx-dev-pipeline/assets/decision-point-index.md',
+    '.codex/prompts/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh',
+    '.codex/prompts/opsx-learn/SKILL.md',
+    '.codex/prompts/opsx-learn/references/phase-1-understand-goal.md',
+    '.codex/prompts/opsx-learn/assets/write-targets.md',
+    '.codex/commands/opsx-dev-pipeline.md',
+    '.codex/commands/opsx-learn.md',
+    '.codex/commands/review.md',
+    '.codex/commands/README.md'
+  ],
+  generic: [
+    '.ai/README.md',
+    '.ai/skills/opsx-dev-pipeline/SKILL.md',
+    '.ai/skills/opsx-dev-pipeline/references/phase-0-entrance.md',
+    '.ai/skills/opsx-dev-pipeline/assets/decision-point-index.md',
+    '.ai/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh',
+    '.ai/skills/opsx-learn/SKILL.md',
+    '.ai/skills/opsx-learn/references/phase-1-understand-goal.md',
+    '.ai/skills/opsx-learn/assets/write-targets.md',
+    '.ai/commands/opsx-dev-pipeline.md',
+    '.ai/commands/opsx-learn.md',
+    '.ai/commands/review.md'
+  ]
 } as const;
 
 describe('tool matrix', () => {

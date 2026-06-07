@@ -73,6 +73,10 @@ describe('buildInstallPlan', () => {
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-dev-pipeline', 'references', 'phase-0-entrance.md'))).toBe(true);
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-dev-pipeline', 'assets', 'decision-point-index.md'))).toBe(true);
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-dev-pipeline', 'scripts', 'dev-pipeline-preflight.sh'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-learn', 'SKILL.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-learn', 'references', 'phase-1-understand-goal.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-learn', 'assets', 'write-targets.md'))).toBe(true);
+    expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', commandsDir, 'opsx-learn.md'))).toBe(true);
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', commandsDir, 'review.md'))).toBe(true);
   });
 
@@ -121,7 +125,9 @@ describe('buildInstallPlan', () => {
   it('limits sync plans to manifest-managed assets', async () => {
     const managedAssets: ManagedAssetRecord[] = [
       { id: 'common-readme', destination: 'README.md' },
-      { id: 'common-metadata', destination: MANIFEST_FILE }
+      { id: 'common-metadata', destination: MANIFEST_FILE },
+      { id: 'opsx-learn-command', destination: '.claude/commands/opsx-learn.md' },
+      { id: 'opsx-learn-skill-bundle:SKILL.md.hbs', destination: '.claude/skills/opsx-learn/SKILL.md' }
     ];
 
     const plan = await buildInstallPlan({
@@ -129,6 +135,11 @@ describe('buildInstallPlan', () => {
       mode: 'sync'
     });
 
-    expect(plan.files.map((file) => file.assetId).sort()).toEqual(['common-metadata', 'common-readme']);
+    expect(plan.files.map((file) => file.assetId).sort()).toEqual([
+      'common-metadata',
+      'common-readme',
+      'opsx-learn-command',
+      'opsx-learn-skill-bundle:SKILL.md.hbs'
+    ]);
   });
 });

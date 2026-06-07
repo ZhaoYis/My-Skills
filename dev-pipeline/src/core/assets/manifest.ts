@@ -46,6 +46,25 @@ export const assetManifest: AssetDefinition[] = [
     destination: '{{commandsDir}}/opsx-dev-pipeline.md'
   },
   {
+    id: 'opsx-learn-skill-bundle',
+    kind: 'bundle',
+    scope: 'common',
+    feature: 'skills',
+    source: 'templates/common/skills/opsx-learn',
+    destination: '{{skillsDir}}/opsx-learn',
+    includeExtensions: ['.md', '.hbs'],
+    templateFiles: ['SKILL.md.hbs'],
+    excludePatterns: ['.gitkeep']
+  },
+  {
+    id: 'opsx-learn-command',
+    kind: 'template',
+    scope: 'common',
+    feature: 'commands',
+    source: 'templates/common/commands/opsx-learn.md.hbs',
+    destination: '{{commandsDir}}/opsx-learn.md'
+  },
+  {
     id: 'common-command',
     kind: 'template',
     scope: 'common',
