@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "projectName": "{{projectName}}",
+  "tool": "{{toolId}}",
+  "features": [{{#each features}}{{#if @index}}, {{/if}}"{{this}}"{{/each}}],
+  "templateVersion": "{{templateVersion}}",
+  "packageName": "{{packageName}}",
+  "managedAssets": [
+    {{#each managedAssets}}
+    {{#if @index}},{{/if}}
+    {
+      "id": "{{this.id}}",
+      "destination": "{{this.destination}}"
+    }
+    {{/each}}
+  ]
+}

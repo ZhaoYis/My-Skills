@@ -1,0 +1,28 @@
+{
+  "features": [
+    {
+      "id": "base",
+      "displayName": "Base project scaffold",
+      "description": "README, gitignore, and metadata files.",
+      "default": true
+    },
+    {
+      "id": "skills",
+      "displayName": "Skills templates",
+      "description": "Reusable skills templates for the selected AI tool.",
+      "default": true
+    },
+    {
+      "id": "commands",
+      "displayName": "Commands templates",
+      "description": "Reusable command templates for the selected AI tool.",
+      "default": true
+    },
+    {
+      "id": "docs",
+      "displayName": "Tooling documentation",
+      "description": "Tool-specific guidance and bootstrap docs.",
+      "default": true
+    }
+  ]
+}

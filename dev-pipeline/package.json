@@ -1,0 +1,45 @@
+{
+  "name": "opsx-dev-pipeline",
+  "version": "0.1.0",
+  "description": "One-stop dev pipeline initializer with AI tool adapters for skills and commands templates.",
+  "type": "module",
+  "bin": {
+    "opsx-dev-pipeline": "dist/bin/opsx-dev-pipeline.js",
+    "create-opsx-dev-pipeline": "dist/bin/create-opsx-dev-pipeline.js"
+  },
+  "files": [
+    "dist",
+    "config",
+    "templates",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx src/bin/opsx-dev-pipeline.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "pack:check": "npm pack --dry-run",
+    "init:smoke": "tsx src/bin/opsx-dev-pipeline.ts init --tool claude --yes --dry-run"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "cac": "^6.7.14",
+    "fs-extra": "^11.3.2",
+    "handlebars": "^4.7.8",
+    "picocolors": "^1.1.1",
+    "prompts": "^2.4.2",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/handlebars": "^4.1.0",
+    "@types/node": "^24.0.1",
+    "@types/prompts": "^2.4.9",
+    "tsx": "^4.20.6",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}
