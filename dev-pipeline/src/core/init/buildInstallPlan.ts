@@ -7,6 +7,7 @@ import type { AssetDefinition, InstallFile } from '../assets/types.js';
 import { MANIFEST_FILE, PACKAGE_NAME, TEMPLATE_VERSION } from '../runtime/meta.js';
 import type { ManagedAssetRecord } from '../manifest/types.js';
 import { renderString } from './renderTemplates.js';
+import { isAppendableInstallFile } from './isAppendableInstallFile.js';
 import type { InstallPlan } from './types.js';
 
 export interface BuildInstallPlanInput {
@@ -18,7 +19,6 @@ export interface BuildInstallPlanInput {
   dryRun: boolean;
   force: boolean;
   mode: 'init' | 'sync';
-  hasExistingRootReadme?: boolean;
   managedAssets?: ManagedAssetRecord[];
   registry: Parameters<typeof getToolAdapter>[0];
 }
@@ -45,7 +45,10 @@ async function expandBundle(
         assetId: `${asset.id}:${entry}`,
         sourcePath,
         destinationPath: path.join(bundleDestinationRoot, relativeDestination),
-        kind: asset.templateFiles?.includes(fileName) || entry.endsWith('.hbs') ? 'template' : 'static'
+        kind: asset.templateFiles?.includes(fileName) || entry.endsWith('.hbs') ? 'template' : 'static',
+        exists: false,
+        appendable: false,
+        resolution: 'none'
       } satisfies InstallFile;
     });
 }
@@ -66,8 +69,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
 
   const selectedAssets = assetManifest
     .filter((asset) => input.features.includes(asset.feature))
-    .filter((asset) => !asset.tools || asset.tools.includes(input.tool))
-    .filter((asset) => !(input.mode === 'init' && input.hasExistingRootReadme && !input.force && asset.id === 'common-readme'));
+    .filter((asset) => !asset.tools || asset.tools.includes(input.tool));
 
   const managedAssetIds = input.managedAssets
     ? new Set(input.managedAssets.map((asset) => asset.id))
@@ -83,14 +85,32 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
         assetId: asset.id,
         sourcePath: path.join(input.rootDir, asset.source),
         destinationPath: path.join(input.targetDir, renderString(asset.destination, templateContext)),
-        kind: asset.kind
+        kind: asset.kind,
+        exists: false,
+        appendable: false,
+        resolution: 'none'
       } satisfies InstallFile];
     })
   );
 
-  const files = expandedFiles
-    .flat()
-    .filter((file) => input.mode !== 'sync' || !managedAssetIds || managedAssetIds.has(file.assetId));
+  const files = await Promise.all(
+    expandedFiles
+      .flat()
+      .filter((file) => input.mode !== 'sync' || !managedAssetIds || managedAssetIds.has(file.assetId))
+      .map(async (file) => {
+        const exists = await fs.pathExists(file.destinationPath);
+        const appendable = isAppendableInstallFile(file);
+
+        return {
+          ...file,
+          exists,
+          appendable,
+          resolution: exists
+            ? (input.force ? 'overwrite' : 'unresolved')
+            : 'none'
+        } satisfies InstallFile;
+      })
+  );
 
   return {
     projectName: input.projectName,

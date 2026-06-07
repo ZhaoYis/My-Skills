@@ -6,7 +6,17 @@ import { PACKAGE_NAME, TEMPLATE_VERSION } from '../runtime/meta.js';
 import { renderTemplate } from './renderTemplates.js';
 import type { InstallPlan } from './types.js';
 
+function appendContent(existingContent: string, nextContent: string): string {
+  if (!existingContent) {
+    return nextContent;
+  }
+
+  const separator = existingContent.endsWith('\n') ? '\n' : '\n\n';
+  return `${existingContent}${separator}${nextContent}`;
+}
+
 export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
+  const managedFiles = [] as typeof plan.files;
   const context = {
     projectName: plan.projectName,
     toolId: plan.tool,
@@ -16,10 +26,7 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
     commandsDir: plan.adapter.getDestination('commands'),
     features: plan.features,
     templateVersion: TEMPLATE_VERSION,
-    managedAssets: plan.files.map((file) => ({
-      id: file.assetId,
-      destination: path.relative(plan.targetDir, file.destinationPath)
-    }))
+    managedAssets: [] as Array<{ id: string; destination: string }>
   };
 
   if (plan.dryRun) {
@@ -31,22 +38,42 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
   }
 
   for (const file of plan.files) {
-    const exists = await fs.pathExists(file.destinationPath);
+    if (file.resolution === 'skip') {
+      continue;
+    }
 
-    if (exists && !plan.force) {
-      throw new Error(`Refusing to overwrite existing file: ${file.destinationPath}`);
+    if (file.resolution === 'unresolved') {
+      throw new Error(`Unresolved install conflict for: ${file.destinationPath}`);
     }
 
     await fs.ensureDir(path.dirname(file.destinationPath));
 
     if (file.kind === 'template') {
       const content = await renderTemplate(file.sourcePath, context);
+
+      if (file.resolution === 'append') {
+        const existingContent = await fs.readFile(file.destinationPath, 'utf8');
+        await fs.outputFile(file.destinationPath, appendContent(existingContent, content));
+        continue;
+      }
+
       await fs.outputFile(file.destinationPath, content);
+      managedFiles.push(file);
       continue;
     }
 
-    await fs.copy(file.sourcePath, file.destinationPath, { overwrite: plan.force });
+    if (file.exists && file.resolution !== 'overwrite') {
+      throw new Error(`Unsupported resolution ${file.resolution} for static file: ${file.destinationPath}`);
+    }
+
+    await fs.copy(file.sourcePath, file.destinationPath, { overwrite: file.resolution === 'overwrite' });
+    managedFiles.push(file);
   }
+
+  context.managedAssets = managedFiles.map((file) => ({
+    id: file.assetId,
+    destination: path.relative(plan.targetDir, file.destinationPath)
+  }));
 
   await writeManifest(plan.targetDir, {
     schemaVersion: 1,

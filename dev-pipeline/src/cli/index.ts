@@ -22,6 +22,7 @@ export async function runCli(argv: string[]): Promise<void> {
 
   cli
     .command('sync', 'Re-render managed files from opsx-dev-pipeline manifest')
+    .option('--yes', 'Skip conflict prompts and preserve existing files when possible')
     .option('--force', 'Overwrite existing managed files')
     .option('--dry-run', 'Preview synchronized files without writing them')
     .option(...dirOption)
@@ -31,6 +32,7 @@ export async function runCli(argv: string[]): Promise<void> {
 
   cli
     .command('upgrade', 'Upgrade managed files using the current opsx-dev-pipeline package templates')
+    .option('--yes', 'Skip conflict prompts and preserve existing files when possible')
     .option('--force', 'Overwrite existing managed files')
     .option('--dry-run', 'Preview upgraded files without writing them')
     .option(...dirOption)

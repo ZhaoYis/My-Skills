@@ -1,4 +1,3 @@
-import fs from 'fs-extra';
 import path from 'node:path';
 import pc from 'picocolors';
 import { loadToolRegistry } from '../adapters/registry.js';
@@ -7,6 +6,7 @@ import { resolvePackageRoot } from '../runtime/resolvePackageRoot.js';
 import { buildInstallPlan } from './buildInstallPlan.js';
 import { collectInputs } from './collectInputs.js';
 import { executeInstallPlan } from './executeInstallPlan.js';
+import { resolveInstallConflicts } from './resolveInstallConflicts.js';
 import { validateTarget } from './validateTarget.js';
 
 export async function runInit(options: InitOptions): Promise<void> {
@@ -28,8 +28,6 @@ export async function runInit(options: InitOptions): Promise<void> {
     },
     registry
   );
-  const hasExistingRootReadme = await fs.pathExists(path.join(targetDir, 'README.md'));
-
   const plan = await buildInstallPlan({
     rootDir,
     targetDir,
@@ -39,9 +37,12 @@ export async function runInit(options: InitOptions): Promise<void> {
     dryRun: Boolean(options.dryRun),
     force: Boolean(options.force),
     mode: 'init',
-    hasExistingRootReadme,
     registry
   });
+  const resolvedPlan = await resolveInstallConflicts(plan, {
+    yes: Boolean(options.yes),
+    force: Boolean(options.force)
+  });
 
-  await executeInstallPlan(plan);
+  await executeInstallPlan(resolvedPlan);
 }

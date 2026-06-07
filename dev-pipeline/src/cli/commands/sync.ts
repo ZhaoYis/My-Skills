@@ -4,6 +4,7 @@ import { readManifest } from '../../core/manifest/io.js';
 import { resolvePackageRoot } from '../../core/runtime/resolvePackageRoot.js';
 import { buildInstallPlan } from '../../core/init/buildInstallPlan.js';
 import { executeInstallPlan } from '../../core/init/executeInstallPlan.js';
+import { resolveInstallConflicts } from '../../core/init/resolveInstallConflicts.js';
 import type { InitOptions } from '../../core/prompts/types.js';
 
 export async function runSyncCommand(options: InitOptions): Promise<void> {
@@ -27,6 +28,10 @@ export async function runSyncCommand(options: InitOptions): Promise<void> {
     managedAssets: result.manifest.managedAssets,
     registry
   });
+  const resolvedPlan = await resolveInstallConflicts(plan, {
+    yes: Boolean(options.yes),
+    force: Boolean(options.force)
+  });
 
-  await executeInstallPlan(plan);
+  await executeInstallPlan(resolvedPlan);
 }

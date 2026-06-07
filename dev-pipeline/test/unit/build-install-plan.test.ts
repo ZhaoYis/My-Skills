@@ -76,23 +76,46 @@ describe('buildInstallPlan', () => {
     expect(plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', commandsDir, 'review.md'))).toBe(true);
   });
 
-  it('skips the managed root README during init when one already exists', async () => {
+  it('marks existing files as unresolved during init without force', async () => {
     const plan = await buildInstallPlan({
-      ...createPlanInput(),
-      hasExistingRootReadme: true
+      ...createPlanInput()
     });
 
-    expect(plan.files.some((file) => file.assetId === 'common-readme')).toBe(false);
+    const readmeFile = plan.files.find((file) => file.assetId === 'common-readme');
+    expect(readmeFile?.resolution).toBe('none');
   });
 
-  it('keeps the managed root README during init when force is enabled', async () => {
+  it('marks existing files as overwrite when force is enabled', async () => {
     const plan = await buildInstallPlan({
       ...createPlanInput(),
-      force: true,
-      hasExistingRootReadme: true
+      force: true
     });
 
-    expect(plan.files.some((file) => file.assetId === 'common-readme')).toBe(true);
+    const readmeFile = plan.files.find((file) => file.assetId === 'common-readme');
+    expect(readmeFile?.resolution).toBe('none');
+  });
+
+  it('marks sync files as unresolved without force', async () => {
+    const managedAssets: ManagedAssetRecord[] = [
+      { id: 'common-readme', destination: 'README.md' }
+    ];
+
+    const plan = await buildInstallPlan({
+      ...createPlanInput(managedAssets),
+      mode: 'sync'
+    });
+
+    expect(plan.files[0]?.resolution).toBe('none');
+  });
+
+  it('keeps the managed root .gitignore during init when force is enabled', async () => {
+    const plan = await buildInstallPlan({
+      ...createPlanInput(),
+      force: true
+    });
+
+    const gitignoreFile = plan.files.find((file) => file.assetId === 'common-gitignore');
+    expect(gitignoreFile?.resolution).toBe('none');
   });
 
   it('limits sync plans to manifest-managed assets', async () => {

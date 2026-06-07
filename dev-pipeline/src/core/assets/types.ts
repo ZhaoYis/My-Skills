@@ -16,9 +16,14 @@ export interface AssetDefinition {
   excludePatterns?: string[];
 }
 
+export type InstallConflictResolution = 'none' | 'overwrite' | 'append' | 'skip' | 'unresolved';
+
 export interface InstallFile {
   assetId: string;
   sourcePath: string;
   destinationPath: string;
   kind: 'template' | 'static';
+  exists: boolean;
+  appendable: boolean;
+  resolution: InstallConflictResolution;
 }
