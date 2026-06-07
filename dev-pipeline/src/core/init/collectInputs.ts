@@ -3,6 +3,8 @@ import prompts from 'prompts';
 import type { ToolAdapter, ToolId } from '../adapters/types.js';
 import type { InitAnswers, InitOptions } from '../prompts/types.js';
 
+const DEFAULT_FEATURES = ['base', 'skills', 'commands', 'docs'] as const;
+
 export async function collectInputs(
   targetDir: string,
   options: InitOptions,
@@ -15,7 +17,7 @@ export async function collectInputs(
     return {
       projectName: defaultProjectName,
       tool: defaultTool,
-      features: ['base', 'skills', 'commands', 'docs']
+      features: [...DEFAULT_FEATURES]
     };
   }
 
@@ -38,24 +40,12 @@ export async function collectInputs(
       message: 'Select your AI tool',
       choices: toolChoices,
       initial: toolChoices.findIndex((choice) => choice.value === defaultTool)
-    },
-    {
-      type: 'multiselect',
-      name: 'features',
-      message: 'Select template bundles',
-      choices: [
-        { title: 'Base scaffold', value: 'base', selected: true },
-        { title: 'Skills templates', value: 'skills', selected: true },
-        { title: 'Commands templates', value: 'commands', selected: true },
-        { title: 'Docs', value: 'docs', selected: true }
-      ],
-      hint: '- Space to select. Return to submit'
     }
   ]);
 
   return {
     projectName: response.projectName ?? defaultProjectName,
     tool: response.tool ?? defaultTool,
-    features: response.features ?? ['base', 'skills', 'commands', 'docs']
+    features: [...DEFAULT_FEATURES]
   };
 }
