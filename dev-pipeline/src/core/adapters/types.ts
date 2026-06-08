@@ -1,4 +1,4 @@
-export type FeatureId = 'base' | 'skills' | 'commands' | 'docs';
+export type FeatureId = 'base' | 'skills' | 'commands' | 'docs' | 'prototype';
 export type ToolId = 'claude' | 'cursor' | 'codex' | 'generic';
 
 export interface ToolDestinations {

@@ -265,6 +265,35 @@ describe('tool matrix', () => {
     expect(await fs.pathExists(path.join(dir, expectedFiles[1].split('/').slice(0, -1).join('/'), 'tests'))).toBe(false);
   });
 
+  it('does not generate the optional opsx-prototype skill by default', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-prototype-default-'));
+    createdDirs.push(dir);
+
+    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
+
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-prototype/SKILL.md'))).toBe(false);
+    expect(await fs.pathExists(path.join(dir, '.claude/commands/opsx-prototype.md'))).toBe(false);
+
+    const manifest = await readManifest(dir);
+    expect(manifest.features).not.toContain('prototype');
+    expect(manifest.managedAssets.some((asset) => asset.id.startsWith('opsx-prototype'))).toBe(false);
+  });
+
+  it('generates the optional opsx-prototype skill when the prototype feature is enabled', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-prototype-enabled-'));
+    createdDirs.push(dir);
+
+    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false, feature: ['prototype'] });
+
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-prototype/SKILL.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-prototype/references/phase-1-collect-prototype.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-prototype/assets/structured-requirement-template.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(dir, '.claude/commands/opsx-prototype.md'))).toBe(true);
+
+    const manifest = await readManifest(dir);
+    expect(manifest.features).toContain('prototype');
+  });
+
   it('embeds manifest in package.json when package.json exists', async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-package-json-'));
     createdDirs.push(dir);

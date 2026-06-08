@@ -161,6 +161,25 @@ export const assetManifest: AssetDefinition[] = [
     destination: '{{commandsDir}}/opsx-health.md'
   },
   {
+    id: 'opsx-prototype-skill-bundle',
+    kind: 'bundle',
+    scope: 'common',
+    feature: 'prototype',
+    source: 'templates/common/skills/opsx-prototype',
+    destination: '{{skillsDir}}/opsx-prototype',
+    includeExtensions: ['.md', '.hbs', '.sh'],
+    templateFiles: ['SKILL.md.hbs'],
+    excludePatterns: ['.gitkeep']
+  },
+  {
+    id: 'opsx-prototype-command',
+    kind: 'template',
+    scope: 'common',
+    feature: 'prototype',
+    source: 'templates/common/commands/opsx-prototype.md.hbs',
+    destination: '{{commandsDir}}/opsx-prototype.md'
+  },
+  {
     id: 'git-commit-push-skill-bundle',
     kind: 'bundle',
     scope: 'common',

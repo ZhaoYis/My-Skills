@@ -15,6 +15,7 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--yes', 'Skip prompts and use defaults/flags')
     .option('--force', 'Overwrite existing files when allowed')
     .option('--dry-run', 'Preview generated files without writing them')
+    .option('--feature <feature>', 'Enable an optional feature (repeatable, e.g. --feature prototype)')
     .option(...dirOption)
     .action(async (options) => {
       await runInitCommand(options);

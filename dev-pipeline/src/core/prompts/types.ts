@@ -6,6 +6,8 @@ export interface InitOptions {
   force?: boolean;
   tool?: ToolId;
   yes?: boolean;
+  /** Optional, non-default features to enable (e.g. 'prototype'). Repeatable on the CLI via --feature. */
+  feature?: string | string[];
 }
 
 export interface InitAnswers {

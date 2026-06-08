@@ -29,6 +29,12 @@
       "displayName": "Structural analysis hint (optional)",
       "description": "Opt-in guidance to prefer structural search (code graph / LSP / index MCP) over plain text search when available. Default off; references stay no-op when disabled.",
       "default": false
+    },
+    {
+      "id": "prototype",
+      "displayName": "Prototype / UI analysis skill (optional)",
+      "description": "Opt-in opsx-prototype skill that turns prototype links / screenshots / descriptions into structured requirements for opsx-analysis. Default off; depends on optional external browser/visual tools and degrades gracefully. No credentials are built in. Enable with `init --feature prototype`.",
+      "default": false
     }
   ]
 }

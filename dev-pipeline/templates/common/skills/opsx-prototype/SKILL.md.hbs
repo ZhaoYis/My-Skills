@@ -1,0 +1,64 @@
+---
+name: opsx-prototype
+description: 把原型链接 / 截图 / 描述转成结构化需求，喂给 opsx-analysis；外部工具可选、默认优雅降级。
+license: MIT
+metadata:
+  author: zhaoyi
+  version: "1.0"
+---
+
+# 原型 / 界面分析（可选能力）
+
+`opsx-prototype` 用于把原型链接、界面截图或口头描述，转成一份**结构化需求**（界面 / 组件 / 交互 / 数据 / 状态），作为 `opsx-analysis` 的输入。
+
+> **可选能力（默认关闭）**：本 skill 依赖外部浏览器自动化 / 视觉或 OCR 分析能力。它通过 feature flag `prototype` 控制，**默认不安装**；仅在初始化时显式开启该 flag 才会生成（如 `init --tool <tool> --feature prototype`）。即使开启，也**不内置任何 API Key / 平台**：若环境未安装相关外部工具，会优雅降级为"用户粘贴截图 / 口述描述"模式。
+
+**重要：** 所有输出使用中文。
+
+## Input
+
+任一原型入口：
+- 原型 / 设计稿链接
+- 界面截图（用户粘贴）
+- 对界面与交互的口头描述
+
+## 最小执行约束摘要
+
+- 外部工具一律表述为"若已安装浏览器自动化 / 视觉分析 CLI 则使用，否则降级为用户粘贴截图 / 口述"。
+- 不内置任何 API Key、平台凭据或固定接口。
+- 输出是**结构化需求**，不是最终设计/实现；其去向是 `opsx-analysis`。
+- 不臆造界面上看不到、也未被用户描述的功能；不确定项列为待确认。
+
+## 阅读顺序
+
+1. 先阅读本页约束摘要与 Phase 引用表
+2. 按 Phase 顺序进入 `references/phase-*.md`
+3. 整理输出时套用 `assets/structured-requirement-template.md`
+4. 维护本 skill 时，先看 `assets/maintenance-index.md`
+
+## Phase 引用表
+
+| Phase | 说明 | 引用文件 |
+| ----- | ---- | -------- |
+| 1 | 采集原型输入（检测外部工具或降级） | `references/phase-1-collect-prototype.md` |
+| 2 | 抽取界面 / 组件 / 交互 / 数据结构 | `references/phase-2-extract-structure.md` |
+| 3 | 产出结构化需求并交接给 opsx-analysis | `references/phase-3-handoff.md` |
+| — | 结构化需求模板 | `assets/structured-requirement-template.md` |
+| — | 维护索引 | `assets/maintenance-index.md` |
+
+## 权威来源地图
+
+- **Phase 执行正文**：`references/phase-*.md`
+- **结构化需求模板**：`assets/structured-requirement-template.md`
+- **维护索引**：`assets/maintenance-index.md`
+
+## 与其他能力的关系
+
+- **下游**：产出的结构化需求作为 `opsx-analysis` 的输入；如需进一步澄清歧义，可转 `opsx-clarify`。
+- **降级关系**：外部工具不可用时，本 skill 仍能基于用户粘贴的截图 / 口述完整产出。
+
+## 完成标准
+
+- 已采集到原型输入（链接 / 截图 / 描述），并说明使用的是外部工具还是降级模式。
+- 输出结构化需求（界面 / 组件 / 交互 / 数据 / 状态 + 待确认项）。
+- 全程无内置凭据；外部工具缺失时优雅降级。

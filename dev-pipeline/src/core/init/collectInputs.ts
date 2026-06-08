@@ -1,9 +1,19 @@
 import path from 'node:path';
 import prompts from 'prompts';
-import type { ToolAdapter, ToolId } from '../adapters/types.js';
+import type { FeatureId, ToolAdapter, ToolId } from '../adapters/types.js';
 import type { InitAnswers, InitOptions } from '../prompts/types.js';
 
 const DEFAULT_FEATURES = ['base', 'skills', 'commands', 'docs'] as const;
+const OPTIONAL_FEATURES = ['prototype'] as const satisfies readonly FeatureId[];
+
+function resolveFeatures(option: InitOptions['feature']): FeatureId[] {
+  const requested = option === undefined ? [] : Array.isArray(option) ? option : [option];
+  const optional = requested
+    .map((value) => String(value).trim())
+    .filter((value): value is FeatureId => (OPTIONAL_FEATURES as readonly string[]).includes(value));
+
+  return Array.from(new Set<FeatureId>([...DEFAULT_FEATURES, ...optional]));
+}
 
 export async function collectInputs(
   targetDir: string,
@@ -13,11 +23,13 @@ export async function collectInputs(
   const defaultProjectName = path.basename(targetDir);
   const defaultTool = options.tool ?? 'claude';
 
+  const features = resolveFeatures(options.feature);
+
   if (options.yes) {
     return {
       projectName: defaultProjectName,
       tool: defaultTool,
-      features: [...DEFAULT_FEATURES]
+      features
     };
   }
 
@@ -46,6 +58,6 @@ export async function collectInputs(
   return {
     projectName: response.projectName ?? defaultProjectName,
     tool: response.tool ?? defaultTool,
-    features: [...DEFAULT_FEATURES]
+    features
   };
 }

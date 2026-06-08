@@ -50,6 +50,14 @@ npx opsx-dev-pipeline init --tool claude --yes --dry-run
 - `git-merge-branch`：将当前分支按指定策略合并到目标分支，并处理合并后的收尾动作
 - `file-code-review`：对指定文件或代码片段进行独立代码审查，适合无 Git diff 场景
 
+此外还有一个**可选（默认关闭）**的 skill，通过 feature flag 控制：
+
+- `opsx-prototype`：把原型链接 / 截图 / 描述转成结构化需求，喂给 `opsx-analysis`。依赖可选的外部浏览器自动化 / 视觉分析工具，未安装时优雅降级为"用户粘贴截图 / 口述"，且不内置任何凭据。默认**不生成**，需在初始化时显式开启 flag：
+
+```bash
+npx opsx-dev-pipeline init --tool claude --yes --feature prototype
+```
+
 `opsx-clarify` / `opsx-design` / `opsx-verify` 构成需求前置到验证的能力链，并与流水线保持单源治理：
 
 - `opsx-clarify` 与 `opsx-analysis` 分工：后者的澄清阶段服务于分析本身，`opsx-clarify` 面向"独立产出一份可发给产品/干系人的问题清单"。
