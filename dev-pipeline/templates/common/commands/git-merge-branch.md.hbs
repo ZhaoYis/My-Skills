@@ -1,0 +1,36 @@
+# git-merge-branch
+
+Use this command as the entrypoint for the bundled `git-merge-branch` skill.
+
+## Intent
+
+Merge the current branch into a target branch with explicit checks for uncommitted work, unpushed commits, merge strategy, conflicts, and post-merge cleanup.
+
+The canonical skill entry is:
+- `{{skillsDir}}/git-merge-branch/SKILL.md`
+
+`{{skillsDir}}` resolves to the active tool's installed skill directory, for example `.claude/skills`, `.cursor/rules`, `.codex/prompts`, or `.ai/skills`.
+
+## When to use it
+
+Use `git-merge-branch` when you want to:
+- merge the current branch into `main`, `master`, `qa`, `stg`, or another target branch
+- choose between standard, squash, or no-ff merge strategies
+- update the target branch before merge
+- handle conflicts and optional source-branch cleanup with a guided flow
+
+## Recommended flow
+
+1. Load and follow the bundled `git-merge-branch` skill.
+2. Check repository status and whether the source branch has unpushed commits.
+3. Choose the target branch.
+4. Choose the merge strategy.
+5. Update the target branch from remote before merging.
+6. Perform the merge, resolve conflicts if needed, and push the target branch.
+7. Return to the source branch unless the user explicitly chooses otherwise.
+
+## Suggested first action
+
+Open or invoke the bundled skill and start with:
+
+- `{{skillsDir}}/git-merge-branch/SKILL.md`

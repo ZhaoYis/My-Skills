@@ -85,12 +85,80 @@ export const assetManifest: AssetDefinition[] = [
     destination: '{{commandsDir}}/opsx-analysis.md'
   },
   {
-    id: 'common-command',
+    id: 'git-commit-push-skill-bundle',
+    kind: 'bundle',
+    scope: 'common',
+    feature: 'skills',
+    source: 'templates/common/skills/git-commit-push',
+    destination: '{{skillsDir}}/git-commit-push',
+    includeExtensions: ['.md', '.hbs', '.sh'],
+    templateFiles: ['SKILL.md.hbs'],
+    excludePatterns: ['.gitkeep']
+  },
+  {
+    id: 'git-code-review-skill-bundle',
+    kind: 'bundle',
+    scope: 'common',
+    feature: 'skills',
+    source: 'templates/common/skills/git-code-review',
+    destination: '{{skillsDir}}/git-code-review',
+    includeExtensions: ['.md', '.hbs', '.sh'],
+    templateFiles: ['SKILL.md.hbs'],
+    excludePatterns: ['.gitkeep']
+  },
+  {
+    id: 'git-merge-branch-skill-bundle',
+    kind: 'bundle',
+    scope: 'common',
+    feature: 'skills',
+    source: 'templates/common/skills/git-merge-branch',
+    destination: '{{skillsDir}}/git-merge-branch',
+    includeExtensions: ['.md', '.hbs', '.sh'],
+    templateFiles: ['SKILL.md.hbs'],
+    excludePatterns: ['.gitkeep']
+  },
+  {
+    id: 'file-code-review-skill-bundle',
+    kind: 'bundle',
+    scope: 'common',
+    feature: 'skills',
+    source: 'templates/common/skills/file-code-review',
+    destination: '{{skillsDir}}/file-code-review',
+    includeExtensions: ['.md', '.hbs', '.sh'],
+    templateFiles: ['SKILL.md.hbs'],
+    excludePatterns: ['.gitkeep']
+  },
+  {
+    id: 'git-commit-push-command',
     kind: 'template',
     scope: 'common',
     feature: 'commands',
-    source: 'templates/common/commands/review.md.hbs',
-    destination: '{{commandsDir}}/review.md'
+    source: 'templates/common/commands/git-commit-push.md.hbs',
+    destination: '{{commandsDir}}/git-commit-push.md'
+  },
+  {
+    id: 'git-code-review-command',
+    kind: 'template',
+    scope: 'common',
+    feature: 'commands',
+    source: 'templates/common/commands/git-code-review.md.hbs',
+    destination: '{{commandsDir}}/git-code-review.md'
+  },
+  {
+    id: 'git-merge-branch-command',
+    kind: 'template',
+    scope: 'common',
+    feature: 'commands',
+    source: 'templates/common/commands/git-merge-branch.md.hbs',
+    destination: '{{commandsDir}}/git-merge-branch.md'
+  },
+  {
+    id: 'file-code-review-command',
+    kind: 'template',
+    scope: 'common',
+    feature: 'commands',
+    source: 'templates/common/commands/file-code-review.md.hbs',
+    destination: '{{commandsDir}}/file-code-review.md'
   },
   {
     id: 'claude-docs',

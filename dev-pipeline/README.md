@@ -41,7 +41,10 @@ npx opsx-dev-pipeline init --tool claude --yes --dry-run
 - `opsx-dev-pipeline`：驱动 OpenSpec + Git 需求开发流水线
 - `opsx-learn`：面向现有仓库的渐进式知识沉淀流程，可把功能、接口、规则、FAQ、术语、配置约束、故障案例等整理进知识库
 - `opsx-analysis`：基于知识库、仓库上下文与用户补充进行需求分析，默认输出结构化分析结果
-- `review`：通用代码审查入口
+- `git-commit-push`：提交并推送当前仓库变更，包含分支同步与敏感信息检查
+- `git-code-review`：面向当前分支变更的 Git 审查流程，默认结合 `openspec/project.md` 输出中文审查报告
+- `git-merge-branch`：将当前分支按指定策略合并到目标分支，并处理合并后的收尾动作
+- `file-code-review`：对指定文件或代码片段进行独立代码审查，适合无 Git diff 场景
 
 其中 `opsx-learn` 的默认使用方式为：
 
@@ -57,6 +60,17 @@ npx opsx-dev-pipeline init --tool claude --yes --dry-run
 - 默认继续完成：功能点拆解、影响面分析与结构化分析输出
 - 输出中明确区分已确认事实、基于证据的推断与待确认问题
 - 默认在对话中输出结果，不强制写文件
+
+新增的 Git / 文件审查相关入口可直接作为生成后 commands 的常用入口，例如：
+
+```md
+/git-code-review
+/git-commit-push
+/git-merge-branch
+/file-code-review src/main/java/com/example/ExampleController.java
+```
+
+如果是 Claude Code，默认会生成到 `.claude/commands/` 与 `.claude/skills/`；其他工具会映射到各自目录（如 Cursor 的 `.cursor/commands/` / `.cursor/rules/`）。
 
 ## Commands
 

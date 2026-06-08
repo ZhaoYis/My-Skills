@@ -51,10 +51,17 @@ const toolExpectations = {
     '.claude/skills/opsx-analysis/assets/maintenance-index.md',
     '.claude/skills/opsx-analysis/assets/question-checklist.md',
     '.claude/skills/opsx-analysis/scripts/opsx-analysis-preflight.sh',
+    '.claude/skills/git-commit-push/SKILL.md',
+    '.claude/skills/git-code-review/SKILL.md',
+    '.claude/skills/git-merge-branch/SKILL.md',
+    '.claude/skills/file-code-review/SKILL.md',
     '.claude/commands/opsx-dev-pipeline.md',
     '.claude/commands/opsx-learn.md',
     '.claude/commands/opsx-analysis.md',
-    '.claude/commands/review.md'
+    '.claude/commands/git-commit-push.md',
+    '.claude/commands/git-code-review.md',
+    '.claude/commands/git-merge-branch.md',
+    '.claude/commands/file-code-review.md'
   ],
   cursor: [
     '.cursor/rules/opsx-dev-pipeline.mdc',
@@ -81,10 +88,17 @@ const toolExpectations = {
     '.cursor/rules/opsx-analysis/assets/maintenance-index.md',
     '.cursor/rules/opsx-analysis/assets/question-checklist.md',
     '.cursor/rules/opsx-analysis/scripts/opsx-analysis-preflight.sh',
+    '.cursor/rules/git-commit-push/SKILL.md',
+    '.cursor/rules/git-code-review/SKILL.md',
+    '.cursor/rules/git-merge-branch/SKILL.md',
+    '.cursor/rules/file-code-review/SKILL.md',
     '.cursor/commands/opsx-dev-pipeline.md',
     '.cursor/commands/opsx-learn.md',
     '.cursor/commands/opsx-analysis.md',
-    '.cursor/commands/review.md',
+    '.cursor/commands/git-commit-push.md',
+    '.cursor/commands/git-code-review.md',
+    '.cursor/commands/git-merge-branch.md',
+    '.cursor/commands/file-code-review.md',
     '.cursor/commands/README.md'
   ],
   codex: [
@@ -112,10 +126,17 @@ const toolExpectations = {
     '.codex/prompts/opsx-analysis/assets/maintenance-index.md',
     '.codex/prompts/opsx-analysis/assets/question-checklist.md',
     '.codex/prompts/opsx-analysis/scripts/opsx-analysis-preflight.sh',
+    '.codex/prompts/git-commit-push/SKILL.md',
+    '.codex/prompts/git-code-review/SKILL.md',
+    '.codex/prompts/git-merge-branch/SKILL.md',
+    '.codex/prompts/file-code-review/SKILL.md',
     '.codex/commands/opsx-dev-pipeline.md',
     '.codex/commands/opsx-learn.md',
     '.codex/commands/opsx-analysis.md',
-    '.codex/commands/review.md',
+    '.codex/commands/git-commit-push.md',
+    '.codex/commands/git-code-review.md',
+    '.codex/commands/git-merge-branch.md',
+    '.codex/commands/file-code-review.md',
     '.codex/commands/README.md'
   ],
   generic: [
@@ -143,10 +164,17 @@ const toolExpectations = {
     '.ai/skills/opsx-analysis/assets/maintenance-index.md',
     '.ai/skills/opsx-analysis/assets/question-checklist.md',
     '.ai/skills/opsx-analysis/scripts/opsx-analysis-preflight.sh',
+    '.ai/skills/git-commit-push/SKILL.md',
+    '.ai/skills/git-code-review/SKILL.md',
+    '.ai/skills/git-merge-branch/SKILL.md',
+    '.ai/skills/file-code-review/SKILL.md',
     '.ai/commands/opsx-dev-pipeline.md',
     '.ai/commands/opsx-learn.md',
     '.ai/commands/opsx-analysis.md',
-    '.ai/commands/review.md'
+    '.ai/commands/git-commit-push.md',
+    '.ai/commands/git-code-review.md',
+    '.ai/commands/git-merge-branch.md',
+    '.ai/commands/file-code-review.md'
   ]
 } as const;
 

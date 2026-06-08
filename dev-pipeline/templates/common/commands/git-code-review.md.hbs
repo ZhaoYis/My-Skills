@@ -1,0 +1,35 @@
+# git-code-review
+
+Use this command as the entrypoint for the bundled `git-code-review` skill.
+
+## Intent
+
+Review uncommitted or unpushed Git changes in the current branch against project conventions, then produce a structured Chinese review report.
+
+The canonical skill entry is:
+- `{{skillsDir}}/git-code-review/SKILL.md`
+
+`{{skillsDir}}` resolves to the active tool's installed skill directory, for example `.claude/skills`, `.cursor/rules`, `.codex/prompts`, or `.ai/skills`.
+
+## When to use it
+
+Use `git-code-review` when you want to:
+- review unstaged or staged changes before commit
+- review unpushed commits before merge or release
+- generate a Chinese review report under `openspec/review/`
+- assess changes against `openspec/project.md` conventions
+
+## Recommended flow
+
+1. Load and follow the bundled `git-code-review` skill.
+2. Read `openspec/project.md` if it exists.
+3. Choose the review scope from unstaged, staged, unpushed, or all.
+4. Collect diffs, change summary, and secret-scan findings.
+5. Produce and save the structured Chinese review report.
+6. If needed, decide whether to generate an OpenSpec fix proposal.
+
+## Suggested first action
+
+Open or invoke the bundled skill and start with:
+
+- `{{skillsDir}}/git-code-review/SKILL.md`

@@ -68,7 +68,15 @@ describe('packaged artifact', () => {
     expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-analysis/assets/maintenance-index.md'))).toBe(true);
     expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-analysis/assets/question-checklist.md'))).toBe(true);
     expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-analysis/scripts/opsx-analysis-preflight.sh'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/git-commit-push/SKILL.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/git-code-review/SKILL.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/git-merge-branch/SKILL.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/file-code-review/SKILL.md'))).toBe(true);
     expect(await fs.pathExists(path.join(targetDir, '.cursor/commands/opsx-learn.md'))).toBe(true);
     expect(await fs.pathExists(path.join(targetDir, '.cursor/commands/opsx-analysis.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/commands/git-commit-push.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/commands/git-code-review.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/commands/git-merge-branch.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(targetDir, '.cursor/commands/file-code-review.md'))).toBe(true);
   }, 45000);
 });
