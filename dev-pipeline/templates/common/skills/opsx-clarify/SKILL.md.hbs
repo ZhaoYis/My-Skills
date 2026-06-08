@@ -1,0 +1,76 @@
+---
+name: opsx-clarify
+description: 把模糊需求转成带优先级、可对外分享的澄清问题清单，工具 / 语言 / 领域无关。
+license: MIT
+metadata:
+  author: zhaoyi
+  version: "1.0"
+---
+
+# 需求澄清问题清单
+
+`opsx-clarify` 用于把模糊、不完整或有歧义的需求，转成一份**带优先级、关联具体位置、可直接发给产品 / 干系人**的澄清问题清单。
+
+它聚焦"独立产出一份可分享的问题清单"。与 `opsx-analysis` 内置的分析内澄清分工不同：`opsx-analysis` 的 clarify 阶段服务于分析本身；`opsx-clarify` 面向"对外发出一份问题清单"。
+
+**重要：** 所有输出使用中文。
+
+## Input
+
+任一澄清入口：
+- 模糊 / 不完整的需求描述
+- PRD / issue / 聊天片段
+- 业务背景说明
+- 已有分析中暴露出的待确认项
+
+## 最小执行约束摘要
+
+- 先识别不明确点，再生成问题，不跳过识别直接提问。
+- 每个问题必须**具体可回答**（"上限 50 万是否可配置？"而非"这功能怎么做？"）。
+- 每个问题标优先级（P0 阻塞 / P1）与关联位置。
+- 不猜测答案、不替用户拍板；只产出问题。
+- 默认在对话中输出清单；对外发送能力抽象为可选，不内置任何具体平台凭据/接口。
+
+## 阅读顺序
+
+1. 先阅读本页约束摘要与 Phase 引用表
+2. 先执行一次 `scripts/opsx-clarify-preflight.sh` 了解仓库与上下文入口
+3. 按 Phase 顺序进入 `references/phase-*.md`
+4. 识别不明确点时参考 `assets/ambiguity-types.md`
+5. 生成清单时套用 `assets/question-list-template.md`
+6. 维护本 skill 时，先看 `assets/maintenance-index.md`
+
+## Phase 引用表
+
+| Phase | 说明 | 引用文件 |
+| ----- | ---- | -------- |
+| 1 | 识别不明确点 | `references/phase-1-detect-ambiguity.md` |
+| 2 | 生成澄清问题清单 | `references/phase-2-build-question-list.md` |
+| 3 | 输出 / 可选分享 | `references/phase-3-deliver.md` |
+| — | 不明确点分类 | `assets/ambiguity-types.md` |
+| — | 问题清单模板 | `assets/question-list-template.md` |
+| — | 维护索引 | `assets/maintenance-index.md` |
+
+## 权威来源地图
+
+- **Phase 执行正文**：`references/phase-*.md`
+- **不明确点分类**：`assets/ambiguity-types.md`
+- **问题清单模板**：`assets/question-list-template.md`
+- **维护索引**：`assets/maintenance-index.md`
+- **预检脚本**：`scripts/opsx-clarify-preflight.sh`
+
+## 与其他能力的关系
+
+- 与 `opsx-analysis`：后者的 phase-1-clarify 负责"分析内澄清"；本 skill 负责"独立产出可分享清单"。
+- 与 `opsx-design`：本 skill 已回答的项可作为设计约束，未回答项标为"设计待确认"。
+
+## 使用方式
+
+- 可独立调用：`/opsx-clarify <模糊需求>`。
+- 默认在对话输出清单；无任何外部凭据时也能完整产出。
+
+## 完成标准
+
+- 已按不明确点分类识别出歧义。
+- 输出一份带优先级与关联位置的问题清单。
+- 问题均具体可回答，无猜测、无替用户决策。

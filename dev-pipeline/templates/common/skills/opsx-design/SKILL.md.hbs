@@ -1,0 +1,82 @@
+---
+name: opsx-design
+description: 通用的设计文档撰写与质量门禁流程，工具 / 语言 / 领域无关。
+license: MIT
+metadata:
+  author: zhaoyi
+  version: "1.0"
+---
+
+# 设计文档撰写 + 质量门禁
+
+`opsx-design` 用于把已澄清的需求与分析结果转化为一份**让实现者能直接照做**的设计文档，并通过统一的质量门禁保证设计的相关性、边界完整性与可验证性。
+
+它的核心价值不是固定的章节模板，而是一套**通用的设计质量纪律**：相关性过滤、受众标注、改动影响汇总（含"不受影响"项）、验证断言字段、任务粒度（一任务=一文件）。
+
+**重要：** 所有输出使用中文。
+
+## Input
+
+任一设计入口：
+- 需求描述 / 功能目标
+- `opsx-analysis` 的结构化分析结果（优先复用）
+- 现有实现、文档、测试、配置等上下文
+- 约束条件或边界要求
+
+## 最小执行约束摘要
+
+- 设计前先收集上下文，优先复用已有分析、知识库与现有实现，不凭空臆造。
+- 每个章节都必须通过"相关性过滤"：去掉它实现者还能否正确实现？能就删。
+- 改动影响汇总表**至少包含 1 个"不受影响"项**，否则视为缺失边界分析。
+- 必须包含"验证断言字段"，供 `opsx-verify` 直接消费，形成 design→verify 链路。
+- 任务粒度：每条任务对应一个文件变更；一任务跨多文件则拆分。
+- 命令、构建、测试一律表述为"按项目基准（`openspec/config.yaml` → `AGENTS.md` → `CLAUDE.md`）与既有约定"，不写死任何技术栈。
+
+## 阅读顺序
+
+1. 先阅读本页约束摘要与 Phase 引用表
+2. 按 Phase 顺序进入 `references/phase-*.md`
+3. 撰写章节时取用 `assets/section-skeleton.md`
+4. 自检时逐条核对 `assets/quality-checklist.md`
+5. 填写影响范围时套用 `assets/impact-summary-template.md`
+6. 维护本 skill 时，先看 `assets/maintenance-index.md`
+
+## Phase 引用表
+
+| Phase | 说明 | 引用文件 |
+| ----- | ---- | -------- |
+| 1 | 收集上下文（需求 / 分析结果 / 项目基准） | `references/phase-1-collect-context.md` |
+| 2 | 按通用章节骨架撰写设计 | `references/phase-2-author-sections.md` |
+| 3 | 质量自检门禁 | `references/phase-3-quality-gate.md` |
+| — | 通用章节骨架 | `assets/section-skeleton.md` |
+| — | 质量自检清单 | `assets/quality-checklist.md` |
+| — | 改动影响汇总表模板 | `assets/impact-summary-template.md` |
+| — | 维护索引 | `assets/maintenance-index.md` |
+
+## 权威来源地图
+
+- **Phase 执行正文**：`references/phase-*.md`
+- **通用章节骨架**：`assets/section-skeleton.md`
+- **质量门禁清单**：`assets/quality-checklist.md`
+- **改动影响汇总表模板**：`assets/impact-summary-template.md`
+- **维护索引**：`assets/maintenance-index.md`
+
+## 与其他能力的关系
+
+- **上游**：可直接复用 `opsx-analysis` 的范围、影响面、待确认问题，避免重复梳理。
+- **下游**：产出的"验证断言字段"由 `opsx-verify` 消费，构成 design→verify 质量闭环。
+- **与 Pipeline**：`opsx-dev-pipeline` Phase 1 产出 design 制品时，应加载本 skill 的章节骨架与质量门禁；本 skill 是"如何写出好设计"的能力库，Pipeline 仍是"何时必须产出 design"的门禁权威。
+
+## 使用方式
+
+- 可独立调用：`/opsx-design <需求或分析结果>`。
+- 也可被 Phase 1 在生成 design 制品时加载。
+- 默认在对话中产出设计内容；若用户要求落盘，再确认目标位置与格式。
+
+## 完成标准
+
+- 每个保留章节都通过相关性过滤，且标注了受众。
+- 改动影响汇总表覆盖文件级改动，并至少含 1 个"不受影响"项。
+- 含验证断言字段（断言字段 + 数据来源 + 自动/人工）。
+- 任务拆分到文件粒度。
+- 全文无写死技术栈词，命令均表述为"按项目基准"。

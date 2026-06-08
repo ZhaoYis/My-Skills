@@ -1,0 +1,47 @@
+# opsx-verify
+
+Use this command as the entrypoint for the bundled `opsx-verify` skill.
+
+## Intent
+
+Systematically verify a change: resolve verification targets from the change/design, build and run using project baselines, run smoke/contract/data checks (auto vs manual), and regress the impacted surface — all language-agnostic.
+
+The canonical skill entry is:
+- `{{skillsDir}}/opsx-verify/SKILL.md`
+
+## When to use it
+
+Use `opsx-verify` when you want to:
+- turn a design's verification assertion fields into an executable verification plan
+- build and run a change using commands resolved from project baselines
+- decide which checks can be automated vs require manual confirmation
+- regress upstream callers and downstream dependencies of a change
+
+## Recommended flow
+
+1. Run the bundled preflight script.
+2. Resolve verification targets from the change/design (reuse `opsx-design` assertion fields).
+3. Build and run using project-baseline commands.
+4. Run smoke/contract/data checks with auto vs manual judgement.
+5. Regress the impacted surface and conclude against the pass criteria.
+
+## Relationship
+
+- Upstream: consumes `opsx-design` verification assertion fields.
+- Pipeline: `opsx-dev-pipeline` Phase 4 may load this skill for full verification; Phase 4 remains the gate authority.
+
+## Default output mode
+
+By default, produce verification steps and a conclusion in the conversation; on failure, give a fix loop.
+
+## Suggested first action
+
+Run the preflight check first:
+
+```bash
+bash {{skillsDir}}/opsx-verify/scripts/opsx-verify-preflight.sh
+```
+
+Then open or invoke the bundled skill and continue from:
+
+- `{{skillsDir}}/opsx-verify/SKILL.md`

@@ -64,6 +64,7 @@ compatibility: 需要 openspec CLI、git 与已初始化 OpenSpec 的项目；Cu
 4. **按依赖顺序创建制品**
 
     - 对每个 `ready` 状态的制品，运行 `bash <SKILL_ROOT>/scripts/dev-pipeline-instructions.sh "<name>" <artifact-id>`（或 `openspec instructions <artifact-id> --change "<name>" --json`）获取指令，读取依赖制品，按 `template` 结构创建文件
+    - **撰写 design 制品时**：若同级安装了 `opsx-design` 技能，加载其 `assets/section-skeleton.md` 章节骨架与 `assets/quality-checklist.md` 质量门禁来撰写并自检设计（相关性过滤、受众标注、改动影响汇总含"不受影响"项、验证断言字段、任务=一文件）；无该技能时按上述纪律内联执行。`opsx-design` 是"如何写好设计"的能力库，本步骤仍是"何时必须产出 design"的门禁权威，不在此复制其正文。
     - 已完成的制品保持不变
     - 循环直到所有 `applyRequires` 制品完成
     - 若检测到自定义 schema：

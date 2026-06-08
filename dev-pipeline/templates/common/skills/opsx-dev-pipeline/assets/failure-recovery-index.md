@@ -50,3 +50,5 @@
 - Phase 正文：`references/phase-*.md`
 - 恢复总览与规则正文：`assets/recovery-guardrails-appendix.md`
 - 脚本输出契约：`assets/script-io-conventions.md`
+
+> 关于 verify（R4-2 / R4-3）：本矩阵只负责"verify 门禁失败时如何恢复续接"。"如何系统性验证一次变更"（构建→启动→冒烟/契约/数据校验→影响面回归与失败回路）属于同级 `opsx-verify` 技能的能力库正文，Phase 4 在需要完整验证时引用它；本文件与 `references/phase-4-archive.md` 不复制其验证正文。

@@ -41,10 +41,20 @@ npx opsx-dev-pipeline init --tool claude --yes --dry-run
 - `opsx-dev-pipeline`：驱动 OpenSpec + Git 需求开发流水线
 - `opsx-learn`：面向现有仓库的渐进式知识沉淀流程，可把功能、接口、规则、FAQ、术语、配置约束、故障案例等整理进知识库
 - `opsx-analysis`：基于知识库、仓库上下文与用户补充进行需求分析，默认输出结构化分析结果
+- `opsx-clarify`：把模糊需求转成带优先级、可对外分享的澄清问题清单，输出平台无关、不内置任何凭据
+- `opsx-design`：设计文档撰写 + 质量门禁（相关性过滤、受众标注、改动影响汇总含"不受影响"项、验证断言字段、任务=一文件）
+- `opsx-verify`：语言无关的通用验证流程（解析验证目标 → 按项目基准构建/启动 → 冒烟/契约/数据校验 → 影响面回归 + 失败回路）
+- `opsx-health`：知识库健康巡检（对话内），复用 `doctor` 结果产出结构化报告与 P0–P3 修复建议
 - `git-commit-push`：提交并推送当前仓库变更，包含分支同步与敏感信息检查
 - `git-code-review`：面向当前分支变更的 Git 审查流程，默认结合 `openspec/project.md` 输出中文审查报告
 - `git-merge-branch`：将当前分支按指定策略合并到目标分支，并处理合并后的收尾动作
 - `file-code-review`：对指定文件或代码片段进行独立代码审查，适合无 Git diff 场景
+
+`opsx-clarify` / `opsx-design` / `opsx-verify` 构成需求前置到验证的能力链，并与流水线保持单源治理：
+
+- `opsx-clarify` 与 `opsx-analysis` 分工：后者的澄清阶段服务于分析本身，`opsx-clarify` 面向"独立产出一份可发给产品/干系人的问题清单"。
+- `opsx-design` 产出的"验证断言字段"由 `opsx-verify` 直接消费，形成 design→verify 质量闭环。
+- `opsx-design` / `opsx-verify` 定位为"能力库"：流水线 Phase 1 生成 design、Phase 4 执行 verify 门禁时可加载它们，但"何时必须产出 design / 何时必须验证"的门禁权威仍在 `opsx-dev-pipeline` 各 Phase。
 
 其中 `opsx-learn` 的默认使用方式为：
 
@@ -64,10 +74,14 @@ npx opsx-dev-pipeline init --tool claude --yes --dry-run
 新增的 Git / 文件审查相关入口可直接作为生成后 commands 的常用入口，例如：
 
 ```md
+/opsx-clarify 把这个模糊需求整理成澄清问题清单
+/opsx-design 根据分析结果产出一份带质量门禁的设计
+/opsx-verify add-export-limit
+/opsx-health
 /git-code-review
 /git-commit-push
 /git-merge-branch
-/file-code-review src/main/java/com/example/ExampleController.java
+/file-code-review path/to/changed-file
 ```
 
 如果是 Claude Code，默认会生成到 `.claude/commands/` 与 `.claude/skills/`；其他工具会映射到各自目录（如 Cursor 的 `.cursor/commands/` / `.cursor/rules/`）。

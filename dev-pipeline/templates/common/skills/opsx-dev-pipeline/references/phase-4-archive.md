@@ -33,6 +33,8 @@ compatibility: 需要 openspec CLI、git；归档推荐 dev-pipeline-archive.sh 
 
 ### 步骤 13：archive 前 verify 门禁
 
+> **能力库与门禁权威的分工**：当变更需要的不只是跑单条 verify 命令、而是系统性验证（构建→启动→冒烟/契约/数据校验→影响面回归）时，可加载同级 `opsx-verify` 技能执行，并把 `opsx-design` 产出的"验证断言字段"作为验证目标输入。`opsx-verify` 是"如何验证"的能力库；本步骤仍是"何时必须验证、是否放行归档"的门禁权威，不在此复制其正文。无该技能时，仍按下述单条命令门禁执行。
+
 1. **解析 verify 命令**
 
     - 若检测到自定义 schema：优先运行 `bash <SKILL_ROOT>/scripts/dev-pipeline-resolve-verify.sh "<name>"`，根据 change 的 schema / `stacks` / 元数据推导 verify 命令

@@ -85,6 +85,82 @@ export const assetManifest: AssetDefinition[] = [
     destination: '{{commandsDir}}/opsx-analysis.md'
   },
   {
+    id: 'opsx-design-skill-bundle',
+    kind: 'bundle',
+    scope: 'common',
+    feature: 'skills',
+    source: 'templates/common/skills/opsx-design',
+    destination: '{{skillsDir}}/opsx-design',
+    includeExtensions: ['.md', '.hbs', '.sh'],
+    templateFiles: ['SKILL.md.hbs'],
+    excludePatterns: ['.gitkeep']
+  },
+  {
+    id: 'opsx-design-command',
+    kind: 'template',
+    scope: 'common',
+    feature: 'commands',
+    source: 'templates/common/commands/opsx-design.md.hbs',
+    destination: '{{commandsDir}}/opsx-design.md'
+  },
+  {
+    id: 'opsx-verify-skill-bundle',
+    kind: 'bundle',
+    scope: 'common',
+    feature: 'skills',
+    source: 'templates/common/skills/opsx-verify',
+    destination: '{{skillsDir}}/opsx-verify',
+    includeExtensions: ['.md', '.hbs', '.sh'],
+    templateFiles: ['SKILL.md.hbs'],
+    excludePatterns: ['.gitkeep']
+  },
+  {
+    id: 'opsx-verify-command',
+    kind: 'template',
+    scope: 'common',
+    feature: 'commands',
+    source: 'templates/common/commands/opsx-verify.md.hbs',
+    destination: '{{commandsDir}}/opsx-verify.md'
+  },
+  {
+    id: 'opsx-clarify-skill-bundle',
+    kind: 'bundle',
+    scope: 'common',
+    feature: 'skills',
+    source: 'templates/common/skills/opsx-clarify',
+    destination: '{{skillsDir}}/opsx-clarify',
+    includeExtensions: ['.md', '.hbs', '.sh'],
+    templateFiles: ['SKILL.md.hbs'],
+    excludePatterns: ['.gitkeep']
+  },
+  {
+    id: 'opsx-clarify-command',
+    kind: 'template',
+    scope: 'common',
+    feature: 'commands',
+    source: 'templates/common/commands/opsx-clarify.md.hbs',
+    destination: '{{commandsDir}}/opsx-clarify.md'
+  },
+  {
+    id: 'opsx-health-skill-bundle',
+    kind: 'bundle',
+    scope: 'common',
+    feature: 'skills',
+    source: 'templates/common/skills/opsx-health',
+    destination: '{{skillsDir}}/opsx-health',
+    includeExtensions: ['.md', '.hbs', '.sh'],
+    templateFiles: ['SKILL.md.hbs'],
+    excludePatterns: ['.gitkeep']
+  },
+  {
+    id: 'opsx-health-command',
+    kind: 'template',
+    scope: 'common',
+    feature: 'commands',
+    source: 'templates/common/commands/opsx-health.md.hbs',
+    destination: '{{commandsDir}}/opsx-health.md'
+  },
+  {
     id: 'git-commit-push-skill-bundle',
     kind: 'bundle',
     scope: 'common',
