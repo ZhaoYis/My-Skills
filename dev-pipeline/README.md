@@ -4,6 +4,9 @@
 
 ## Quick Start
 
+使用本工具前，请先安装OpenSpec：
+- [OpenSpec](https://github.com/Fission-AI/OpenSpec)
+
 推荐直接使用：
 
 ```bash
@@ -36,12 +39,14 @@ npx opsx-dev-pipeline init --tool claude --yes --feature prototype
 
 ## Supported AI Tools
 
-| Tool ID | 工具 | 生成目录 / 文件 | 说明 |
-| ------- | ---- | --------------- | ---- |
-| `claude` | Claude Code | `CLAUDE.md`、`.claude/skills/`、`.claude/commands/` | 默认推荐；skills 与 commands 分目录安装 |
-| `cursor` | Cursor | `.cursor/rules/`、`.cursor/commands/`、`opsx-dev-pipeline.mdc` | rules 以 `alwaysApply: true` 常驻；skills 映射到 rules 目录 |
-| `codex` | Codex | `.codex/prompts/`、`.codex/commands/` | prompts 承载 skill 入口；commands 承载快捷命令 |
-| `generic` | 通用 AI 工具 | `.ai/skills/`、`.ai/commands/`、`.ai/README.md` | 不绑定特定 IDE，适合自建 AI 工作区 |
+
+| Tool ID   | 工具          | 生成目录 / 文件                                                    | 说明                                                 |
+| --------- | ----------- | ------------------------------------------------------------ | -------------------------------------------------- |
+| `claude`  | Claude Code | `CLAUDE.md`、`.claude/skills/`、`.claude/commands/`            | 默认推荐；skills 与 commands 分目录安装                       |
+| `cursor`  | Cursor      | `.cursor/rules/`、`.cursor/commands/`、`opsx-dev-pipeline.mdc` | rules 以 `alwaysApply: true` 常驻；skills 映射到 rules 目录 |
+| `codex`   | Codex       | `.codex/prompts/`、`.codex/commands/`                         | prompts 承载 skill 入口；commands 承载快捷命令                |
+| `generic` | 通用 AI 工具    | `.ai/skills/`、`.ai/commands/`、`.ai/README.md`                | 不绑定特定 IDE，适合自建 AI 工作区                              |
+
 
 查看当前内置适配器：
 
@@ -53,20 +58,22 @@ npx opsx-dev-pipeline list-tools
 
 初始化后，模板会额外安装一组面向 AI 工具的集成 skill / command 入口。下表按**推荐研发流程顺序**排列；Git / 文件审查类入口可在流水线各 Phase 中按需调用。
 
-| 顺序 | 入口 | 类型 | 用途摘要 | 备注 |
-| :--: | ---- | ---- | -------- | ---- |
-| 0 | `opsx-learn` | skill | 渐进式知识沉淀：功能、接口、规则、FAQ、术语、配置约束、故障案例等 | 持续进行；`init` 默认生成 `.knowledge/` 骨架 |
-| 1 | `opsx-prototype` | skill | 原型链接 / 截图 / 描述 → 结构化需求 | **可选**，默认不生成；`--feature prototype` 开启 |
-| 2 | `opsx-analysis` | skill | 基于知识库与仓库上下文做需求分析，输出结构化分析结果 | 产出喂给 design / pipeline |
-| 3 | `opsx-clarify` | skill | 模糊需求 → 带优先级的澄清问题清单（可对外分享） | 与 analysis 内澄清分工：面向干系人 |
-| 4 | `opsx-design` | skill | 设计文档撰写 + 质量门禁（相关性、影响面、验证断言、一任务一文件） | 验证断言字段由 `opsx-verify` 消费 |
-| 5 | `opsx-dev-pipeline` | skill | OpenSpec + Git 需求开发全流程（提案 → 应用 → 审查 → 归档 → 单测 → 推送/合并） | **门禁权威**；何时必须 design / verify 以各 Phase 为准 |
-| 6 | `opsx-verify` | skill | 语言无关验证：解析目标 → 构建/启动 → 冒烟/契约/数据校验 → 回归 | 能力库；Pipeline Phase 4 可加载 |
-| 7 | `opsx-health` | skill | 知识库健康巡检：复用 `doctor` 产出报告与 P0–P3 修复建议 | 对话内包装，不重复 doctor 规则 |
-| — | `git-code-review` | skill | 面向当前分支变更的 Git 审查，结合 `openspec/project.md` | Pipeline Phase 3 审查时可复用 |
-| — | `git-commit-push` | skill | 提交并推送，含分支同步与敏感信息检查 | Pipeline Phase 6 收尾时可复用 |
-| — | `git-merge-branch` | skill | 按策略合并到目标分支并处理收尾 | Pipeline Phase 6 合并时可复用 |
-| — | `file-code-review` | skill | 对指定文件或代码片段独立审查 | 无 Git diff 场景 |
+
+| 顺序  | 入口                  | 类型    | 用途摘要                                                   | 备注                                        |
+| --- | ------------------- | ----- | ------------------------------------------------------ | ----------------------------------------- |
+| 0   | `opsx-learn`        | skill | 渐进式知识沉淀：功能、接口、规则、FAQ、术语、配置约束、故障案例等                     | 持续进行；`init` 默认生成 `.knowledge/` 骨架         |
+| 1   | `opsx-prototype`    | skill | 原型链接 / 截图 / 描述 → 结构化需求                                 | **可选**，默认不生成；`--feature prototype` 开启     |
+| 2   | `opsx-analysis`     | skill | 基于知识库与仓库上下文做需求分析，输出结构化分析结果                             | 产出喂给 design / pipeline                    |
+| 3   | `opsx-clarify`      | skill | 模糊需求 → 带优先级的澄清问题清单（可对外分享）                              | 与 analysis 内澄清分工：面向干系人                    |
+| 4   | `opsx-design`       | skill | 设计文档撰写 + 质量门禁（相关性、影响面、验证断言、一任务一文件）                     | 验证断言字段由 `opsx-verify` 消费                  |
+| 5   | `opsx-dev-pipeline` | skill | OpenSpec + Git 需求开发全流程（提案 → 应用 → 审查 → 归档 → 单测 → 推送/合并） | **门禁权威**；何时必须 design / verify 以各 Phase 为准 |
+| 6   | `opsx-verify`       | skill | 语言无关验证：解析目标 → 构建/启动 → 冒烟/契约/数据校验 → 回归                  | 能力库；Pipeline Phase 4 可加载                  |
+| 7   | `opsx-health`       | skill | 知识库健康巡检：复用 `doctor` 产出报告与 P0–P3 修复建议                   | 对话内包装，不重复 doctor 规则                       |
+| —   | `git-code-review`   | skill | 面向当前分支变更的 Git 审查，结合 `openspec/project.md`              | Pipeline Phase 3 审查时可复用                   |
+| —   | `git-commit-push`   | skill | 提交并推送，含分支同步与敏感信息检查                                     | Pipeline Phase 6 收尾时可复用                   |
+| —   | `git-merge-branch`  | skill | 按策略合并到目标分支并处理收尾                                        | Pipeline Phase 6 合并时可复用                   |
+| —   | `file-code-review`  | skill | 对指定文件或代码片段独立审查                                         | 无 Git diff 场景                             |
+
 
 ### 能力链与单源治理
 
@@ -151,31 +158,37 @@ flowchart TD
   end
 ```
 
+
+
 ### 阶段要点
 
-| 阶段 | 技能 | 何时使用 | 产出 / 门禁 |
-| ---- | ---- | -------- | ----------- |
-| 知识基础 | `opsx-learn` | 接手存量仓库、功能不熟、排障需沉淀 | 可复用知识条目；写入追加不覆盖 |
-| 原型输入 | `opsx-prototype` | 有 Figma / 截图 / 原型链接且无清晰 PRD | 结构化需求 → 喂给 analysis |
-| 需求分析 | `opsx-analysis` | 实施前明确范围、影响面、待确认项 | 结构化分析；区分事实 / 推断 / 待确认 |
-| 需求澄清 | `opsx-clarify` | 需求模糊或需对外确认 | P0/P1 问题清单；平台无关 |
-| 设计 | `opsx-design` | 分析通过后、进入 Pipeline 前或 Phase 1 | 带质量门禁的设计；验证断言供 verify |
-| 开发流水线 | `opsx-dev-pipeline` | 正式 change 全生命周期 | Phase 0–6；关键步骤用户决策 |
-| 验证 | `opsx-verify` | Phase 4 门禁或变更后独立验证 | 冒烟 / 契约 / 数据 / 回归 |
-| 知识治理 | `opsx-health` | 定期巡检或 learn 落盘前 | doctor 结构化报告 + P0–P3 建议 |
-| Git 审查 | `git-code-review` | Phase 3 或提交前 | 中文审查报告 |
-| 提交合并 | `git-commit-push` / `git-merge-branch` | Phase 6 或独立收尾 | 同步、敏感信息检查、合并策略 |
-| 文件审查 | `file-code-review` | 片段审查、无分支 diff | 独立审查报告 |
+
+| 阶段     | 技能                                     | 何时使用                         | 产出 / 门禁                 |
+| ------ | -------------------------------------- | ---------------------------- | ----------------------- |
+| 知识基础   | `opsx-learn`                           | 接手存量仓库、功能不熟、排障需沉淀            | 可复用知识条目；写入追加不覆盖         |
+| 原型输入   | `opsx-prototype`                       | 有 Figma / 截图 / 原型链接且无清晰 PRD  | 结构化需求 → 喂给 analysis     |
+| 需求分析   | `opsx-analysis`                        | 实施前明确范围、影响面、待确认项             | 结构化分析；区分事实 / 推断 / 待确认   |
+| 需求澄清   | `opsx-clarify`                         | 需求模糊或需对外确认                   | P0/P1 问题清单；平台无关         |
+| 设计     | `opsx-design`                          | 分析通过后、进入 Pipeline 前或 Phase 1 | 带质量门禁的设计；验证断言供 verify   |
+| 开发流水线  | `opsx-dev-pipeline`                    | 正式 change 全生命周期              | Phase 0–6；关键步骤用户决策      |
+| 验证     | `opsx-verify`                          | Phase 4 门禁或变更后独立验证           | 冒烟 / 契约 / 数据 / 回归       |
+| 知识治理   | `opsx-health`                          | 定期巡检或 learn 落盘前              | doctor 结构化报告 + P0–P3 建议 |
+| Git 审查 | `git-code-review`                      | Phase 3 或提交前                 | 中文审查报告                  |
+| 提交合并   | `git-commit-push` / `git-merge-branch` | Phase 6 或独立收尾                | 同步、敏感信息检查、合并策略          |
+| 文件审查   | `file-code-review`                     | 片段审查、无分支 diff                | 独立审查报告                  |
+
 
 ## Commands
 
-| Command | Example | Description |
-| ------- | ------- | ----------- |
-| `init` | `npx opsx-dev-pipeline init --tool claude --yes` | 初始化当前目录的模板文件 |
-| `list-tools` | `npx opsx-dev-pipeline list-tools` | 查看当前内置支持的 AI 工具适配器 |
-| `doctor` | `npx opsx-dev-pipeline doctor --json` | 检查 manifest、知识库骨架与索引健康，输出 0–100 健康评分与断链 / 重复 / 老化检查；可加 `--history` 落盘快照并对比上次得分趋势，`--stale-days` 调整老化阈值 |
-| `sync` | `npx opsx-dev-pipeline sync --dry-run` | 根据 manifest 重新渲染托管文件 |
-| `upgrade` | `npx opsx-dev-pipeline upgrade --dry-run` | 使用当前包内模板执行升级入口 |
+
+| Command      | Example                                          | Description                                                                                            |
+| ------------ | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| `init`       | `npx opsx-dev-pipeline init --tool claude --yes` | 初始化当前目录的模板文件                                                                                           |
+| `list-tools` | `npx opsx-dev-pipeline list-tools`               | 查看当前内置支持的 AI 工具适配器                                                                                     |
+| `doctor`     | `npx opsx-dev-pipeline doctor --json`            | 检查 manifest、知识库骨架与索引健康，输出 0–100 健康评分与断链 / 重复 / 老化检查；可加 `--history` 落盘快照并对比上次得分趋势，`--stale-days` 调整老化阈值 |
+| `sync`       | `npx opsx-dev-pipeline sync --dry-run`           | 根据 manifest 重新渲染托管文件                                                                                   |
+| `upgrade`    | `npx opsx-dev-pipeline upgrade --dry-run`        | 使用当前包内模板执行升级入口                                                                                         |
+
 
 > 提示：`init` 完成后，可在生成的 commands / skills 目录里直接使用 `opsx-learn`，把现有仓库知识逐步沉淀到知识库中；用 `opsx-health` 或 `doctor` 定期巡检 `.knowledge/` 健康度。
 
