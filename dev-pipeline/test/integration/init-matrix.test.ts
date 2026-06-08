@@ -271,6 +271,62 @@ describe('tool matrix', () => {
     expect(parsed.manifest.status).toBe('ok');
   });
 
+  const overlayExpectations = {
+    claude: { overlay: 'CLAUDE.md', skillsDir: '.claude/skills', expectAlwaysApply: false },
+    cursor: { overlay: '.cursor/rules/opsx-dev-pipeline.mdc', skillsDir: '.cursor/rules', expectAlwaysApply: true },
+    codex: { overlay: '.codex/prompts/opsx-dev-pipeline.md', skillsDir: '.codex/prompts', expectAlwaysApply: false },
+    generic: { overlay: '.ai/README.md', skillsDir: '.ai/skills', expectAlwaysApply: false }
+  } as const;
+
+  it.each(Object.entries(overlayExpectations))(
+    'injects the knowledge-first rule into the %s overlay',
+    async (tool, { overlay, expectAlwaysApply }) => {
+      const dir = await fs.mkdtemp(path.join(os.tmpdir(), `opsx-overlay-${tool}-`));
+      createdDirs.push(dir);
+
+      await runInit({ dir, tool: tool as 'claude' | 'cursor' | 'codex' | 'generic', yes: true, force: false, dryRun: false });
+
+      const content = await fs.readFile(path.join(dir, overlay), 'utf8');
+      expect(content).toContain('知识优先');
+      expect(content).toContain('.knowledge/INDEX.md');
+      expect(content).toContain('追加不覆盖');
+
+      if (expectAlwaysApply) {
+        expect(content).toContain('alwaysApply: true');
+      }
+    }
+  );
+
+  it('embeds the new pipeline gates and decision points in skill references', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-pipeline-gates-'));
+    createdDirs.push(dir);
+
+    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
+
+    const skillRoot = path.join(dir, '.claude/skills/opsx-dev-pipeline');
+
+    const archive = await fs.readFile(path.join(skillRoot, 'references/phase-4-archive.md'), 'utf8');
+    expect(archive).toContain('步骤 15.5');
+    expect(archive).toContain('决策点 4c');
+    expect(archive).toContain('知识沉淀');
+
+    const apply = await fs.readFile(path.join(skillRoot, 'references/phase-2-apply.md'), 'utf8');
+    expect(apply).toContain('写前复用门禁');
+    expect(apply).toContain('自审查硬门禁');
+    expect(apply).toContain('apply-quality-gate.md');
+
+    const propose = await fs.readFile(path.join(skillRoot, 'references/phase-1-propose.md'), 'utf8');
+    expect(propose).toContain('决策点 1c');
+    expect(propose).toContain('需求理解确认');
+
+    expect(await fs.pathExists(path.join(skillRoot, 'assets/apply-quality-gate.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(skillRoot, 'assets/structural-analysis-hint.md'))).toBe(true);
+
+    const decisionIndex = await fs.readFile(path.join(skillRoot, 'assets/decision-point-index.md'), 'utf8');
+    expect(decisionIndex).toContain('| 4c |');
+    expect(decisionIndex).toContain('| 1c |');
+  });
+
   it('writes a concise root README for new projects', async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-readme-generated-'));
     createdDirs.push(dir);

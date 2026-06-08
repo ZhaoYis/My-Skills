@@ -72,6 +72,8 @@ npx opsx-dev-pipeline init --tool claude --yes --dry-run
 
 如果是 Claude Code，默认会生成到 `.claude/commands/` 与 `.claude/skills/`；其他工具会映射到各自目录（如 Cursor 的 `.cursor/commands/` / `.cursor/rules/`）。
 
+此外，四套工具 overlay（`CLAUDE.md` / Cursor rule / Codex prompt / 通用 `.ai/README.md`）都会注入一段通用的「知识优先」规则：每个开发 / 排查任务开始前先检索 `.knowledge/` 知识库、命中即复用、写入一律追加不覆盖；项目无知识库时该规则自动跳过、不报错。Cursor 规则以 `alwaysApply: true` 常驻。
+
 ## Commands
 
 
@@ -79,7 +81,7 @@ npx opsx-dev-pipeline init --tool claude --yes --dry-run
 | ------------ | ------------------------------------------------ | ----------------------- |
 | `init`       | `npx opsx-dev-pipeline init --tool claude --yes` | 初始化当前目录的模板文件            |
 | `list-tools` | `npx opsx-dev-pipeline list-tools`               | 查看当前内置支持的 AI 工具适配器      |
-| `doctor`     | `npx opsx-dev-pipeline doctor --json`            | 检查当前目录的 manifest、知识库骨架与索引健康 |
+| `doctor`     | `npx opsx-dev-pipeline doctor --json`            | 检查 manifest、知识库骨架与索引健康，输出 0–100 健康评分与断链 / 重复 / 老化检查；可加 `--history` 落盘快照并对比上次得分趋势，`--stale-days` 调整老化阈值 |
 | `sync`       | `npx opsx-dev-pipeline sync --dry-run`           | 根据 manifest 重新渲染托管文件    |
 | `upgrade`    | `npx opsx-dev-pipeline upgrade --dry-run`        | 使用当前包内模板执行升级入口          |
 

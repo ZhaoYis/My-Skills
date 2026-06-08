@@ -52,6 +52,8 @@ compatibility: 需要 git；项目规范按 `openspec/config.yaml` → `AGENTS.m
 - **性能**：明显 N+1、无谓热路径复杂度、大批量无分页
 - **可维护性**：重复逻辑、过大的函数/类、关键行为缺少可读说明
 
+> （可选）分析改动影响面（谁调用谁、波及范围、符号定义位置）时，若启用了 `structural-analysis-hint`（默认关闭，见 `assets/structural-analysis-hint.md`）且仓库具备结构化检索能力（代码图谱 / LSP / 索引型 MCP），优先用之，文本性问题仍用 grep；未启用时按文本检索进行，不影响本步骤。
+
 #### 10.4 典型 Java 分层栈（仅当项目基准或目录结构表明适用时强化检查，否则以项目基准与通用维度为主）
 
 - 分层与依赖：Web → Biz → Core → Common，禁止上层被下层反向依赖、禁止跨层乱依赖

@@ -23,6 +23,12 @@
       "displayName": "Tooling documentation",
       "description": "Tool-specific guidance and bootstrap docs.",
       "default": true
+    },
+    {
+      "id": "structural-analysis-hint",
+      "displayName": "Structural analysis hint (optional)",
+      "description": "Opt-in guidance to prefer structural search (code graph / LSP / index MCP) over plain text search when available. Default off; references stay no-op when disabled.",
+      "default": false
     }
   ]
 }

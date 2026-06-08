@@ -103,11 +103,11 @@
 | Phase | 步骤范围 | 主 references 文件 | 直接调用脚本 | 复用脚本 | 无脚本/人工步骤 | 备注 |
 | --- | --- | --- | --- | --- | --- | --- |
 | 0 | 1–2 | `references/phase-0-entrance.md` | `dev-pipeline-preflight.sh`、`dev-pipeline-detect-schema.sh`、`dev-pipeline-change-status.sh`、`dev-pipeline-list-changes.sh` | - | 入口问询、续接判断 | 负责环境预检、schema 探测、change 续接入口 |
-| 1 | 3–4 | `references/phase-1-propose.md` | `dev-pipeline-new-change.sh`、`dev-pipeline-change-status.sh`、`dev-pipeline-instructions.sh`、`dev-pipeline-ensure-change-meta.sh` | `dev-pipeline-validate-change.sh` | 提案澄清与确认 | 负责新建 change、生成制品、补齐 change 元数据 |
-| 2 | 5–7 | `references/phase-2-apply.md` | `dev-pipeline-instructions-apply.sh` | `dev-pipeline-change-context.sh` | 逐任务处理、实施完成确认 | 自定义 schema 主路径优先复用 `dev-pipeline-change-context.sh` |
+| 1 | 2.9–4 | `references/phase-1-propose.md` | `dev-pipeline-new-change.sh`、`dev-pipeline-change-status.sh`、`dev-pipeline-instructions.sh`、`dev-pipeline-ensure-change-meta.sh` | `dev-pipeline-validate-change.sh` | 步骤 2.9 需求理解确认（决策点 1c）、提案澄清与确认 | 负责新建 change、生成制品、补齐 change 元数据；决策点 1c 可复用 opsx-analysis 输出，作为探索→提案硬桥梁 |
+| 2 | 5–7 | `references/phase-2-apply.md` | `dev-pipeline-instructions-apply.sh` | `dev-pipeline-change-context.sh` | 逐任务处理（步骤 6 含写前复用门禁 + 准出自审查门禁）、实施完成确认 | 写前复用 / 自审查清单正文以 `assets/apply-quality-gate.md` 为准；自定义 schema 主路径优先复用 `dev-pipeline-change-context.sh` |
 | 3 | 8–11 | `references/phase-3-review.md` | - | `dev-pipeline-change-context.sh` | git diff、代码审查、修复回环决策 | schema-aware 场景复用上下文脚本 |
 | 3.1 | review 修复子流程 | `references/phase-3.1-fix-review.md` | `dev-pipeline-archive.sh` | `dev-pipeline-instructions-apply.sh` | 修复提案确认与恢复 | fix-review 会文字复用 Phase 2 Apply 路径 |
-| 4 | 12–16 | `references/phase-4-archive.md` | `dev-pipeline-change-status.sh`、`dev-pipeline-resolve-verify.sh`、`dev-pipeline-archive.sh` | `dev-pipeline-validate-change.sh`、`dev-pipeline-change-context.sh` | 归档决策、归档后 git 选择 | `dev-pipeline-change-context.sh` 在 verify 解析失败时作回退补充 |
+| 4 | 12–16（含 15.5） | `references/phase-4-archive.md` | `dev-pipeline-change-status.sh`、`dev-pipeline-resolve-verify.sh`、`dev-pipeline-archive.sh` | `dev-pipeline-validate-change.sh`、`dev-pipeline-change-context.sh` | 归档决策、步骤 15.5 知识沉淀（决策点 4c）、归档后 git 选择 | 步骤 15.5 复用同级 `opsx-learn` 的 `write-targets.md` / `dedup-rules.md` / `knowledge-entry-templates.md`，无知识库时自动跳过；`dev-pipeline-change-context.sh` 在 verify 解析失败时作回退补充 |
 | 5 | 16 | `references/phase-5-unit-tests.md` | - | `dev-pipeline-change-context.sh` | 测试命令确认、门禁选择 | 主要复用 schema-aware 上下文 |
 | 6 | 17–22 | `references/phase-6-merge-push.md` | - | - | 预提交、提交、推送、合并、删分支 | 主要是内联 git 流程 |
 | 附录 | 跨阶段 | `assets/recovery-guardrails-appendix.md` | 说明性引用：`dev-pipeline-detect-schema.sh`、`dev-pipeline-archive.sh` | - | AskQuestion fallback、恢复、错误处理 | 规则汇总，不是主执行入口 |
@@ -128,6 +128,8 @@
 - 决策点与确认等级：`assets/decision-point-index.md`
 - 脚本输出约定：`assets/script-io-conventions.md`
 - 恢复与异常路径：`assets/failure-recovery-index.md`
+- Apply 写前复用与准出自审查清单：`assets/apply-quality-gate.md`
+- 结构化代码分析优先指引（可选，默认关闭，feature flag `structural-analysis-hint`）：`assets/structural-analysis-hint.md`
 - 脚本自检入口：`scripts/dev-pipeline-selftest.sh`
 - 流程完整性与综合回归：
   - `tests/run-all.sh`（统一入口，默认跑 integrity + coverage + regression + validation）

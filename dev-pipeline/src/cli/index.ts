@@ -49,9 +49,15 @@ export async function runCli(argv: string[]): Promise<void> {
   cli
     .command('doctor', 'Inspect current directory for opsx-dev-pipeline metadata and .knowledge health')
     .option('--json', 'Print doctor report as JSON')
+    .option('--history', 'Persist a health snapshot and report score trend vs the previous snapshot')
+    .option('--stale-days <days>', 'Days after which a knowledge file is considered stale (default 90)')
     .option(...dirOption)
     .action(async (options) => {
-      await runDoctorCommand(options.dir, Boolean(options.json));
+      const staleDays = options.staleDays === undefined ? undefined : Number(options.staleDays);
+      await runDoctorCommand(options.dir, Boolean(options.json), {
+        history: Boolean(options.history),
+        staleDays: Number.isFinite(staleDays) ? staleDays : undefined
+      });
     });
 
   cli.help();
