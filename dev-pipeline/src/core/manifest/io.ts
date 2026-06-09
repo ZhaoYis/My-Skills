@@ -15,7 +15,7 @@ const manifestSchema = z.object({
   schemaVersion: z.number().default(1),
   projectName: z.string(),
   tool: z.enum(['claude', 'cursor', 'codex', 'generic']),
-  features: z.array(z.enum(['base', 'skills', 'commands', 'docs', 'prototype'])),
+  features: z.array(z.enum(['base', 'skills', 'commands', 'docs', 'prototype', 'structural-analysis-hint'])),
   templateVersion: z.string().default(TEMPLATE_VERSION),
   packageName: z.string().default(PACKAGE_NAME),
   managedAssets: z.array(z.object({
@@ -71,6 +71,19 @@ export async function readManifest(dir: string): Promise<ManifestReadResult | nu
   }
 
   return null;
+}
+
+export async function removeManifest(dir: string, storage: ManifestStorage): Promise<void> {
+  if (storage === 'package-json') {
+    const packageJsonPath = path.join(dir, PACKAGE_JSON_FILE);
+    if (await fs.pathExists(packageJsonPath)) {
+      const pkg = await fs.readJson(packageJsonPath) as Record<string, unknown>;
+      delete pkg[MANIFEST_PACKAGE_JSON_KEY];
+      await fs.writeJson(packageJsonPath, pkg, { spaces: 2 });
+    }
+  }
+
+  await removeStandaloneManifestFiles(dir);
 }
 
 export async function writeManifest(dir: string, manifest: PipelineManifest): Promise<string> {

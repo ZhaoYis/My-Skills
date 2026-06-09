@@ -64,13 +64,16 @@ export async function resolveInstallConflicts(
       continue;
     }
 
-    const response = await prompts({
-      type: 'select',
-      name: 'resolution',
-      message: `[${index + 1}/${unresolvedFiles.length}] 检测到重复文件：${file.destinationPath}`,
-      choices: buildChoices(file.appendable),
-      initial: file.appendable ? 1 : 0
-    });
+    const response = await prompts(
+      {
+        type: 'select',
+        name: 'resolution',
+        message: `[${index + 1}/${unresolvedFiles.length}] 检测到重复文件：${file.destinationPath}`,
+        choices: buildChoices(file.appendable),
+        initial: file.appendable ? 1 : 0
+      },
+      { onCancel: () => process.exit(1) }
+    );
 
     if (response.resolution === 'overwrite-all' || response.resolution === 'append-all-safe' || response.resolution === 'skip-all') {
       applyBulkResolution(unresolvedFiles, index, response.resolution);

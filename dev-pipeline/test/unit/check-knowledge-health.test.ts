@@ -222,4 +222,17 @@ describe('checkKnowledgeHealth', () => {
     expect(agingCheck?.status).toBe('warn');
     expect(agingCheck?.staleFiles).toContain('tech/old-note.md');
   });
+
+  it('detects alternate knowledge directories such as docs/knowledge', async () => {
+    const dir = await createTempDir('opsx-knowledge-alt-');
+    await fs.ensureDir(path.join(dir, 'docs/knowledge'));
+    await fs.writeFile(path.join(dir, 'docs/knowledge/README.md'), '# Knowledge\n');
+
+    const report = await checkKnowledgeHealth(dir);
+
+    const locationCheck = report.checks.find((check) => check.id === 'knowledge-directory-exists');
+    expect(locationCheck?.status).toBe('warn');
+    expect(locationCheck?.message).toContain('docs/knowledge');
+    expect(report.rootPath).toBe(path.join(dir, 'docs/knowledge'));
+  });
 });

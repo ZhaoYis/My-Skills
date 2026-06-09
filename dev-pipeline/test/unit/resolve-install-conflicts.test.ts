@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import prompts from 'prompts';
 import { resolveInstallConflicts } from '../../src/core/init/resolveInstallConflicts.js';
 import type { InstallPlan } from '../../src/core/init/types.js';
@@ -53,6 +53,10 @@ function createPlan(files?: Partial<InstallPlan['files'][number]>[]): InstallPla
 }
 
 describe('resolveInstallConflicts', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('auto-skips conflicts when yes is enabled', async () => {
     const plan = await resolveInstallConflicts(createPlan(), { yes: true, force: false });
     expect(plan.files[0]?.resolution).toBe('skip');
@@ -78,13 +82,16 @@ describe('resolveInstallConflicts', () => {
     vi.mocked(prompts).mockResolvedValueOnce({ resolution: 'skip-all' });
     await resolveInstallConflicts(createPlan(), { yes: false, force: false });
 
-    expect(vi.mocked(prompts)).toHaveBeenCalledWith(expect.objectContaining({
-      message: '[1/1] 检测到重复文件：/tmp/README.md',
-      choices: expect.arrayContaining([
-        expect.objectContaining({ value: 'overwrite-all' }),
-        expect.objectContaining({ value: 'skip-all' }),
-        expect.objectContaining({ value: 'append-all-safe' })
-      ])
-    }));
+    expect(vi.mocked(prompts)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: '[1/1] 检测到重复文件：/tmp/README.md',
+        choices: expect.arrayContaining([
+          expect.objectContaining({ value: 'overwrite-all' }),
+          expect.objectContaining({ value: 'skip-all' }),
+          expect.objectContaining({ value: 'append-all-safe' })
+        ])
+      }),
+      expect.objectContaining({ onCancel: expect.any(Function) })
+    );
   });
 });

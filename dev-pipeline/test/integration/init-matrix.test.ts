@@ -9,6 +9,7 @@ vi.mock('prompts', () => ({
   default: vi.fn()
 }));
 import { runSyncCommand } from '../../src/cli/commands/sync.js';
+import { runUninstallCommand } from '../../src/cli/commands/uninstall.js';
 import { runUpgradeCommand } from '../../src/cli/commands/upgrade.js';
 import { runInit } from '../../src/core/init/runInit.js';
 import { MANIFEST_FILE, MANIFEST_PACKAGE_JSON_KEY, PACKAGE_JSON_FILE } from '../../src/core/runtime/meta.js';
@@ -284,6 +285,29 @@ describe('tool matrix', () => {
     expect(manifest.managedAssets.some((asset) => asset.id.startsWith('opsx-prototype'))).toBe(false);
   });
 
+  it('generates structural-analysis-hint when the feature is enabled', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-structural-hint-enabled-'));
+    createdDirs.push(dir);
+
+    await runInit({
+      dir,
+      tool: 'claude',
+      yes: true,
+      force: false,
+      dryRun: false,
+      feature: ['structural-analysis-hint']
+    });
+
+    const skillRoot = path.join(dir, '.claude/skills/opsx-dev-pipeline');
+    expect(await fs.pathExists(path.join(skillRoot, 'assets/structural-analysis-hint.md'))).toBe(true);
+
+    const skillContent = await fs.readFile(path.join(skillRoot, 'SKILL.md'), 'utf8');
+    expect(skillContent).toContain('structural-analysis-hint.md');
+
+    const manifest = await readManifest(dir);
+    expect(manifest.features).toContain('structural-analysis-hint');
+  });
+
   it('generates the optional opsx-prototype skill when the prototype feature is enabled', async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-prototype-enabled-'));
     createdDirs.push(dir);
@@ -335,6 +359,26 @@ describe('tool matrix', () => {
     await runUpgradeCommand({ dir, force: true, dryRun: false });
 
     expect(await fs.pathExists(path.join(dir, MANIFEST_FILE))).toBe(true);
+  });
+
+  it('doctor reports current manifest version after init', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-doctor-version-'));
+    createdDirs.push(dir);
+
+    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
+
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const status = await runDoctorCommand(dir, true);
+
+    const payload = JSON.parse(String(logSpy.mock.calls[0]?.[0])) as {
+      manifest: {
+        versionCheck: { status: string };
+      };
+    };
+    logSpy.mockRestore();
+
+    expect(status).not.toBe('fail');
+    expect(payload.manifest.versionCheck.status).toBe('current');
   });
 
   it('doctor supports json output with knowledge report', async () => {
@@ -430,7 +474,10 @@ describe('tool matrix', () => {
     expect(propose).toContain('需求理解确认');
 
     expect(await fs.pathExists(path.join(skillRoot, 'assets/apply-quality-gate.md'))).toBe(true);
-    expect(await fs.pathExists(path.join(skillRoot, 'assets/structural-analysis-hint.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(skillRoot, 'assets/structural-analysis-hint.md'))).toBe(false);
+
+    const skillContent = await fs.readFile(path.join(skillRoot, 'SKILL.md'), 'utf8');
+    expect(skillContent).not.toContain('structural-analysis-hint.md');
 
     const decisionIndex = await fs.readFile(path.join(skillRoot, 'assets/decision-point-index.md'), 'utf8');
     expect(decisionIndex).toContain('| 4c |');
@@ -624,6 +671,36 @@ describe('tool matrix', () => {
 
     await runUpgradeCommand({ dir, yes: true, force: false, dryRun: false });
     expect(await fs.readFile(path.join(dir, 'CLAUDE.md'), 'utf8')).toBe('custom\n');
+  });
+
+  it('uninstall removes managed files and manifest with yes enabled', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-uninstall-full-'));
+    createdDirs.push(dir);
+
+    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
+    expect(await readStoredManifest(dir)).not.toBeNull();
+
+    await runUninstallCommand({ dir, yes: true, dryRun: false });
+
+    expect(await readStoredManifest(dir)).toBeNull();
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-dev-pipeline/SKILL.md'))).toBe(false);
+    expect(await fs.pathExists(path.join(dir, '.claude/commands/opsx-dev-pipeline.md'))).toBe(false);
+    expect(await fs.pathExists(path.join(dir, 'CLAUDE.md'))).toBe(false);
+  });
+
+  it('uninstall can preserve knowledge skeleton with keep-knowledge', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-uninstall-keep-knowledge-'));
+    createdDirs.push(dir);
+
+    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
+
+    await runUninstallCommand({ dir, yes: true, dryRun: false, keepKnowledge: true });
+
+    expect(await fs.pathExists(path.join(dir, '.knowledge/README.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-dev-pipeline/SKILL.md'))).toBe(false);
+
+    const manifest = await readManifest(dir);
+    expect(manifest?.managedAssets.every((asset) => asset.id.startsWith('common-knowledge-skeleton:'))).toBe(true);
   });
 
   it('sync prompts for conflicts without yes or force', async () => {

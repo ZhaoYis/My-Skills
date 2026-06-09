@@ -4,6 +4,7 @@ import { runDoctorCommand } from './commands/doctor.js';
 import { runInitCommand } from './commands/init.js';
 import { runListToolsCommand } from './commands/list-tools.js';
 import { runSyncCommand } from './commands/sync.js';
+import { runUninstallCommand } from './commands/uninstall.js';
 import { runUpgradeCommand } from './commands/upgrade.js';
 
 export async function runCli(argv: string[]): Promise<void> {
@@ -16,7 +17,7 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--yes', 'Skip prompts and use defaults/flags')
     .option('--force', 'Overwrite existing files when allowed')
     .option('--dry-run', 'Preview generated files without writing them')
-    .option('--feature <feature>', 'Enable an optional feature (repeatable, e.g. --feature prototype)')
+    .option('--feature <feature>', 'Enable an optional feature (e.g. prototype, structural-analysis-hint)')
     .option(...dirOption)
     .action(async (options) => {
       await runInitCommand(options);
@@ -43,9 +44,20 @@ export async function runCli(argv: string[]): Promise<void> {
     });
 
   cli
+    .command('uninstall', 'Remove managed files tracked by opsx-dev-pipeline manifest')
+    .option('--yes', 'Remove all matched managed files without prompts')
+    .option('--dry-run', 'Preview files that would be removed without deleting them')
+    .option('--keep-knowledge', 'Keep .knowledge skeleton files on disk')
+    .option(...dirOption)
+    .action(async (options) => {
+      await runUninstallCommand(options);
+    });
+
+  cli
     .command('list-tools', 'List supported AI tool adapters')
-    .action(async () => {
-      await runListToolsCommand();
+    .option('--json', 'Print supported tools as JSON')
+    .action(async (options) => {
+      await runListToolsCommand({ json: Boolean(options.json) });
     });
 
   cli
@@ -55,10 +67,17 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--stale-days <days>', 'Days after which a knowledge file is considered stale (default 90)')
     .option(...dirOption)
     .action(async (options) => {
-      const staleDays = options.staleDays === undefined ? undefined : Number(options.staleDays);
+      let staleDays: number | undefined;
+      if (options.staleDays !== undefined) {
+        staleDays = Number(options.staleDays);
+        if (!Number.isFinite(staleDays) || staleDays < 1) {
+          throw new Error('Invalid --stale-days value. Must be a positive number.');
+        }
+      }
+
       const status = await runDoctorCommand(options.dir, Boolean(options.json), {
         history: Boolean(options.history),
-        staleDays: Number.isFinite(staleDays) ? staleDays : undefined
+        staleDays
       });
 
       if (status === 'fail') {

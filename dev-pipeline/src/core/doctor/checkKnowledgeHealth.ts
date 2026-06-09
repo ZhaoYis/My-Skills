@@ -1,5 +1,6 @@
 import fs from 'fs-extra';
 import path from 'node:path';
+import { KNOWLEDGE_DIR_CANDIDATES, resolveKnowledgeDirectory } from '../knowledge/dirs.js';
 import type { ManagedAssetRecord } from '../manifest/types.js';
 import type {
   HealthCheckResult,
@@ -9,8 +10,6 @@ import type {
   KnowledgeHealthScore,
   KnowledgeHealthScoreDimension
 } from './types.js';
-
-const knowledgeRoot = '.knowledge';
 const DEFAULT_STALE_DAYS = 90;
 const linkExtensions = ['.md', '.sql', '.yaml', '.yml'];
 
@@ -252,18 +251,18 @@ export async function checkKnowledgeHealth(
   const staleDays = options.staleDays ?? DEFAULT_STALE_DAYS;
   const now = Date.now();
   const generatedAt = new Date(now).toISOString();
-  const rootPath = path.join(targetDir, knowledgeRoot);
+  const resolvedKnowledge = await resolveKnowledgeDirectory(targetDir);
+  const rootPath = resolvedKnowledge?.path ?? path.join(targetDir, KNOWLEDGE_DIR_CANDIDATES[0]);
   const checks: HealthCheckResult[] = [];
   const knowledgeManaged = managedAssets.some((asset) => asset.id.startsWith('common-knowledge-skeleton:'));
-  const rootExists = await fs.pathExists(rootPath);
 
-  if (!rootExists) {
+  if (!resolvedKnowledge) {
     checks.push({
       id: 'knowledge-directory-exists',
       status: knowledgeManaged ? 'warn' : 'ok',
       message: knowledgeManaged
-        ? '.knowledge directory is missing even though knowledge skeleton assets are managed.'
-        : '.knowledge directory is not present.',
+        ? 'Knowledge directory is missing even though knowledge skeleton assets are managed.'
+        : `Knowledge directory is not present (checked: ${KNOWLEDGE_DIR_CANDIDATES.join(', ')}).`,
       path: rootPath
     });
 
@@ -278,8 +277,10 @@ export async function checkKnowledgeHealth(
 
   checks.push({
     id: 'knowledge-directory-exists',
-    status: 'ok',
-    message: '.knowledge directory exists.',
+    status: resolvedKnowledge.relative === '.knowledge' ? 'ok' : 'warn',
+    message: resolvedKnowledge.relative === '.knowledge'
+      ? '.knowledge directory exists.'
+      : `Using alternate knowledge directory: ${resolvedKnowledge.relative}.`,
     path: rootPath
   });
 

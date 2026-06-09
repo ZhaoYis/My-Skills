@@ -3,7 +3,8 @@ import { checkKnowledgeHealth } from '../../core/doctor/checkKnowledgeHealth.js'
 import { applyKnowledgeHealthHistory } from '../../core/doctor/healthHistory.js';
 import type { HealthGrade, HealthStatus, KnowledgeHealthReport } from '../../core/doctor/types.js';
 import { readManifest } from '../../core/manifest/io.js';
-import { MANIFEST_PACKAGE_JSON_KEY } from '../../core/runtime/meta.js';
+import { checkManifestVersion, mergeHealthStatus } from '../../core/manifest/versionCheck.js';
+import { MANIFEST_PACKAGE_JSON_KEY, PACKAGE_VERSION } from '../../core/runtime/meta.js';
 
 export interface DoctorCommandOptions {
   json?: boolean;
@@ -130,20 +131,30 @@ export async function runDoctorCommand(
     knowledge = await applyKnowledgeHealthHistory(dir, knowledge, { persist: true });
   }
 
-  const status: HealthStatus = !manifestResult
+  const versionCheck = manifestResult
+    ? checkManifestVersion(manifestResult.manifest.templateVersion, PACKAGE_VERSION)
+    : undefined;
+
+  let status: HealthStatus = !manifestResult
     ? (knowledge.status === 'fail' ? 'fail' : 'warn')
     : knowledge.status;
 
+  if (versionCheck) {
+    status = mergeHealthStatus(status, versionCheck.healthStatus);
+  }
+
   const manifest = manifestResult
     ? {
-        status: 'ok' as const,
+        status: versionCheck?.healthStatus === 'ok' ? 'ok' as const : 'warn' as const,
         storage: manifestResult.storage,
         path: manifestResult.storage === 'package-json'
           ? `${manifestResult.path} (${MANIFEST_PACKAGE_JSON_KEY})`
           : manifestResult.path,
         tool: manifestResult.manifest.tool,
         features: manifestResult.manifest.features,
-        templateVersion: manifestResult.manifest.templateVersion
+        templateVersion: manifestResult.manifest.templateVersion,
+        currentVersion: PACKAGE_VERSION,
+        versionCheck
       }
     : {
         status: 'warn' as const,
@@ -163,6 +174,14 @@ export async function runDoctorCommand(
     console.log(`- tool: ${manifest.tool}`);
     console.log(`- features: ${manifest.features?.join(', ') ?? ''}`);
     console.log(`- templateVersion: ${manifest.templateVersion}`);
+    console.log(`- currentVersion: ${PACKAGE_VERSION}`);
+
+    if (versionCheck) {
+      console.log(colorizeStatus(versionCheck.healthStatus, `- version: ${versionCheck.message}`));
+      if (versionCheck.recommendation) {
+        console.log(colorizeStatus(versionCheck.healthStatus, `  recommendation: ${versionCheck.recommendation}`));
+      }
+    }
   } else {
     console.log(pc.yellow(manifest.message));
   }

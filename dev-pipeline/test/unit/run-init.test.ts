@@ -7,4 +7,10 @@ describe('runInit', () => {
       runInit({ dir: '/tmp', tool: 'vscode' as 'claude', yes: true, dryRun: true })
     ).rejects.toThrow('Unsupported tool: vscode');
   });
+
+  it('rejects unknown feature flags before installation', async () => {
+    await expect(
+      runInit({ dir: '/tmp', tool: 'claude', yes: true, dryRun: true, feature: ['not-a-feature'] })
+    ).rejects.toThrow('Unknown feature(s): not-a-feature');
+  });
 });

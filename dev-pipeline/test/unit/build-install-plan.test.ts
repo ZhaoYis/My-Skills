@@ -1,11 +1,23 @@
+import fs from 'fs-extra';
+import os from 'node:os';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { buildInstallPlan } from '../../src/core/init/buildInstallPlan.js';
-import type { FeatureId, ToolAdapter, ToolId } from '../../src/core/adapters/types.js';
+import { DEFAULT_FEATURES, type FeatureId, type ToolAdapter, type ToolId } from '../../src/core/adapters/types.js';
 import type { ManagedAssetRecord } from '../../src/core/manifest/types.js';
 import { PACKAGE_ROOT } from '../helpers/package-root.js';
 
-const DEFAULT_FEATURES = ['base', 'skills', 'commands', 'docs'] as const satisfies readonly FeatureId[];
+const createdDirs: string[] = [];
+
+afterEach(async () => {
+  await Promise.all(createdDirs.splice(0).map((dir) => fs.remove(dir)));
+});
+
+async function createTempTargetDir(): Promise<string> {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-build-plan-'));
+  createdDirs.push(dir);
+  return dir;
+}
 
 function createAdapter(id: ToolId, skills: string, commands: string, displayName: string): ToolAdapter {
   return {
@@ -114,13 +126,17 @@ describe('buildInstallPlan', () => {
   });
 
   it('marks existing files as overwrite when force is enabled', async () => {
+    const targetDir = await createTempTargetDir();
+    await fs.writeFile(path.join(targetDir, 'README.md'), '# existing\n');
+
     const plan = await buildInstallPlan({
       ...createPlanInput(),
+      targetDir,
       force: true
     });
 
     const readmeFile = plan.files.find((file) => file.assetId === 'common-readme');
-    expect(readmeFile?.resolution).toBe('none');
+    expect(readmeFile?.resolution).toBe('overwrite');
   });
 
   it('marks sync files as unresolved without force', async () => {
@@ -146,7 +162,7 @@ describe('buildInstallPlan', () => {
     expect(gitignoreFile?.resolution).toBe('none');
   });
 
-  it('limits sync plans to manifest-managed assets', async () => {
+  it('limits sync plans to manifest-managed assets and full managed bundles', async () => {
     const managedAssets: ManagedAssetRecord[] = [
       { id: 'common-readme', destination: 'README.md' },
       { id: 'opsx-learn-command', destination: '.claude/commands/opsx-learn.md' },
@@ -158,11 +174,49 @@ describe('buildInstallPlan', () => {
       mode: 'sync'
     });
 
-    expect(plan.files.map((file) => file.assetId).sort()).toEqual([
-      'common-readme',
-      'opsx-learn-command',
-      'opsx-learn-skill-bundle:SKILL.md.hbs'
-    ]);
+    const assetIds = plan.files.map((file) => file.assetId).sort();
+    expect(assetIds).toContain('common-readme');
+    expect(assetIds).toContain('opsx-learn-command');
+    expect(assetIds).toContain('opsx-learn-skill-bundle:SKILL.md.hbs');
+    expect(assetIds.every((id) => id === 'common-readme' || id.startsWith('opsx-learn'))).toBe(true);
+    expect(assetIds.some((id) => id.startsWith('opsx-dev-pipeline'))).toBe(false);
+  });
+
+  it('omits structural-analysis-hint unless the feature is enabled', async () => {
+    const plan = await buildInstallPlan({
+      ...createPlanInput(),
+      features: [...DEFAULT_FEATURES]
+    });
+
+    expect(
+      plan.files.some((file) => file.assetId.endsWith('assets/structural-analysis-hint.md'))
+    ).toBe(false);
+  });
+
+  it('includes structural-analysis-hint when the feature is enabled', async () => {
+    const plan = await buildInstallPlan({
+      ...createPlanInput(),
+      features: [...DEFAULT_FEATURES, 'structural-analysis-hint']
+    });
+
+    expect(
+      plan.files.some((file) => file.assetId.endsWith('assets/structural-analysis-hint.md'))
+    ).toBe(true);
+  });
+
+  it('adopts newly added package assets during upgrade', async () => {
+    const managedAssets: ManagedAssetRecord[] = [
+      { id: 'common-readme', destination: 'README.md' }
+    ];
+
+    const plan = await buildInstallPlan({
+      ...createPlanInput(managedAssets),
+      mode: 'upgrade',
+      allowUpgradeAdoption: false
+    });
+
+    expect(plan.files.some((file) => file.assetId === 'opsx-learn-command')).toBe(true);
+    expect(plan.files.some((file) => file.assetId.startsWith('opsx-learn-skill-bundle:'))).toBe(true);
   });
 
   it('adopts knowledge skeleton files during upgrade when allowed', async () => {

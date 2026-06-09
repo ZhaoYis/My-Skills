@@ -52,7 +52,9 @@ metadata:
 - **跨阶段规则 / 恢复 / 降级 / Error Handling / 决策自动化分级**：`assets/recovery-guardrails-appendix.md`
 - **决策点导航索引**：`assets/decision-point-index.md`
 - **Apply 写前复用 + 准出自审查门禁**：`assets/apply-quality-gate.md`
-- **结构化代码分析优先指引（可选 · 默认关闭）**：`assets/structural-analysis-hint.md`
+{{#if (hasFeature 'structural-analysis-hint')}}
+- **结构化代码分析优先指引（已启用）**：`assets/structural-analysis-hint.md`
+{{/if}}
 - **失败恢复导航索引**：`assets/failure-recovery-index.md`
 - **schema-aware 差异专题**：`assets/schema-adapter-summary.md`
 - **脚本 I/O 契约**：`assets/script-io-conventions.md`

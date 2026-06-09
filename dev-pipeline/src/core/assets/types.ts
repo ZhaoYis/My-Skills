@@ -15,6 +15,8 @@ export interface AssetDefinition {
   templateFiles?: string[];
   excludePatterns?: string[];
   adoptOnUpgrade?: boolean;
+  /** Bundle members that require an optional feature to be enabled. */
+  bundleGatedFiles?: Array<{ path: string; feature: FeatureId }>;
 }
 
 export type InstallConflictResolution = 'none' | 'overwrite' | 'append' | 'skip' | 'unresolved';

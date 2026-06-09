@@ -31,10 +31,20 @@ npx opsx-dev-pipeline init --tool claude --yes
 npx opsx-dev-pipeline init --tool claude --yes --dry-run
 ```
 
-开启可选原型分析能力：
+卸载已安装的托管文件（保留知识库）：
 
 ```bash
+npx opsx-dev-pipeline uninstall --yes --keep-knowledge
+```
+
+开启可选能力：
+
+```bash
+# 原型 / 截图 → 结构化需求
 npx opsx-dev-pipeline init --tool claude --yes --feature prototype
+
+# 优先使用代码图谱 / LSP 等结构化检索（默认关闭）
+npx opsx-dev-pipeline init --tool claude --yes --feature structural-analysis-hint
 ```
 
 ## Supported AI Tools
@@ -43,7 +53,7 @@ npx opsx-dev-pipeline init --tool claude --yes --feature prototype
 | Tool ID   | 工具          | 生成目录 / 文件                                                    | 说明                                                 |
 | --------- | ----------- | ------------------------------------------------------------ | -------------------------------------------------- |
 | `claude`  | Claude Code | `CLAUDE.md`、`.claude/skills/`、`.claude/commands/`            | 默认推荐；skills 与 commands 分目录安装                       |
-| `cursor`  | Cursor      | `.cursor/rules/`、`.cursor/commands/`、`opsx-dev-pipeline.mdc` | rules 以 `alwaysApply: true` 常驻；skills 映射到 rules 目录 |
+| `cursor`  | Cursor      | `.cursor/rules/`、`.cursor/commands/`、`opsx-dev-pipeline.mdc` | skills 安装为 `.cursor/rules/<skill>/SKILL.md`；`opsx-dev-pipeline.mdc` 为常驻规则 |
 | `codex`   | Codex       | `.codex/prompts/`、`.codex/commands/`                         | prompts 承载 skill 入口；commands 承载快捷命令                |
 | `generic` | 通用 AI 工具    | `.ai/skills/`、`.ai/commands/`、`.ai/README.md`                | 不绑定特定 IDE，适合自建 AI 工作区                              |
 
@@ -52,6 +62,7 @@ npx opsx-dev-pipeline init --tool claude --yes --feature prototype
 
 ```bash
 npx opsx-dev-pipeline list-tools
+npx opsx-dev-pipeline list-tools --json
 ```
 
 ## Generated Integrated Commands
@@ -184,10 +195,11 @@ flowchart TD
 | Command      | Example                                          | Description                                                                                            |
 | ------------ | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
 | `init`       | `npx opsx-dev-pipeline init --tool claude --yes` | 初始化当前目录的模板文件                                                                                           |
-| `list-tools` | `npx opsx-dev-pipeline list-tools`               | 查看当前内置支持的 AI 工具适配器                                                                                     |
-| `doctor`     | `npx opsx-dev-pipeline doctor --json`            | 检查 manifest、知识库骨架与索引健康，输出 0–100 健康评分与断链 / 重复 / 老化检查；可加 `--history` 落盘快照并对比上次得分趋势，`--stale-days` 调整老化阈值 |
-| `sync`       | `npx opsx-dev-pipeline sync --dry-run`           | 根据 manifest 重新渲染托管文件                                                                                   |
-| `upgrade`    | `npx opsx-dev-pipeline upgrade --dry-run`        | 使用当前包内模板执行升级入口                                                                                         |
+| `list-tools` | `npx opsx-dev-pipeline list-tools --json`        | 查看当前内置支持的 AI 工具适配器；`--json` 输出结构化工具清单（含 destinations / markers / supports）                          |
+| `doctor`     | `npx opsx-dev-pipeline doctor --json`            | 检查 manifest、知识库骨架与索引健康，输出 0–100 健康评分与断链 / 重复 / 老化检查；对比 manifest `templateVersion` 与当前 CLI 版本并给出 upgrade 建议；可加 `--history` 落盘快照并对比上次得分趋势，`--stale-days` 调整老化阈值 |
+| `sync`       | `npx opsx-dev-pipeline sync --dry-run`           | 根据 manifest **仅**重新渲染已托管文件；若某 bundle 有部分成员已托管，会同步该 bundle 的全部成员                               |
+| `upgrade`    | `npx opsx-dev-pipeline upgrade --dry-run`        | 在 sync 基础上额外采纳包内**新增** skill/command，并在无现有知识目录时自动采纳 `.knowledge` 骨架（`adoptOnUpgrade`）；执行前会对比 manifest 与 CLI 版本，manifest 偏新或无法解析时需确认（`--yes` 跳过） |
+| `uninstall`  | `npx opsx-dev-pipeline uninstall --dry-run`      | 按 manifest 删除托管文件并清理空目录；`--keep-knowledge` 保留 `.knowledge`；部分删除时会更新 manifest                          |
 
 
 > 提示：`init` 完成后，可在生成的 commands / skills 目录里直接使用 `opsx-learn`，把现有仓库知识逐步沉淀到知识库中；用 `opsx-health` 或 `doctor` 定期巡检 `.knowledge/` 健康度。

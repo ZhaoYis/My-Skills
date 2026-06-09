@@ -24,11 +24,83 @@ export interface BuildInstallPlanInput {
   registry: Parameters<typeof getToolAdapter>[0];
 }
 
+interface ManagedAssetIndex {
+  assetIds: Set<string>;
+  topLevelIds: Set<string>;
+  bundleIds: Set<string>;
+}
+
+function indexManagedAssets(managedAssets: ManagedAssetRecord[] | undefined): ManagedAssetIndex {
+  const assetIds = new Set(managedAssets?.map((asset) => asset.id) ?? []);
+  const topLevelIds = new Set<string>();
+  const bundleIds = new Set<string>();
+
+  for (const id of assetIds) {
+    if (id.includes(':')) {
+      bundleIds.add(id.split(':')[0] ?? id);
+    } else {
+      topLevelIds.add(id);
+    }
+  }
+
+  return { assetIds, topLevelIds, bundleIds };
+}
+
+function isBundleFileGated(asset: AssetDefinition, entry: string, features: FeatureId[]): boolean {
+  return asset.bundleGatedFiles?.some(
+    (gate) => gate.path === entry && !features.includes(gate.feature)
+  ) ?? false;
+}
+
+function isAssetInUpgradeScope(
+  asset: AssetDefinition,
+  managed: ManagedAssetIndex,
+  allowUpgradeAdoption: boolean
+): boolean {
+  if (managed.topLevelIds.has(asset.id) || managed.bundleIds.has(asset.id)) {
+    return true;
+  }
+
+  if (asset.adoptOnUpgrade) {
+    return allowUpgradeAdoption;
+  }
+
+  return true;
+}
+
+function shouldIncludeInstallFile(
+  file: InstallFile,
+  mode: BuildInstallPlanInput['mode'],
+  managed: ManagedAssetIndex,
+  upgradeAssetIds: Set<string>
+): boolean {
+  if (mode === 'init') {
+    return true;
+  }
+
+  if (managed.assetIds.has(file.assetId)) {
+    return true;
+  }
+
+  const bundleParent = file.assetId.includes(':') ? file.assetId.split(':')[0] ?? file.assetId : file.assetId;
+
+  if (managed.bundleIds.has(bundleParent)) {
+    return true;
+  }
+
+  if (mode === 'upgrade') {
+    return upgradeAssetIds.has(bundleParent);
+  }
+
+  return managed.topLevelIds.has(file.assetId);
+}
+
 async function expandBundle(
   asset: AssetDefinition,
   rootDir: string,
   targetDir: string,
-  templateContext: Record<string, unknown>
+  templateContext: Record<string, unknown>,
+  features: FeatureId[]
 ): Promise<InstallFile[]> {
   const sourceRoot = path.join(rootDir, asset.source);
   const bundleDestinationRoot = path.join(targetDir, renderString(asset.destination, templateContext));
@@ -37,6 +109,7 @@ async function expandBundle(
   return files
     .filter((entry): entry is string => typeof entry === 'string')
     .filter((entry) => !asset.excludePatterns?.some((pattern) => entry.endsWith(pattern)))
+    .filter((entry) => !isBundleFileGated(asset, entry, features))
     .filter((entry) => asset.includeExtensions?.includes(path.extname(entry)) ?? true)
     .map((entry) => {
       const sourcePath = path.join(sourceRoot, entry);
@@ -71,14 +144,21 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
     .filter((asset) => input.features.includes(asset.feature))
     .filter((asset) => !asset.tools || asset.tools.includes(input.tool));
 
-  const managedAssetIds = input.managedAssets
-    ? new Set(input.managedAssets.map((asset) => asset.id))
-    : undefined;
+  const managed = indexManagedAssets(input.managedAssets);
+  const allowUpgradeAdoption = Boolean(input.allowUpgradeAdoption);
+
+  const upgradeAssetIds = new Set(
+    input.mode === 'upgrade'
+      ? selectedAssets
+          .filter((asset) => isAssetInUpgradeScope(asset, managed, allowUpgradeAdoption))
+          .map((asset) => asset.id)
+      : []
+  );
 
   const expandedFiles = await Promise.all(
     selectedAssets.map(async (asset) => {
       if (asset.kind === 'bundle') {
-        return expandBundle(asset, input.rootDir, input.targetDir, templateContext);
+        return expandBundle(asset, input.rootDir, input.targetDir, templateContext, input.features);
       }
 
       return [{
@@ -93,36 +173,15 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
     })
   );
 
-  const selectedAssetIds = new Set(
-    selectedAssets
-      .filter((asset) => input.mode !== 'upgrade' || (input.allowUpgradeAdoption && asset.adoptOnUpgrade) || managedAssetIds?.has(asset.id))
-      .map((asset) => asset.id)
-  );
-
   const files = await Promise.all(
     expandedFiles
       .flat()
-      .filter((file) => {
-        if (input.mode === 'init') {
-          return true;
-        }
-
-        if (managedAssetIds?.has(file.assetId)) {
-          return true;
-        }
-
-        if (input.mode === 'upgrade' && input.allowUpgradeAdoption) {
-          const assetId = file.assetId.split(':')[0] ?? file.assetId;
-          return selectedAssetIds.has(assetId);
-        }
-
-        return false;
-      })
+      .filter((file) => shouldIncludeInstallFile(file, input.mode, managed, upgradeAssetIds))
       .map(async (file) => {
         const exists = await fs.pathExists(file.destinationPath);
         const appendable = isAppendableInstallFile(file);
-        const isManaged = managedAssetIds?.has(file.assetId) ?? false;
-        const allowAdoption = input.mode === 'upgrade' && input.allowUpgradeAdoption && !isManaged;
+        const isManaged = managed.assetIds.has(file.assetId);
+        const allowAdoption = input.mode === 'upgrade' && allowUpgradeAdoption && !isManaged;
 
         if (exists && allowAdoption) {
           return {

@@ -36,7 +36,10 @@ export const assetManifest: AssetDefinition[] = [
     destination: '{{skillsDir}}/opsx-dev-pipeline',
     includeExtensions: ['.md', '.hbs', '.sh'],
     templateFiles: ['SKILL.md.hbs'],
-    excludePatterns: ['.gitkeep']
+    excludePatterns: ['.gitkeep'],
+    bundleGatedFiles: [
+      { path: 'assets/structural-analysis-hint.md', feature: 'structural-analysis-hint' }
+    ]
   },
   {
     id: 'opsx-dev-pipeline-command',
