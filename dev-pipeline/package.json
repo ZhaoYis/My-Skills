@@ -13,12 +13,27 @@
     "templates",
     "README.md"
   ],
+  "license": "MIT",
+  "keywords": [
+    "openspec",
+    "ai-workflow",
+    "claude-code",
+    "cursor",
+    "skills",
+    "dev-pipeline"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZhaoYis/My-Skills.git",
+    "directory": "dev-pipeline"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsx src/bin/opsx-dev-pipeline.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
+    "prepublishOnly": "npm run build",
     "pack:check": "npm pack --dry-run",
     "init:smoke": "tsx src/bin/opsx-dev-pipeline.ts init --tool claude --yes --dry-run"
   },

@@ -9,15 +9,16 @@ import {
   PACKAGE_JSON_FILE
 } from '../../src/core/runtime/meta.js';
 import { readManifest, writeManifest } from '../../src/core/manifest/io.js';
+import type { PipelineManifest } from '../../src/core/manifest/types.js';
 
 const createdDirs: string[] = [];
 
-const sampleManifest = {
+const sampleManifest: PipelineManifest = {
   schemaVersion: 1,
   projectName: 'demo',
-  tool: 'claude' as const,
-  features: ['base'] as const,
-  templateVersion: '0.1.0',
+  tool: 'claude',
+  features: ['base'],
+  templateVersion: '0.1.2',
   packageName: 'opsx-dev-pipeline',
   managedAssets: [{ id: 'common-readme', destination: 'README.md' }]
 };

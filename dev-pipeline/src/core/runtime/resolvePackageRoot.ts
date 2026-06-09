@@ -1,10 +1,11 @@
 import fs from 'fs-extra';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const MARKERS = ['package.json', 'config/tools.json', 'templates/common/base/README.md.hbs'];
 
 export async function resolvePackageRoot(fromFileUrl: string): Promise<string> {
-  let current = path.resolve(path.dirname(new URL(fromFileUrl).pathname));
+  let current = path.dirname(fileURLToPath(fromFileUrl));
 
   while (true) {
     const hasAll = await Promise.all(MARKERS.map((marker) => fs.pathExists(path.join(current, marker))));

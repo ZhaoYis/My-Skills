@@ -120,7 +120,7 @@ export async function runDoctorCommand(
   dir: string = process.cwd(),
   json = false,
   options: DoctorCommandOptions = {}
-): Promise<void> {
+): Promise<HealthStatus> {
   const manifestResult = await readManifest(dir);
   let knowledge = await checkKnowledgeHealth(dir, manifestResult?.manifest.managedAssets ?? [], {
     staleDays: options.staleDays
@@ -130,7 +130,9 @@ export async function runDoctorCommand(
     knowledge = await applyKnowledgeHealthHistory(dir, knowledge, { persist: true });
   }
 
-  const status: HealthStatus = manifestResult && knowledge.status === 'ok' ? 'ok' : knowledge.status;
+  const status: HealthStatus = !manifestResult
+    ? (knowledge.status === 'fail' ? 'fail' : 'warn')
+    : knowledge.status;
 
   const manifest = manifestResult
     ? {
@@ -151,7 +153,7 @@ export async function runDoctorCommand(
 
   if (json) {
     console.log(JSON.stringify({ status, manifest, knowledge }, null, 2));
-    return;
+    return status;
   }
 
   console.log(`Doctor summary: ${colorizeStatus(status, statusLabel(status))}`);
@@ -166,4 +168,5 @@ export async function runDoctorCommand(
   }
 
   printKnowledgeReport(knowledge);
+  return status;
 }

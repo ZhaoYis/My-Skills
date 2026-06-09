@@ -1,0 +1,43 @@
+name: dev-pipeline CI
+
+on:
+  push:
+    paths:
+      - 'dev-pipeline/**'
+      - '.github/workflows/dev-pipeline-ci.yml'
+  pull_request:
+    paths:
+      - 'dev-pipeline/**'
+      - '.github/workflows/dev-pipeline-ci.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20, 22]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: dev-pipeline/package-lock.json
+
+      - name: Install dependencies
+        working-directory: dev-pipeline
+        run: npm ci
+
+      - name: Typecheck
+        working-directory: dev-pipeline
+        run: npm run typecheck
+
+      - name: Build
+        working-directory: dev-pipeline
+        run: npm run build
+
+      - name: Test
+        working-directory: dev-pipeline
+        run: npm test

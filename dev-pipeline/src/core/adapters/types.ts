@@ -14,6 +14,7 @@ export interface ToolDefinition {
   markers: string[];
   destinations: ToolDestinations;
   supports: FeatureId[];
+  postInstallNotes?: string[];
 }
 
 export interface ToolAdapter {

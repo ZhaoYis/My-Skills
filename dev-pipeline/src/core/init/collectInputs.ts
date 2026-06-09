@@ -22,7 +22,6 @@ export async function collectInputs(
 ): Promise<InitAnswers> {
   const defaultProjectName = path.basename(targetDir);
   const defaultTool = options.tool ?? 'claude';
-
   const features = resolveFeatures(options.feature);
 
   if (options.yes) {
@@ -52,12 +51,23 @@ export async function collectInputs(
       message: 'Select your AI tool',
       choices: toolChoices,
       initial: toolChoices.findIndex((choice) => choice.value === defaultTool)
+    },
+    {
+      type: 'confirm',
+      name: 'enablePrototype',
+      message: 'Enable opsx-prototype (optional prototype/screenshot skill)?',
+      initial: features.includes('prototype')
     }
   ]);
+
+  const resolvedFeatures = Array.from(new Set<FeatureId>([
+    ...features,
+    ...(response.enablePrototype ? ['prototype' as const] : [])
+  ]));
 
   return {
     projectName: response.projectName ?? defaultProjectName,
     tool: response.tool ?? defaultTool,
-    features
+    features: resolvedFeatures
   };
 }

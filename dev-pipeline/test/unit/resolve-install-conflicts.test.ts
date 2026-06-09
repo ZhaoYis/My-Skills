@@ -47,7 +47,8 @@ function createPlan(files?: Partial<InstallPlan['files'][number]>[]): InstallPla
     })),
     targetDir: '/tmp',
     dryRun: false,
-    force: false
+    force: false,
+    mode: 'init'
   };
 }
 

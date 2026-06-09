@@ -152,6 +152,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
     files,
     targetDir: input.targetDir,
     dryRun: input.dryRun,
-    force: input.force
+    force: input.force,
+    mode: input.mode
   };
 }

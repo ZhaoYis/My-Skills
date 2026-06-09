@@ -4,9 +4,10 @@ import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { PACKAGE_ROOT } from '../helpers/package-root.js';
 
 const execFileAsync = promisify(execFile);
-const rootDir = '/Users/mrzhaoyi/Workspace/LLM/My-Skills/dev-pipeline';
+const rootDir = PACKAGE_ROOT;
 const createdDirs: string[] = [];
 let tarball = '';
 

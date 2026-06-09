@@ -1,8 +1,11 @@
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildInstallPlan } from '../../src/core/init/buildInstallPlan.js';
-import type { ToolAdapter, ToolId } from '../../src/core/adapters/types.js';
+import type { FeatureId, ToolAdapter, ToolId } from '../../src/core/adapters/types.js';
 import type { ManagedAssetRecord } from '../../src/core/manifest/types.js';
+import { PACKAGE_ROOT } from '../helpers/package-root.js';
+
+const DEFAULT_FEATURES = ['base', 'skills', 'commands', 'docs'] as const satisfies readonly FeatureId[];
 
 function createAdapter(id: ToolId, skills: string, commands: string, displayName: string): ToolAdapter {
   return {
@@ -31,11 +34,11 @@ function createPlanInput(managedAssets?: ManagedAssetRecord[]) {
   const registry = new Map<ToolId, ToolAdapter>([['claude', adapter]]);
 
   return {
-    rootDir: '/Users/mrzhaoyi/Workspace/LLM/My-Skills/dev-pipeline',
+    rootDir: PACKAGE_ROOT,
     targetDir: '/tmp/demo',
     projectName: 'demo',
     tool: 'claude' as const,
-    features: ['base', 'skills', 'commands', 'docs'],
+    features: [...DEFAULT_FEATURES],
     dryRun: true,
     force: false,
     mode: 'init' as const,
@@ -55,11 +58,11 @@ describe('buildInstallPlan', () => {
     const registry = new Map<ToolId, ToolAdapter>([[tool, adapter]]);
 
     const plan = await buildInstallPlan({
-      rootDir: '/Users/mrzhaoyi/Workspace/LLM/My-Skills/dev-pipeline',
+      rootDir: PACKAGE_ROOT,
       targetDir: '/tmp/demo',
       projectName: 'demo',
       tool,
-      features: ['base', 'skills', 'commands', 'docs'],
+      features: [...DEFAULT_FEATURES],
       dryRun: true,
       force: false,
       mode: 'init',

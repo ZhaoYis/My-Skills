@@ -1,7 +1,8 @@
 import fs from 'fs-extra';
 import path from 'node:path';
 import pc from 'picocolors';
-import { writeManifest } from '../manifest/io.js';
+import { readManifest, writeManifest } from '../manifest/io.js';
+import type { ManagedAssetRecord } from '../manifest/types.js';
 import { PACKAGE_NAME, TEMPLATE_VERSION } from '../runtime/meta.js';
 import { renderTemplate } from './renderTemplates.js';
 import type { InstallPlan } from './types.js';
@@ -13,6 +14,30 @@ function appendContent(existingContent: string, nextContent: string): string {
 
   const separator = existingContent.endsWith('\n') ? '\n' : '\n\n';
   return `${existingContent}${separator}${nextContent}`;
+}
+
+function mergeManagedAssets(
+  existingAssets: ManagedAssetRecord[],
+  writtenAssets: ManagedAssetRecord[]
+): ManagedAssetRecord[] {
+  const merged = new Map(existingAssets.map((asset) => [asset.id, asset]));
+
+  for (const asset of writtenAssets) {
+    merged.set(asset.id, asset);
+  }
+
+  return Array.from(merged.values());
+}
+
+function successMessage(mode: InstallPlan['mode'], displayName: string): string {
+  switch (mode) {
+    case 'sync':
+      return `Synchronized ${PACKAGE_NAME} managed files for ${displayName}.`;
+    case 'upgrade':
+      return `Upgraded ${PACKAGE_NAME} managed files for ${displayName}.`;
+    default:
+      return `Initialized ${PACKAGE_NAME} for ${displayName}.`;
+  }
 }
 
 export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
@@ -32,6 +57,10 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
   if (plan.dryRun) {
     console.log(pc.cyan('Dry run: the following files would be created:'));
     for (const file of plan.files) {
+      if (file.resolution === 'skip') {
+        continue;
+      }
+
       console.log(`- ${path.relative(plan.targetDir, file.destinationPath)}`);
     }
     return;
@@ -54,6 +83,7 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
       if (file.resolution === 'append') {
         const existingContent = await fs.readFile(file.destinationPath, 'utf8');
         await fs.outputFile(file.destinationPath, appendContent(existingContent, content));
+        managedFiles.push(file);
         continue;
       }
 
@@ -70,10 +100,20 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
     managedFiles.push(file);
   }
 
-  context.managedAssets = managedFiles.map((file) => ({
+  const writtenAssets = managedFiles.map((file) => ({
     id: file.assetId,
     destination: path.relative(plan.targetDir, file.destinationPath)
   }));
+
+  if (plan.mode === 'init') {
+    context.managedAssets = writtenAssets;
+  } else {
+    const existingManifest = await readManifest(plan.targetDir);
+    context.managedAssets = mergeManagedAssets(
+      existingManifest?.manifest.managedAssets ?? [],
+      writtenAssets
+    );
+  }
 
   await writeManifest(plan.targetDir, {
     schemaVersion: 1,
@@ -85,7 +125,7 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
     managedAssets: context.managedAssets
   });
 
-  console.log(pc.green(`Initialized ${PACKAGE_NAME} for ${plan.adapter.definition.displayName}.`));
+  console.log(pc.green(successMessage(plan.mode, plan.adapter.definition.displayName)));
   for (const note of plan.adapter.getPostInstallNotes()) {
     console.log(`- ${note}`);
   }

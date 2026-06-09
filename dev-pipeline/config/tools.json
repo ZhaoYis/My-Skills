@@ -10,7 +10,11 @@
         "skills": ".claude/skills",
         "commands": ".claude/commands"
       },
-      "supports": ["base", "skills", "commands", "docs"]
+      "supports": ["base", "skills", "commands", "docs"],
+      "postInstallNotes": [
+        "Try /opsx-dev-pipeline in Claude Code to start an OpenSpec change.",
+        "Seed project knowledge with /opsx-learn and inspect .knowledge/INDEX.md."
+      ]
     },
     {
       "id": "cursor",
@@ -22,7 +26,11 @@
         "skills": ".cursor/rules",
         "commands": ".cursor/commands"
       },
-      "supports": ["base", "skills", "commands", "docs"]
+      "supports": ["base", "skills", "commands", "docs"],
+      "postInstallNotes": [
+        "Use Cursor commands under .cursor/commands/ (e.g. opsx-dev-pipeline).",
+        "The opsx-dev-pipeline rule is always applied; review .knowledge/ before large tasks."
+      ]
     },
     {
       "id": "codex",
@@ -34,7 +42,11 @@
         "skills": ".codex/prompts",
         "commands": ".codex/commands"
       },
-      "supports": ["base", "skills", "commands", "docs"]
+      "supports": ["base", "skills", "commands", "docs"],
+      "postInstallNotes": [
+        "Open .codex/prompts/opsx-dev-pipeline.md as the pipeline entry prompt.",
+        "Commands live under .codex/commands/ for quick invocation."
+      ]
     },
     {
       "id": "generic",
@@ -46,7 +58,11 @@
         "skills": ".ai/skills",
         "commands": ".ai/commands"
       },
-      "supports": ["base", "skills", "commands", "docs"]
+      "supports": ["base", "skills", "commands", "docs"],
+      "postInstallNotes": [
+        "Read .ai/README.md for the generic workspace layout.",
+        "Skills and commands are under .ai/skills/ and .ai/commands/."
+      ]
     }
   ]
 }

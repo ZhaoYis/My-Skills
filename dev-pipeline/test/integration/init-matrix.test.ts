@@ -1,8 +1,13 @@
 import fs from 'fs-extra';
 import os from 'node:os';
 import path from 'node:path';
+import prompts from 'prompts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { runDoctorCommand } from '../../src/cli/commands/doctor.js';
+
+vi.mock('prompts', () => ({
+  default: vi.fn()
+}));
 import { runSyncCommand } from '../../src/cli/commands/sync.js';
 import { runUpgradeCommand } from '../../src/cli/commands/upgrade.js';
 import { runInit } from '../../src/core/init/runInit.js';
@@ -536,9 +541,21 @@ describe('tool matrix', () => {
     expect(manifest.managedAssets.some((asset) => asset.id === 'common-gitignore')).toBe(false);
   });
 
-  it('appends to an existing root README when duplicate conflicts are auto-skipped only for yes=false flows later', async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-readme-append-manual-'));
+  it('preserves managed assets when sync skips conflicts with yes enabled', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-sync-managed-assets-'));
     createdDirs.push(dir);
+
+    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
+    const before = await readManifest(dir);
+    const managedCount = before.managedAssets.length;
+    expect(managedCount).toBeGreaterThan(0);
+
+    await fs.writeFile(path.join(dir, 'CLAUDE.md'), 'custom\n');
+    await runSyncCommand({ dir, yes: true, force: false, dryRun: false });
+
+    const after = await readManifest(dir);
+    expect(after.managedAssets.length).toBe(managedCount);
+    expect(after.managedAssets.some((asset) => asset.id === 'claude-docs')).toBe(true);
   });
 
   it('sync skips conflicts when yes is enabled', async () => {
@@ -609,7 +626,17 @@ describe('tool matrix', () => {
     expect(await fs.readFile(path.join(dir, 'CLAUDE.md'), 'utf8')).toBe('custom\n');
   });
 
-  it('sync prompts for conflicts without yes or force', () => {
-    expect(true).toBe(true);
+  it('sync prompts for conflicts without yes or force', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-sync-prompt-'));
+    createdDirs.push(dir);
+
+    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
+    await fs.writeFile(path.join(dir, 'CLAUDE.md'), 'custom\n');
+
+    vi.mocked(prompts).mockResolvedValue({ resolution: 'skip' });
+    await runSyncCommand({ dir, yes: false, force: false, dryRun: false });
+
+    expect(vi.mocked(prompts)).toHaveBeenCalled();
+    expect(await fs.readFile(path.join(dir, 'CLAUDE.md'), 'utf8')).toBe('custom\n');
   });
 });

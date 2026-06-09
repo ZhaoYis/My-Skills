@@ -1,4 +1,5 @@
 import { cac } from 'cac';
+import { PACKAGE_VERSION } from '../core/runtime/meta.js';
 import { runDoctorCommand } from './commands/doctor.js';
 import { runInitCommand } from './commands/init.js';
 import { runListToolsCommand } from './commands/list-tools.js';
@@ -55,13 +56,17 @@ export async function runCli(argv: string[]): Promise<void> {
     .option(...dirOption)
     .action(async (options) => {
       const staleDays = options.staleDays === undefined ? undefined : Number(options.staleDays);
-      await runDoctorCommand(options.dir, Boolean(options.json), {
+      const status = await runDoctorCommand(options.dir, Boolean(options.json), {
         history: Boolean(options.history),
         staleDays: Number.isFinite(staleDays) ? staleDays : undefined
       });
+
+      if (status === 'fail') {
+        process.exitCode = 1;
+      }
     });
 
   cli.help();
-  cli.version('0.1.0');
+  cli.version(PACKAGE_VERSION);
   await cli.parse(argv);
 }
