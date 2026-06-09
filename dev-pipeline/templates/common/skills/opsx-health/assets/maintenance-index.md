@@ -15,6 +15,8 @@
 
 - 修改 doctor 调用方式或字段消费时，同时更新：
   - `references/phase-1-run-doctor.md`
+  - `../opsx-dev-pipeline/scripts/dev-pipeline-resolve-cli.sh`（CLI 解析回退顺序）
+  - `scripts/opsx-health-run-doctor.sh`
   - 确认与 `opsx-dev-pipeline doctor --json` 实际输出字段一致
 - 修改报告结构或分级口径时，同时更新：
   - `assets/report-template.md`

@@ -22,7 +22,7 @@ metadata:
 
 ## 最小执行约束摘要
 
-- 优先调用 `opsx-dev-pipeline doctor --json` 取结构化结果；不可用时降级到现有存在性检查。
+- 优先调用 `opsx-dev-pipeline doctor --json` 取结构化结果；**无需全局安装**时可回退到 `npx --yes opsx-dev-pipeline doctor --json`，或运行 `scripts/opsx-health-run-doctor.sh` 自动解析 CLI；仍不可用时降级到现有存在性检查。
 - 报告须包含：总体状态/评分、按维度的问题、按 P0–P3 排序的修复建议。
 - 修复属于写操作，**需用户确认后**才执行；不静默修改知识库。
 - 不重写 doctor 的检查规则；以其输出为事实来源。

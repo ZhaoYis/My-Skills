@@ -36,9 +36,53 @@ if [ -z "$knowledge_dir" ]; then
   knowledge_dir=".knowledge"
 fi
 
-if command -v opsx-dev-pipeline >/dev/null 2>&1; then
-  if doctor_json="$(opsx-dev-pipeline doctor --json --dir "$repo_root" 2>/dev/null)"; then
-    if DOCTOR_JSON="$doctor_json" python3 - <<'PY' >/dev/null 2>&1
+knowledge_health_source=""
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+resolve_cli="$script_dir/../../opsx-dev-pipeline/scripts/dev-pipeline-resolve-cli.sh"
+if [ -f "$resolve_cli" ]; then
+  # shellcheck source=/dev/null
+  source "$resolve_cli"
+fi
+
+run_doctor_json() {
+  if declare -F opsx_run_doctor_json >/dev/null 2>&1; then
+    opsx_run_doctor_json "$repo_root"
+    return $?
+  fi
+
+  if command -v opsx-dev-pipeline >/dev/null 2>&1; then
+    OPSX_CLI_SOURCE="global"
+    opsx-dev-pipeline doctor --json --dir "$repo_root"
+    return $?
+  fi
+
+  if [ -x "$repo_root/node_modules/.bin/opsx-dev-pipeline" ]; then
+    OPSX_CLI_SOURCE="node_modules"
+    "$repo_root/node_modules/.bin/opsx-dev-pipeline" doctor --json --dir "$repo_root"
+    return $?
+  fi
+
+  if command -v npx >/dev/null 2>&1; then
+    OPSX_CLI_SOURCE="npx"
+    if [ -n "${OPSX_DEV_PIPELINE_VERSION:-}" ]; then
+      npx --yes -p "opsx-dev-pipeline@${OPSX_DEV_PIPELINE_VERSION}" opsx-dev-pipeline doctor --json --dir "$repo_root"
+    else
+      npx --yes opsx-dev-pipeline doctor --json --dir "$repo_root"
+    fi
+    return $?
+  fi
+
+  return 1
+}
+
+doctor_tmp="$(mktemp "${TMPDIR:-/tmp}/opsx-learn-doctor.XXXXXX")"
+trap 'rm -f "$doctor_tmp"' EXIT
+
+if run_doctor_json > "$doctor_tmp" 2>/dev/null; then
+  doctor_json="$(cat "$doctor_tmp")"
+  knowledge_health_source="${OPSX_CLI_SOURCE:-unknown}"
+  if DOCTOR_JSON="$doctor_json" python3 - <<'PY' >/dev/null 2>&1
 import json
 import os
 
@@ -116,7 +160,6 @@ for check in knowledge.get('checks', []):
 print(json.dumps(highlights[:3], ensure_ascii=False))
 PY
 )"
-    fi
   fi
 fi
 
@@ -130,6 +173,9 @@ printf '  "knowledgeHealthStatus": "%s",\n' "$knowledge_health_status"
 if [ -n "$knowledge_health_summary" ]; then
   printf '  "knowledgeHealthSummary": "%s",\n' "$knowledge_health_summary"
   printf '  "knowledgeHealthHighlights": %s,\n' "$knowledge_health_highlights_json"
+fi
+if [ -n "$knowledge_health_source" ]; then
+  printf '  "knowledgeHealthSource": "%s",\n' "$knowledge_health_source"
 fi
 if [ -n "$knowledge_health_json" ]; then
   printf '  "knowledgeHealth": %s,\n' "$knowledge_health_json"

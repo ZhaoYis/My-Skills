@@ -15,6 +15,7 @@
 | `knowledgeHealthSummary` | `string` | 否 | 面向人读的一句话摘要。仅在 `knowledgeHealthAvailable = true` 时出现。 |
 | `knowledgeHealthHighlights` | `array` | 否 | 面向人读的重点问题列表。仅在 `knowledgeHealthAvailable = true` 时出现。 |
 | `knowledgeHealth` | `object` | 否 | 原始完整知识健康报告。仅在 `knowledgeHealthAvailable = true` 时出现。 |
+| `knowledgeHealthSource` | `"global" | "node_modules" | "npx" | "unknown"` | 否 | doctor 命令的解析来源。仅在成功获取健康报告时出现。 |
 | `message` | `string` | 是 | 通用预检说明，提醒如何选择知识目录，以及在拿到 health report 时如何处理。 |
 
 ## `knowledgeHealthHighlights` 条目结构
@@ -47,10 +48,12 @@
 
 当满足任一情况时，预检脚本应保留主流程可用性，并降级为“不提供知识健康详情”而不是中断： 
 
-- 当前环境中不存在 `opsx-dev-pipeline` 命令
-- `opsx-dev-pipeline doctor --json` 调用失败
+- 全局 PATH、`node_modules/.bin` 与 `npx` 均无法解析 `opsx-dev-pipeline` CLI
+- `doctor --json` 调用失败
 - doctor 输出不是合法 JSON
 - doctor JSON 中缺少 `knowledge` 对象或结构不符合预期
+
+> **注意**：未执行 `npm install -g opsx-dev-pipeline` 时，预检会通过 `npx --yes opsx-dev-pipeline` 自动回退，**不应**因此进入降级模式（前提是本机有 Node.js 与网络）。
 
 降级后的期望行为：
 

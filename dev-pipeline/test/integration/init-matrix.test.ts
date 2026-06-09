@@ -347,6 +347,10 @@ describe('tool matrix', () => {
 
     expect(skillContent).toContain('knowledgeHealth');
     expect(preflightContent).toContain('opsx-dev-pipeline doctor --json');
+    expect(preflightContent).toContain('npx --yes opsx-dev-pipeline');
+    expect(preflightContent).toContain('knowledgeHealthSource');
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-resolve-cli.sh'))).toBe(true);
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-health/scripts/opsx-health-run-doctor.sh'))).toBe(true);
     expect(preflightContent).toContain('knowledgeHealthStatus');
     expect(preflightContent).toContain('knowledgeHealthSummary');
     expect(preflightContent).toContain('knowledgeHealthHighlights');

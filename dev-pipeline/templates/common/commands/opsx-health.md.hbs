@@ -18,7 +18,7 @@ Use `opsx-health` when you want to:
 
 ## Recommended flow
 
-1. Run `opsx-dev-pipeline doctor --json` (fall back to existence checks if unavailable).
+1. Run `bash <SKILL_ROOT>/opsx-health/scripts/opsx-health-run-doctor.sh` (or `opsx-dev-pipeline doctor --json`; without global install use `npx --yes opsx-dev-pipeline doctor --json`; fall back to existence checks if all fail).
 2. Produce a structured report and P0–P3 fix suggestions.
 3. Optionally apply fixes after confirmation, then re-run doctor.
 
@@ -33,10 +33,11 @@ By default, produce the report and fix suggestions in the conversation. Fixes ar
 
 ## Suggested first action
 
-Run the doctor check first:
+Run the doctor check first (no global install required):
 
 ```bash
-opsx-dev-pipeline doctor --json
+bash {{skillsDir}}/opsx-health/scripts/opsx-health-run-doctor.sh
+# or: npx --yes opsx-dev-pipeline doctor --json
 ```
 
 Then open or invoke the bundled skill and continue from:
