@@ -63,7 +63,7 @@ describe('executeInstallPlan', () => {
       projectName: 'demo',
       tool: 'claude',
       features: ['base', 'skills', 'commands', 'docs'],
-      templateVersion: '0.1.3',
+      templateVersion: '0.1.4',
       packageName: 'opsx-dev-pipeline',
       managedAssets
     });

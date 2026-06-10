@@ -18,7 +18,7 @@ const sampleManifest: PipelineManifest = {
   projectName: 'demo',
   tool: 'claude',
   features: ['base'],
-  templateVersion: '0.1.3',
+  templateVersion: '0.1.4',
   packageName: 'opsx-dev-pipeline',
   managedAssets: [{ id: 'common-readme', destination: 'README.md' }]
 };

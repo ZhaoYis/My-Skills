@@ -14,9 +14,9 @@ function createVersionCheck(overrides: Partial<ManifestVersionCheck>): ManifestV
   return {
     status: 'current',
     healthStatus: 'ok',
-    manifestVersion: '0.1.3',
-    currentVersion: '0.1.3',
-    message: 'Manifest template version matches the installed CLI (0.1.3).',
+    manifestVersion: '0.1.4',
+    currentVersion: '0.1.4',
+    message: 'Manifest template version matches the installed CLI (0.1.4).',
     ...overrides
   };
 }
@@ -57,7 +57,7 @@ describe('upgrade version prompt', () => {
         status: 'ahead',
         healthStatus: 'warn',
         manifestVersion: '0.2.0',
-        message: 'Manifest template version 0.2.0 is newer than the installed CLI 0.1.3.',
+        message: 'Manifest template version 0.2.0 is newer than the installed CLI 0.1.4.',
         recommendation: 'Upgrade the opsx-dev-pipeline package to match the manifest template version.'
       })
     );
