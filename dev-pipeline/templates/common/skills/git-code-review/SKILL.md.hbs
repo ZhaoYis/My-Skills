@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires git CLI and a git repository.
 metadata:
   author: zhaoyi
-  version: "1.6"
+  version: "1.7"
   generatedBy: "1.0.0"
 ---
 
@@ -17,7 +17,7 @@ Review uncommitted or committed changes in the current branch and generate a cod
 - Review scope: `unstaged`, `staged`, `unpushed`, `all`
 - Review focus: `security`, `performance`, `style`, `architecture`, `all`
 
-**IMPORTANT**: This skill MUST read `openspec/project.md` before performing the review to understand project-specific conventions and constraints. If the file does not exist, fall back to repository-local conventions such as `README.md`, `CLAUDE.md`, `AGENTS.md`, or nearby architecture documents, and explicitly note the fallback baseline in the report.
+**IMPORTANT**: 本技能与具体技术栈无关。审查规范一律按 **项目基准（Project_Baseline）** 动态解析，不写死任何语言、框架或公司专有约定。强制审查清单的唯一权威来源是 `references/convention-checklist.md`。
 
 **重要**: 审查报告必须使用中文输出。
 
@@ -28,19 +28,37 @@ Review uncommitted or committed changes in the current branch and generate a cod
 - Keep the report focused on actionable findings tied to the current diff or commit range; avoid turning the review into a broad refactor plan unless the user explicitly asks.
 - This bundled skill is typically installed under `{{skillsDir}}/git-code-review/`; the exact resolved directory depends on the active AI tool.
 
+## 权威来源地图
+
+- **强制审查清单（规范来源解析 / 通用审查维度 / 严重程度判定）**：`references/convention-checklist.md`
+- **可选技术栈示例**：仅存在于 `references/convention-checklist.md` 的"可选示例"折叠块中，非强制，匹配栈时才适用。
+
+> 单一来源原则：审查清单正文只在 `references/convention-checklist.md` 中定义，本页 **不内联** 清单表格。执行审查前请先加载该参考文件。
+
 **Steps**
 
-1. **Load project conventions**
+1. **Load project conventions（按项目基准动态解析）**
 
-   **CRITICAL**: First read `openspec/project.md` to get:
-   - Technology stack constraints
-   - Layered architecture rules
-   - Naming conventions
-   - Code style requirements
-   - Design patterns
-   - Important constraints
+   **CRITICAL**: 审查规范不绑定任何固定技术栈，须按 **Project_Baseline** 顺序解析规范来源，命中即用：
 
-   Use these conventions as the baseline for the review.
+   1. `openspec/project.md`（主基准）
+   2. `README.md`
+   3. `CLAUDE.md`
+   4. `AGENTS.md`
+   5. 邻近架构文档（如 `docs/`、`ARCHITECTURE.md` 等）
+   6. 通用约定兜底（以上均未找到时）
+
+   从命中的来源中提取适用于本仓库的约定，例如：
+   - 技术栈与版本约束（由基准声明，而非预设 Java/Spring 等）
+   - 分层 / 模块边界规则
+   - 命名约定
+   - 代码风格要求
+   - 设计模式与重要约束
+
+   - 在报告的 `规范基准` 字段中记录实际解析到的来源。
+   - 若 **未找到任何项目基准来源**，则采用通用约定继续审查，并在报告中明确记录 `未找到项目基准`。
+
+   强制审查清单详见 `references/convention-checklist.md`，执行 Step 5 前请先加载。
 
 2. **Determine review scope**
 
@@ -102,119 +120,21 @@ Review uncommitted or committed changes in the current branch and generate a cod
    - Suggest using environment variables or secret management
    - Warn about git history (may need `git filter-branch` or BFG)
 
-5. **Perform code review based on openspec/project.md**
+5. **Perform code review against the resolved baseline**
 
-   Analyze the changes against the project conventions loaded from `openspec/project.md`:
+   先加载 `references/convention-checklist.md`，再按其中的 **通用审查维度** 对变更进行审查。所有"强制"检查项均以 Step 1 解析到的项目基准为准，**不要**预设任何特定技术栈。
 
-   **5.1 Technology Stack Compliance:**
-   - Java 8 compatibility (no Java 9+ features: `var`, `record`, `sealed`, pattern matching, text blocks)
-   - Spring Boot annotations usage
-   - MyBatis/MyBatis-Plus usage (`@TableName`)
-   - MapStruct for object conversion
-   - Lombok annotations (`@Data`, `@Builder`, `@Slf4j`, `@AllArgsConstructor`, `@NoArgsConstructor`)
-   - PageHelper for pagination
-   - Swagger 2 (`@Api`, `@ApiOperation`, `@ApiModelProperty`) or OpenAPI 3 (`@Schema`)
+   核心审查维度（详见参考清单，语言无关）：
+   - 命名一致性：是否遵循项目基准中声明的命名约定
+   - 分层 / 模块边界：是否符合项目基准声明的架构边界，无反向 / 跨层依赖
+   - 错误处理：错误路径是否被处理并向上传递，无静默吞错
+   - 日志：使用项目约定的日志机制，无裸输出
+   - 安全：输入校验、注入防护、鉴权 / 授权按基准要求
+   - 敏感信息：无硬编码密钥 / 口令 / 令牌（见 Step 4）
+   - 性能：无明显的 N+1、重复计算、未释放资源
+   - 测试：关键变更具备对应测试或验证手段
 
-   **5.2 Layered Architecture Compliance:**
-   Check that code follows the strict layering: Web → Biz → Core → Common
-   - No reverse dependencies (lower layers depending on upper layers)
-   - No cross-layer dependencies (each layer only depends on direct lower layer)
-
-   **5.3 Naming Conventions:**
-
-   | Type | Pattern | Example |
-   |------|---------|---------|
-   | Controller | `*Controller` | `PurWebContractPaymentBaseController` |
-   | BizService | `*BizService` / `*BizServiceImpl` | `ContractPaymentBaseBizService` |
-   | DomainService | `*DomainService` / `*DomainServiceImpl` | `ContractPaymentBaseDomainService` |
-   | Mapper | `@Repository` | `ContractPaymentBaseMapper` |
-   | ManualMapper | `*ManualMapper` | `ContractPaymentBaseManualMapper` |
-   | DO | `*DO` | `ContractPaymentBaseDO` |
-   | Model | `*Model` | `ContractPaymentBaseModel` |
-   | VO | `*VO` | `WebContractPaymentConfirmedVO` |
-   | Request | `*Request` | `ContractPaymentBaseAddRequest` |
-   | Converter | `*Convert` / `*Converter` | `ContractPaymentBaseConvert` |
-   | FacadeClient | `*FacadeClient` / `*FacadeClientImpl` | `IdGeneratorFacadeClient` |
-   | Utils | `*Utils` | `AssertUtils` |
-   | ConditionDalRequest | `*ConditionDalRequest` | `ContractPaymentBaseConditionDalRequest` |
-
-   **5.4 Annotation Usage:**
-
-   **Controller Layer:**
-   - `@RestController`, `@RequestMapping`
-   - `@Api` + `@ApiOperation` (Swagger 2) or `@Schema` (OpenAPI 3)
-   - `@Slf4j`
-   - `@Authority(permissionCode = ...)` or `@NonLoginAuthority`
-   - `@Validated` with JSR-303 annotations
-   - Return type: `YzwResult<T>`
-
-   **BizService Layer:**
-   - Interface: `*BizService`
-   - Implementation: `@Service`, `@Slf4j`, `*BizServiceImpl`
-   - Injection: `@Resource` (preferred) or `@Autowired`
-
-   **DomainService Layer:**
-   - Interface: `*DomainService`
-   - Implementation: `@Service`, `@Slf4j`, `*DomainServiceImpl`
-   - Write operations: `@Transactional(rollbackFor = Throwable.class)`
-   - Injection: `@Autowired` or `@Resource`
-
-   **DO Objects:**
-   - Extend `AbstractBaseDO`
-   - `@TableName` (MyBatis-Plus)
-   - `@Data`, `@ToString(callSuper = true)`, `@EqualsAndHashCode(callSuper = true)`
-   - JavaDoc for fields
-
-   **Model Objects:**
-   - Extend `AbstractBaseBO`
-   - `@Data`
-   - JavaDoc for fields
-
-   **Request Objects:**
-   - AddRequest extends `CreateInfo`
-   - UpdateRequest extends `UpdateInfo`
-   - `@Data`, `@Builder`, `@AllArgsConstructor`, `@NoArgsConstructor`
-
-   **5.5 Code Style:**
-   - Import order: Java stdlib → Third-party → Project internal
-   - No full package name imports (e.g., use `List` not `java.util.List`)
-   - Empty lines between class members and methods
-   - Use `log.debug()`, `log.info()`, `log.error()` - NO `System.out.println()`
-
-   **5.6 Error Handling:**
-   - Use `AssertUtils` for validation
-   - Throw `BusinessException` with `BizErrorCode`
-   - Private validation methods: `validateAddXxx()`, `validateUpdateXxx()`
-
-   **5.7 Pagination:**
-   - Use `PageHelper.startPage(pageNum, pageSize)`
-   - Convert to `Page<DO>` type
-   - Use `PageConvertUtils.pageResultConvert(PageInfo, List)`
-   - Empty result: `PageConvertUtils.getResult(PageInfo)`
-
-   **5.8 Object Conversion:**
-   - MUST use MapStruct (`@Mapper` with `INSTANCE` constant)
-   - Call pattern: `XxxConvert.INSTANCE.method(...)`
-   - NO manual field-by-field conversion
-
-   **5.9 Collection Handling:**
-   - Use `CollectionUtils.isEmpty()` / `CollectionUtils.isNotEmpty()`
-   - Use `StringUtils` (Apache Commons Lang3) for strings
-
-   **5.10 Transaction Management:**
-   - Write operations MUST have `@Transactional(rollbackFor = Throwable.class)`
-   - Read operations: no transaction needed
-
-   **5.11 Security:**
-   - SQL injection prevention (parameterized queries)
-   - XSS prevention
-   - Input validation
-   - Authentication/Authorization with `@Authority`
-
-   **5.12 Performance:**
-   - N+1 query detection
-   - Batch query optimization
-   - Efficient algorithms
+   > 若项目基准识别出某种具体技术栈（例如 Java/Spring），可参考 `references/convention-checklist.md` 末尾的"可选示例"折叠块作为映射提示；非匹配项目应忽略该示例。
 
 6. **Check historical reviews**
 
@@ -238,9 +158,9 @@ Review uncommitted or committed changes in the current branch and generate a cod
 
    **日期:** YYYY-MM-DD HH:mm
    **分支:** <branch-name>
-   **审查人:** Claude Opus 4.8
+   **审查人:** {{toolName}}
    **审查范围:** 未暂存 / 已暂存 / 未推送 / 全部
-   **规范基准:** openspec/project.md
+   **规范基准:** <实际解析到的基准来源，如 openspec/project.md / README.md / ...；若均未找到则填写"未找到项目基准">
 
    ## 概要
 
@@ -254,11 +174,11 @@ Review uncommitted or committed changes in the current branch and generate a cod
 
    <!-- 必须立即修复的严重问题 -->
 
-   1. **[安全] SQL注入风险** - `path/to/file.java:123`
-      ```java
+   1. **[安全] 注入风险** - `path/to/file:123`
+      ```
       // 问题代码片段
       ```
-      **修复建议:** 使用参数化查询
+      **修复建议:** 使用参数化查询 / 安全 API
 
    ## 重要问题 ⚠️
 
@@ -272,20 +192,20 @@ Review uncommitted or committed changes in the current branch and generate a cod
 
    <!-- 可选的改进建议 -->
 
-   ## 规范违规 (openspec/project.md)
+   ## 规范违规 (依据规范基准)
 
-   <!-- 违反项目规范的问题 -->
+   <!-- 违反项目基准声明约定的问题 -->
 
    | 规范类型 | 文件 | 问题描述 |
    |----------|------|----------|
-   | 命名规范: Controller | path/to/file.java | 类名应以 'Controller' 结尾 |
-   | 架构规范: 分层 | path/to/file.java | Core层不应依赖Biz层 |
+   | 命名一致性 | path/to/file | 与基准声明的命名约定不符 |
+   | 分层/模块边界 | path/to/file | 存在反向/跨层依赖 |
 
    ## 已审查文件
 
    | 文件 | 变更行数 | 问题数 | 严重程度 |
    |------|----------|--------|----------|
-   | path/to/file.java | +50/-10 | 2 | 重要 |
+   | path/to/file | +50/-10 | 2 | 重要 |
 
    ## 敏感信息扫描结果
 
@@ -374,7 +294,7 @@ Review uncommitted or committed changes in the current branch and generate a cod
 
 **分支:** <branch-name>
 **审查范围:** <scope>
-**规范基准:** openspec/project.md
+**规范基准:** <实际解析到的基准来源，或"未找到项目基准">
 **报告路径:** openspec/review/YYYY-MM-DD-HH:mm-<branch-name>-review.md
 
 ### 问题统计
@@ -390,8 +310,8 @@ Review uncommitted or committed changes in the current branch and generate a cod
 
 | 类型 | 数量 |
 |------|------|
-| 命名规范 | X |
-| 架构规范 | X |
+| 命名一致性 | X |
+| 分层/模块边界 | X |
 | 代码风格 | X |
 
 ### 敏感信息扫描
@@ -400,7 +320,7 @@ Review uncommitted or committed changes in the current branch and generate a cod
 ⚠️ 在 X 个文件中检测到潜在敏感信息 - 详情见报告
 
 ### 严重问题（必须在提交前修复）
-1. **[安全] SQL注入** - `path/to/file.java:123`
+1. **[安全] 注入风险** - `path/to/file:123`
 2. ...
 
 ### 后续步骤
@@ -430,12 +350,14 @@ Review uncommitted or committed changes in the current branch and generate a cod
 
 **严重程度说明**
 
-| 严重程度 | 图标 | 判定标准 | 处理建议 |
-|----------|------|----------|----------|
-| 严重 | 🚨 | 安全漏洞、Bug、破坏性变更、敏感信息泄露 | 必须在提交前修复 |
-| 重要 | ⚠️ | 规范违规、性能问题、SOLID原则违反 | 应在合并前修复 |
-| 一般 | 📝 | 代码风格、命名、注释 | 建议修复 |
-| 建议 | 💡 | 最佳实践、优化建议 | 可选修复 |
+严重程度判定标准以 `references/convention-checklist.md` 为权威来源：
+
+| 严重程度 | 图标 | 处理建议 |
+|----------|------|----------|
+| 严重 | 🚨 | 必须在提交前修复 |
+| 重要 | ⚠️ | 应在合并前修复 |
+| 一般 | 📝 | 建议修复 |
+| 建议 | 💡 | 可选修复 |
 
 **Review Focus Areas**
 
@@ -443,18 +365,19 @@ When user specifies focus areas, prioritize:
 - `security` - Focus on security vulnerabilities + secret scanning
 - `performance` - Focus on performance issues + N+1 queries
 - `style` - Focus on code style and conventions
-- `architecture` - Focus on layered architecture and design patterns
+- `architecture` - Focus on layered/module boundaries and design patterns
 - `all` - Full review (default)
 
 **Guardrails**
 
-- ALWAYS read `openspec/project.md` before reviewing
+- ALWAYS 按 Project_Baseline 解析规范来源后再审查（Step 1）；不写死任何技术栈
+- ALWAYS 加载 `references/convention-checklist.md` 作为强制审查清单（单一权威来源）
 - Always ask for review scope first (Step 2 is the ONLY place to use `AskUserQuestion` before the report)
 - Always run secret scanning
 - **ALWAYS save review report to `openspec/review/` — do NOT ask, just save and also output to conversation**
 - **审查报告必须使用中文输出**
 - Use severity levels consistently
-- Check against project-specific conventions from openspec/project.md
+- 在报告 `规范基准` 字段记录实际解析到的基准来源；未找到时记录"未找到项目基准"
 - Provide actionable recommendations with file paths and line numbers
 - Include code snippets in issue descriptions
 - Include positive highlights to encourage good practices
@@ -471,25 +394,8 @@ When user specifies focus areas, prioritize:
 
 **Error Handling**
 
-- If `openspec/project.md` not found: Warn user and use default conventions
+- If `openspec/project.md` not found: 按 Project_Baseline 回退链（`README.md` → `CLAUDE.md` → `AGENTS.md` → 邻近架构文档）解析；若全部未命中，使用通用约定继续，并在报告中记录"未找到项目基准"
 - If no changes to review: Inform user and exit
 - If diff is too large (>5000 lines): Review file by file and summarize
 - If review directory creation fails: Show error and suggest manual creation
 - If secret scanning fails: Continue review and note the failure
-
-**Convention Checklist (from openspec/project.md)**
-
-| Category | Check |
-|----------|-------|
-| Java Version | Java 8 compatible |
-| Layering | Web → Biz → Core → Common, no reverse deps |
-| Naming | Controller/BizService/DomainService/DO/Model/VO/Request |
-| Annotations | @RestController/@Service/@Transactional/@Data/@Builder |
-| Transaction | @Transactional(rollbackFor = Throwable.class) on writes |
-| Pagination | PageHelper.startPage() + PageConvertUtils |
-| Conversion | MapStruct with INSTANCE, no manual conversion |
-| Error | AssertUtils + BusinessException + BizErrorCode |
-| Logging | log.debug/info/error, no System.out |
-| Imports | Java stdlib → Third-party → Project internal |
-| Collections | CollectionUtils.isEmpty/isNotEmpty |
-| Strings | StringUtils (Apache Commons) |

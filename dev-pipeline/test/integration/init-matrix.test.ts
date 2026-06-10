@@ -73,8 +73,10 @@ const toolExpectations = {
     '.claude/skills/opsx-health/assets/report-template.md',
     '.claude/skills/git-commit-push/SKILL.md',
     '.claude/skills/git-code-review/SKILL.md',
+    '.claude/skills/git-code-review/references/convention-checklist.md',
     '.claude/skills/git-merge-branch/SKILL.md',
     '.claude/skills/file-code-review/SKILL.md',
+    '.claude/skills/file-code-review/references/convention-checklist.md',
     '.claude/commands/opsx-dev-pipeline.md',
     '.claude/commands/opsx-learn.md',
     '.claude/commands/opsx-analysis.md',
@@ -128,8 +130,10 @@ const toolExpectations = {
     '.cursor/rules/opsx-health/assets/report-template.md',
     '.cursor/rules/git-commit-push/SKILL.md',
     '.cursor/rules/git-code-review/SKILL.md',
+    '.cursor/rules/git-code-review/references/convention-checklist.md',
     '.cursor/rules/git-merge-branch/SKILL.md',
     '.cursor/rules/file-code-review/SKILL.md',
+    '.cursor/rules/file-code-review/references/convention-checklist.md',
     '.cursor/commands/opsx-dev-pipeline.md',
     '.cursor/commands/opsx-learn.md',
     '.cursor/commands/opsx-analysis.md',
@@ -184,8 +188,10 @@ const toolExpectations = {
     '.codex/prompts/opsx-health/assets/report-template.md',
     '.codex/prompts/git-commit-push/SKILL.md',
     '.codex/prompts/git-code-review/SKILL.md',
+    '.codex/prompts/git-code-review/references/convention-checklist.md',
     '.codex/prompts/git-merge-branch/SKILL.md',
     '.codex/prompts/file-code-review/SKILL.md',
+    '.codex/prompts/file-code-review/references/convention-checklist.md',
     '.codex/commands/opsx-dev-pipeline.md',
     '.codex/commands/opsx-learn.md',
     '.codex/commands/opsx-analysis.md',
@@ -240,8 +246,10 @@ const toolExpectations = {
     '.ai/skills/opsx-health/assets/report-template.md',
     '.ai/skills/git-commit-push/SKILL.md',
     '.ai/skills/git-code-review/SKILL.md',
+    '.ai/skills/git-code-review/references/convention-checklist.md',
     '.ai/skills/git-merge-branch/SKILL.md',
     '.ai/skills/file-code-review/SKILL.md',
+    '.ai/skills/file-code-review/references/convention-checklist.md',
     '.ai/commands/opsx-dev-pipeline.md',
     '.ai/commands/opsx-learn.md',
     '.ai/commands/opsx-analysis.md',
@@ -482,6 +490,71 @@ describe('tool matrix', () => {
     const decisionIndex = await fs.readFile(path.join(skillRoot, 'assets/decision-point-index.md'), 'utf8');
     expect(decisionIndex).toContain('| 4c |');
     expect(decisionIndex).toContain('| 1c |');
+  });
+
+  it('decouples the review skills from a fixed stack and neutralizes tool identity', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-review-decoupling-'));
+    createdDirs.push(dir);
+
+    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
+
+    // The rendered tool display name for the claude adapter (adapter.definition.displayName).
+    const toolDisplayName = 'Claude Code';
+    const forbiddenStackIdentifiers = ['YzwResult', '@Authority', 'PurWebContractPaymentBaseController', '*BizService'];
+    const forbiddenModelIdentity = 'Claude Opus 4.8';
+
+    const reviewSkillPaths = {
+      git: path.join(dir, '.claude/skills/git-code-review/SKILL.md'),
+      file: path.join(dir, '.claude/skills/file-code-review/SKILL.md')
+    } as const;
+
+    for (const skillPath of Object.values(reviewSkillPaths)) {
+      const content = await fs.readFile(skillPath, 'utf8');
+
+      // 1. Mandatory body is decoupled: no stack-specific or company-specific identifiers, no model-version identity.
+      for (const forbidden of forbiddenStackIdentifiers) {
+        expect(content).not.toContain(forbidden);
+      }
+      expect(content).not.toContain(forbiddenModelIdentity);
+
+      // 2. Points at the single-source authoritative checklist via 权威来源地图.
+      expect(content).toContain('权威来源地图');
+      expect(content).toContain('references/convention-checklist.md');
+
+      // 3. Instructs Chinese output and retains the baseline fallback chain + 规范基准 disclosure.
+      expect(content).toContain('审查报告必须使用中文输出');
+      expect(content).toContain('README.md');
+      expect(content).toContain('CLAUDE.md');
+      expect(content).toContain('AGENTS.md');
+      expect(content).toContain('邻近架构文档');
+      expect(content).toContain('未找到项目基准');
+      expect(content).toContain('规范基准');
+
+      // 4. Renders the tool display name (not the raw template variable) in the report 审查人 field.
+      expect(content).toContain(`**审查人:** ${toolDisplayName}`);
+      expect(content).not.toContain('{{toolName}}');
+    }
+
+    // git-commit-push neutralizes model identity and renders the display name in the commit trailer.
+    const commitPushContent = await fs.readFile(path.join(dir, '.claude/skills/git-commit-push/SKILL.md'), 'utf8');
+    expect(commitPushContent).not.toContain(forbiddenModelIdentity);
+    expect(commitPushContent).toContain(`Co-Authored-By: ${toolDisplayName} <noreply@opsx-dev-pipeline.local>`);
+    expect(commitPushContent).not.toContain('{{toolName}}');
+
+    // 5. Any retained Java/Spring enterprise content lives ONLY under the optional-example marker
+    //    in the shared checklist; the mandatory body above the marker is stack-agnostic.
+    const checklistContent = await fs.readFile(
+      path.join(dir, '.claude/skills/git-code-review/references/convention-checklist.md'),
+      'utf8'
+    );
+    const optionalMarkerIndex = checklistContent.indexOf('非强制');
+    expect(optionalMarkerIndex).toBeGreaterThan(-1);
+    const mandatoryChecklistBody = checklistContent.slice(0, optionalMarkerIndex);
+    for (const javaToken of ['@RestController', '*ServiceImpl', '@Transactional']) {
+      // Retained as an optional example only — never in the mandatory body.
+      expect(mandatoryChecklistBody).not.toContain(javaToken);
+      expect(checklistContent).toContain(javaToken);
+    }
   });
 
   it('writes a concise root README for new projects', async () => {
