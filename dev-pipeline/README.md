@@ -7,10 +7,10 @@
 使用本工具前，请先安装OpenSpec：
 - [OpenSpec](https://github.com/Fission-AI/OpenSpec)
 
-推荐直接使用：
+推荐直接使用 npx 初始化：
 
 ```bash
-npm create opsx-dev-pipeline@latest
+npx opsx-dev-pipeline@latest init
 ```
 
 也可以直接执行 init：
