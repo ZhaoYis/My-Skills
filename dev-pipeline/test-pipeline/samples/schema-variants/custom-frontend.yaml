@@ -1,0 +1,12 @@
+# OpenSpec custom schema - Frontend only
+schema: custom
+stacks:
+  - frontend
+
+context: |
+  Frontend-only Todo app built with React, Vite, and TypeScript.
+
+rules:
+  verify: ./scripts/validate.sh frontend
+  test: npm test --workspace=frontend
+  build: cd frontend && npm install && npm run build

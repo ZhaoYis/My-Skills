@@ -1,0 +1,13 @@
+{
+  "name": "fullstack-todo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Sample fullstack Todo app for pipeline delivery flow testing",
+  "workspaces": ["backend", "frontend"],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm test --workspaces --if-present",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend"
+  }
+}

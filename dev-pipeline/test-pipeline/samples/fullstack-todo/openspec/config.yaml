@@ -1,0 +1,17 @@
+# OpenSpec configuration for fullstack-todo
+schema: custom
+stacks:
+  - backend
+  - frontend
+
+context: |
+  Fullstack Todo application with Express backend API and React frontend.
+  Backend: Express + TypeScript, REST API on /api/todos
+  Frontend: React + Vite + TypeScript, SPA consuming backend API
+
+rules:
+  verify: ./scripts/validate.sh
+  test: npm test --workspaces --if-present
+  build: |
+    cd backend && npm install && npm run build
+    cd ../frontend && npm install && npm run build
