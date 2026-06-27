@@ -132,4 +132,11 @@ compatibility: 需要 openspec CLI、git；归档推荐 dev-pipeline-archive.sh 
 
 - `仅提交并推送（不合并）` — 进入 **Phase 6**，执行 commit + push 后结束（同上文件）
 
+- `创建 Pull Request（推送后创建 PR，等待 CI）` — 进入 **Phase 6** 执行 commit + push，然后转入 **Phase 7** PR/CI 闭环（见 `phase-7-pr-ci.md`）。选择此选项前请确认：
+  - 目标仓库支持 Pull Request 工作流
+  - `gh` CLI 可用（否则降级为输出 PR 创建模板）
+  - 本地 merge 将被**禁止**（PR 模式下不得执行 Phase 6 步骤 20 本地合并）
+
 - `终止流程` — 退出流水线（提供恢复指引）
+
+> **交付模式互斥规则**：PR 模式与本地合并模式互斥。选择 PR 模式后，Phase 6 步骤 20（本地 merge）必须被显式跳过；选择本地合并后，不得为同一变更再创建 PR 并执行 `gh pr merge`。决策点 4 的选择必须写入 `openspec/runtime-state.yaml` 的 `delivery_mode` 字段。

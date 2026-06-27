@@ -1,0 +1,155 @@
+---
+name: opsx-ci-triage
+description: >
+  CI 结果消费与失败分诊技能。在 opsx-dev-pipeline PR 交付模式下由 Phase 7
+  自动调用，也可独立使用。通过 gh CLI 获取 PR checks 结果，将失败归类为
+  code/flaky/infra/config/unknown，并建议下一步动作。
+---
+
+## opsx-ci-triage：CI 结果消费与失败分诊
+
+### 触发条件
+
+- PR 创建后 CI checks 返回失败状态（Phase 7 步骤 25 调用）
+- 或手动调用：`/opsx-ci-triage <PR_NUMBER>` 消费指定 PR 的 CI 结果
+
+### 前置依赖
+
+- **必需**：`gh` CLI 已安装并完成 `gh auth login`
+- **必需**：PR 已创建且 CI checks 已有结果（非 pending）
+- **推荐**：`openspec/runtime-state.yaml` 包含当前 PR 和 CI 状态
+
+### 输入契约
+
+| 输入项 | 必需 | 来源 |
+|--------|------|------|
+| PR 标识 | 是 | PR Number 或 runtime state 中的 `pr.number` |
+| Runtime state | 否 | `openspec/runtime-state.yaml` |
+| Checks 日志 | 否 | `gh pr checks` / `gh run view --log`；不可用时降级为人工粘贴 |
+
+### 输出契约
+
+| 输出项 | 类型 | 说明 |
+|--------|------|------|
+| CI 总状态 | enum | `passed` / `failed` / `pending` / `unknown` |
+| 失败分类 | enum[] | 每个失败 check 的归类：`code_failure` / `flaky_failure` / `infra_failure` / `config_permission_failure` / `unknown` |
+| 建议下一步 | string | `进入修复回路` / `重试 CI` / `人工介入` / `继续合并` |
+| Runtime state 更新 | file | 更新 `ci.failure_category` 等字段 |
+
+### 不负责什么
+
+- 不直接修改代码（修复回路回到 Phase 2）
+- 不替代 Pipeline 决定是否回到 Apply 阶段
+- 不负责合并 PR（Phase 7 步骤 26）
+- 不判断业务逻辑正确性（那是 Phase 3 Review 的职责）
+
+### 执行流程
+
+#### 1. 获取 CI 状态
+
+```bash
+# 获取所有 checks 的汇总状态
+gh pr checks <PR_NUMBER>
+
+# 获取结构化 JSON（含每个 check 的结论和详情 URL）
+gh pr view <PR_NUMBER> --json statusCheckRollup
+
+# 获取某个失败 run 的日志（按需）
+gh run view <RUN_ID> --log --job <JOB_ID>
+```
+
+#### 2. 分类每个失败的 Check
+
+对于每个失败的 check，按以下决策树分类：
+
+```
+失败的 check
+├── 测试失败、编译错误、lint 错误
+│   → code_failure —— 代码问题，回到 Phase 2 修复
+├── 同一代码上次通过、本次失败；重试后通过
+│   → flaky_failure —— 间歇性失败，建议重试
+├── 网络错误、容器启动失败、依赖下载失败、超时
+│   → infra_failure —— 基础设施问题，建议重试或等待
+├── 401/403、缺少环境变量、secrets 不可用、权限不足
+│   → config_permission_failure —— 配置/权限问题，人工介入
+└── 以上都不匹配
+    → unknown —— 无法自动分类，展示日志请用户判断
+```
+
+**分类依据**：
+- `code_failure`：exit code 非零来自测试框架/编译器/linter，error message 指向具体代码位置
+- `flaky_failure`：同 branch 的上一次 run 通过、或重试后通过、或 error 为 timeout/temporary
+- `infra_failure`：error 包含 `ECONNREFUSED`、`ETIMEDOUT`、`500 Internal Server Error`、`502 Bad Gateway`、Docker/pod 启动失败
+- `config_permission_failure`：error 包含 `401`、`403`、`AccessDenied`、`credentials`、`secrets.`、`environment variable`
+
+#### 3. 汇总和建议
+
+输出分诊报告：
+
+```
+CI 状态: FAILED
+总检查数: 8 / 通过: 5 / 失败: 3
+
+失败分类:
+  - code_failure (2):
+    ✗ Unit Tests (backend) — 3 tests failed
+    ✗ Lint (frontend) — 12 errors
+  - flaky_failure (1):
+    ✗ E2E Tests — timeout (上次通过)
+
+建议: 进入修复回路，优先修复 code_failure；flaky 可重试
+```
+
+根据失败类型给出建议：
+
+| 失败组合 | 建议 |
+|---------|------|
+| 只有 `code_failure` | 进入修复回路（回到 Phase 2） |
+| 只有 `flaky_failure` | 重试 CI（`gh pr checks --retry`） |
+| 只有 `infra_failure` | 重试或等待；联系运维 |
+| 只有 `config_permission_failure` | 人工介入——检查仓库设置 |
+| 混合（code + flaky） | 先修 code，剩下 flaky 重试 |
+| 混合（code + infra） | 先修 code，infra 确认不是代码引起后重试 |
+
+#### 4. 展示决策点
+
+使用 **AskQuestion**（或降级编号选项）：
+
+- `进入修复回路（推荐）` — 回到 Phase 2 修复代码，自动重试最多 2 轮
+- `重试 CI` — 执行 `gh pr checks --retry` 后回到等待
+- `继续后续流程（承担风险）` — 跳过失败 checks，进入合并
+- `终止流程` — 退出流水线
+
+#### 5. 修复回路
+
+进入修复回路时：
+1. 更新 runtime state：`current_phase: phase7_ci_triage`、`pending_action.type: wait_fix`
+2. 记录 `decisions` 条目：`{ id: "6d", choice: "修复代码后重试", attempt: N }`
+3. 跳转到 Phase 2（`phase-2-apply.md`）
+4. 修复后自动走：Phase 2 → Phase 3 → Phase 5 → Phase 6(17-19) → Phase 7(24)
+
+**上限**：最多 2 轮自动修复。第 2 轮 CI 仍失败 → 强制暂停，提示人工介入。
+
+#### 6. 降级路径：CI 数据不可获取
+
+若 `gh pr checks` 失败或 `gh` 不可用：
+1. 标记 CI 状态为 `unknown`
+2. 降级为**人工日志模式**：请用户粘贴 CI 输出或截图
+3. 手动解析用户提供的日志进行分类
+4. 不阻塞流水线——但未确认 CI 通过前不得进入 PR 合并
+
+### 人机协作契约
+
+| 场景 | 行为 |
+|------|------|
+| CI 仍在运行 | 暂停流水线，输出 PR URL + 预计等待说明，不空转 |
+| 用户通知"CI 完成" | 恢复 Phase 7 步骤 24，拉取 checks 结果 |
+| CI 失败且可归因为代码问题 | 回修复回路，默认最多自动重试 2 轮 |
+| CI 失败但疑似基础设施波动 | 优先建议重试，不直接进入代码修复 |
+| 无法获取 CI 数据 | 降级为人工日志模式 |
+
+### 参考
+
+- `gh pr checks` 文档：`gh help pr checks`
+- Phase 7 CI 分诊步骤：`<SKILL_ROOT>/references/phase-7-pr-ci.md` 步骤 25
+- Runtime state schema：`docs/runtime-state-schema.md`

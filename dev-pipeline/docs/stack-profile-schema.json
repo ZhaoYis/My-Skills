@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://opsx-dev-pipeline/schemas/stack-profile.json",
+  "title": "Stack Profile Schema",
+  "description": "项目级 stack-aware 执行基准。描述项目的运行、测试、验证、部署命令与服务结构。",
+  "type": "object",
+  "required": ["stack"],
+  "additionalProperties": false,
+  "properties": {
+    "stack": {
+      "type": "object",
+      "required": ["id", "languages", "services"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "栈标识符，例如 nextjs-prisma、express-react。用于路由和模板选择。",
+          "minLength": 1,
+          "examples": ["nextjs-prisma", "express-react", "fastapi-vue"]
+        },
+        "languages": {
+          "type": "array",
+          "description": "栈使用的编程语言列表。",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "examples": [["typescript", "sql"], ["python", "typescript"]]
+        },
+        "services": {
+          "type": "array",
+          "description": "项目包含的服务列表。每个服务定义运行、测试和验证的命令。",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/ServiceDefinition" }
+        },
+        "infra": {
+          "$ref": "#/definitions/InfraDefinition",
+          "description": "基础设施定义：Docker、数据库、迁移、健康检查命令。"
+        },
+        "verify": {
+          "$ref": "#/definitions/VerifyDefinition",
+          "description": "验证定义：构建、冒烟、契约检查命令。"
+        },
+        "deploy": {
+          "$ref": "#/definitions/DeployDefinition",
+          "description": "部署定义：各环境的部署命令。"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "ServiceCommand": {
+      "type": "object",
+      "required": ["command"],
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "可执行的 shell 命令。",
+          "minLength": 1
+        },
+        "cwd": {
+          "type": "string",
+          "description": "命令执行的工作目录（相对于项目根目录）。"
+        },
+        "required": {
+          "type": "boolean",
+          "description": "是否为必须执行的步骤。默认 false。",
+          "default": false
+        },
+        "timeout": {
+          "type": "number",
+          "description": "命令超时时间（秒）。未设置则无限制。",
+          "minimum": 1
+        },
+        "depends_on": {
+          "type": "array",
+          "description": "前置依赖的服务名称列表。",
+          "items": { "type": "string" }
+        },
+        "outputs": {
+          "type": "array",
+          "description": "命令输出的文件路径列表（用于下游消费）。",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "ServiceDefinition": {
+      "type": "object",
+      "required": ["name", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "服务名称，与 stack 标签对应。",
+          "minLength": 1,
+          "examples": ["web", "api", "worker"]
+        },
+        "path": {
+          "type": "string",
+          "description": "服务在仓库中的路径（相对于项目根目录）。",
+          "minLength": 1
+        },
+        "dev": {
+          "$ref": "#/definitions/ServiceCommand",
+          "description": "开发模式启动命令。"
+        },
+        "test": {
+          "$ref": "#/definitions/ServiceCommand",
+          "description": "单元测试命令。"
+        },
+        "integration": {
+          "description": "集成测试命令。若为 null 则表示该项目无集成测试层。",
+          "oneOf": [
+            { "$ref": "#/definitions/ServiceCommand" },
+            { "type": "null" }
+          ]
+        },
+        "e2e": {
+          "description": "端到端测试命令。若为 null 则表示该项目无 E2E 测试层。",
+          "oneOf": [
+            { "$ref": "#/definitions/ServiceCommand" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "InfraDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "docker": {
+          "$ref": "#/definitions/ServiceCommand",
+          "description": "Docker 容器启动命令（例如 docker compose up）。"
+        },
+        "db": {
+          "type": "string",
+          "description": "数据库类型。",
+          "examples": ["postgresql", "mysql", "sqlite", "mongodb"]
+        },
+        "migrate": {
+          "$ref": "#/definitions/ServiceCommand",
+          "description": "数据库迁移命令。"
+        },
+        "healthCheck": {
+          "$ref": "#/definitions/ServiceCommand",
+          "description": "基础设施健康检查命令（例如 curl 健康端点）。"
+        }
+      }
+    },
+    "VerifyDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "build": {
+          "allOf": [
+            { "$ref": "#/definitions/ServiceCommand" },
+            { "description": "项目级构建命令。required 默认 true（构建通常是必须的）。" }
+          ]
+        },
+        "smoke": {
+          "allOf": [
+            { "$ref": "#/definitions/ServiceCommand" },
+            { "description": "冒烟测试命令。至少检查服务是否启动成功。" }
+          ]
+        },
+        "contract": {
+          "$ref": "#/definitions/ServiceCommand",
+          "description": "API 契约验证命令（例如 OpenAPI diff 或 contract test）。"
+        }
+      }
+    },
+    "DeployDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "staging": {
+          "$ref": "#/definitions/ServiceCommand",
+          "description": "预发布环境部署命令。"
+        },
+        "production": {
+          "$ref": "#/definitions/ServiceCommand",
+          "description": "生产环境部署命令。"
+        }
+      }
+    }
+  }
+}

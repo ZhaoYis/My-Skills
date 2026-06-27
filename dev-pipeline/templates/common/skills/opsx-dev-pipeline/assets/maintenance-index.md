@@ -75,7 +75,7 @@
 | schema-aware 规则变化 | `bash scripts/dev-pipeline-selftest.sh` | 演练 `baseline-custom-schema-fullstack-mainline` |
 | verify 解析规则变化 | `bash scripts/dev-pipeline-selftest.sh`、`tests/integrity-check.sh` | 检查 verify 失败路径是否仍能导航到 appendix |
 | 脚本 I/O 变化 | `bash scripts/dev-pipeline-selftest.sh`、`bash -n scripts/dev-pipeline-preflight.sh scripts/dev-pipeline-detect-schema.sh scripts/dev-pipeline-change-context.sh scripts/dev-pipeline-resolve-verify.sh scripts/dev-pipeline-selftest.sh` | 核对调用文档是否引用了最新字段 |
-| Phase 门禁 / 顺序变化 | `tests/comprehensive-pipeline-test.sh`、`tests/final-validation.sh` | 检查流程图、Phase 表与 phase 正文是否一致 |
+| Phase 门禁 / 顺序变化 | `tests/comprehensive-pipeline-test.sh`、`tests/final-validation.sh` | 检查流程图、Phase 表、Phase 7 PR/CI 闭环与 phase 正文是否一致 |
 
 ## 6. 自动检查排除策略
 
@@ -109,8 +109,9 @@
 | 3.1 | review 修复子流程 | `references/phase-3.1-fix-review.md` | `dev-pipeline-archive.sh` | `dev-pipeline-instructions-apply.sh` | 修复提案确认与恢复 | fix-review 会文字复用 Phase 2 Apply 路径 |
 | 4 | 12–16（含 15.5） | `references/phase-4-archive.md` | `dev-pipeline-change-status.sh`、`dev-pipeline-resolve-verify.sh`、`dev-pipeline-archive.sh` | `dev-pipeline-validate-change.sh`、`dev-pipeline-change-context.sh` | 归档决策、步骤 15.5 知识沉淀（决策点 4c）、归档后 git 选择 | 步骤 15.5 复用同级 `opsx-learn` 的 `write-targets.md` / `dedup-rules.md` / `knowledge-entry-templates.md`，无知识库时自动跳过；步骤 13 verify 门禁在需完整验证时可加载同级 `opsx-verify`（能力库），本 Phase 仍是 verify 门禁权威；`dev-pipeline-change-context.sh` 在 verify 解析失败时作回退补充 |
 | 5 | 16 | `references/phase-5-unit-tests.md` | - | `dev-pipeline-change-context.sh` | 测试命令确认、门禁选择 | 主要复用 schema-aware 上下文 |
-| 6 | 17–22 | `references/phase-6-merge-push.md` | - | - | 预提交、提交、推送、合并、删分支 | 主要是内联 git 流程 |
-| 附录 | 跨阶段 | `assets/recovery-guardrails-appendix.md` | 说明性引用：`dev-pipeline-detect-schema.sh`、`dev-pipeline-archive.sh` | - | AskQuestion fallback、恢复、错误处理 | 规则汇总，不是主执行入口 |
+| 6 | 17–22 | `references/phase-6-merge-push.md` | - | - | 预提交、提交、推送、合并、删分支 | 主要是内联 git 流程；PR 模式下步骤 20 禁止 |
+| 7 | 23–27 | `references/phase-7-pr-ci.md` | `dev-pipeline-resolve-delivery.sh`、`dev-pipeline-read-runtime.sh` | `gh pr create`、`gh pr checks`、`gh pr merge` | PR 创建、CI 等待/分诊、PR 合并、分支清理 | 仅 PR 模式；与 Phase 6 本地 merge 互斥 |
+| 附录 | 跨阶段 | `assets/recovery-guardrails-appendix.md` | 说明性引用：`dev-pipeline-detect-schema.sh`、`dev-pipeline-archive.sh`、`dev-pipeline-resolve-delivery.sh` | - | AskQuestion fallback、恢复、错误处理 | 规则汇总，不是主执行入口 |
 
 ## 9. 高复用脚本反向影响表
 

@@ -311,5 +311,45 @@ export const assetManifest: AssetDefinition[] = [
     tools: ['generic'],
     source: 'templates/tools/generic/overlay/.ai/README.md.hbs',
     destination: '.ai/README.md'
+  },
+  // ── opsx-pr skill + command (feature-gated) ──
+  {
+    id: 'opsx-pr-skill-bundle',
+    kind: 'bundle',
+    scope: 'common',
+    feature: 'opsx-pr',
+    source: 'templates/common/skills/opsx-pr',
+    destination: '{{skillsDir}}/opsx-pr',
+    includeExtensions: ['.md', '.hbs'],
+    templateFiles: ['SKILL.md.hbs'],
+    excludePatterns: ['.gitkeep']
+  },
+  {
+    id: 'opsx-pr-command',
+    kind: 'template',
+    scope: 'common',
+    feature: 'commands',
+    source: 'templates/common/commands/opsx-pr.md.hbs',
+    destination: '{{commandsDir}}/opsx-pr.md'
+  },
+  // ── opsx-ci-triage skill + command (feature-gated) ──
+  {
+    id: 'opsx-ci-triage-skill-bundle',
+    kind: 'bundle',
+    scope: 'common',
+    feature: 'opsx-ci-triage',
+    source: 'templates/common/skills/opsx-ci-triage',
+    destination: '{{skillsDir}}/opsx-ci-triage',
+    includeExtensions: ['.md', '.hbs'],
+    templateFiles: ['SKILL.md.hbs'],
+    excludePatterns: ['.gitkeep']
+  },
+  {
+    id: 'opsx-ci-triage-command',
+    kind: 'template',
+    scope: 'common',
+    feature: 'commands',
+    source: 'templates/common/commands/opsx-ci-triage.md.hbs',
+    destination: '{{commandsDir}}/opsx-ci-triage.md'
   }
 ];

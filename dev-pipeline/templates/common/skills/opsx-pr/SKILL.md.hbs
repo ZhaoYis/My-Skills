@@ -1,0 +1,163 @@
+---
+name: opsx-pr
+description: >
+  创建 GitHub Pull Request 的技能。在 opsx-dev-pipeline PR 交付模式下由 Phase 7
+  自动调用，也可独立使用。生成 PR title/body，调用 gh CLI 创建 PR；gh 不可用时降级
+  输出平台无关的 PR 创建模板。
+---
+
+## opsx-pr：创建 Pull Request
+
+### 触发条件
+
+- Phase 6 推送成功后，Decision Point 4-ext 选择了 PR 模式（由 `opsx-dev-pipeline` Phase 7 调用）
+- 或手动调用：`/opsx-pr`，传入 change 名称或分支信息
+
+### 前置依赖
+
+- **必需**：当前目录是 git 仓库，当前分支已推送到 remote
+- **推荐**：已安装 `gh` CLI 并完成 `gh auth login`
+- **无需**：OpenSpec CLI（本技能仅操作 git/GitHub）
+
+### 输入契约
+
+| 输入项 | 必需 | 来源 |
+|--------|------|------|
+| 变更摘要 | 是 | `openspec/changes/<name>/proposal.md` 或手动描述 |
+| Base 分支 | 是 | 用户选择或从 runtime state 读取 |
+| Head 分支 | 是 | `git branch --show-current` |
+| Runtime state | 否 | `openspec/runtime-state.yaml`（续接场景） |
+| 当前推送状态 | 是 | `git log origin/<branch>..HEAD --oneline` |
+
+### 输出契约
+
+| 输出项 | 类型 | 说明 |
+|--------|------|------|
+| PR 创建状态 | boolean | 是否创建成功 |
+| PR URL | string | GitHub PR 链接 |
+| PR Number | number | PR 编号 |
+| PR Title | string | 生成的 PR 标题 |
+| PR Body | string | 生成的 PR 描述 |
+| Runtime state 更新 | file | 写入 `openspec/runtime-state.yaml` |
+
+### 不负责什么
+
+- 不负责合并 PR（由 `opsx-ci-triage` / Phase 7 步骤 26 负责）
+- 不负责等待 CI 完成（Phase 7 步骤 24）
+- 不负责定义合并策略（Phase 7 步骤 26 决策点 6e）
+- 不负责代码审查（Phase 3 负责）
+
+### 执行流程
+
+#### 1. 收集上下文
+
+```bash
+# 确认当前分支和推送状态
+git branch --show-current
+git log origin/$(git branch --show-current)..HEAD --oneline
+
+# 尝试读取 runtime state（续接场景）
+bash <SKILL_ROOT>/scripts/dev-pipeline-read-runtime.sh 2>/dev/null || true
+```
+
+**续接处理**：
+- 若 runtime state 中 `pr.number` 存在 → **PR 已创建**，输出已有 PR 信息，不重新创建
+- 若 runtime state 中 `current_phase` 为 `phase7_pr_created` 或更晚 → 续接到对应 Phase 7 步骤
+
+#### 2. 收集 PR 参数
+
+展示以下选项给用户选择：
+
+- **目标分支（Base）**：`main` / `master` / `develop` / `其他（手动输入）`
+- **PR 标题**：从 conventional commit 自动生成（如 `feat: add todo due date field`），可手动修改
+- **PR 描述**：从 change 上下文自动生成模板（见下方模板），可手动修改
+- **Draft PR**：`否（推荐）` / `是`
+
+**PR Body 模板**：
+
+```markdown
+## Summary
+
+<从 proposal.md 自动提取的变更摘要>
+
+## Changes
+
+- <变更项 1>
+- <变更项 2>
+
+## Verification
+
+- [ ] Unit tests passed
+- [ ] Integration tests passed (if applicable)
+- [ ] E2E tests passed (if applicable)
+- [ ] Verify passed
+
+## Related
+
+- Change: `<change-name>`
+- Branch: `<branch-name>`
+
+🤖 Generated with [opsx-dev-pipeline](https://github.com/ZhaoYis/My-Skills)
+```
+
+#### 3. 创建 PR
+
+```bash
+gh pr create \
+  --base "<target-branch>" \
+  --head "$(git branch --show-current)" \
+  --title "<pr-title>" \
+  --body "<pr-body>"
+```
+
+若需要 Draft PR：
+```bash
+gh pr create --draft \
+  --base "<target-branch>" \
+  --head "$(git branch --show-current)" \
+  --title "<pr-title>" \
+  --body "<pr-body>"
+```
+
+#### 4. 处理结果
+
+**成功**：
+1. 记录 PR URL 和 PR Number
+2. 更新 `openspec/runtime-state.yaml`：
+   ```yaml
+   current_phase: phase7_pr_created
+   delivery_mode: pr
+   pr:
+     number: <PR_NUMBER>
+     url: <PR_URL>
+     status: open
+     title: <PR_TITLE>
+     base_branch: <TARGET>
+     created_at: <ISO8601>
+   ci:
+     status: pending
+   pending_action:
+     type: wait_ci
+     detail: 等待 CI 完成后继续
+   ```
+3. 输出 PR URL，提示用户可随时回来续接
+
+**失败**：
+- 展示错误输出
+- 提供选项：重试 / 手动创建 / 回退到 push_only 模式 / 终止
+
+#### 5. 降级路径：无 `gh` CLI
+
+若 `gh` CLI 不可用：
+
+1. 检查 `gh --version`
+2. 若失败 → 生成平台无关 PR 模板，输出到对话中
+3. 提示用户在 Web UI 手动创建 PR
+4. 标注 runtime state 为 `pending_action.type: wait_user`
+5. **不阻塞流水线**——用户手动创建后可通知 Agent 续接
+
+### 参考
+
+- `gh pr create` 文档：`gh help pr create`
+- Phase 7 完整流程：`<SKILL_ROOT>/references/phase-7-pr-ci.md`
+- Runtime state schema：`docs/runtime-state-schema.md`

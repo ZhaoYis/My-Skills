@@ -190,6 +190,14 @@ description: 流水线中断与恢复、兼容性与降级（含 AskQuestion fal
 | 合并冲突 | 展示冲突文件，提供中止/theirs/ours/暂停手动解决选项 | Phase 6 Step 20 |
 | openspec 命令执行失败或返回非预期格式 | 展示错误输出；询问（首选 AskQuestion；否则编号选项）：重试 / 跳过当前步骤 / 终止流程 | 当前步骤 |
 | openspec 命令超时（>30s 无响应） | 终止命令，提示可能原因（网络、配置），提供重试或终止选项 | 当前步骤 |
+| `gh` CLI 不可用（PR 模式） | 输出平台无关 PR 模板（title/body/base/head），提示用户在 Web UI 手动创建。将 runtime state 标记为 `pending_action.type: wait_user` | Phase 7 步骤 23 |
+| PR 创建失败（`gh pr create` 非零退出） | 展示错误输出，提供重试 / 手动创建 / 回退到 push_only 模式 / 终止流程 | Phase 7 步骤 23 |
+| PR 已存在（同分支已有 open PR） | 读取已有 PR 信息，更新 runtime state，续接到步骤 24（CI 等待） | Phase 7 步骤 24 |
+| 无法获取 CI 数据（网络/权限/gh 异常） | 降级为人工日志模式——请用户粘贴 CI 输出或截图 | Phase 7 步骤 24 |
+| CI 持续 pending（超过预期时间） | 提示用户检查 CI 队列状态或手动触发，提供继续等待 / 人工判断 / 终止流程 | Phase 7 步骤 24 |
+| `gh pr merge` 失败（conflict/base 过期） | 提示更新分支：`git pull origin <base>` → `git push`。若冲突：展示冲突文件，回到手动解决路径 | Phase 7 步骤 26 |
+| CI 修复回路达到 2 轮上限 | 强制暂停并提示人工介入；展示所有失败的 checks 和历史修复尝试 | Phase 7 步骤 25 |
+| delivery_mode 在已有 runtime state 中与当前 DP4 选择冲突 | 以 runtime state 为准（续接场景优先）。若用户明确要更改模式，需在 AskQuestion 中确认后更新 runtime state | Phase 6 入口 |
 
 ### 3.2 决策点总览
 

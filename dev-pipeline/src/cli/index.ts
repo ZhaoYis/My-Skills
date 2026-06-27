@@ -65,6 +65,7 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--json', 'Print doctor report as JSON')
     .option('--history', 'Persist a health snapshot and report score trend vs the previous snapshot')
     .option('--stale-days <days>', 'Days after which a knowledge file is considered stale (default 90)')
+    .option('--stack', 'Only validate the stack profile in openspec/config.yaml')
     .option(...dirOption)
     .action(async (options) => {
       let staleDays: number | undefined;
@@ -77,7 +78,8 @@ export async function runCli(argv: string[]): Promise<void> {
 
       const status = await runDoctorCommand(options.dir, Boolean(options.json), {
         history: Boolean(options.history),
-        staleDays
+        staleDays,
+        stackOnly: Boolean(options.stack),
       });
 
       if (status === 'fail') {

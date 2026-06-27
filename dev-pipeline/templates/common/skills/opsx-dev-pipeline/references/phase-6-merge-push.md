@@ -1,12 +1,42 @@
 ---
 name: phase-6-merge-push
-description: 全局步骤 17–22（预提交 5a/5b、提交决策点 5、推送 5c、合并决策点 6、合并后、最终摘要）。须先完成 phase-5-unit-tests.md 步骤 16 与 phase-4-archive.md 步骤 12–16；步骤 22 后主干结束。
+description: 全局步骤 17–22（预提交 5a/5b、提交决策点 5、推送 5c、合并决策点 6、合并后、最终摘要）。须先完成 phase-5-unit-tests.md 步骤 16 与 phase-4-archive.md 步骤 12–16；步骤 22 后主干结束。支持三种交付模式：push_only / local_merge / pr。
 compatibility: 需要 git、可访问的 remote（推送/拉取）；Cursor 中推荐 AskQuestion。
 ---
 
 ## Phase 6: 提交合并推送 (Merge & Push)
 
 本 Phase 对应全局 **步骤 17–22**。须先完成 `phase-5-unit-tests.md` **步骤 16** 与 `phase-4-archive.md` **步骤 12–16**。
+
+---
+
+### 交付模式分发
+
+在进入步骤 17 之前，必须先确定当前交付模式。交付模式的优先级：
+
+1. 若 `openspec/runtime-state.yaml` 已存在且包含 `delivery_mode` → 以该值为准（续接场景）
+2. 否则，以用户在 **决策点 4** 中的选择为准
+3. 若两者均未设定 → **AskQuestion** 请用户选择
+
+> **互斥规则**（强制）：
+> - PR 模式下，Phase 6 **步骤 20（本地 merge）必须被跳过**
+> - 本地合并模式下，不得为同一变更执行 `gh pr create` + `gh pr merge`
+> - push_only 模式下，步骤 20–21 全部跳过
+> - 模式选择写入 `openspec/runtime-state.yaml` → `delivery_mode` 后立即生效
+
+**模式分发逻辑**：
+
+```
+读取 delivery_mode
+├── push_only    → 执行步骤 17–19 → 步骤 22（最终摘要）。跳过步骤 20–21。
+├── local_merge  → 执行步骤 17–22（完整现有流程，与原有行为一致）
+└── pr           → 执行步骤 17–19 → 跳转到 Phase 7（phase-7-pr-ci.md）。
+                   步骤 20–21 在 PR 模式下被禁止，步骤 22 由 Phase 7 中的对应步骤提供。
+```
+
+> 恢复续接：若 runtime state 显示 `current_phase: phase7_*`（PR 已创建/CI 等待中/CI 分诊中），从 Phase 7 恢复，不重新进入 Phase 6。
+
+---
 
 ### 步骤 17：预提交检查
 
@@ -98,7 +128,9 @@ git push origin <current-branch>
 
 ### 步骤 20：[决策点 6] 合并分支
 
-**前提**：仅当用户在 **决策点 4** 选择「提交代码并合并」时执行本步骤。
+**前提**：仅当 `delivery_mode = local_merge` 且用户在 **决策点 4** 选择「提交代码并合并」时执行本步骤。
+
+**PR 模式下禁止**：若 `delivery_mode = pr`，本步骤不得执行。PR 模式下的合并操作由 Phase 7（`phase-7-pr-ci.md`）中的 `gh pr merge` 处理。
 
 #### 合并前自检（对齐内联合并流程）
 
@@ -173,3 +205,7 @@ git checkout <source-branch>
 - 各阶段状态表（提案/应用/审查/归档/**单元测试**/提交/合并）
 - **决策点 4b** 选择（需要单测 / 跳过）及若适用时的测试命令与结果概要
 - 提交信息和变更统计（文件数、新增行、删除行）
+- **交付模式**与下一动作：
+  - `push_only` → 流水线完成
+  - `local_merge` → 流水线完成（已合并到目标分支）
+  - `pr` → 引导用户进入 Phase 7（`phase-7-pr-ci.md`），或提示 PR 已创建/CI 状态/合并完成

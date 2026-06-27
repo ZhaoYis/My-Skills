@@ -45,6 +45,9 @@ npx opsx-dev-pipeline init --tool claude --yes --feature prototype
 
 # 优先使用代码图谱 / LSP 等结构化检索（默认关闭）
 npx opsx-dev-pipeline init --tool claude --yes --feature structural-analysis-hint
+
+# PR 模式：创建 Pull Request + CI 闭环
+npx opsx-dev-pipeline init --tool claude --yes --feature opsx-pr --feature opsx-ci-triage
 ```
 
 ## Supported AI Tools
@@ -77,9 +80,11 @@ npx opsx-dev-pipeline list-tools --json
 | 2   | `opsx-analysis`     | skill | 基于知识库与仓库上下文做需求分析，输出结构化分析结果                             | 产出喂给 design / pipeline                    |
 | 3   | `opsx-clarify`      | skill | 模糊需求 → 带优先级的澄清问题清单（可对外分享）                              | 与 analysis 内澄清分工：面向干系人                    |
 | 4   | `opsx-design`       | skill | 设计文档撰写 + 质量门禁（相关性、影响面、验证断言、一任务一文件）                     | 验证断言字段由 `opsx-verify` 消费                  |
-| 5   | `opsx-dev-pipeline` | skill | OpenSpec + Git 需求开发全流程（提案 → 应用 → 审查 → 归档 → 单测 → 推送/合并） | **门禁权威**；何时必须 design / verify 以各 Phase 为准 |
+| 5   | `opsx-dev-pipeline` | skill | OpenSpec + Git 需求开发全流程（提案 → 应用 → 审查 → 单测 → 归档 → 推送/合并 → PR/CI） | **门禁权威**；Phase 0–7；支持 push_only / local_merge / pr 三种交付模式 |
 | 6   | `opsx-verify`       | skill | 语言无关验证：解析目标 → 构建/启动 → 冒烟/契约/数据校验 → 回归                  | 能力库；Pipeline Phase 4 可加载                  |
 | 7   | `opsx-health`       | skill | 知识库健康巡检：复用 `doctor` 产出报告与 P0–P3 修复建议                   | 对话内包装，不重复 doctor 规则                       |
+| —   | `opsx-pr`           | skill | 创建 GitHub Pull Request（gh CLI）；不可用时降级输出 PR 模板              | **可选**，PR 模式专用；`--feature opsx-pr` 开启      |
+| —   | `opsx-ci-triage`    | skill | CI 结果消费与失败分诊（code/flaky/infra/config/unknown）               | **可选**，PR 模式专用；`--feature opsx-ci-triage` 开启 |
 | —   | `git-code-review`   | skill | 面向当前分支变更的 Git 审查，结合 `openspec/project.md`              | Pipeline Phase 3 审查时可复用                   |
 | —   | `git-commit-push`   | skill | 提交并推送，含分支同步与敏感信息检查                                     | Pipeline Phase 6 收尾时可复用                   |
 | —   | `git-merge-branch`  | skill | 按策略合并到目标分支并处理收尾                                        | Pipeline Phase 6 合并时可复用                   |
@@ -149,10 +154,10 @@ flowchart TD
     P1["Phase 1 提案 Propose"]
     P2["Phase 2 应用 Apply"]
     P3["Phase 3 审查 Review<br/>↳ git-code-review"]
-    P4["Phase 4 归档 Archive<br/>↳ opsx-verify 门禁"]
     P5["Phase 5 单测门禁"]
+    P4["Phase 4 归档 Archive<br/>↳ opsx-verify 门禁"]
     P6["Phase 6 提交 / 推送 / 合并<br/>↳ git-commit-push · git-merge-branch"]
-    P0 --> P1 --> P2 --> P3 --> P4 --> P5 --> P6
+    P0 --> P1 --> P2 --> P3 --> P5 --> P4 --> P6
   end
 
   PIPELINE["进入 opsx-dev-pipeline"] --> P0
@@ -161,7 +166,11 @@ flowchart TD
   P4 -->|验证未过| VFIX["opsx-verify 失败回路"]
   VFIX --> P2
 
-  P6 --> DONE(["交付完成"])
+  P6 --> MODE{"交付模式?"}
+  MODE -->|本地合并| DONE(["交付完成"])
+  MODE -->|仅推送| DONE
+  MODE -->|PR 模式| PR["Phase 7 PR / CI 闭环<br/>↳ opsx-pr · opsx-ci-triage"]
+  PR --> DONE
   DONE -.-> LEARN
 
   subgraph adhoc ["按需独立调用"]

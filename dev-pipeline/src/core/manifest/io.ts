@@ -15,7 +15,7 @@ const manifestSchema = z.object({
   schemaVersion: z.number().default(1),
   projectName: z.string(),
   tool: z.enum(['claude', 'cursor', 'codex', 'generic']),
-  features: z.array(z.enum(['base', 'skills', 'commands', 'docs', 'prototype', 'structural-analysis-hint'])),
+  features: z.array(z.enum(['base', 'skills', 'commands', 'docs', 'prototype', 'structural-analysis-hint', 'opsx-pr', 'opsx-ci-triage'])),
   templateVersion: z.string().default(TEMPLATE_VERSION),
   packageName: z.string().default(PACKAGE_NAME),
   managedAssets: z.array(z.object({

@@ -1,0 +1,78 @@
+# Stack Profile 完整示例
+# 基于 fullstack-todo 项目 (Express + React)
+# 此文件展示 openspec/config.yaml 中 stack 段的标准写法
+
+stack:
+  id: express-react
+  languages:
+    - typescript
+    - sql
+
+  services:
+    - name: backend
+      path: backend
+      dev:
+        command: npm run dev
+        cwd: backend
+      test:
+        command: npm test
+        cwd: backend
+        required: true
+      integration:
+        command: npm run test:integration
+        cwd: backend
+        required: false
+        depends_on:
+          - db
+      e2e: null  # 后端无独立 E2E 测试
+
+    - name: frontend
+      path: frontend
+      dev:
+        command: npm run dev
+        cwd: frontend
+      test:
+        command: npm test
+        cwd: frontend
+        required: true
+      integration: null
+      e2e:
+        command: npm run test:e2e
+        cwd: frontend
+        required: false
+        depends_on:
+          - backend
+
+  infra:
+    docker:
+      command: docker compose up -d
+      cwd: .
+    db: postgresql
+    migrate:
+      command: npx prisma migrate dev
+      cwd: backend
+    healthCheck:
+      command: curl -f http://localhost:3001/api/health
+      cwd: .
+
+  verify:
+    build:
+      command: ./scripts/build.sh
+      cwd: .
+      required: true
+    smoke:
+      command: curl -f http://localhost:3001/api/health
+      cwd: .
+      required: true
+    contract:
+      command: npm run contract:test
+      cwd: .
+      required: false
+
+  deploy:
+    staging:
+      command: ./scripts/deploy-staging.sh
+      cwd: .
+    production:
+      command: ./scripts/deploy-prod.sh
+      cwd: .

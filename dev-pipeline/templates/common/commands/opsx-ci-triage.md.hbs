@@ -1,0 +1,21 @@
+# opsx-ci-triage
+
+消费 CI 结果并对失败进行分类和修复建议。由 `opsx-dev-pipeline` Phase 7 在 PR 模式下调用，也可独立使用。
+
+## 使用方式
+
+```
+/opsx-ci-triage <PR_NUMBER>
+```
+
+## 推荐流程
+
+1. 读取 skill 定义：`{{skillsDir}}/opsx-ci-triage/SKILL.md`
+2. 获取 CI checks 结果：`gh pr checks <PR_NUMBER>`
+3. 分类失败：code / flaky / infra / config / unknown
+4. 展示分诊报告和建议下一步动作
+5. 按用户选择进入修复回路或重试
+
+## 降级
+
+若 `gh` 不可用或无法获取 CI 数据，降级为人工日志模式——用户粘贴 CI 输出。
