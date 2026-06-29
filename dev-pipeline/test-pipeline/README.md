@@ -6,20 +6,20 @@
 
 ```
 Test Scenario (vitest)
-  → EnvironmentFactory: 创建临时全栈项目
+  → EnvironmentFactory: 创建临时全栈项目 (git init + openspec init + pipeline init)
   → PipelineAgentOrchestrator: 按序启动 Agent 执行各阶段
-    ├─ opsx-learn
-    ├─ opsx-analysis
-    ├─ opsx-design
-    ├─ opsx-dev-pipeline Phase 0 (Entrance)
-    ├─ opsx-dev-pipeline Phase 1 (Propose)
-    ├─ opsx-dev-pipeline Phase 2 (Apply)
-    ├─ opsx-dev-pipeline Phase 3 (Review)
-    ├─ opsx-dev-pipeline Phase 4 (Archive)
-    ├─ opsx-dev-pipeline Phase 5 (Unit Tests)
-    ├─ opsx-dev-pipeline Phase 6 (Merge & Push)
-    ├─ opsx-verify
-    └─ opsx-health
+    ├─ opsx-learn — 知识沉淀到 .knowledge/
+    ├─ opsx-analysis — 结构化需求分析
+    ├─ opsx-design — 设计文档 + 质量门禁
+    ├─ Phase 0 (Entrance) — 环境预检 + Schema 检测
+    ├─ Phase 1 (Propose) — 创建 change + proposal/tasks/specs
+    ├─ Phase 2 (Apply) — 逐任务实现 + self-review
+    ├─ Phase 3 (Review) — 多维代码审查
+    ├─ Phase 4 (Archive) — 验证 + 归档 + 知识沉淀
+    ├─ Phase 5 (Unit Tests) — 单元测试门禁
+    ├─ Phase 6 (Merge & Push) — commit + push + merge
+    ├─ opsx-verify — 冒烟/契约/回归验证
+    └─ opsx-health — 知识库健康巡检
   → PhaseValidator: 验证每个阶段产物
   → ReportGenerator: 生成 JSON + Markdown 报告
 ```
@@ -61,10 +61,32 @@ test-pipeline/reports/
 
 ## 测试场景
 
-| 分类 | 场景 | 描述 |
-|------|------|------|
-| happy-path | fullstack-todo-full-flow | 完整交付流程 |
-| happy-path | fullstack-todo-simple-feature | 简单特性（只改后端） |
-| error-recovery | missing-knowledge | 缺少知识库时的降级 |
-| error-recovery | archive-pending-tasks | 未完成任务归档 |
-| schema-variations | custom-fullstack-schema | 自定义 backend+frontend schema |
+| 分类 | 场景文件 | 描述 | 测试数 |
+|------|---------|------|--------|
+| happy-path | `fullstack-todo-full-flow.test.ts` | 完整 12 阶段交付流程框架验证 | 17 |
+| happy-path | `fullstack-todo-simple-feature.test.ts` | 简单后端特性 (只改 API) | 10 |
+| pr-mode | `pr-delivery-flow.test.ts` | PR/CI 交付模式基础设施验收 | 12 |
+| error-recovery | `missing-openspec.test.ts` | 缺失知识库/OpenSpec 时的降级处理 | 3 |
+| error-recovery | `archive-with-pending-tasks.test.ts` | 未完成任务归档时的阻断与恢复 | 7 |
+| schema-variations | `custom-backend-schema.test.ts` | 自定义 backend-only schema | 4 |
+| schema-variations | `custom-fullstack-schema.test.ts` | 自定义 backend+frontend 多栈 schema | 8 |
+
+**总计: 7 个场景, 59 个测试** (运行 `npm test` 全部通过)
+
+## 报告示例
+
+```json
+{
+  "meta": {
+    "scenarioName": "fullstack-todo-framework-verification",
+    "sampleProject": "fullstack-todo",
+    "overallStatus": "pass",
+    "schema": "default"
+  },
+  "summary": {
+    "totalPhases": 12,
+    "passedPhases": 12,
+    "overallScore": 100
+  }
+}
+```
