@@ -178,7 +178,7 @@ Review specified files or code snippets against project conventions and generate
    **CRITICAL: 不需要询问用户，直接保存。**
 
    a. 如果 `openspec/review/` 目录不存在，先用 Shell 创建 `mkdir -p openspec/review`
-   b. 使用 Write 工具将报告写入 `openspec/review/YYYY-MM-DD-HH:mm-file-review.md`（文件名中的时间使用当前时间）
+   b. 使用 Write 工具将报告写入 `openspec/review/YYYY-MM-DD-HH-mm-file-review.md`（文件名中的时间使用当前时间）
 
    **Report structure (中文模板):**
    ```markdown
@@ -247,7 +247,7 @@ Review specified files or code snippets against project conventions and generate
    **在同一条消息中完成以下全部内容：**
 
    a. **输出完整报告内容**到对话（与 Step 5 保存到文件的内容相同）
-   b. **在报告末尾注明**：`> 报告已保存到 openspec/review/YYYY-MM-DD-HH:mm-file-review.md`
+   b. **在报告末尾注明**：`> 报告已保存到 openspec/review/YYYY-MM-DD-HH-mm-file-review.md`
    c. **如果发现严重或重要问题**，在报告输出之后使用 **AskUserQuestion tool** 询问：
       > "审查发现 X 个严重问题和 Y 个重要问题。是否需要生成 OpenSpec 修复提案？"
 
@@ -301,7 +301,7 @@ Review specified files or code snippets against project conventions and generate
 
 **审查目标:** <file-path> / 代码片段
 **规范基准:** openspec/project.md
-**报告文件:** openspec/review/YYYY-MM-DD-HH:mm-file-review.md
+**报告文件:** openspec/review/YYYY-MM-DD-HH-mm-file-review.md
 
 ### 问题统计
 
@@ -323,7 +323,7 @@ Review specified files or code snippets against project conventions and generate
 
 **审查目标:** <file-path> / 代码片段
 **规范基准:** openspec/project.md
-**报告文件:** openspec/review/YYYY-MM-DD-HH:mm-file-review.md
+**报告文件:** openspec/review/YYYY-MM-DD-HH-mm-file-review.md
 
 ### 问题统计
 

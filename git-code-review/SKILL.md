@@ -220,8 +220,8 @@ Review uncommitted or committed changes in the current branch and generate a cod
    **CRITICAL: 不需要询问用户，直接保存。**
 
    a. 用 Shell 创建目录（如不存在）：`mkdir -p openspec/review`
-   b. 使用 Write 工具将报告写入 `openspec/review/YYYY-MM-DD-HH:mm-<branch-name>-review.md`
-   c. 如果同名文件已存在，使用 `-N` 后缀：`YYYY-MM-DD-HH:mm-<branch-name>-review-N.md`
+   b. 使用 Write 工具将报告写入 `openspec/review/YYYY-MM-DD-HH-mm-<branch-name>-review.md`
+   c. 如果同名文件已存在，使用 `-N` 后缀：`YYYY-MM-DD-HH-mm-<branch-name>-review-N.md`
 
    **Report structure (中文模板):**
    ```markdown
@@ -307,7 +307,7 @@ Review uncommitted or committed changes in the current branch and generate a cod
    **在同一条消息中完成以下全部内容：**
 
    a. **输出完整报告内容**到对话（与 Step 7 保存到文件的内容相同）
-   b. **在报告末尾注明**：`> 报告已保存到 openspec/review/YYYY-MM-DD-HH:mm-<branch-name>-review.md`
+   b. **在报告末尾注明**：`> 报告已保存到 openspec/review/YYYY-MM-DD-HH-mm-<branch-name>-review.md`
    c. **如果发现严重或重要问题**，在报告输出之后使用 **AskUserQuestion tool** 询问：
       > "审查发现 X 个严重问题和 Y 个重要问题。是否需要生成 OpenSpec 修复提案？"
 
@@ -366,7 +366,7 @@ Review uncommitted or committed changes in the current branch and generate a cod
 **分支:** <branch-name>
 **审查范围:** <scope>
 **规范基准:** openspec/project.md
-**报告路径:** openspec/review/YYYY-MM-DD-HH:mm-<branch-name>-review.md
+**报告路径:** openspec/review/YYYY-MM-DD-HH-mm-<branch-name>-review.md
 
 ### 问题统计
 
@@ -408,7 +408,7 @@ Review uncommitted or committed changes in the current branch and generate a cod
 
 **提案名称:** fix-<issue-name>
 **提案路径:** openspec/changes/fix-<issue-name>/
-**提案摘要已追加到报告文件中:** openspec/review/YYYY-MM-DD-HH:mm-<branch-name>-review.md
+**提案摘要已追加到报告文件中:** openspec/review/YYYY-MM-DD-HH-mm-<branch-name>-review.md
 
 ### 提案包含制品
 - `proposal.md` - 提案文档
