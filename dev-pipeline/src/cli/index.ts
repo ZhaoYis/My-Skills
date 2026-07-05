@@ -89,10 +89,16 @@ export async function runCli(argv: string[]): Promise<void> {
     });
 
   cli
-    .command('hermes <action>', 'Manage Hermes runtime state and skill memory')
+    .command('hermes <action>', 'Manage Hermes runtime state and drive agents')
     .option('--json', 'Output as JSON')
     .option('--phase <phase>', 'Filter by pipeline phase')
     .option('--category <category>', 'Filter by skill memory category')
+    .option('--agent-id <agentId>', 'Run a specific agent by ID')
+    .option('--dry-run', 'Preview without making changes')
+    .option('--single-step', 'Execute only one step')
+    .option('--yes', 'Skip interactive prompts')
+    .option('--force', 'Force overwrite when allowed')
+    .option('--strategy <strategy>', 'Agent selection strategy (first-available | best-success-rate | explicit)')
     .option(...dirOption)
     .action(async (action, options) => {
       await runHermesCommand(action, options);

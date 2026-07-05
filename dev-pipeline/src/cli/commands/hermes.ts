@@ -1,6 +1,8 @@
 import pc from 'picocolors';
 import {
   readHermesState,
+  createInitialState,
+  writeHermesState,
 } from '../../core/hermes/runtime-state.js';
 import {
   findSimilarDecisions,
@@ -15,12 +17,20 @@ import {
   getRecoveryBehavior,
   isTerminal,
 } from '../../core/hermes/state-machine.js';
+import { HermesOrchestrator } from '../../core/hermes/orchestrator.js';
 import type {
   DecideResult,
   HermesState,
   LearningResult,
   PipelinePhase,
 } from '../../core/hermes/types.js';
+import type {
+  AgentDefinition,
+  AgentSelectionStrategy,
+  OrchestratorOptions,
+  RunResult,
+  StepResult,
+} from '../../core/hermes/agents/types.js';
 
 // ── Entry Point ──
 
@@ -29,6 +39,18 @@ export interface HermesCommandOptions {
   json?: boolean;
   phase?: string;
   category?: string;
+  /** When running a specific agent */
+  agentId?: string;
+  /** Dry run mode for agents */
+  dryRun?: boolean;
+  /** Run single step */
+  singleStep?: boolean;
+  /** Auto-confirm */
+  yes?: boolean;
+  /** Force mode */
+  force?: boolean;
+  /** Strategy for agent selection */
+  strategy?: string;
 }
 
 export async function runHermesCommand(
@@ -42,8 +64,6 @@ export async function runHermesCommand(
       await showStatus(dir, Boolean(options.json));
       break;
     case 'decide':
-      // point-id is passed as part of action for cac subcommand routing
-      // Actually, cac passes the point-id differently. Let's handle via positional args
       await runDecide(dir, Boolean(options.json));
       break;
     case 'learn':
@@ -52,9 +72,19 @@ export async function runHermesCommand(
     case 'memory':
       await showMemory(dir, Boolean(options.json), options.category);
       break;
+    case 'run':
+      await runOrchestrate(dir, options);
+      break;
+    case 'agent':
+      await runSingleAgent(dir, options);
+      break;
+    case 'agents':
+      await listAgents();
+      break;
+
     default:
       console.error(pc.red(`Unknown hermes action: ${action}`));
-      console.error(pc.dim('Available actions: status, decide, learn, memory'));
+      console.error(pc.dim('Available actions: status, decide, learn, memory, run, agent, agents'));
       process.exitCode = 1;
   }
 }
@@ -359,7 +389,150 @@ async function showMemory(
   }
 }
 
-// ── Helpers ──
+// ── Orchestrate (run) ──
+
+async function runOrchestrate(
+  dir: string,
+  options: HermesCommandOptions,
+): Promise<void> {
+  const opts: OrchestratorOptions = {
+    dir,
+    startPhase: options.phase as PipelinePhase | undefined,
+    agentId: options.agentId,
+    singleStep: options.singleStep,
+    yes: options.yes,
+    strategy: options.strategy as AgentSelectionStrategy | undefined,
+  };
+
+  console.log(pc.bold('Hermes Orchestrator'));
+  console.log(pc.dim('─────────────────'));
+
+  if (options.singleStep) {
+    console.log(pc.dim('Mode: single step'));
+  } else if (options.agentId) {
+    console.log(pc.dim(`Running specific agent: ${options.agentId}`));
+  } else {
+    console.log(pc.dim('Mode: full pipeline run'));
+  }
+
+  const orchestrator = new HermesOrchestrator(opts);
+
+  if (options.json) {
+    const result = await orchestrator.run();
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+
+  // Human-readable output — stream steps
+  if (options.singleStep || options.agentId) {
+    const state = await readHermesState(dir);
+    if (!state) {
+      console.log(pc.red('No Hermes runtime state found.'));
+      return;
+    }
+    const step = await (orchestrator as any).step(state) as StepResult;
+    printStepHuman(step);
+  } else {
+    const result = await orchestrator.run();
+    printRunResultHuman(result);
+  }
+}
+
+// ── Run Single Agent ──
+
+async function runSingleAgent(
+  dir: string,
+  options: HermesCommandOptions,
+): Promise<void> {
+  const agentId = options.agentId;
+  if (!agentId) {
+    console.error(pc.red('Missing agent ID. Usage: hermes agent <agent-id>'));
+    process.exitCode = 1;
+    return;
+  }
+
+  const orchestrator = new HermesOrchestrator({
+    dir,
+    agentId,
+    yes: options.yes,
+  });
+
+  const result = await orchestrator.run();
+
+  if (options.json) {
+    console.log(JSON.stringify(result, null, 2));
+  } else {
+    printRunResultHuman(result);
+  }
+}
+
+// ── List Agents ──
+
+async function listAgents(): Promise<void> {
+  const orchestrator = new HermesOrchestrator();
+  const agents = orchestrator.getRegistry().getAll();
+
+  console.log(pc.bold('Registered Hermes Agents'));
+  console.log(pc.dim('──────────────────────'));
+
+  const cliAgents = agents.filter((a: AgentDefinition) => a.category === 'cli');
+  const pipelineAgents = agents.filter((a: AgentDefinition) => a.category === 'pipeline');
+
+  console.log(`\n${pc.bold('CLI Utility Agents')} (${cliAgents.length}):`);
+  for (const agent of cliAgents) {
+    console.log(`  ${pc.green(agent.id)}: ${agent.name}`);
+    console.log(`    ${pc.dim(agent.description)}`);
+    console.log(`    Phases: ${agent.phases.join(', ')}`);
+  }
+
+  console.log(`\n${pc.bold('Pipeline Phase Agents')} (${pipelineAgents.length}):`);
+  for (const agent of pipelineAgents) {
+    console.log(`  ${pc.green(agent.id)}: ${agent.name}`);
+    console.log(`    ${pc.dim(agent.description)}`);
+    console.log(`    Phases: ${agent.phases.length} phases`);
+  }
+}
+
+// ── Print Helpers ──
+
+function printStepHuman(step: StepResult): void {
+  const icon = step.execution.result.success ? pc.green('✓') : pc.red('✗');
+  console.log(
+    `\n  ${icon} [${step.execution.phase}] ${step.execution.agentId}`,
+  );
+  console.log(`    Result: ${JSON.stringify(step.execution.result.output)}`);
+  if (step.execution.result.error) {
+    console.log(`    Error: ${pc.red(step.execution.result.error)}`);
+  }
+  console.log(`    Next phase: ${pc.blue(step.newState.currentPhase)}`);
+  if (step.isTerminal) {
+    console.log(`    ${pc.dim('(terminal)')}`);
+  }
+}
+
+function printRunResultHuman(result: RunResult): void {
+  console.log(`\n${pc.bold('Run Summary')}`);
+  console.log(pc.dim('───────────'));
+  console.log(`  Steps:     ${result.totalSteps}`);
+  console.log(
+    `  Status:    ${result.completed ? pc.green('completed') : pc.yellow('incomplete')}`,
+  );
+  console.log(`  ${pc.dim(result.summary)}`);
+
+  if (result.steps.length > 0) {
+    console.log(`\n${pc.bold('Step Details:')}`);
+    for (const step of result.steps) {
+      const icon = step.execution.result.success ? pc.green('✓') : pc.red('✗');
+      const decisions = step.execution.result.decisions.length;
+      console.log(
+        `  ${icon} [${step.execution.phase}] ${step.execution.agentId} — ${decisions} decisions, ${step.execution.result.toolCalls} tool calls`,
+      );
+      if (step.execution.result.error) {
+        console.log(`    ${pc.red('Error:')} ${step.execution.result.error}`);
+      }
+    }
+  }
+}
 
 function formatTime(iso: string): string {
   try {
