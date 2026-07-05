@@ -15,3 +15,6 @@ export const MANIFEST_PACKAGE_JSON_KEY = 'opsxDevPipeline';
 export const MANIFEST_FILE = 'opsx-dev-pipeline.json';
 export const LEGACY_MANIFEST_FILE = 'dev-pipeline.json';
 export const TEMPLATE_VERSION = PACKAGE_VERSION;
+export const HERMES_RUNTIME_FILE = 'openspec/hermes-runtime.json';
+export const HERMES_DECISIONS_FILE = 'openspec/hermes-decisions.jsonl';
+export const HERMES_SKILL_MEMORY_FILE = '.knowledge/hermes-skill-memory.json';

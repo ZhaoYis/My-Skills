@@ -5,6 +5,7 @@ import { runInitCommand } from './commands/init.js';
 import { runListToolsCommand } from './commands/list-tools.js';
 import { runSyncCommand } from './commands/sync.js';
 import { runUninstallCommand } from './commands/uninstall.js';
+import { runHermesCommand } from './commands/hermes.js';
 import { runUpgradeCommand } from './commands/upgrade.js';
 
 export async function runCli(argv: string[]): Promise<void> {
@@ -85,6 +86,16 @@ export async function runCli(argv: string[]): Promise<void> {
       if (status === 'fail') {
         process.exitCode = 1;
       }
+    });
+
+  cli
+    .command('hermes <action>', 'Manage Hermes runtime state and skill memory')
+    .option('--json', 'Output as JSON')
+    .option('--phase <phase>', 'Filter by pipeline phase')
+    .option('--category <category>', 'Filter by skill memory category')
+    .option(...dirOption)
+    .action(async (action, options) => {
+      await runHermesCommand(action, options);
     });
 
   cli.help();
