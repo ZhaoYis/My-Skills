@@ -79,6 +79,18 @@ export async function collectInputs(
         name: 'enableStructuralAnalysisHint',
         message: 'Enable structural-analysis-hint (prefer code graph / LSP over plain text search)?',
         initial: features.includes('structural-analysis-hint')
+      },
+      {
+        type: 'confirm',
+        name: 'enablePr',
+        message: 'Enable opsx-pr (create Pull Requests via gh CLI, PR delivery mode)?',
+        initial: features.includes('opsx-pr')
+      },
+      {
+        type: 'confirm',
+        name: 'enableCiTriage',
+        message: 'Enable opsx-ci-triage (CI failure classification: code/flaky/infra/config)?',
+        initial: features.includes('opsx-ci-triage')
       }
     ],
     { onCancel: () => process.exit(1) }
@@ -88,7 +100,9 @@ export async function collectInputs(
     new Set<FeatureId>([
       ...features,
       ...(response.enablePrototype ? ['prototype' as const] : []),
-      ...(response.enableStructuralAnalysisHint ? ['structural-analysis-hint' as const] : [])
+      ...(response.enableStructuralAnalysisHint ? ['structural-analysis-hint' as const] : []),
+      ...(response.enablePr ? ['opsx-pr' as const] : []),
+      ...(response.enableCiTriage ? ['opsx-ci-triage' as const] : []),
     ])
   );
 
