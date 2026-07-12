@@ -35,7 +35,11 @@
     "test:watch": "vitest",
     "prepublishOnly": "npm run build",
     "pack:check": "npm pack --dry-run",
-    "init:smoke": "tsx src/bin/opsx-dev-pipeline.ts init --tool claude --yes --dry-run"
+    "init:smoke": "tsx src/bin/opsx-dev-pipeline.ts init --tool claude --yes --dry-run",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write ."
   },
   "engines": {
     "node": ">=20"
@@ -49,6 +53,7 @@
     "zod": "^4.0.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.3",
     "@types/fs-extra": "^11.0.4",
     "@types/handlebars": "^4.1.0",
     "@types/node": "^24.0.1",
