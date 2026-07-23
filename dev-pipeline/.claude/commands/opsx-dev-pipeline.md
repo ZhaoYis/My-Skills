@@ -5,7 +5,7 @@ Use this command as the entrypoint for the bundled `opsx-dev-pipeline` skill.
 ## Intent
 
 Drive the full OpenSpec + Git development pipeline through the installed skill at:
-- `{{skillsDir}}/opsx-dev-pipeline/SKILL.md`
+- `.claude/skills/opsx-dev-pipeline/SKILL.md`
 
 ## Flow
 

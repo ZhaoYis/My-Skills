@@ -2,8 +2,6 @@ import path from 'node:path';
 import prompts from 'prompts';
 import {
   ALL_FEATURE_IDS,
-  DEFAULT_FEATURES,
-  OPTIONAL_FEATURES,
   type FeatureId,
   type ToolAdapter,
   type ToolId,
@@ -19,15 +17,12 @@ function resolveFeatures(option: InitOptions['feature']): FeatureId[] {
 
   if (unknown.length > 0) {
     throw new Error(
-      `Unknown feature(s): ${unknown.join(', ')}. Valid optional features: ${OPTIONAL_FEATURES.join(', ')}.`,
+      `Unknown feature(s): ${unknown.join(', ')}. Valid features: ${ALL_FEATURE_IDS.join(', ')}.`,
     );
   }
 
-  const optional = normalized.filter((value): value is FeatureId =>
-    (OPTIONAL_FEATURES as readonly string[]).includes(value),
-  );
-
-  return Array.from(new Set<FeatureId>([...DEFAULT_FEATURES, ...optional]));
+  // All features are default features; no optional features remain
+  return [...ALL_FEATURE_IDS];
 }
 
 export async function collectInputs(
@@ -68,27 +63,13 @@ export async function collectInputs(
         choices: toolChoices,
         initial: toolChoices.findIndex((choice) => choice.value === defaultTool),
       },
-      {
-        type: 'confirm',
-        name: 'enableStructuralAnalysisHint',
-        message:
-          'Enable structural-analysis-hint (prefer code graph / LSP over plain text search)?',
-        initial: features.includes('structural-analysis-hint'),
-      },
     ],
     { onCancel: () => process.exit(1) },
-  );
-
-  const resolvedFeatures = Array.from(
-    new Set<FeatureId>([
-      ...features,
-      ...(response.enableStructuralAnalysisHint ? ['structural-analysis-hint' as const] : []),
-    ]),
   );
 
   return {
     projectName: response.projectName ?? defaultProjectName,
     tool: response.tool ?? defaultTool,
-    features: resolvedFeatures,
+    features,
   };
 }

@@ -73,26 +73,23 @@ const toolExpectations = {
   claude: [
     { path: 'CLAUDE.md', present: true },
     { path: '.claude/skills/opsx-dev-pipeline/SKILL.md', present: true },
-    { path: '.claude/skills/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
-    { path: '.claude/skills/opsx-dev-pipeline/assets/decision-point-index.md', present: true },
     { path: '.claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', present: true },
+    { path: '.claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-archive.sh', present: true },
     { path: '.claude/commands/opsx-dev-pipeline.md', present: true },
   ],
   cursor: [
     { path: '.cursor/rules/opsx-dev-pipeline.mdc', present: true },
     { path: '.cursor/rules/opsx-dev-pipeline/SKILL.md', present: true },
-    { path: '.cursor/rules/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
-    { path: '.cursor/rules/opsx-dev-pipeline/assets/decision-point-index.md', present: true },
     { path: '.cursor/rules/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', present: true },
+    { path: '.cursor/rules/opsx-dev-pipeline/scripts/dev-pipeline-archive.sh', present: true },
     { path: '.cursor/commands/opsx-dev-pipeline.md', present: true },
     { path: '.cursor/commands/README.md', present: true },
   ],
   codex: [
     { path: '.codex/prompts/opsx-dev-pipeline.md', present: true },
     { path: '.codex/prompts/opsx-dev-pipeline/SKILL.md', present: true },
-    { path: '.codex/prompts/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
-    { path: '.codex/prompts/opsx-dev-pipeline/assets/decision-point-index.md', present: true },
     { path: '.codex/prompts/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', present: true },
+    { path: '.codex/prompts/opsx-dev-pipeline/scripts/dev-pipeline-archive.sh', present: true },
     { path: '.codex/commands/opsx-dev-pipeline.md', present: true },
     { path: '.codex/commands/README.md', present: true },
   ],
@@ -154,57 +151,13 @@ describe('tool matrix', () => {
     }
   });
 
-  it('generates structural-analysis-hint when the feature is enabled', async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-structural-hint-enabled-'));
+  it('default init includes all base features', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-feature-default-'));
     createdDirs.push(dir);
 
-    await runInit({
-      dir,
-      tool: 'claude',
-      yes: true,
-      force: false,
-      dryRun: false,
-      feature: ['structural-analysis-hint'],
-    });
-
-    const skillRoot = path.join(dir, '.claude/skills/opsx-dev-pipeline');
-    expect(await fs.pathExists(path.join(skillRoot, 'assets/structural-analysis-hint.md'))).toBe(
-      true,
-    );
-
-    const skillContent = await fs.readFile(path.join(skillRoot, 'SKILL.md'), 'utf8');
-    expect(skillContent).toContain('structural-analysis-hint.md');
-
-    const manifest = await readManifest(dir);
-    expect(manifest.features).toContain('structural-analysis-hint');
-  });
-
-  it('structural-analysis-hint is the only optional feature', async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-feature-optional-only-'));
-    createdDirs.push(dir);
-
-    // Default init should only have base features
     await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
     const defaultManifest = await readManifest(dir);
-    expect(
-      defaultManifest.features.filter(
-        (f) => f !== 'base' && f !== 'skills' && f !== 'commands' && f !== 'docs',
-      ),
-    ).toEqual([]);
-
-    // structural-analysis-hint can be enabled
-    const dir2 = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-feature-sah-on-'));
-    createdDirs.push(dir2);
-    await runInit({
-      dir: dir2,
-      tool: 'claude',
-      yes: true,
-      force: false,
-      dryRun: false,
-      feature: ['structural-analysis-hint'],
-    });
-    const sahManifest = await readManifest(dir2);
-    expect(sahManifest.features).toContain('structural-analysis-hint');
+    expect(defaultManifest.features.sort()).toEqual(['base', 'commands', 'docs', 'skills']);
   });
 
   it('embeds manifest in package.json when package.json exists', async () => {
@@ -265,46 +218,40 @@ describe('tool matrix', () => {
     expect(payload.manifest.versionCheck.status).toBe('current');
   });
 
-  it('embeds the new pipeline gates and decision points in skill references', async () => {
+  it('embeds the pipeline phases and decision points in SKILL.md', async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-pipeline-gates-'));
     createdDirs.push(dir);
 
     await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
 
     const skillRoot = path.join(dir, '.claude/skills/opsx-dev-pipeline');
-
-    const archive = await fs.readFile(
-      path.join(skillRoot, 'references/phase-4-archive.md'),
-      'utf8',
-    );
-    expect(archive).toContain('步骤 15.5');
-    expect(archive).toContain('决策点 4');
-
-    const apply = await fs.readFile(path.join(skillRoot, 'references/phase-2-apply.md'), 'utf8');
-    expect(apply).toContain('写前复用门禁');
-    expect(apply).toContain('自审查硬门禁');
-    expect(apply).toContain('apply-quality-gate.md');
-
-    const propose = await fs.readFile(
-      path.join(skillRoot, 'references/phase-1-propose.md'),
-      'utf8',
-    );
-    expect(propose).toContain('决策点 1c');
-    expect(propose).toContain('需求理解确认');
-
-    expect(await fs.pathExists(path.join(skillRoot, 'assets/apply-quality-gate.md'))).toBe(true);
-    expect(await fs.pathExists(path.join(skillRoot, 'assets/structural-analysis-hint.md'))).toBe(
-      false,
-    );
-
     const skillContent = await fs.readFile(path.join(skillRoot, 'SKILL.md'), 'utf8');
-    expect(skillContent).not.toContain('structural-analysis-hint.md');
 
-    const decisionIndex = await fs.readFile(
-      path.join(skillRoot, 'assets/decision-point-index.md'),
-      'utf8',
-    );
-    expect(decisionIndex).toContain('| 1c |');
+    // Verify all phases are present
+    for (const phase of ['Phase 0', 'Phase 1', 'Phase 2', 'Phase 3', 'Phase 4', 'Phase 5', 'Phase 6']) {
+      expect(skillContent).toContain(phase);
+    }
+
+    // Verify key decision points
+    expect(skillContent).toContain('决策点 1c');
+    expect(skillContent).toContain('决策点 1');
+    expect(skillContent).toContain('决策点 2');
+    expect(skillContent).toContain('决策点 3');
+    expect(skillContent).toContain('决策点 4');
+    expect(skillContent).toContain('决策点 4b');
+    expect(skillContent).toContain('决策点 5');
+    expect(skillContent).toContain('决策点 6');
+
+    // Verify key content
+    expect(skillContent).toContain('写前复用门禁');
+    expect(skillContent).toContain('准出自审查门禁');
+    expect(skillContent).toContain('需求理解确认');
+    expect(skillContent).toContain('错误处理速查');
+
+    // Verify scripts directory exists with essential scripts
+    const scriptsDir = path.join(skillRoot, 'scripts');
+    expect(await fs.pathExists(path.join(scriptsDir, 'dev-pipeline-preflight.sh'))).toBe(true);
+    expect(await fs.pathExists(path.join(scriptsDir, 'dev-pipeline-archive.sh'))).toBe(true);
   });
 
   it('renders tool display name in retained skills without template variables', async () => {

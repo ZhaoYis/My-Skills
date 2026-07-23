@@ -61,5 +61,76 @@
     "tsx": "^4.20.6",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"
+  },
+  "opsxDevPipeline": {
+    "schemaVersion": 1,
+    "projectName": "dev-pipeline",
+    "tool": "claude",
+    "features": [
+      "base",
+      "skills",
+      "commands",
+      "docs"
+    ],
+    "templateVersion": "0.1.6",
+    "packageName": "opsx-dev-pipeline",
+    "managedAssets": [
+      {
+        "id": "common-readme",
+        "destination": "README.md"
+      },
+      {
+        "id": "common-gitignore",
+        "destination": ".gitignore"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:SKILL.md.hbs",
+        "destination": ".claude/skills/opsx-dev-pipeline/SKILL.md"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-archive.sh",
+        "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-archive.sh"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-change-status.sh",
+        "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-change-status.sh"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-instructions-apply.sh",
+        "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-instructions-apply.sh"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-instructions.sh",
+        "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-instructions.sh"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-list-changes.sh",
+        "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-list-changes.sh"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-new-change.sh",
+        "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-new-change.sh"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-preflight.sh",
+        "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-validate-all.sh",
+        "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-validate-all.sh"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-validate-change.sh",
+        "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-validate-change.sh"
+      },
+      {
+        "id": "opsx-dev-pipeline-command",
+        "destination": ".claude/commands/opsx-dev-pipeline.md"
+      },
+      {
+        "id": "claude-docs",
+        "destination": "CLAUDE.md"
+      }
+    ]
   }
 }

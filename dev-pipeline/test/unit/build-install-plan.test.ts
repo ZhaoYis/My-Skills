@@ -4,7 +4,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { buildInstallPlan } from '../../src/core/init/buildInstallPlan.js';
 import {
-  DEFAULT_FEATURES,
+  ALL_FEATURE_IDS,
   type FeatureId,
   type ToolAdapter,
   type ToolId,
@@ -60,7 +60,7 @@ function createPlanInput(managedAssets?: ManagedAssetRecord[]) {
     targetDir: '/tmp/demo',
     projectName: 'demo',
     tool: 'claude' as const,
-    features: [...DEFAULT_FEATURES],
+    features: [...ALL_FEATURE_IDS],
     dryRun: true,
     force: false,
     mode: 'init' as const,
@@ -83,7 +83,7 @@ describe('buildInstallPlan', () => {
       targetDir: '/tmp/demo',
       projectName: 'demo',
       tool,
-      features: [...DEFAULT_FEATURES],
+      features: [...ALL_FEATURE_IDS],
       dryRun: true,
       force: false,
       mode: 'init',
@@ -108,21 +108,8 @@ describe('buildInstallPlan', () => {
             '/tmp/demo',
             skillsDir,
             'opsx-dev-pipeline',
-            'references',
-            'phase-0-entrance.md',
-          ),
-      ),
-    ).toBe(true);
-    expect(
-      plan.files.some(
-        (file) =>
-          file.destinationPath ===
-          path.join(
-            '/tmp/demo',
-            skillsDir,
-            'opsx-dev-pipeline',
-            'assets',
-            'decision-point-index.md',
+            'scripts',
+            'dev-pipeline-archive.sh',
           ),
       ),
     ).toBe(true);
@@ -231,28 +218,6 @@ describe('buildInstallPlan', () => {
     expect(assetIds).toContain('opsx-dev-pipeline-skill-bundle:SKILL.md.hbs');
     expect(
       assetIds.every((id) => id === 'common-readme' || id.startsWith('opsx-dev-pipeline')),
-    ).toBe(true);
-  });
-
-  it('omits structural-analysis-hint unless the feature is enabled', async () => {
-    const plan = await buildInstallPlan({
-      ...createPlanInput(),
-      features: [...DEFAULT_FEATURES],
-    });
-
-    expect(
-      plan.files.some((file) => file.assetId.endsWith('assets/structural-analysis-hint.md')),
-    ).toBe(false);
-  });
-
-  it('includes structural-analysis-hint when the feature is enabled', async () => {
-    const plan = await buildInstallPlan({
-      ...createPlanInput(),
-      features: [...DEFAULT_FEATURES, 'structural-analysis-hint'],
-    });
-
-    expect(
-      plan.files.some((file) => file.assetId.endsWith('assets/structural-analysis-hint.md')),
     ).toBe(true);
   });
 
