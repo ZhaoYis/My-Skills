@@ -26,7 +26,10 @@ export async function gitInit(cwd: string): Promise<GitResult> {
  * Stage all changes and create a commit.
  * Returns success=false when there is nothing to commit (no error thrown).
  */
-export async function gitCommit(cwd: string, message: string): Promise<GitResult & { success: boolean }> {
+export async function gitCommit(
+  cwd: string,
+  message: string,
+): Promise<GitResult & { success: boolean }> {
   await execFileAsync('git', ['add', '-A'], { cwd });
   try {
     const result = await execFileAsync('git', ['commit', '-m', message], { cwd });
@@ -74,7 +77,11 @@ export async function gitDiffAll(cwd: string): Promise<string> {
 /**
  * Get a list of changed files between two refs.
  */
-export async function gitChangedFiles(cwd: string, from: string = 'HEAD~1', to: string = 'HEAD'): Promise<string[]> {
+export async function gitChangedFiles(
+  cwd: string,
+  from: string = 'HEAD~1',
+  to: string = 'HEAD',
+): Promise<string[]> {
   const result = await execFileAsync('git', ['diff', '--name-only', from, to], { cwd });
   return result.stdout.trim().split('\n').filter(Boolean);
 }

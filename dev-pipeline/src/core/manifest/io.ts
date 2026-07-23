@@ -7,7 +7,7 @@ import {
   MANIFEST_PACKAGE_JSON_KEY,
   PACKAGE_JSON_FILE,
   PACKAGE_NAME,
-  TEMPLATE_VERSION
+  TEMPLATE_VERSION,
 } from '../runtime/meta.js';
 import type { PipelineManifest } from './types.js';
 
@@ -15,13 +15,17 @@ const manifestSchema = z.object({
   schemaVersion: z.number().default(1),
   projectName: z.string(),
   tool: z.enum(['claude', 'cursor', 'codex', 'generic']),
-  features: z.array(z.enum(['base', 'skills', 'commands', 'docs', 'prototype', 'structural-analysis-hint', 'opsx-pr', 'opsx-ci-triage'])),
+  features: z.array(z.enum(['base', 'skills', 'commands', 'docs', 'structural-analysis-hint'])),
   templateVersion: z.string().default(TEMPLATE_VERSION),
   packageName: z.string().default(PACKAGE_NAME),
-  managedAssets: z.array(z.object({
-    id: z.string(),
-    destination: z.string()
-  })).default([])
+  managedAssets: z
+    .array(
+      z.object({
+        id: z.string(),
+        destination: z.string(),
+      }),
+    )
+    .default([]),
 });
 
 export type ManifestStorage = 'package-json' | 'standalone';
@@ -42,19 +46,19 @@ async function removeStandaloneManifestFiles(dir: string): Promise<void> {
       if (await fs.pathExists(filePath)) {
         await fs.remove(filePath);
       }
-    })
+    }),
   );
 }
 
 export async function readManifest(dir: string): Promise<ManifestReadResult | null> {
   const packageJsonPath = path.join(dir, PACKAGE_JSON_FILE);
   if (await fs.pathExists(packageJsonPath)) {
-    const pkg = await fs.readJson(packageJsonPath) as Record<string, unknown>;
+    const pkg = (await fs.readJson(packageJsonPath)) as Record<string, unknown>;
     if (pkg[MANIFEST_PACKAGE_JSON_KEY]) {
       return {
         path: packageJsonPath,
         manifest: manifestSchema.parse(pkg[MANIFEST_PACKAGE_JSON_KEY]),
-        storage: 'package-json'
+        storage: 'package-json',
       };
     }
   }
@@ -65,7 +69,7 @@ export async function readManifest(dir: string): Promise<ManifestReadResult | nu
       return {
         path: filePath,
         manifest: manifestSchema.parse(raw),
-        storage: 'standalone'
+        storage: 'standalone',
       };
     }
   }
@@ -77,7 +81,7 @@ export async function removeManifest(dir: string, storage: ManifestStorage): Pro
   if (storage === 'package-json') {
     const packageJsonPath = path.join(dir, PACKAGE_JSON_FILE);
     if (await fs.pathExists(packageJsonPath)) {
-      const pkg = await fs.readJson(packageJsonPath) as Record<string, unknown>;
+      const pkg = (await fs.readJson(packageJsonPath)) as Record<string, unknown>;
       delete pkg[MANIFEST_PACKAGE_JSON_KEY];
       await fs.writeJson(packageJsonPath, pkg, { spaces: 2 });
     }
@@ -89,7 +93,7 @@ export async function removeManifest(dir: string, storage: ManifestStorage): Pro
 export async function writeManifest(dir: string, manifest: PipelineManifest): Promise<string> {
   const packageJsonPath = path.join(dir, PACKAGE_JSON_FILE);
   if (await fs.pathExists(packageJsonPath)) {
-    const pkg = await fs.readJson(packageJsonPath) as Record<string, unknown>;
+    const pkg = (await fs.readJson(packageJsonPath)) as Record<string, unknown>;
     pkg[MANIFEST_PACKAGE_JSON_KEY] = manifest;
     await fs.writeJson(packageJsonPath, pkg, { spaces: 2 });
     await removeStandaloneManifestFiles(dir);

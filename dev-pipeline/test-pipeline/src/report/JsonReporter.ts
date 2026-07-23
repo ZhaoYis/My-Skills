@@ -29,7 +29,11 @@ export class JsonReporter {
 
     // Update latest symlink
     const latestDir = path.join(this.outputDir, 'latest');
-    try { await fs.remove(latestDir); } catch { /* ignore */ }
+    try {
+      await fs.remove(latestDir);
+    } catch {
+      /* ignore */
+    }
     try {
       await fs.symlink(path.relative(path.dirname(latestDir), reportDir), latestDir, 'dir');
     } catch {
@@ -46,5 +50,8 @@ function formatTimestamp(date: Date): string {
 }
 
 function slugify(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 }

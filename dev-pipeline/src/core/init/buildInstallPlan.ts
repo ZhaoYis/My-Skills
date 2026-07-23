@@ -47,15 +47,17 @@ function indexManagedAssets(managedAssets: ManagedAssetRecord[] | undefined): Ma
 }
 
 function isBundleFileGated(asset: AssetDefinition, entry: string, features: FeatureId[]): boolean {
-  return asset.bundleGatedFiles?.some(
-    (gate) => gate.path === entry && !features.includes(gate.feature)
-  ) ?? false;
+  return (
+    asset.bundleGatedFiles?.some(
+      (gate) => gate.path === entry && !features.includes(gate.feature),
+    ) ?? false
+  );
 }
 
 function isAssetInUpgradeScope(
   asset: AssetDefinition,
   managed: ManagedAssetIndex,
-  allowUpgradeAdoption: boolean
+  allowUpgradeAdoption: boolean,
 ): boolean {
   if (managed.topLevelIds.has(asset.id) || managed.bundleIds.has(asset.id)) {
     return true;
@@ -72,7 +74,7 @@ function shouldIncludeInstallFile(
   file: InstallFile,
   mode: BuildInstallPlanInput['mode'],
   managed: ManagedAssetIndex,
-  upgradeAssetIds: Set<string>
+  upgradeAssetIds: Set<string>,
 ): boolean {
   if (mode === 'init') {
     return true;
@@ -82,7 +84,9 @@ function shouldIncludeInstallFile(
     return true;
   }
 
-  const bundleParent = file.assetId.includes(':') ? file.assetId.split(':')[0] ?? file.assetId : file.assetId;
+  const bundleParent = file.assetId.includes(':')
+    ? (file.assetId.split(':')[0] ?? file.assetId)
+    : file.assetId;
 
   if (managed.bundleIds.has(bundleParent)) {
     return true;
@@ -100,10 +104,13 @@ async function expandBundle(
   rootDir: string,
   targetDir: string,
   templateContext: Record<string, unknown>,
-  features: FeatureId[]
+  features: FeatureId[],
 ): Promise<InstallFile[]> {
   const sourceRoot = path.join(rootDir, asset.source);
-  const bundleDestinationRoot = path.join(targetDir, renderString(asset.destination, templateContext));
+  const bundleDestinationRoot = path.join(
+    targetDir,
+    renderString(asset.destination, templateContext),
+  );
   const files = await fs.readdir(sourceRoot, { recursive: true });
 
   return files
@@ -119,10 +126,11 @@ async function expandBundle(
         assetId: `${asset.id}:${entry}`,
         sourcePath,
         destinationPath: path.join(bundleDestinationRoot, relativeDestination),
-        kind: asset.templateFiles?.includes(fileName) || entry.endsWith('.hbs') ? 'template' : 'static',
+        kind:
+          asset.templateFiles?.includes(fileName) || entry.endsWith('.hbs') ? 'template' : 'static',
         exists: false,
         appendable: false,
-        resolution: 'none'
+        resolution: 'none',
       } satisfies InstallFile;
     });
 }
@@ -137,7 +145,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
     skillsDir: adapter.getDestination('skills'),
     commandsDir: adapter.getDestination('commands'),
     features: input.features,
-    templateVersion: TEMPLATE_VERSION
+    templateVersion: TEMPLATE_VERSION,
   };
 
   const selectedAssets = assetManifest
@@ -152,7 +160,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
       ? selectedAssets
           .filter((asset) => isAssetInUpgradeScope(asset, managed, allowUpgradeAdoption))
           .map((asset) => asset.id)
-      : []
+      : [],
   );
 
   const expandedFiles = await Promise.all(
@@ -161,16 +169,21 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
         return expandBundle(asset, input.rootDir, input.targetDir, templateContext, input.features);
       }
 
-      return [{
-        assetId: asset.id,
-        sourcePath: path.join(input.rootDir, asset.source),
-        destinationPath: path.join(input.targetDir, renderString(asset.destination, templateContext)),
-        kind: asset.kind,
-        exists: false,
-        appendable: false,
-        resolution: 'none'
-      } satisfies InstallFile];
-    })
+      return [
+        {
+          assetId: asset.id,
+          sourcePath: path.join(input.rootDir, asset.source),
+          destinationPath: path.join(
+            input.targetDir,
+            renderString(asset.destination, templateContext),
+          ),
+          kind: asset.kind,
+          exists: false,
+          appendable: false,
+          resolution: 'none',
+        } satisfies InstallFile,
+      ];
+    }),
   );
 
   const files = await Promise.all(
@@ -188,7 +201,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
             ...file,
             exists,
             appendable,
-            resolution: 'skip'
+            resolution: 'skip',
           } satisfies InstallFile;
         }
 
@@ -196,11 +209,9 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
           ...file,
           exists,
           appendable,
-          resolution: exists
-            ? (input.force ? 'overwrite' : 'unresolved')
-            : 'none'
+          resolution: exists ? (input.force ? 'overwrite' : 'unresolved') : 'none',
         } satisfies InstallFile;
-      })
+      }),
   );
 
   return {
@@ -212,6 +223,6 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
     targetDir: input.targetDir,
     dryRun: input.dryRun,
     force: input.force,
-    mode: input.mode
+    mode: input.mode,
   };
 }

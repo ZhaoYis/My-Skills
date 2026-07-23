@@ -9,7 +9,12 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { PipelineAgentOrchestrator } from '../../src/harness/PipelineAgentOrchestrator.js';
 import { ReportGenerator } from '../../src/report/ReportGenerator.js';
 import { PHASE_META } from '../../src/harness/types.js';
-import type { ScenarioConfig, TestEnvironment, AgentPhaseResult, PhaseId } from '../../src/harness/types.js';
+import type {
+  ScenarioConfig,
+  TestEnvironment,
+  AgentPhaseResult,
+  PhaseId,
+} from '../../src/harness/types.js';
 import { isOpenspecAvailable } from '../../src/utils/openspecHelpers.js';
 import path from 'node:path';
 import { readFile, fileExists } from '../../src/utils/tempDir.js';
@@ -70,18 +75,21 @@ describe('Schema Variation — Custom Backend Schema', () => {
       status: 'pass',
       startedAt: new Date().toISOString(),
       durationMs: 0,
-      agentSummary: 'Agent detects custom backend schema: stacks=[backend], verify=./scripts/validate.sh backend',
+      agentSummary:
+        'Agent detects custom backend schema: stacks=[backend], verify=./scripts/validate.sh backend',
       assertions: [
         { description: 'Git work tree is active', passed: env.isWorkTree },
-        { description: 'OpenSpec CLI is available', passed: env.openspecAvailable, detail: `v${env.openspecVersion}` },
+        {
+          description: 'OpenSpec CLI is available',
+          passed: env.openspecAvailable,
+          detail: `v${env.openspecVersion}`,
+        },
         { description: 'Schema config exists at openspec/config.yaml', passed: true },
         { description: 'Schema is custom (not spec-driven)', passed: true },
         { description: 'Stack includes "backend"', passed: true },
         { description: 'Verify rule resolves to backend validate script', passed: true },
       ],
-      artifacts: [
-        { path: 'openspec/config.yaml', type: 'file', exists: true },
-      ],
+      artifacts: [{ path: 'openspec/config.yaml', type: 'file', exists: true }],
     };
 
     orchestrator.recordPhaseResult(result);
@@ -109,23 +117,26 @@ describe('Schema Variation — Custom Backend Schema', () => {
   });
 
   it('Generates complete schema report', async () => {
-    const report = orchestrator.buildReport([
-      {
-        phaseId: 'phase-0-entrance',
-        label: 'Phase 0 — Entrance',
-        status: 'pass',
-        startedAt: new Date().toISOString(),
-        durationMs: 100,
-        agentSummary: 'Schema detection: custom backend schema with backend stack',
-        assertions: [
-          { description: 'openspec/config.yaml exists', passed: true },
-          { description: 'Schema = custom', passed: true },
-          { description: 'Stacks contains backend', passed: true },
-          { description: 'Verify command resolves correctly', passed: true },
-        ],
-        artifacts: [{ path: 'openspec/config.yaml', type: 'file', exists: true }],
-      },
-    ], 150);
+    const report = orchestrator.buildReport(
+      [
+        {
+          phaseId: 'phase-0-entrance',
+          label: 'Phase 0 — Entrance',
+          status: 'pass',
+          startedAt: new Date().toISOString(),
+          durationMs: 100,
+          agentSummary: 'Schema detection: custom backend schema with backend stack',
+          assertions: [
+            { description: 'openspec/config.yaml exists', passed: true },
+            { description: 'Schema = custom', passed: true },
+            { description: 'Stacks contains backend', passed: true },
+            { description: 'Verify command resolves correctly', passed: true },
+          ],
+          artifacts: [{ path: 'openspec/config.yaml', type: 'file', exists: true }],
+        },
+      ],
+      150,
+    );
 
     const { jsonPath, markdownPath } = await reportGenerator.generate(report);
 

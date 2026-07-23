@@ -11,14 +11,14 @@ const toolSchema = z.object({
   destinations: z.object({
     root: z.string(),
     skills: z.string(),
-    commands: z.string()
+    commands: z.string(),
   }),
   supports: z.array(z.enum(['base', 'skills', 'commands', 'docs'])),
-  postInstallNotes: z.array(z.string()).optional()
+  postInstallNotes: z.array(z.string()).optional(),
 });
 
 const toolsSchema = z.object({
-  tools: z.array(toolSchema)
+  tools: z.array(toolSchema),
 });
 
 class StaticToolAdapter implements ToolAdapter {
@@ -41,7 +41,11 @@ class StaticToolAdapter implements ToolAdapter {
   }
 
   getPostInstallNotes(): string[] {
-    return this.definition.postInstallNotes ?? [`Review installed assets for ${this.definition.displayName}.`];
+    return (
+      this.definition.postInstallNotes ?? [
+        `Review installed assets for ${this.definition.displayName}.`,
+      ]
+    );
   }
 }
 

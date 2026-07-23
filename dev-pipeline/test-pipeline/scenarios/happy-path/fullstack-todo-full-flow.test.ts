@@ -16,10 +16,18 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { PipelineAgentOrchestrator } from '../../src/harness/PipelineAgentOrchestrator.js';
 import { ReportGenerator } from '../../src/report/ReportGenerator.js';
-import { AgentPhaseRunner, getPhaseSpecificInstructions } from '../../src/harness/AgentPhaseRunner.js';
+import {
+  AgentPhaseRunner,
+  getPhaseSpecificInstructions,
+} from '../../src/harness/AgentPhaseRunner.js';
 import { PHASE_VALIDATORS } from '../../src/validators/PhaseValidators.js';
 import { ALL_PHASES, PHASE_META } from '../../src/harness/types.js';
-import type { ScenarioConfig, TestEnvironment, AgentPhaseResult, PhaseId } from '../../src/harness/types.js';
+import type {
+  ScenarioConfig,
+  TestEnvironment,
+  AgentPhaseResult,
+  PhaseId,
+} from '../../src/harness/types.js';
 import { isOpenspecAvailable } from '../../src/utils/openspecHelpers.js';
 import path from 'node:path';
 
@@ -75,7 +83,7 @@ describe('Pipeline Framework — Full Verification', () => {
     expect(env.openspecAvailable).toBe(true);
   });
 
-  it('Agent prompts are generated for all 12 phases', () => {
+  it('Agent prompts are generated for all phases', () => {
     for (const phaseId of ALL_PHASES) {
       const meta = PHASE_META[phaseId];
 
@@ -83,7 +91,7 @@ describe('Pipeline Framework — Full Verification', () => {
       const basePrompt = runner.buildPhasePrompt(
         phaseId,
         FEATURE_SCENARIO.changeName,
-        FEATURE_SCENARIO.featureDescription
+        FEATURE_SCENARIO.featureDescription,
       );
       const specific = getPhaseSpecificInstructions(phaseId, {
         changeName: FEATURE_SCENARIO.changeName,
@@ -107,99 +115,20 @@ describe('Pipeline Framework — Full Verification', () => {
     }
   });
 
-  // ─── Pre-Pipeline Phase Tests ──────────────────────────────────
-
-  it('Phase: opsx-learn — validates knowledge skeleton', async () => {
-    const phaseId: PhaseId = 'opsx-learn';
-    const meta = PHASE_META[phaseId];
-
-    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-      env, { changeName: FEATURE_SCENARIO.changeName }
-    );
-
-    const result: AgentPhaseResult = {
-      phaseId,
-      label: meta.label,
-      status: assertions.every(a => a.passed) ? 'pass' : 'fail',
-      startedAt: new Date().toISOString(),
-      durationMs: 0,
-      agentSummary: `opsx-learn: validated knowledge skeleton, ${assertions.filter(a => a.passed).length}/${assertions.length} assertions passed`,
-      assertions,
-      artifacts,
-    };
-
-    orchestrator.recordPhaseResult(result);
-    collectedResults.push(result);
-
-    // Knowledge base skeleton should exist
-    const hasKnowledge = assertions.find(a => a.description.includes('Knowledge base'));
-    expect(hasKnowledge).toBeDefined();
-
-    console.log(`  ${result.status === 'pass' ? '✅' : '❌'} ${meta.label}: ${result.agentSummary}`);
-  }, 30000);
-
-  it('Phase: opsx-analysis — validates analysis structure', async () => {
-    const phaseId: PhaseId = 'opsx-analysis';
-    const meta = PHASE_META[phaseId];
-
-    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-      env, { changeName: FEATURE_SCENARIO.changeName }
-    );
-
-    const result: AgentPhaseResult = {
-      phaseId,
-      label: meta.label,
-      status: 'pass', // Analysis validator checks structure, not required at this stage
-      startedAt: new Date().toISOString(),
-      durationMs: 0,
-      agentSummary: `opsx-analysis: verified validator can check analysis output structure`,
-      assertions,
-      artifacts,
-    };
-
-    orchestrator.recordPhaseResult(result);
-    collectedResults.push(result);
-    console.log(`  ℹ️  ${meta.label}: ${result.agentSummary}`);
-  }, 15000);
-
-  it('Phase: opsx-design — validates design structure', async () => {
-    const phaseId: PhaseId = 'opsx-design';
-    const meta = PHASE_META[phaseId];
-
-    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-      env, { changeName: FEATURE_SCENARIO.changeName }
-    );
-
-    const result: AgentPhaseResult = {
-      phaseId,
-      label: meta.label,
-      status: 'pass',
-      startedAt: new Date().toISOString(),
-      durationMs: 0,
-      agentSummary: `opsx-design: verified validator can check design document structure`,
-      assertions,
-      artifacts,
-    };
-
-    orchestrator.recordPhaseResult(result);
-    collectedResults.push(result);
-    console.log(`  ℹ️  ${meta.label}: ${result.agentSummary}`);
-  }, 15000);
-
   // ─── Pipeline Phase Tests ─────────────────────────────────────
 
   it('Phase 0: Entrance — preflight + schema detection', async () => {
     const phaseId: PhaseId = 'phase-0-entrance';
     const meta = PHASE_META[phaseId];
 
-    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-      env, { changeName: FEATURE_SCENARIO.changeName }
-    );
+    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](env, {
+      changeName: FEATURE_SCENARIO.changeName,
+    });
 
     const result: AgentPhaseResult = {
       phaseId,
       label: meta.label,
-      status: assertions.every(a => a.passed) ? 'pass' : 'fail',
+      status: assertions.every((a) => a.passed) ? 'pass' : 'fail',
       startedAt: new Date().toISOString(),
       durationMs: 0,
       agentSummary: `Phase 0: git=${env.isWorkTree}, openspec=${env.openspecAvailable}`,
@@ -218,9 +147,9 @@ describe('Pipeline Framework — Full Verification', () => {
     const phaseId: PhaseId = 'phase-1-propose';
     const meta = PHASE_META[phaseId];
 
-    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-      env, { changeName: FEATURE_SCENARIO.changeName }
-    );
+    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](env, {
+      changeName: FEATURE_SCENARIO.changeName,
+    });
 
     const result: AgentPhaseResult = {
       phaseId,
@@ -242,9 +171,9 @@ describe('Pipeline Framework — Full Verification', () => {
     const phaseId: PhaseId = 'phase-2-apply';
     const meta = PHASE_META[phaseId];
 
-    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-      env, { changeName: FEATURE_SCENARIO.changeName }
-    );
+    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](env, {
+      changeName: FEATURE_SCENARIO.changeName,
+    });
 
     const result: AgentPhaseResult = {
       phaseId,
@@ -266,9 +195,9 @@ describe('Pipeline Framework — Full Verification', () => {
     const phaseId: PhaseId = 'phase-3-review';
     const meta = PHASE_META[phaseId];
 
-    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-      env, { changeName: FEATURE_SCENARIO.changeName }
-    );
+    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](env, {
+      changeName: FEATURE_SCENARIO.changeName,
+    });
 
     const result: AgentPhaseResult = {
       phaseId,
@@ -290,12 +219,12 @@ describe('Pipeline Framework — Full Verification', () => {
     const phaseId: PhaseId = 'phase-5-unit-tests';
     const meta = PHASE_META[phaseId];
 
-    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-      env, { changeName: FEATURE_SCENARIO.changeName }
-    );
+    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](env, {
+      changeName: FEATURE_SCENARIO.changeName,
+    });
 
     // Check that package.json has a test script
-    const hasTestScript = assertions.find(a => a.description.includes('test script'));
+    const hasTestScript = assertions.find((a) => a.description.includes('test script'));
     expect(hasTestScript?.passed).toBe(true);
 
     const result: AgentPhaseResult = {
@@ -318,9 +247,9 @@ describe('Pipeline Framework — Full Verification', () => {
     const phaseId: PhaseId = 'phase-4-archive';
     const meta = PHASE_META[phaseId];
 
-    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-      env, { changeName: FEATURE_SCENARIO.changeName }
-    );
+    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](env, {
+      changeName: FEATURE_SCENARIO.changeName,
+    });
 
     const result: AgentPhaseResult = {
       phaseId,
@@ -342,14 +271,14 @@ describe('Pipeline Framework — Full Verification', () => {
     const phaseId: PhaseId = 'phase-6-merge-push';
     const meta = PHASE_META[phaseId];
 
-    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-      env, { changeName: FEATURE_SCENARIO.changeName }
-    );
+    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](env, {
+      changeName: FEATURE_SCENARIO.changeName,
+    });
 
     const result: AgentPhaseResult = {
       phaseId,
       label: meta.label,
-      status: assertions.every(a => a.passed) ? 'pass' : 'fail',
+      status: assertions.every((a) => a.passed) ? 'pass' : 'fail',
       startedAt: new Date().toISOString(),
       durationMs: 0,
       agentSummary: 'Agent would commit with conventional commit and push',
@@ -362,61 +291,10 @@ describe('Pipeline Framework — Full Verification', () => {
     console.log(`  ℹ️  ${meta.label}: ${result.agentSummary}`);
   }, 10000);
 
-  // ─── Post-Pipeline Phase Tests ─────────────────────────────────
-
-  it('Phase: opsx-verify — validates verify infrastructure', async () => {
-    const phaseId: PhaseId = 'opsx-verify';
-    const meta = PHASE_META[phaseId];
-
-    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-      env, { changeName: FEATURE_SCENARIO.changeName }
-    );
-
-    const result: AgentPhaseResult = {
-      phaseId,
-      label: meta.label,
-      status: assertions.every(a => a.passed) ? 'pass' : 'fail',
-      startedAt: new Date().toISOString(),
-      durationMs: 0,
-      agentSummary: 'Agent would resolve verification targets and run checks',
-      assertions,
-      artifacts,
-    };
-
-    orchestrator.recordPhaseResult(result);
-    collectedResults.push(result);
-    expect(result.status).toBe('pass');
-    console.log(`  ✅ ${meta.label}: validate.sh found`);
-  }, 15000);
-
-  it('Phase: opsx-health — validates health check infrastructure', async () => {
-    const phaseId: PhaseId = 'opsx-health';
-    const meta = PHASE_META[phaseId];
-
-    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-      env, { changeName: FEATURE_SCENARIO.changeName }
-    );
-
-    const result: AgentPhaseResult = {
-      phaseId,
-      label: meta.label,
-      status: assertions.every(a => a.passed) ? 'pass' : 'fail',
-      startedAt: new Date().toISOString(),
-      durationMs: 0,
-      agentSummary: 'Agent would run doctor and produce health report with P0-P3 fixes',
-      assertions,
-      artifacts,
-    };
-
-    orchestrator.recordPhaseResult(result);
-    collectedResults.push(result);
-    console.log(`  ℹ️  ${meta.label}: ${result.agentSummary}`);
-  }, 10000);
-
   // ─── Report Verification ──────────────────────────────────────
 
   it('Generates valid JSON and Markdown reports', async () => {
-    expect(collectedResults.length).toBe(12); // All 12 phases
+    expect(collectedResults.length).toBe(ALL_PHASES.length); // All phases
 
     const report = orchestrator.buildReport(collectedResults, 0);
 
@@ -424,8 +302,8 @@ describe('Pipeline Framework — Full Verification', () => {
     expect(report.meta.scenarioName).toBe(FEATURE_SCENARIO.name);
     expect(report.meta.sampleProject).toBe('fullstack-todo');
     expect(report.meta.changeName).toBe(FEATURE_SCENARIO.changeName);
-    expect(report.phases).toHaveLength(12);
-    expect(report.summary.totalPhases).toBe(12);
+    expect(report.phases).toHaveLength(ALL_PHASES.length);
+    expect(report.summary.totalPhases).toBe(ALL_PHASES.length);
     expect(report.summary.totalAssertions).toBeGreaterThan(0);
 
     // Verify each phase has required fields

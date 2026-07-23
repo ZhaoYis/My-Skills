@@ -76,7 +76,6 @@ description: 定义默认 OpenSpec schema 与自定义 schema 的适配差异、
 - `scripts/dev-pipeline-ensure-change-meta.sh`
 - `scripts/dev-pipeline-change-context.sh`
 - `scripts/dev-pipeline-resolve-verify.sh`
-- `scripts/dev-pipeline-resolve-delivery.sh`   # 新增——解析交付模式
 - `scripts/dev-pipeline-read-runtime.sh`      # 新增——读取运行时状态
 
 ## 6. 降级策略
@@ -124,7 +123,6 @@ opsx:
     show_phase_summary: true
     show_term_hint: false
   verify_command_preference: [schema, metadata, repo_heuristics]
-  delivery_mode: push_only | local_merge | pr   # 交付模式。未配置时 Phase 6 进入前询问用户
   schema_supplement_rules:
     extra_context_sections: []
     extra_standards: []

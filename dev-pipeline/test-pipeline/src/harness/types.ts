@@ -2,26 +2,18 @@
  * Phase identifiers for the pipeline delivery flow.
  */
 export type PhaseId =
-  | 'opsx-learn'
-  | 'opsx-analysis'
-  | 'opsx-design'
   | 'phase-0-entrance'
   | 'phase-1-propose'
   | 'phase-2-apply'
   | 'phase-3-review'
   | 'phase-4-archive'
   | 'phase-5-unit-tests'
-  | 'phase-6-merge-push'
-  | 'opsx-verify'
-  | 'opsx-health';
+  | 'phase-6-merge-push';
 
 /**
- * All phases in recommended order.
+ * All phases in pipeline order.
  */
 export const ALL_PHASES: PhaseId[] = [
-  'opsx-learn',
-  'opsx-analysis',
-  'opsx-design',
   'phase-0-entrance',
   'phase-1-propose',
   'phase-2-apply',
@@ -29,8 +21,6 @@ export const ALL_PHASES: PhaseId[] = [
   'phase-4-archive',
   'phase-5-unit-tests',
   'phase-6-merge-push',
-  'opsx-verify',
-  'opsx-health',
 ];
 
 /**
@@ -40,7 +30,7 @@ export interface PhaseMeta {
   id: PhaseId;
   label: string;
   description: string;
-  /** Path to the skill SKILL.md relative to .claude/skills/ */
+  /** Path to the skill SKILL.md relative to the skills directory */
   skillPath: string;
   /** Readable name for the phase */
   skillName: string;
@@ -50,27 +40,6 @@ export interface PhaseMeta {
  * Metadata for each pipeline phase.
  */
 export const PHASE_META: Record<PhaseId, PhaseMeta> = {
-  'opsx-learn': {
-    id: 'opsx-learn',
-    label: 'Knowledge Learn',
-    description: '沉淀项目知识到 .knowledge/ 知识库',
-    skillPath: 'opsx-learn/SKILL.md',
-    skillName: 'opsx-learn',
-  },
-  'opsx-analysis': {
-    id: 'opsx-analysis',
-    label: 'Requirement Analysis',
-    description: '结构化需求分析：事实/推断/待确认',
-    skillPath: 'opsx-analysis/SKILL.md',
-    skillName: 'opsx-analysis',
-  },
-  'opsx-design': {
-    id: 'opsx-design',
-    label: 'Design Document',
-    description: '设计文档 + 质量门禁 + 验证断言',
-    skillPath: 'opsx-design/SKILL.md',
-    skillName: 'opsx-design',
-  },
   'phase-0-entrance': {
     id: 'phase-0-entrance',
     label: 'Phase 0 — Entrance',
@@ -119,20 +88,6 @@ export const PHASE_META: Record<PhaseId, PhaseMeta> = {
     description: 'commit + push + merge',
     skillPath: 'opsx-dev-pipeline/SKILL.md',
     skillName: 'opsx-dev-pipeline',
-  },
-  'opsx-verify': {
-    id: 'opsx-verify',
-    label: 'Verification',
-    description: '语言无关验证：冒烟/契约/回归',
-    skillPath: 'opsx-verify/SKILL.md',
-    skillName: 'opsx-verify',
-  },
-  'opsx-health': {
-    id: 'opsx-health',
-    label: 'Health Check',
-    description: '知识库健康巡检 + P0-P3 建议',
-    skillPath: 'opsx-health/SKILL.md',
-    skillName: 'opsx-health',
   },
 };
 

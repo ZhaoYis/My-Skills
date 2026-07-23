@@ -20,7 +20,7 @@ export async function runUpgradeCommand(options: InitOptions): Promise<void> {
   const versionCheck = checkManifestVersion(result.manifest.templateVersion);
   await ensureUpgradeVersionCheck(versionCheck, {
     yes: Boolean(options.yes),
-    dryRun: Boolean(options.dryRun)
+    dryRun: Boolean(options.dryRun),
   });
 
   const rootDir = await resolvePackageRoot(import.meta.url);
@@ -36,11 +36,11 @@ export async function runUpgradeCommand(options: InitOptions): Promise<void> {
     mode: 'upgrade',
     managedAssets: result.manifest.managedAssets,
     allowUpgradeAdoption: !(await hasExistingKnowledgeDirectory(targetDir)),
-    registry
+    registry,
   });
   const resolvedPlan = await resolveInstallConflicts(plan, {
     yes: Boolean(options.yes),
-    force: Boolean(options.force)
+    force: Boolean(options.force),
   });
 
   await executeInstallPlan(resolvedPlan);

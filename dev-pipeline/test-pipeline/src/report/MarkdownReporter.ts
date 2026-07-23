@@ -46,7 +46,9 @@ export class MarkdownReporter {
     lines.push(`| Property | Value |`);
     lines.push(`|----------|-------|`);
     lines.push(`| Node.js | ${report.environment.nodeVersion} |`);
-    lines.push(`| OpenSpec Available | ${report.environment.openspecAvailable ? '✅ Yes' : '❌ No'} |`);
+    lines.push(
+      `| OpenSpec Available | ${report.environment.openspecAvailable ? '✅ Yes' : '❌ No'} |`,
+    );
     if (report.environment.openspecVersion) {
       lines.push(`| OpenSpec Version | \`${report.environment.openspecVersion}\` |`);
     }
@@ -145,12 +147,18 @@ export class MarkdownReporter {
 
 function statusBadge(status: string): string {
   switch (status) {
-    case 'pass': return '🟢 PASS';
-    case 'fail': return '🔴 FAIL';
-    case 'partial': return '🟡 PARTIAL';
-    case 'error': return '💥 ERROR';
-    case 'skipped': return '⚪ SKIPPED';
-    default: return `\`${status}\``;
+    case 'pass':
+      return '🟢 PASS';
+    case 'fail':
+      return '🔴 FAIL';
+    case 'partial':
+      return '🟡 PARTIAL';
+    case 'error':
+      return '💥 ERROR';
+    case 'skipped':
+      return '⚪ SKIPPED';
+    default:
+      return `\`${status}\``;
   }
 }
 
@@ -168,5 +176,8 @@ function formatTimestamp(date: Date): string {
 }
 
 function slugify(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 }

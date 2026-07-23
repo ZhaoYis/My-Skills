@@ -33,7 +33,7 @@ function colorizeNotice(versionCheck: ManifestVersionCheck, message: string): st
 
 export function printUpgradeVersionNotice(
   versionCheck: ManifestVersionCheck,
-  dryRun = false
+  dryRun = false,
 ): void {
   const prefix = dryRun ? 'Upgrade preview' : 'Upgrade preflight';
   console.log(colorizeNotice(versionCheck, `${prefix}: ${upgradeNotice(versionCheck)}`));
@@ -45,7 +45,7 @@ export function printUpgradeVersionNotice(
 
 export async function ensureUpgradeVersionCheck(
   versionCheck: ManifestVersionCheck,
-  options: UpgradeVersionPromptOptions = {}
+  options: UpgradeVersionPromptOptions = {},
 ): Promise<void> {
   printUpgradeVersionNotice(versionCheck, Boolean(options.dryRun));
 
@@ -62,9 +62,9 @@ export async function ensureUpgradeVersionCheck(
       type: 'confirm',
       name: 'continue',
       message: 'Continue upgrade anyway?',
-      initial: false
+      initial: false,
     },
-    { onCancel: () => process.exit(1) }
+    { onCancel: () => process.exit(1) },
   );
 
   if (!response.continue) {

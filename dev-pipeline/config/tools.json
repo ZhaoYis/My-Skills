@@ -11,10 +11,7 @@
         "commands": ".claude/commands"
       },
       "supports": ["base", "skills", "commands", "docs"],
-      "postInstallNotes": [
-        "Try /opsx-dev-pipeline in Claude Code to start an OpenSpec change.",
-        "Seed project knowledge with /opsx-learn and inspect .knowledge/INDEX.md."
-      ]
+      "postInstallNotes": ["Try /opsx-dev-pipeline in Claude Code to start an OpenSpec change."]
     },
     {
       "id": "cursor",

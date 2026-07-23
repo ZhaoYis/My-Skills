@@ -18,7 +18,7 @@ function appendContent(existingContent: string, nextContent: string): string {
 
 function mergeManagedAssets(
   existingAssets: ManagedAssetRecord[],
-  writtenAssets: ManagedAssetRecord[]
+  writtenAssets: ManagedAssetRecord[],
 ): ManagedAssetRecord[] {
   const merged = new Map(existingAssets.map((asset) => [asset.id, asset]));
 
@@ -51,7 +51,7 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
     commandsDir: plan.adapter.getDestination('commands'),
     features: plan.features,
     templateVersion: TEMPLATE_VERSION,
-    managedAssets: [] as Array<{ id: string; destination: string }>
+    managedAssets: [] as Array<{ id: string; destination: string }>,
   };
 
   if (plan.dryRun) {
@@ -93,16 +93,20 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
     }
 
     if (file.exists && file.resolution !== 'overwrite') {
-      throw new Error(`Unsupported resolution ${file.resolution} for static file: ${file.destinationPath}`);
+      throw new Error(
+        `Unsupported resolution ${file.resolution} for static file: ${file.destinationPath}`,
+      );
     }
 
-    await fs.copy(file.sourcePath, file.destinationPath, { overwrite: file.resolution === 'overwrite' });
+    await fs.copy(file.sourcePath, file.destinationPath, {
+      overwrite: file.resolution === 'overwrite',
+    });
     managedFiles.push(file);
   }
 
   const writtenAssets = managedFiles.map((file) => ({
     id: file.assetId,
-    destination: path.relative(plan.targetDir, file.destinationPath)
+    destination: path.relative(plan.targetDir, file.destinationPath),
   }));
 
   if (plan.mode === 'init') {
@@ -111,7 +115,7 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
     const existingManifest = await readManifest(plan.targetDir);
     context.managedAssets = mergeManagedAssets(
       existingManifest?.manifest.managedAssets ?? [],
-      writtenAssets
+      writtenAssets,
     );
   }
 
@@ -122,7 +126,7 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
     features: plan.features,
     templateVersion: TEMPLATE_VERSION,
     packageName: PACKAGE_NAME,
-    managedAssets: context.managedAssets
+    managedAssets: context.managedAssets,
   });
 
   console.log(pc.green(successMessage(plan.mode, plan.adapter.definition.displayName)));

@@ -4,7 +4,7 @@ import { resolveUninstallConflicts } from '../../src/core/uninstall/resolveUnins
 import type { UninstallPlan } from '../../src/core/uninstall/types.js';
 
 vi.mock('prompts', () => ({
-  default: vi.fn()
+  default: vi.fn(),
 }));
 
 function createPlan(files?: Partial<UninstallPlan['files'][number]>[]): UninstallPlan {
@@ -15,20 +15,24 @@ function createPlan(files?: Partial<UninstallPlan['files'][number]>[]): Uninstal
     keepKnowledge: false,
     manifestPath: '/tmp/demo/opsx-dev-pipeline.json',
     manifestStorage: 'standalone',
-    files: (files ?? [{
-      assetId: 'common-readme',
-      destinationPath: '/tmp/demo/README.md',
-      exists: true,
-      appendable: true,
-      resolution: 'unresolved'
-    }]).map((file, index) => ({
+    files: (
+      files ?? [
+        {
+          assetId: 'common-readme',
+          destinationPath: '/tmp/demo/README.md',
+          exists: true,
+          appendable: true,
+          resolution: 'unresolved',
+        },
+      ]
+    ).map((file, index) => ({
       assetId: `asset-${index}`,
       destinationPath: `/tmp/demo/file-${index}.md`,
       exists: true,
       appendable: false,
       resolution: 'unresolved',
-      ...file
-    }))
+      ...file,
+    })),
   };
 }
 
@@ -44,10 +48,13 @@ describe('resolveUninstallConflicts', () => {
 
   it('applies skip-all from the prompt', async () => {
     vi.mocked(prompts).mockResolvedValueOnce({ resolution: 'skip-all' });
-    const plan = await resolveUninstallConflicts(createPlan([
-      { destinationPath: '/tmp/demo/README.md', appendable: true },
-      { destinationPath: '/tmp/demo/CLAUDE.md', appendable: true }
-    ]), { yes: false });
+    const plan = await resolveUninstallConflicts(
+      createPlan([
+        { destinationPath: '/tmp/demo/README.md', appendable: true },
+        { destinationPath: '/tmp/demo/CLAUDE.md', appendable: true },
+      ]),
+      { yes: false },
+    );
 
     expect(plan.files.every((file) => file.resolution === 'skip')).toBe(true);
   });

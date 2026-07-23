@@ -19,7 +19,7 @@ async function createTempDir(): Promise<string> {
 
 function createManifestResult(
   targetDir: string,
-  managedAssets: ManifestReadResult['manifest']['managedAssets']
+  managedAssets: ManifestReadResult['manifest']['managedAssets'],
 ): ManifestReadResult {
   return {
     path: path.join(targetDir, 'opsx-dev-pipeline.json'),
@@ -31,8 +31,8 @@ function createManifestResult(
       features: ['base', 'skills', 'commands', 'docs'],
       templateVersion: '0.1.5',
       packageName: 'opsx-dev-pipeline',
-      managedAssets
-    }
+      managedAssets,
+    },
   };
 }
 
@@ -47,11 +47,14 @@ describe('buildUninstallPlan', () => {
       targetDir,
       manifestResult: createManifestResult(targetDir, [
         { id: 'common-readme', destination: 'README.md' },
-        { id: 'opsx-learn-skill-bundle:SKILL.md.hbs', destination: '.claude/skills/opsx-learn/SKILL.md' }
+        {
+          id: 'opsx-learn-skill-bundle:SKILL.md.hbs',
+          destination: '.claude/skills/opsx-learn/SKILL.md',
+        },
       ]),
       dryRun: false,
       yes: true,
-      keepKnowledge: false
+      keepKnowledge: false,
     });
 
     expect(plan.files).toHaveLength(2);
@@ -66,15 +69,19 @@ describe('buildUninstallPlan', () => {
       targetDir,
       manifestResult: createManifestResult(targetDir, [
         { id: 'common-readme', destination: 'README.md' },
-        { id: 'opsx-learn-command', destination: '.claude/commands/opsx-learn.md' }
+        { id: 'opsx-learn-command', destination: '.claude/commands/opsx-learn.md' },
       ]),
       dryRun: false,
       yes: false,
-      keepKnowledge: false
+      keepKnowledge: false,
     });
 
-    expect(plan.files.find((file) => file.assetId === 'common-readme')?.resolution).toBe('unresolved');
-    expect(plan.files.find((file) => file.assetId === 'opsx-learn-command')?.resolution).toBe('skip');
+    expect(plan.files.find((file) => file.assetId === 'common-readme')?.resolution).toBe(
+      'unresolved',
+    );
+    expect(plan.files.find((file) => file.assetId === 'opsx-learn-command')?.resolution).toBe(
+      'skip',
+    );
   });
 
   it('excludes knowledge skeleton assets when keepKnowledge is enabled', async () => {
@@ -87,11 +94,11 @@ describe('buildUninstallPlan', () => {
       targetDir,
       manifestResult: createManifestResult(targetDir, [
         { id: 'common-readme', destination: 'README.md' },
-        { id: 'common-knowledge-skeleton:README.md.hbs', destination: '.knowledge/README.md' }
+        { id: 'common-knowledge-skeleton:README.md.hbs', destination: '.knowledge/README.md' },
       ]),
       dryRun: false,
       yes: true,
-      keepKnowledge: true
+      keepKnowledge: true,
     });
 
     expect(plan.files).toHaveLength(1);

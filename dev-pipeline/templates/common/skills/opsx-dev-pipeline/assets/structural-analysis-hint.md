@@ -32,5 +32,3 @@
 
 - `references/phase-2-apply.md`（写前复用门禁的检索环节）
 - `references/phase-3-review.md`（审查时的影响面分析）
-- `opsx-learn` 的探索上下文环节
-- `opsx-analysis` 的探索上下文环节

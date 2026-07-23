@@ -3,7 +3,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
-const packageJsonPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../package.json');
+const packageJsonPath = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../../../package.json',
+);
 const packageJson = require(packageJsonPath) as { version: string };
 
 export const PACKAGE_NAME = 'opsx-dev-pipeline';

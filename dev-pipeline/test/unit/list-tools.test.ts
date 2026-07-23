@@ -15,14 +15,19 @@ describe('runListToolsCommand', () => {
     };
 
     expect(payload.packageVersion).toBe(PACKAGE_VERSION);
-    expect(payload.tools.map((tool) => tool.id).sort()).toEqual(['claude', 'codex', 'cursor', 'generic']);
+    expect(payload.tools.map((tool) => tool.id).sort()).toEqual([
+      'claude',
+      'codex',
+      'cursor',
+      'generic',
+    ]);
     expect(payload.tools[0]).toMatchObject({
       destinations: expect.objectContaining({
         skills: expect.any(String),
-        commands: expect.any(String)
+        commands: expect.any(String),
       }),
       markers: expect.any(Array),
-      supports: expect.any(Array)
+      supports: expect.any(Array),
     });
 
     logSpy.mockRestore();

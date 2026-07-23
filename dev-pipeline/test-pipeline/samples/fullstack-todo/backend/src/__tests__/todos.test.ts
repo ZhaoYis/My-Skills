@@ -1,5 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { clearTodos, createTodo, getAllTodos, getTodoById, updateTodo, deleteTodo } from '../models/todo.js';
+import {
+  clearTodos,
+  createTodo,
+  getAllTodos,
+  getTodoById,
+  updateTodo,
+  deleteTodo,
+} from '../models/todo.js';
 
 describe('Todo Model', () => {
   beforeEach(() => {

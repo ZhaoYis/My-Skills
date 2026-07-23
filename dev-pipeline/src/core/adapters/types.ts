@@ -1,18 +1,20 @@
-export type FeatureId =
-  | 'base'
-  | 'skills'
-  | 'commands'
-  | 'docs'
-  | 'prototype'
-  | 'structural-analysis-hint'
-  | 'opsx-pr'
-  | 'opsx-ci-triage';
+export type FeatureId = 'base' | 'skills' | 'commands' | 'docs' | 'structural-analysis-hint';
 
-export const DEFAULT_FEATURES = ['base', 'skills', 'commands', 'docs'] as const satisfies readonly FeatureId[];
+export const DEFAULT_FEATURES = [
+  'base',
+  'skills',
+  'commands',
+  'docs',
+] as const satisfies readonly FeatureId[];
 
-export const OPTIONAL_FEATURES = ['prototype', 'structural-analysis-hint', 'opsx-pr', 'opsx-ci-triage'] as const satisfies readonly FeatureId[];
+export const OPTIONAL_FEATURES = [
+  'structural-analysis-hint',
+] as const satisfies readonly FeatureId[];
 
-export const ALL_FEATURE_IDS = [...DEFAULT_FEATURES, ...OPTIONAL_FEATURES] as const satisfies readonly FeatureId[];
+export const ALL_FEATURE_IDS = [
+  ...DEFAULT_FEATURES,
+  ...OPTIONAL_FEATURES,
+] as const satisfies readonly FeatureId[];
 export type ToolId = 'claude' | 'cursor' | 'codex' | 'generic';
 
 export interface ToolDestinations {

@@ -3,11 +3,11 @@ import prompts from 'prompts';
 import type { ManifestVersionCheck } from '../../src/core/manifest/versionCheck.js';
 import {
   ensureUpgradeVersionCheck,
-  printUpgradeVersionNotice
+  printUpgradeVersionNotice,
 } from '../../src/core/upgrade/versionPrompt.js';
 
 vi.mock('prompts', () => ({
-  default: vi.fn()
+  default: vi.fn(),
 }));
 
 function createVersionCheck(overrides: Partial<ManifestVersionCheck>): ManifestVersionCheck {
@@ -17,7 +17,7 @@ function createVersionCheck(overrides: Partial<ManifestVersionCheck>): ManifestV
     manifestVersion: '0.1.5',
     currentVersion: '0.1.5',
     message: 'Manifest template version matches the installed CLI (0.1.5).',
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -41,7 +41,7 @@ describe('upgrade version prompt', () => {
 
     await ensureUpgradeVersionCheck(
       createVersionCheck({ status: 'outdated', healthStatus: 'warn', manifestVersion: '0.1.0' }),
-      { yes: true }
+      { yes: true },
     );
 
     expect(prompts).not.toHaveBeenCalled();
@@ -58,13 +58,14 @@ describe('upgrade version prompt', () => {
         healthStatus: 'warn',
         manifestVersion: '0.2.0',
         message: 'Manifest template version 0.2.0 is newer than the installed CLI 0.1.5.',
-        recommendation: 'Upgrade the opsx-dev-pipeline package to match the manifest template version.'
-      })
+        recommendation:
+          'Upgrade the opsx-dev-pipeline package to match the manifest template version.',
+      }),
     );
 
     expect(prompts).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'continue', type: 'confirm' }),
-      expect.objectContaining({ onCancel: expect.any(Function) })
+      expect.objectContaining({ onCancel: expect.any(Function) }),
     );
     logSpy.mockRestore();
   });
@@ -79,9 +80,9 @@ describe('upgrade version prompt', () => {
           status: 'ahead',
           healthStatus: 'warn',
           manifestVersion: '0.2.0',
-          message: 'ahead'
-        })
-      )
+          message: 'ahead',
+        }),
+      ),
     ).rejects.toThrow('Upgrade cancelled due to manifest version mismatch.');
 
     logSpy.mockRestore();

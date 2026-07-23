@@ -43,15 +43,6 @@
 | R6-6 | Phase 6 | 合并前工作区不干净 | `git status` 发现未提交或未暂存变更 | 用户确认后 stash、提交或终止 | 是 | Phase 6 | `assets/recovery-guardrails-appendix.md` §3.1；`references/phase-6-merge-push.md` | 合并前门禁 |
 | R6-7 | Phase 6 | 合并冲突 | `git merge` 冲突 | 用户确认后中止、选 theirs / ours 或暂停手动解决 | 是 | Phase 6 | `assets/recovery-guardrails-appendix.md` §3.1；`references/phase-6-merge-push.md` | 需列出冲突文件 |
 | R6-8 | Phase 6 | 合并后分支清理失败 | 删除本地或远程分支失败 | 保留当前结果并提示清理失败 | 否 | 当前 Phase 结束 | `references/phase-6-merge-push.md` | 收尾性异常 |
-| R7-1 | Phase 7 | `gh` CLI 不可用 | `gh --version` 失败 | 输出 PR 模板，提示用户手动创建 | 否 | Phase 7 步骤 23 | `references/phase-7-pr-ci.md`；`assets/recovery-guardrails-appendix.md` §3.1 | 降级不阻塞 |
-| R7-2 | Phase 7 | PR 创建失败 | `gh pr create` 非零退出 | 用户确认后重试、手动创建、回退到 push_only 或终止 | 是 | Phase 7 步骤 23 | `references/phase-7-pr-ci.md`；`assets/recovery-guardrails-appendix.md` §3.1 | 需展示错误输出 |
-| R7-3 | Phase 7 | CI 数据不可获取 | `gh pr checks` 失败 | 降级为人工日志模式 | 否 | Phase 7 步骤 24 | `references/phase-7-pr-ci.md` | 用户粘贴 CI 输出 |
-| R7-4 | Phase 7 | CI 失败（code_failure） | 测试/编译失败 | 用户确认后进入修复回路（最多 2 轮） | 是 | Phase 2 / Phase 7 步骤 25 | `references/phase-7-pr-ci.md` | 代码问题修复后重新推送 |
-| R7-5 | Phase 7 | CI 失败（flaky_failure） | 间歇性失败 | 建议重试 CI；用户确认 | 是 | Phase 7 步骤 25 | `references/phase-7-pr-ci.md` | `gh pr checks --retry` |
-| R7-6 | Phase 7 | CI 失败（infra_failure） | 基础设施问题 | 建议重试或等待；用户确认 | 是 | Phase 7 步骤 25 | `references/phase-7-pr-ci.md` | 不进入代码修复 |
-| R7-7 | Phase 7 | CI 持续 pending | 超过预期时间未完成 | 提示用户检查 CI 队列，提供继续等待/人工判断/终止 | 是 | Phase 7 步骤 24 | `references/phase-7-pr-ci.md` | 不空转等待 |
-| R7-8 | Phase 7 | `gh pr merge` 失败 | 合并失败（conflict / base 过期） | 提示更新分支或解决冲突 | 是 | Phase 7 步骤 26 | `references/phase-7-pr-ci.md` | `git pull origin <base>` + push |
-| R7-9 | Phase 7 | 修复回路达到 2 轮上限 | 第 2 次 CI 仍然失败 | 强制暂停，提示人工介入 | 否 | Phase 7 步骤 25 | `references/phase-7-pr-ci.md` | 展示所有失败 checks 和历史修复 |
 
 ## 3. 维护入口
 
@@ -59,5 +50,3 @@
 - Phase 正文：`references/phase-*.md`
 - 恢复总览与规则正文：`assets/recovery-guardrails-appendix.md`
 - 脚本输出契约：`assets/script-io-conventions.md`
-
-> 关于 verify（R4-2 / R4-3）：本矩阵只负责"verify 门禁失败时如何恢复续接"。"如何系统性验证一次变更"（构建→启动→冒烟/契约/数据校验→影响面回归与失败回路）属于同级 `opsx-verify` 技能的能力库正文，Phase 4 在需要完整验证时引用它；本文件与 `references/phase-4-archive.md` 不复制其验证正文。

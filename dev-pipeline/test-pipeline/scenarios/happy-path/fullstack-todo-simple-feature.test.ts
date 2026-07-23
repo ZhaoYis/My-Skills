@@ -13,7 +13,12 @@ import { PipelineAgentOrchestrator } from '../../src/harness/PipelineAgentOrches
 import { ReportGenerator } from '../../src/report/ReportGenerator.js';
 import { PHASE_VALIDATORS } from '../../src/validators/PhaseValidators.js';
 import { PHASE_META, ALL_PHASES } from '../../src/harness/types.js';
-import type { ScenarioConfig, TestEnvironment, AgentPhaseResult, PhaseId } from '../../src/harness/types.js';
+import type {
+  ScenarioConfig,
+  TestEnvironment,
+  AgentPhaseResult,
+  PhaseId,
+} from '../../src/harness/types.js';
 import { isOpenspecAvailable } from '../../src/utils/openspecHelpers.js';
 import { gitStatus } from '../../src/utils/gitHelpers.js';
 import { expectFileContains, expectFileExists } from '../../src/utils/fileAssertions.js';
@@ -73,89 +78,30 @@ describe('Simple Feature — Backend Only', () => {
     expect(routeExists.passed).toBe(true);
 
     // Verify existing route patterns exist
-    const hasGetAll = await expectFileContains(routesPath, /GET.*\/api\/todos|router\.get\('\/'/, 'Has GET all route');
+    const hasGetAll = await expectFileContains(
+      routesPath,
+      /GET.*\/api\/todos|router\.get\('\/'/,
+      'Has GET all route',
+    );
     const hasPost = await expectFileContains(routesPath, /POST|router\.post/, 'Has POST route');
-    const hasDelete = await expectFileContains(routesPath, /DELETE|router\.delete/, 'Has DELETE route');
+    const hasDelete = await expectFileContains(
+      routesPath,
+      /DELETE|router\.delete/,
+      'Has DELETE route',
+    );
 
-    console.log(`  ✅ Backend routes: GET all=${hasGetAll.passed}, POST=${hasPost.passed}, DELETE=${hasDelete.passed}`);
+    console.log(
+      `  ✅ Backend routes: GET all=${hasGetAll.passed}, POST=${hasPost.passed}, DELETE=${hasDelete.passed}`,
+    );
   }, 15000);
 
-  // ── Pre-Pipeline Phases ─────────────────────────────────────────
+  // ── Knowledge Validation ───────────────────────────────────────
 
-  it('Phase: opsx-learn — knowledge skeleton is ready', async () => {
-    const phaseId: PhaseId = 'opsx-learn';
-    const meta = PHASE_META[phaseId];
-
-    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-      env, { changeName: SIMPLE_SCENARIO.changeName }
-    );
-
-    const result: AgentPhaseResult = {
-      phaseId,
-      label: meta.label,
-      status: assertions.every(a => a.passed) ? 'pass' : 'fail',
-      startedAt: new Date().toISOString(),
-      durationMs: 0,
-      agentSummary: `opsx-learn: ${assertions.filter(a => a.passed).length}/${assertions.length} assertions passed`,
-      assertions,
-      artifacts,
-    };
-
-    orchestrator.recordPhaseResult(result);
-    collectedResults.push(result);
-
-    const knowledgeIdx = assertions.find(a => a.description.includes('Knowledge base'));
-    expect(knowledgeIdx).toBeDefined();
-    console.log(`  ${result.status === 'pass' ? '✅' : '❌'} ${meta.label}`);
+  it('Knowledge skeleton is ready after init', async () => {
+    // Verify knowledge base exists after pipeline init
+    expect(env.knowledgeRoot).toBeTruthy();
+    console.log(`  ✅ Knowledge base root: ${env.knowledgeRoot}`);
   }, 15000);
-
-  it('Phase: opsx-analysis — validates analysis output structure', async () => {
-    const phaseId: PhaseId = 'opsx-analysis';
-    const meta = PHASE_META[phaseId];
-
-    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-      env, { changeName: SIMPLE_SCENARIO.changeName }
-    );
-
-    const result: AgentPhaseResult = {
-      phaseId,
-      label: meta.label,
-      status: 'pass',
-      startedAt: new Date().toISOString(),
-      durationMs: 0,
-      agentSummary: 'Analysis validator checks facts/inferences/open-questions structure',
-      assertions,
-      artifacts,
-    };
-
-    orchestrator.recordPhaseResult(result);
-    collectedResults.push(result);
-    console.log(`  ℹ️  ${meta.label}: structure verified`);
-  }, 10000);
-
-  it('Phase: opsx-design — validates design document structure', async () => {
-    const phaseId: PhaseId = 'opsx-design';
-    const meta = PHASE_META[phaseId];
-
-    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-      env, { changeName: SIMPLE_SCENARIO.changeName }
-    );
-
-    const result: AgentPhaseResult = {
-      phaseId,
-      label: meta.label,
-      status: 'pass',
-      startedAt: new Date().toISOString(),
-      durationMs: 0,
-      agentSummary: 'Design validator checks quality gate, verification assertions, and impact analysis',
-      assertions,
-      artifacts,
-    };
-
-    orchestrator.recordPhaseResult(result);
-    collectedResults.push(result);
-    console.log(`  ℹ️  ${meta.label}: design structure verified`);
-  }, 10000);
 
   // ── Pipeline Phases ─────────────────────────────────────────────
 
@@ -163,14 +109,14 @@ describe('Simple Feature — Backend Only', () => {
     const phaseId: PhaseId = 'phase-0-entrance';
     const meta = PHASE_META[phaseId];
 
-    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-      env, { changeName: SIMPLE_SCENARIO.changeName }
-    );
+    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](env, {
+      changeName: SIMPLE_SCENARIO.changeName,
+    });
 
     const result: AgentPhaseResult = {
       phaseId,
       label: meta.label,
-      status: assertions.every(a => a.passed) ? 'pass' : 'fail',
+      status: assertions.every((a) => a.passed) ? 'pass' : 'fail',
       startedAt: new Date().toISOString(),
       durationMs: 0,
       agentSummary: `Phase 0: git=${env.isWorkTree}, openspec=${env.openspecAvailable}`,
@@ -188,9 +134,9 @@ describe('Simple Feature — Backend Only', () => {
     const phaseId: PhaseId = 'phase-1-propose';
     const meta = PHASE_META[phaseId];
 
-    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-      env, { changeName: SIMPLE_SCENARIO.changeName }
-    );
+    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](env, {
+      changeName: SIMPLE_SCENARIO.changeName,
+    });
 
     const result: AgentPhaseResult = {
       phaseId,
@@ -198,7 +144,8 @@ describe('Simple Feature — Backend Only', () => {
       status: 'pass',
       startedAt: new Date().toISOString(),
       durationMs: 0,
-      agentSummary: 'Agent creates openspec change with proposal/tasks/specs for single-todo endpoint',
+      agentSummary:
+        'Agent creates openspec change with proposal/tasks/specs for single-todo endpoint',
       assertions,
       artifacts,
     };
@@ -212,9 +159,9 @@ describe('Simple Feature — Backend Only', () => {
     const phaseId: PhaseId = 'phase-2-apply';
     const meta = PHASE_META[phaseId];
 
-    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-      env, { changeName: SIMPLE_SCENARIO.changeName }
-    );
+    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](env, {
+      changeName: SIMPLE_SCENARIO.changeName,
+    });
 
     const result: AgentPhaseResult = {
       phaseId,
@@ -222,7 +169,8 @@ describe('Simple Feature — Backend Only', () => {
       status: 'pass',
       startedAt: new Date().toISOString(),
       durationMs: 0,
-      agentSummary: 'Agent adds GET /api/todos/:id route + test, self-review, and conventional commit',
+      agentSummary:
+        'Agent adds GET /api/todos/:id route + test, self-review, and conventional commit',
       assertions,
       artifacts,
     };
@@ -244,15 +192,13 @@ describe('Simple Feature — Backend Only', () => {
       'phase-5-unit-tests',
       'phase-4-archive',
       'phase-6-merge-push',
-      'opsx-verify',
-      'opsx-health',
     ];
 
     for (const phaseId of remainingPhases) {
       const meta = PHASE_META[phaseId];
-      const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-        env, { changeName: SIMPLE_SCENARIO.changeName }
-      );
+      const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](env, {
+        changeName: SIMPLE_SCENARIO.changeName,
+      });
 
       const result: AgentPhaseResult = {
         phaseId,
@@ -269,8 +215,8 @@ describe('Simple Feature — Backend Only', () => {
       collectedResults.push(result);
     }
 
-    expect(collectedResults.length).toBe(12); // All 12 phases
-    console.log(`  ✅ All 12 phase validators registered and callable`);
+    expect(collectedResults.length).toBe(ALL_PHASES.length); // All phases
+    console.log(`  ✅ All ${ALL_PHASES.length} phase validators registered and callable`);
   }, 30000);
 
   // ── Final Report ────────────────────────────────────────────────
@@ -280,17 +226,21 @@ describe('Simple Feature — Backend Only', () => {
 
     expect(report.meta.scenarioName).toBe(SIMPLE_SCENARIO.name);
     expect(report.meta.changeName).toBe('add-get-todo-by-id');
-    expect(report.phases).toHaveLength(12);
-    expect(report.summary.passedPhases).toBe(12);
+    expect(report.phases).toHaveLength(ALL_PHASES.length);
+    expect(report.summary.passedPhases).toBe(ALL_PHASES.length);
     expect(report.summary.totalAssertions).toBeGreaterThan(0);
-    // Score won't be 100 because opsx-learn checks for non-template entries
+    // Score won't be 100 because knowledge skeleton checks for non-template entries
     // which don't exist in a fresh skeleton
     expect(report.summary.overallScore).toBeGreaterThan(0);
 
     console.log(`\n📊 Simple Feature Report:`);
     console.log(`   Scenario: ${report.meta.scenarioName}`);
-    console.log(`   Phases: ${report.summary.totalPhases} | Passed: ${report.summary.passedPhases}`);
-    console.log(`   Assertions: ${report.summary.passedAssertions}/${report.summary.totalAssertions}`);
+    console.log(
+      `   Phases: ${report.summary.totalPhases} | Passed: ${report.summary.passedPhases}`,
+    );
+    console.log(
+      `   Assertions: ${report.summary.passedAssertions}/${report.summary.totalAssertions}`,
+    );
     console.log(`   Score: ${report.summary.overallScore}/100`);
   }, 30000);
 });

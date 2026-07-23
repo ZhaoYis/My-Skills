@@ -13,7 +13,12 @@ import { PipelineAgentOrchestrator } from '../../src/harness/PipelineAgentOrches
 import { ReportGenerator } from '../../src/report/ReportGenerator.js';
 import { PHASE_VALIDATORS } from '../../src/validators/PhaseValidators.js';
 import { PHASE_META } from '../../src/harness/types.js';
-import type { ScenarioConfig, TestEnvironment, AgentPhaseResult, PhaseId } from '../../src/harness/types.js';
+import type {
+  ScenarioConfig,
+  TestEnvironment,
+  AgentPhaseResult,
+  PhaseId,
+} from '../../src/harness/types.js';
 import { isOpenspecAvailable } from '../../src/utils/openspecHelpers.js';
 import { gitIsWorkTree, gitStatus, gitLastCommitMessage } from '../../src/utils/gitHelpers.js';
 import { expectFileExists, expectFileContains } from '../../src/utils/fileAssertions.js';
@@ -62,14 +67,14 @@ describe('Error Recovery — Archive with Pending Tasks', () => {
     const phaseId: PhaseId = 'phase-0-entrance';
     const meta = PHASE_META[phaseId];
 
-    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-      env, { changeName: ARCHIVE_ERROR_SCENARIO.changeName }
-    );
+    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](env, {
+      changeName: ARCHIVE_ERROR_SCENARIO.changeName,
+    });
 
     const result: AgentPhaseResult = {
       phaseId,
       label: meta.label,
-      status: assertions.every(a => a.passed) ? 'pass' : 'fail',
+      status: assertions.every((a) => a.passed) ? 'pass' : 'fail',
       startedAt: new Date().toISOString(),
       durationMs: 0,
       agentSummary: `Phase 0 preflight: git=${env.isWorkTree}, openspec=${env.openspecAvailable}`,
@@ -81,7 +86,12 @@ describe('Error Recovery — Archive with Pending Tasks', () => {
     collectedResults.push(result);
 
     // Manually create a change directory with incomplete tasks
-    const changeDir = path.join(env.rootDir, 'openspec', 'changes', ARCHIVE_ERROR_SCENARIO.changeName);
+    const changeDir = path.join(
+      env.rootDir,
+      'openspec',
+      'changes',
+      ARCHIVE_ERROR_SCENARIO.changeName,
+    );
     await fs.ensureDir(changeDir);
 
     // Create tasks.md with both completed and pending items
@@ -118,7 +128,11 @@ Test the error recovery when archiving incomplete work.
 
     // Create specs directory
     await fs.ensureDir(path.join(changeDir, 'specs'));
-    await fs.writeFile(path.join(changeDir, 'specs', 'api.md'), '# API Spec\n\nIncomplete.', 'utf-8');
+    await fs.writeFile(
+      path.join(changeDir, 'specs', 'api.md'),
+      '# API Spec\n\nIncomplete.',
+      'utf-8',
+    );
 
     console.log('✅ Created incomplete change with pending tasks');
   }, 30000);
@@ -127,7 +141,11 @@ Test the error recovery when archiving incomplete work.
 
   it('Detects incomplete tasks in the change', async () => {
     const tasksPath = path.join(
-      env.rootDir, 'openspec', 'changes', ARCHIVE_ERROR_SCENARIO.changeName, 'tasks.md'
+      env.rootDir,
+      'openspec',
+      'changes',
+      ARCHIVE_ERROR_SCENARIO.changeName,
+      'tasks.md',
     );
 
     const tasksExist = await expectFileExists(tasksPath);
@@ -153,15 +171,19 @@ Test the error recovery when archiving incomplete work.
 
     // Read tasks file to check for pending items
     const tasksPath = path.join(
-      env.rootDir, 'openspec', 'changes', ARCHIVE_ERROR_SCENARIO.changeName, 'tasks.md'
+      env.rootDir,
+      'openspec',
+      'changes',
+      ARCHIVE_ERROR_SCENARIO.changeName,
+      'tasks.md',
     );
     const tasksContent = await fs.readFile(tasksPath, 'utf-8');
     const hasPendingTasks = /\[ \]/.test(tasksContent);
 
     // Run the standard archive validator
-    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](
-      env, { changeName: ARCHIVE_ERROR_SCENARIO.changeName }
-    );
+    const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](env, {
+      changeName: ARCHIVE_ERROR_SCENARIO.changeName,
+    });
 
     // Add our custom pending-task assertion
     const pendingAssertion = {
@@ -177,7 +199,7 @@ Test the error recovery when archiving incomplete work.
     const result: AgentPhaseResult = {
       phaseId,
       label: meta.label,
-      status: allAssertions.every(a => a.passed) ? 'pass' : 'fail',
+      status: allAssertions.every((a) => a.passed) ? 'pass' : 'fail',
       startedAt: new Date().toISOString(),
       durationMs: 0,
       agentSummary: hasPendingTasks
@@ -204,7 +226,11 @@ Test the error recovery when archiving incomplete work.
     // Simulate the user choosing to force-archive
     // In real agent execution, this would be a decision point interaction
     const tasksPath = path.join(
-      env.rootDir, 'openspec', 'changes', ARCHIVE_ERROR_SCENARIO.changeName, 'tasks.md'
+      env.rootDir,
+      'openspec',
+      'changes',
+      ARCHIVE_ERROR_SCENARIO.changeName,
+      'tasks.md',
     );
 
     // Mark remaining tasks as explicitly skipped (not completed)
@@ -217,7 +243,7 @@ Test the error recovery when archiving incomplete work.
     await fs.appendFile(
       tasksPath,
       '\n\n## Force Archive Note\nArchived with pending tasks per user decision.\n',
-      'utf-8'
+      'utf-8',
     );
 
     // Verify the tasks.md now reflects the force-archive decision
@@ -226,7 +252,7 @@ Test the error recovery when archiving incomplete work.
     const hasForceNote = updatedContent.includes('Force Archive Note');
 
     expect(stillPending).toBe(false); // No more unchecked boxes
-    expect(hasForceNote).toBe(true);  // Force archive note added
+    expect(hasForceNote).toBe(true); // Force archive note added
 
     console.log('✅ Force-archive preparation: pending tasks marked as skipped, note added');
   }, 15000);
@@ -235,7 +261,10 @@ Test the error recovery when archiving incomplete work.
 
   it('Recovery guardrails appendix covers archive errors', async () => {
     const guardrailsPath = path.join(
-      env.skillsRoot, 'opsx-dev-pipeline', 'assets', 'recovery-guardrails-appendix.md'
+      env.skillsRoot,
+      'opsx-dev-pipeline',
+      'assets',
+      'recovery-guardrails-appendix.md',
     );
 
     const guardrailsExist = await fileExists(guardrailsPath);
@@ -253,7 +282,10 @@ Test the error recovery when archiving incomplete work.
 
   it('Failure recovery index has archive-related entries', async () => {
     const recoveryPath = path.join(
-      env.skillsRoot, 'opsx-dev-pipeline', 'assets', 'failure-recovery-index.md'
+      env.skillsRoot,
+      'opsx-dev-pipeline',
+      'assets',
+      'failure-recovery-index.md',
     );
 
     const recoveryExists = await fileExists(recoveryPath);
@@ -277,13 +309,13 @@ Test the error recovery when archiving incomplete work.
     expect(report.meta.overallStatus).toBe('fail'); // Archive should be in fail state
 
     // Verify the archive phase is recorded as failed
-    const archivePhase = report.phases.find(p => p.phaseId === 'phase-4-archive');
+    const archivePhase = report.phases.find((p) => p.phaseId === 'phase-4-archive');
     expect(archivePhase).toBeDefined();
     expect(archivePhase!.status).toBe('fail');
 
     // Verify the pending tasks assertion is recorded
-    const pendingAssertion = archivePhase!.assertions.find(
-      a => a.description.includes('All tasks are completed')
+    const pendingAssertion = archivePhase!.assertions.find((a) =>
+      a.description.includes('All tasks are completed'),
     );
     expect(pendingAssertion).toBeDefined();
     expect(pendingAssertion!.passed).toBe(false);
@@ -291,7 +323,7 @@ Test the error recovery when archiving incomplete work.
     // Verify recommendations mention the failure
     expect(report.summary.recommendations.length).toBeGreaterThan(0);
     const hasArchiveRec = report.summary.recommendations.some(
-      r => r.includes('Phase 4') || r.includes('archive') || r.includes('Archive')
+      (r) => r.includes('Phase 4') || r.includes('archive') || r.includes('Archive'),
     );
     // At minimum, there should be a recommendation about the failed phase
     expect(report.summary.failedPhases).toBeGreaterThan(0);

@@ -5,10 +5,11 @@ import { readManifest, removeManifest, writeManifest } from '../manifest/io.js';
 import { PACKAGE_NAME, TEMPLATE_VERSION } from '../runtime/meta.js';
 import type { UninstallPlan } from './types.js';
 
-async function removeEmptyParentDirectories(targetDir: string, removedFilePaths: string[]): Promise<void> {
-  const parentDirs = new Set(
-    removedFilePaths.map((filePath) => path.dirname(filePath))
-  );
+async function removeEmptyParentDirectories(
+  targetDir: string,
+  removedFilePaths: string[],
+): Promise<void> {
+  const parentDirs = new Set(removedFilePaths.map((filePath) => path.dirname(filePath)));
 
   const sortedParents = Array.from(parentDirs).sort((left, right) => right.length - left.length);
 
@@ -35,12 +36,10 @@ async function updateManifestAfterUninstall(plan: UninstallPlan): Promise<void> 
   }
 
   const removedAssetIds = new Set(
-    plan.files
-      .filter((file) => file.resolution === 'remove')
-      .map((file) => file.assetId)
+    plan.files.filter((file) => file.resolution === 'remove').map((file) => file.assetId),
   );
   const remainingAssets = manifestResult.manifest.managedAssets.filter(
-    (asset) => !removedAssetIds.has(asset.id)
+    (asset) => !removedAssetIds.has(asset.id),
   );
 
   if (remainingAssets.length === 0) {
@@ -51,7 +50,7 @@ async function updateManifestAfterUninstall(plan: UninstallPlan): Promise<void> 
   await writeManifest(plan.targetDir, {
     ...manifestResult.manifest,
     templateVersion: TEMPLATE_VERSION,
-    managedAssets: remainingAssets
+    managedAssets: remainingAssets,
   });
 }
 
@@ -66,8 +65,8 @@ export async function executeUninstallPlan(plan: UninstallPlan): Promise<void> {
     }
 
     if (plan.keepKnowledge) {
-      const keptKnowledge = plan.files.filter(
-        (file) => file.assetId.startsWith('common-knowledge-skeleton:')
+      const keptKnowledge = plan.files.filter((file) =>
+        file.assetId.startsWith('common-knowledge-skeleton:'),
       );
       if (keptKnowledge.length > 0) {
         console.log(pc.cyan('Knowledge files kept by --keep-knowledge:'));
@@ -79,14 +78,16 @@ export async function executeUninstallPlan(plan: UninstallPlan): Promise<void> {
 
     const manifestResult = await readManifest(plan.targetDir);
     const removedAssetIds = new Set(filesToRemove.map((file) => file.assetId));
-    const remainingAssets = manifestResult?.manifest.managedAssets.filter(
-      (asset) => !removedAssetIds.has(asset.id)
-    ) ?? [];
+    const remainingAssets =
+      manifestResult?.manifest.managedAssets.filter((asset) => !removedAssetIds.has(asset.id)) ??
+      [];
 
     if (remainingAssets.length === 0) {
       console.log(pc.cyan('Manifest would be removed after file cleanup.'));
     } else {
-      console.log(pc.cyan(`Manifest would be updated to keep ${remainingAssets.length} managed asset(s).`));
+      console.log(
+        pc.cyan(`Manifest would be updated to keep ${remainingAssets.length} managed asset(s).`),
+      );
     }
 
     return;

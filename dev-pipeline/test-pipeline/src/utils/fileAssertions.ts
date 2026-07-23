@@ -48,14 +48,12 @@ export async function expectDirExists(dirPath: string): Promise<FileAssertion> {
 export async function expectFileContains(
   filePath: string,
   pattern: string | RegExp,
-  description?: string
+  description?: string,
 ): Promise<FileAssertion> {
   const desc = description || `File contains pattern: ${String(pattern)}`;
   try {
     const content = await readFile(filePath);
-    const passed = typeof pattern === 'string'
-      ? content.includes(pattern)
-      : pattern.test(content);
+    const passed = typeof pattern === 'string' ? content.includes(pattern) : pattern.test(content);
     return {
       description: desc,
       passed,
@@ -76,13 +74,13 @@ export async function expectFileContains(
  */
 export async function expectFilesExist(
   baseDir: string,
-  expectedFiles: string[]
+  expectedFiles: string[],
 ): Promise<FileAssertion[]> {
   return Promise.all(
     expectedFiles.map(async (f) => {
       const fullPath = path.join(baseDir, f);
       return expectFileExists(fullPath);
-    })
+    }),
   );
 }
 
@@ -91,7 +89,7 @@ export async function expectFilesExist(
  */
 export async function expectDirContains(
   dirPath: string,
-  expectedRelativePaths: string[]
+  expectedRelativePaths: string[],
 ): Promise<FileAssertion[]> {
   return expectFilesExist(dirPath, expectedRelativePaths);
 }
@@ -99,9 +97,7 @@ export async function expectDirContains(
 /**
  * Assert that a JSON file parses successfully and optionally matches a schema.
  */
-export async function expectValidJson(
-  filePath: string
-): Promise<FileAssertion> {
+export async function expectValidJson(filePath: string): Promise<FileAssertion> {
   try {
     const content = await readFile(filePath);
     JSON.parse(content);
@@ -121,11 +117,10 @@ export async function expectValidJson(
 /**
  * Assert that a file path matches conventional commit format.
  */
-export async function expectConventionalCommit(
-  message: string
-): Promise<FileAssertion> {
+export async function expectConventionalCommit(message: string): Promise<FileAssertion> {
   // Conventional commit: type(scope?): description
-  const conventionalPattern = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?: .+/;
+  const conventionalPattern =
+    /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?: .+/;
   return {
     description: 'Commit message follows conventional commit format',
     passed: conventionalPattern.test(message),
@@ -146,8 +141,8 @@ export interface AssertionSummary {
 }
 
 export function summarizeAssertions(assertions: FileAssertion[]): AssertionSummary {
-  const passed = assertions.filter(a => a.passed);
-  const failed = assertions.filter(a => !a.passed);
+  const passed = assertions.filter((a) => a.passed);
+  const failed = assertions.filter((a) => !a.passed);
   return {
     all: assertions,
     passed,

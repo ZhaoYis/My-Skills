@@ -9,6 +9,6 @@ export interface ToolsListPayload {
 export function buildToolsListPayload(tools: ToolDefinition[]): ToolsListPayload {
   return {
     packageVersion: PACKAGE_VERSION,
-    tools: tools.map((tool) => ({ ...tool }))
+    tools: tools.map((tool) => ({ ...tool })),
   };
 }

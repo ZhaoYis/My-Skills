@@ -11,7 +11,7 @@ function buildChoices(appendable: boolean) {
     { title: '强制覆盖', value: 'overwrite' },
     { title: '跳过', value: 'skip' },
     { title: '覆盖当前及剩余全部', value: 'overwrite-all' },
-    { title: '跳过当前及剩余全部', value: 'skip-all' }
+    { title: '跳过当前及剩余全部', value: 'skip-all' },
   ] as Array<{ title: string; value: InstallConflictResolution | ConflictBulkAction }>;
 
   if (appendable) {
@@ -22,7 +22,11 @@ function buildChoices(appendable: boolean) {
   return choices;
 }
 
-function applyBulkResolution(files: InstallPlan['files'], startIndex: number, action: ConflictBulkAction) {
+function applyBulkResolution(
+  files: InstallPlan['files'],
+  startIndex: number,
+  action: ConflictBulkAction,
+) {
   for (let index = startIndex; index < files.length; index += 1) {
     const file = files[index];
     if (!file || file.resolution !== 'unresolved') {
@@ -45,7 +49,7 @@ function applyBulkResolution(files: InstallPlan['files'], startIndex: number, ac
 
 export async function resolveInstallConflicts(
   plan: InstallPlan,
-  options: ResolveInstallConflictsOptions
+  options: ResolveInstallConflictsOptions,
 ): Promise<InstallPlan> {
   const unresolvedFiles = getUnresolvedFiles(plan);
 
@@ -70,12 +74,16 @@ export async function resolveInstallConflicts(
         name: 'resolution',
         message: `[${index + 1}/${unresolvedFiles.length}] 检测到重复文件：${file.destinationPath}`,
         choices: buildChoices(file.appendable),
-        initial: file.appendable ? 1 : 0
+        initial: file.appendable ? 1 : 0,
       },
-      { onCancel: () => process.exit(1) }
+      { onCancel: () => process.exit(1) },
     );
 
-    if (response.resolution === 'overwrite-all' || response.resolution === 'append-all-safe' || response.resolution === 'skip-all') {
+    if (
+      response.resolution === 'overwrite-all' ||
+      response.resolution === 'append-all-safe' ||
+      response.resolution === 'skip-all'
+    ) {
       applyBulkResolution(unresolvedFiles, index, response.resolution);
       continue;
     }

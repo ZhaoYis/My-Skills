@@ -12,7 +12,12 @@ import { PipelineAgentOrchestrator } from '../../src/harness/PipelineAgentOrches
 import { ReportGenerator } from '../../src/report/ReportGenerator.js';
 import { PHASE_VALIDATORS } from '../../src/validators/PhaseValidators.js';
 import { PHASE_META } from '../../src/harness/types.js';
-import type { ScenarioConfig, TestEnvironment, AgentPhaseResult, PhaseId } from '../../src/harness/types.js';
+import type {
+  ScenarioConfig,
+  TestEnvironment,
+  AgentPhaseResult,
+  PhaseId,
+} from '../../src/harness/types.js';
 import { isOpenspecAvailable } from '../../src/utils/openspecHelpers.js';
 import { gitIsWorkTree } from '../../src/utils/gitHelpers.js';
 import { expectFileExists } from '../../src/utils/fileAssertions.js';
@@ -60,7 +65,9 @@ describe('Error Recovery — Graceful Degradation', () => {
     try {
       const stat = await fs.stat(path.join(env.rootDir, '.git'));
       gitDirExists = stat.isDirectory();
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     expect(gitDirExists).toBe(true);
 
     console.log('✅ Git work tree created successfully');
@@ -68,7 +75,9 @@ describe('Error Recovery — Graceful Degradation', () => {
 
   it('Knowledge skeleton exists after pipeline init', async () => {
     // Knowledge directory should exist
-    const knowledgeExists = await expectFileExists(path.join(env.rootDir, '.knowledge', 'INDEX.md'));
+    const knowledgeExists = await expectFileExists(
+      path.join(env.rootDir, '.knowledge', 'INDEX.md'),
+    );
     expect(knowledgeExists.passed).toBe(true);
 
     // Tech knowledge directory
@@ -82,12 +91,14 @@ describe('Error Recovery — Graceful Degradation', () => {
     const phaseId: PhaseId = 'phase-0-entrance';
     const meta = PHASE_META[phaseId];
 
-    const validation = await PHASE_VALIDATORS[phaseId](env, { changeName: ERROR_SCENARIO.changeName });
+    const validation = await PHASE_VALIDATORS[phaseId](env, {
+      changeName: ERROR_SCENARIO.changeName,
+    });
 
     const result: AgentPhaseResult = {
       phaseId,
       label: meta.label,
-      status: validation.assertions.every(a => a.passed) ? 'pass' : 'fail',
+      status: validation.assertions.every((a) => a.passed) ? 'pass' : 'fail',
       startedAt: new Date().toISOString(),
       durationMs: 0,
       agentSummary: 'Phase 0 preflight checks completed',
@@ -99,8 +110,8 @@ describe('Error Recovery — Graceful Degradation', () => {
 
     // Report on assertions but don't fail on openspec-specific ones
     // since openspec may or may not be installed
-    const coreAssertions = validation.assertions.filter(a => !a.description.includes('OpenSpec'));
-    const gitAssertion = validation.assertions.find(a => a.description.includes('Git'));
+    const coreAssertions = validation.assertions.filter((a) => !a.description.includes('OpenSpec'));
+    const gitAssertion = validation.assertions.find((a) => a.description.includes('Git'));
 
     expect(gitAssertion?.passed).toBe(true);
 
@@ -110,6 +121,8 @@ describe('Error Recovery — Graceful Degradation', () => {
 
     console.log(`📄 JSON report: ${jsonPath}`);
     console.log(`📝 Markdown report: ${markdownPath}`);
-    console.log(`Summary: ${report.summary.totalPhases} phases, score ${report.summary.overallScore}/100`);
+    console.log(
+      `Summary: ${report.summary.totalPhases} phases, score ${report.summary.overallScore}/100`,
+    );
   }, 60000);
 });

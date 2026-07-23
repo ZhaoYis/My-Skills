@@ -26,11 +26,11 @@ export async function runSyncCommand(options: InitOptions): Promise<void> {
     force: Boolean(options.force),
     mode: 'sync',
     managedAssets: result.manifest.managedAssets,
-    registry
+    registry,
   });
   const resolvedPlan = await resolveInstallConflicts(plan, {
     yes: Boolean(options.yes),
-    force: Boolean(options.force)
+    force: Boolean(options.force),
   });
 
   await executeInstallPlan(resolvedPlan);

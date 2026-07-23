@@ -23,13 +23,14 @@ function createAdapter(): ToolAdapter {
       markers: ['.claude'],
       destinations: { root: '.', skills: '.claude/skills', commands: '.claude/commands' },
       supports: ['base', 'skills', 'commands', 'docs'],
-      postInstallNotes: ['note-a', 'note-b']
+      postInstallNotes: ['note-a', 'note-b'],
     },
     detectFiles: () => ['.claude'],
     supports: () => true,
-    getDestination: (feature: 'skills' | 'commands') => feature === 'skills' ? '.claude/skills' : '.claude/commands',
+    getDestination: (feature: 'skills' | 'commands') =>
+      feature === 'skills' ? '.claude/skills' : '.claude/commands',
     getRoot: () => '.',
-    getPostInstallNotes: () => ['note-a', 'note-b']
+    getPostInstallNotes: () => ['note-a', 'note-b'],
   };
 }
 
@@ -44,7 +45,7 @@ function createPlan(overrides: Partial<InstallPlan> = {}): InstallPlan {
     dryRun: false,
     force: false,
     mode: 'init',
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -55,7 +56,7 @@ describe('executeInstallPlan', () => {
 
     const managedAssets = [
       { id: 'common-readme', destination: 'README.md' },
-      { id: 'claude-docs', destination: 'CLAUDE.md' }
+      { id: 'claude-docs', destination: 'CLAUDE.md' },
     ];
 
     await fs.writeJson(path.join(dir, MANIFEST_FILE), {
@@ -65,7 +66,7 @@ describe('executeInstallPlan', () => {
       features: ['base', 'skills', 'commands', 'docs'],
       templateVersion: '0.1.5',
       packageName: 'opsx-dev-pipeline',
-      managedAssets
+      managedAssets,
     });
     await fs.writeFile(path.join(dir, 'README.md'), '# Existing\n');
     await fs.writeFile(path.join(dir, 'CLAUDE.md'), 'custom\n');
@@ -81,7 +82,7 @@ describe('executeInstallPlan', () => {
           kind: 'template',
           exists: true,
           appendable: true,
-          resolution: 'skip'
+          resolution: 'skip',
         },
         {
           assetId: 'claude-docs',
@@ -90,9 +91,9 @@ describe('executeInstallPlan', () => {
           kind: 'template',
           exists: true,
           appendable: true,
-          resolution: 'skip'
-        }
-      ]
+          resolution: 'skip',
+        },
+      ],
     });
 
     await executeInstallPlan(plan);
@@ -121,9 +122,9 @@ describe('executeInstallPlan', () => {
           kind: 'template',
           exists: true,
           appendable: true,
-          resolution: 'append'
-        }
-      ]
+          resolution: 'append',
+        },
+      ],
     });
 
     await executeInstallPlan(plan);
@@ -134,7 +135,7 @@ describe('executeInstallPlan', () => {
 
     const manifest = await readManifest(dir);
     expect(manifest?.manifest.managedAssets).toEqual([
-      { id: 'common-readme', destination: 'README.md' }
+      { id: 'common-readme', destination: 'README.md' },
     ]);
   });
 });

@@ -56,7 +56,7 @@ export class PipelineAgentOrchestrator {
       if (result.status === 'fail' || result.status === 'error') {
         // Mark remaining phases as skipped
         const remainingPhases = this.scenario.phases.slice(
-          this.scenario.phases.indexOf(phaseId) + 1
+          this.scenario.phases.indexOf(phaseId) + 1,
         );
         for (const skippedId of remainingPhases) {
           const skippedResult = this.createSkippedResult(skippedId, `Phase ${phaseId} failed`);
@@ -83,7 +83,7 @@ export class PipelineAgentOrchestrator {
     const basePrompt = this.runner.buildPhasePrompt(
       phaseId,
       this.scenario.changeName,
-      this.scenario.featureDescription
+      this.scenario.featureDescription,
     );
 
     const specificInstructions = getPhaseSpecificInstructions(phaseId, {
@@ -136,7 +136,7 @@ export class PipelineAgentOrchestrator {
    */
   private async launchAgent(
     phaseId: PhaseId,
-    prompt: string
+    prompt: string,
   ): Promise<{
     status: string;
     summary: string;
@@ -165,7 +165,7 @@ export class PipelineAgentOrchestrator {
     const basePrompt = this.runner.buildPhasePrompt(
       phaseId,
       this.scenario.changeName,
-      this.scenario.featureDescription
+      this.scenario.featureDescription,
     );
     const specificInstructions = getPhaseSpecificInstructions(phaseId, {
       changeName: this.scenario.changeName,
@@ -202,24 +202,24 @@ export class PipelineAgentOrchestrator {
   /**
    * Build the final report from all collected results.
    */
-  buildReport(
-    phaseResults: AgentPhaseResult[],
-    durationMs: number
-  ): PipelineReport {
-    const passed = phaseResults.filter(p => p.status === 'pass').length;
-    const failed = phaseResults.filter(p => p.status === 'fail' || p.status === 'error').length;
-    const skipped = phaseResults.filter(p => p.status === 'skipped').length;
+  buildReport(phaseResults: AgentPhaseResult[], durationMs: number): PipelineReport {
+    const passed = phaseResults.filter((p) => p.status === 'pass').length;
+    const failed = phaseResults.filter((p) => p.status === 'fail' || p.status === 'error').length;
+    const skipped = phaseResults.filter((p) => p.status === 'skipped').length;
 
     const totalAssertions = phaseResults.reduce((sum, p) => sum + p.assertions.length, 0);
     const passedAssertions = phaseResults.reduce(
-      (sum, p) => sum + p.assertions.filter(a => a.passed).length,
-      0
+      (sum, p) => sum + p.assertions.filter((a) => a.passed).length,
+      0,
     );
     const failedAssertions = totalAssertions - passedAssertions;
 
-    const overallScore = totalAssertions > 0
-      ? Math.round((passedAssertions / totalAssertions) * 100)
-      : passed > 0 ? 100 : 0;
+    const overallScore =
+      totalAssertions > 0
+        ? Math.round((passedAssertions / totalAssertions) * 100)
+        : passed > 0
+          ? 100
+          : 0;
 
     const recommendations: string[] = [];
     if (failed > 0) {

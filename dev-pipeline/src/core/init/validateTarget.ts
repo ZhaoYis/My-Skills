@@ -2,7 +2,16 @@ import fs from 'fs-extra';
 import path from 'node:path';
 import type { ToolAdapter, ToolId } from '../adapters/types.js';
 
-const SAFE_FILES = new Set(['.git', '.gitignore', 'README.md', 'package.json', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'bun.lockb']);
+const SAFE_FILES = new Set([
+  '.git',
+  '.gitignore',
+  'README.md',
+  'package.json',
+  'package-lock.json',
+  'pnpm-lock.yaml',
+  'yarn.lock',
+  'bun.lockb',
+]);
 
 export interface TargetValidation {
   existingEntries: string[];
@@ -11,7 +20,7 @@ export interface TargetValidation {
 
 export async function validateTarget(
   targetDir: string,
-  registry: Map<ToolId, ToolAdapter>
+  registry: Map<ToolId, ToolAdapter>,
 ): Promise<TargetValidation> {
   await fs.ensureDir(targetDir);
   const existingEntries = (await fs.readdir(targetDir)).filter((entry) => !SAFE_FILES.has(entry));

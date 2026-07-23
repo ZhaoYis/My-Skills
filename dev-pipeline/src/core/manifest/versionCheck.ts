@@ -44,7 +44,7 @@ function compareSemver(left: string, right: string): -1 | 0 | 1 | null {
 
 export function checkManifestVersion(
   manifestVersion: string,
-  currentVersion: string = PACKAGE_VERSION
+  currentVersion: string = PACKAGE_VERSION,
 ): ManifestVersionCheck {
   const comparison = compareSemver(manifestVersion, currentVersion);
 
@@ -54,7 +54,7 @@ export function checkManifestVersion(
       healthStatus: 'ok',
       manifestVersion,
       currentVersion,
-      message: `Manifest template version matches the installed CLI (${currentVersion}).`
+      message: `Manifest template version matches the installed CLI (${currentVersion}).`,
     };
   }
 
@@ -65,7 +65,7 @@ export function checkManifestVersion(
       manifestVersion,
       currentVersion,
       message: `Manifest template version ${manifestVersion} is older than the installed CLI ${currentVersion}.`,
-      recommendation: 'Run `npx opsx-dev-pipeline upgrade` to refresh managed templates.'
+      recommendation: 'Run `npx opsx-dev-pipeline upgrade` to refresh managed templates.',
     };
   }
 
@@ -76,7 +76,8 @@ export function checkManifestVersion(
       manifestVersion,
       currentVersion,
       message: `Manifest template version ${manifestVersion} is newer than the installed CLI ${currentVersion}.`,
-      recommendation: 'Upgrade the opsx-dev-pipeline package to match the manifest template version.'
+      recommendation:
+        'Upgrade the opsx-dev-pipeline package to match the manifest template version.',
     };
   }
 
@@ -86,7 +87,8 @@ export function checkManifestVersion(
     manifestVersion,
     currentVersion,
     message: `Unable to compare manifest template version "${manifestVersion}" with CLI version ${currentVersion}.`,
-    recommendation: 'Re-run `npx opsx-dev-pipeline upgrade` after confirming the installed package version.'
+    recommendation:
+      'Re-run `npx opsx-dev-pipeline upgrade` after confirming the installed package version.',
   };
 }
 

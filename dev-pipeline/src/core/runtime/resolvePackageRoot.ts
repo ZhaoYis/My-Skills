@@ -8,7 +8,9 @@ export async function resolvePackageRoot(fromFileUrl: string): Promise<string> {
   let current = path.dirname(fileURLToPath(fromFileUrl));
 
   while (true) {
-    const hasAll = await Promise.all(MARKERS.map((marker) => fs.pathExists(path.join(current, marker))));
+    const hasAll = await Promise.all(
+      MARKERS.map((marker) => fs.pathExists(path.join(current, marker))),
+    );
     if (hasAll.every(Boolean)) {
       return current;
     }

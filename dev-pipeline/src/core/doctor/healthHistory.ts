@@ -3,7 +3,7 @@ import path from 'node:path';
 import type {
   KnowledgeHealthDimensionDelta,
   KnowledgeHealthReport,
-  KnowledgeHealthTrend
+  KnowledgeHealthTrend,
 } from './types.js';
 
 const historyDir = path.join('.knowledge', 'health-reports');
@@ -29,12 +29,14 @@ function toSnapshot(report: KnowledgeHealthReport): HealthSnapshot | null {
     grade: report.score.grade,
     dimensions: report.score.dimensions.map((dimension) => ({
       id: dimension.id,
-      score: dimension.score
-    }))
+      score: dimension.score,
+    })),
   };
 }
 
-async function readSnapshots(dirPath: string): Promise<Array<{ file: string; snapshot: HealthSnapshot }>> {
+async function readSnapshots(
+  dirPath: string,
+): Promise<Array<{ file: string; snapshot: HealthSnapshot }>> {
   if (!(await fs.pathExists(dirPath))) {
     return [];
   }
@@ -58,22 +60,27 @@ async function readSnapshots(dirPath: string): Promise<Array<{ file: string; sna
   return snapshots;
 }
 
-function computeTrend(current: HealthSnapshot, previous: HealthSnapshot | null): KnowledgeHealthTrend {
+function computeTrend(
+  current: HealthSnapshot,
+  previous: HealthSnapshot | null,
+): KnowledgeHealthTrend {
   if (!previous) {
     return {
       previousDate: null,
       previousValue: null,
       delta: null,
-      dimensionDeltas: current.dimensions.map((dimension) => ({ id: dimension.id, delta: null }))
+      dimensionDeltas: current.dimensions.map((dimension) => ({ id: dimension.id, delta: null })),
     };
   }
 
-  const previousById = new Map(previous.dimensions.map((dimension) => [dimension.id, dimension.score]));
+  const previousById = new Map(
+    previous.dimensions.map((dimension) => [dimension.id, dimension.score]),
+  );
   const dimensionDeltas: KnowledgeHealthDimensionDelta[] = current.dimensions.map((dimension) => {
     const before = previousById.get(dimension.id);
     return {
       id: dimension.id,
-      delta: typeof before === 'number' ? dimension.score - before : null
+      delta: typeof before === 'number' ? dimension.score - before : null,
     };
   });
 
@@ -81,14 +88,14 @@ function computeTrend(current: HealthSnapshot, previous: HealthSnapshot | null):
     previousDate: previous.date,
     previousValue: previous.value,
     delta: current.value - previous.value,
-    dimensionDeltas
+    dimensionDeltas,
   };
 }
 
 export async function applyKnowledgeHealthHistory(
   targetDir: string,
   report: KnowledgeHealthReport,
-  options: { persist?: boolean } = {}
+  options: { persist?: boolean } = {},
 ): Promise<KnowledgeHealthReport> {
   const current = toSnapshot(report);
   if (!current) {

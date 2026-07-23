@@ -18,7 +18,7 @@ export async function runUninstallCommand(options: UninstallOptions): Promise<vo
     manifestResult,
     dryRun: Boolean(options.dryRun),
     yes: Boolean(options.yes),
-    keepKnowledge: Boolean(options.keepKnowledge)
+    keepKnowledge: Boolean(options.keepKnowledge),
   });
 
   if (plan.files.length === 0) {
@@ -26,7 +26,7 @@ export async function runUninstallCommand(options: UninstallOptions): Promise<vo
   }
 
   const resolvedPlan = await resolveUninstallConflicts(plan, {
-    yes: Boolean(options.yes)
+    yes: Boolean(options.yes),
   });
 
   await executeUninstallPlan(resolvedPlan);

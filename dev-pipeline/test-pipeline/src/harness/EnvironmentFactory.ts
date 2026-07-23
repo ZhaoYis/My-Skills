@@ -17,7 +17,7 @@ const SAMPLES_ROOT = path.resolve(__dirname, '../../samples');
  * git repository, OpenSpec init, and opsx-dev-pipeline templates.
  */
 export async function createTestEnvironment(
-  config: EnvironmentConfig = {}
+  config: EnvironmentConfig = {},
 ): Promise<TestEnvironment> {
   const {
     sampleProject = 'fullstack-todo',
@@ -79,25 +79,35 @@ export async function createTestEnvironment(
     try {
       // Try local build first
       const pipelineRoot = path.resolve(__dirname, '../../..');
-      const result = await execFileAsync('npx', [
-        'tsx',
-        path.join(pipelineRoot, 'src/bin/opsx-dev-pipeline.ts'),
-        'init',
-        '--tool', toolId,
-        '--yes',
-        ...features.flatMap(f => ['--feature', f]),
-      ], { cwd: rootDir });
+      const result = await execFileAsync(
+        'npx',
+        [
+          'tsx',
+          path.join(pipelineRoot, 'src/bin/opsx-dev-pipeline.ts'),
+          'init',
+          '--tool',
+          toolId,
+          '--yes',
+          ...features.flatMap((f) => ['--feature', f]),
+        ],
+        { cwd: rootDir },
+      );
       pipelineInitResult = result.stdout;
     } catch {
       // Fallback: try installed CLI
       try {
-        const result = await execFileAsync('npx', [
-          'opsx-dev-pipeline',
-          'init',
-          '--tool', toolId,
-          '--yes',
-          ...features.flatMap(f => ['--feature', f]),
-        ], { cwd: rootDir });
+        const result = await execFileAsync(
+          'npx',
+          [
+            'opsx-dev-pipeline',
+            'init',
+            '--tool',
+            toolId,
+            '--yes',
+            ...features.flatMap((f) => ['--feature', f]),
+          ],
+          { cwd: rootDir },
+        );
         pipelineInitResult = result.stdout;
       } catch (e) {
         pipelineInitResult = `Pipeline init failed: ${String(e)}`;

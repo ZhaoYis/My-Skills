@@ -1,7 +1,7 @@
 ---
 name: phase-4-archive
 description: 全局步骤 12–16，含决策点 4c（知识沉淀）与决策点 4。本阶段在 phase-5-unit-tests.md 步骤 16 完成后执行；归档完成后先经步骤 15.5 知识沉淀决策点，再按决策点 4 进入 Phase 6 或终止。
-compatibility: 需要 openspec CLI、git；归档推荐 dev-pipeline-archive.sh 或等价 openspec archive；知识沉淀复用同级 opsx-learn 技能的写入约定（无该技能或无知识库时自动降级跳过）。
+compatibility: 需要 openspec CLI、git；归档推荐 dev-pipeline-archive.sh 或等价 openspec archive；知识沉淀按通用约定执行（无知识库时自动降级跳过）。
 ---
 
 ## Phase 4: 提案归档 (Archive)
@@ -33,7 +33,7 @@ compatibility: 需要 openspec CLI、git；归档推荐 dev-pipeline-archive.sh 
 
 ### 步骤 13：archive 前 verify 门禁
 
-> **能力库与门禁权威的分工**：当变更需要的不只是跑单条 verify 命令、而是系统性验证（构建→启动→冒烟/契约/数据校验→影响面回归）时，可加载同级 `opsx-verify` 技能执行，并把 `opsx-design` 产出的"验证断言字段"作为验证目标输入。`opsx-verify` 是"如何验证"的能力库；本步骤仍是"何时必须验证、是否放行归档"的门禁权威，不在此复制其正文。无该技能时，仍按下述单条命令门禁执行。
+> **验证门禁**：当变更需要的不仅是跑单条 verify 命令、而是系统性验证（构建→启动→冒烟/契约/数据校验→影响面回归）时，按下述单条命令门禁执行。本步骤是"何时必须验证、是否放行归档"的门禁权威。
 
 1. **解析 verify 命令**
 
@@ -95,12 +95,12 @@ compatibility: 需要 openspec CLI、git；归档推荐 dev-pipeline-archive.sh 
 
 ### 步骤 15.5：[决策点 4c] 知识沉淀（归档后回写知识库）
 
-把「开发完 → 归档」延伸为「开发完 → 归档 → 沉淀知识」，让前向学习（`opsx-learn`）与归档时的反向沉淀形成闭环。该选择属于附录定义的 **B 类：可推荐，不可静默代选**；可给出推荐项，但**不得**替用户自动写入知识库。
+把「开发完 → 归档」延伸为「开发完 → 归档 → 沉淀知识」，让前向学习与归档时的反向沉淀形成闭环。该选择属于附录定义的 **B 类：可推荐，不可静默代选**；可给出推荐项，但**不得**替用户自动写入知识库。
 
 1. **前置判断（无副作用降级）**
 
     - 若目标仓库**不存在**任何知识库（既无 `.knowledge/`，也无项目既有知识目录约定）：跳过本步骤，直接进入 **步骤 16**，不报错。
-    - 若存在知识库但**未安装 `opsx-learn` 技能**：仍可执行沉淀，按本步骤内联的通用约定操作；写入目标、去重与条目格式以同级技能目录的下列正文为准（存在时优先引用，不重复造第二份正文）。
+    - 若存在知识库：仍可执行沉淀，按本步骤内联的通用约定操作。写入目标、去重与条目格式以通用约定为准。
 
 2. **输入**
 
@@ -114,9 +114,9 @@ compatibility: 需要 openspec CLI、git；归档推荐 dev-pipeline-archive.sh 
 
 4. **执行「沉淀知识」时遵循**
 
-    - **写入目标**：以同级技能 `../../opsx-learn/assets/write-targets.md` 的「知识类型与推荐落位」为准；无该技能时按通用落位（能力/业务 → `.knowledge/business/`；接口 → `.knowledge/tech/api/`；数据模型 → `.knowledge/tech/db/`；外部依赖 → 对应技术主题；经验 → `.knowledge/tech/development-experience.md`；风险 → `.knowledge/risks/known-issues.md`）。
-    - **去重规则**：以 `../../opsx-learn/assets/dedup-rules.md` 为准——完全重复则跳过并说明；已有条目更完整则仅补缺；有新事实则合并并标注新增；疑似过时标「建议修订」不静默覆盖。
-    - **条目格式**：以 `../../opsx-learn/assets/knowledge-entry-templates.md` 为准，按六类维度选对应模板。
+    - **写入目标**：按通用落位（能力/业务 → `.knowledge/business/`；接口 → `.knowledge/tech/api/`；数据模型 → `.knowledge/tech/db/`；外部依赖 → 对应技术主题；经验 → `.knowledge/tech/development-experience.md`；风险 → `.knowledge/risks/known-issues.md`）。
+    - **去重规则**：完全重复则跳过并说明；已有条目更完整则仅补缺；有新事实则合并并标注新增；疑似过时标「建议修订」不静默覆盖。
+    - **条目格式**：按六类维度（功能说明、API 契约、数据模型、外部依赖、开发经验、风险评估）选对应模板。
     - **护栏**：仅**追加** + 写入日期时间戳 + 来源标记 `<!-- 来源: dev-pipeline archive: <name> @ <date> -->`；**只记已落地的事实，不记未完成项 / 猜测**；不覆盖用户手工维护内容。
     - **索引同步**：当本次沉淀新增 API 路径、功能域、数据模型、外部服务、风险或运维主题时，同步更新 `.knowledge/INDEX.md` 对应区块；若项目已有其他知识索引约定，遵循既有约定，不重复维护第二套索引。
 
@@ -132,11 +132,4 @@ compatibility: 需要 openspec CLI、git；归档推荐 dev-pipeline-archive.sh 
 
 - `仅提交并推送（不合并）` — 进入 **Phase 6**，执行 commit + push 后结束（同上文件）
 
-- `创建 Pull Request（推送后创建 PR，等待 CI）` — 进入 **Phase 6** 执行 commit + push，然后转入 **Phase 7** PR/CI 闭环（见 `phase-7-pr-ci.md`）。选择此选项前请确认：
-  - 目标仓库支持 Pull Request 工作流
-  - `gh` CLI 可用（否则降级为输出 PR 创建模板）
-  - 本地 merge 将被**禁止**（PR 模式下不得执行 Phase 6 步骤 20 本地合并）
-
 - `终止流程` — 退出流水线（提供恢复指引）
-
-> **交付模式互斥规则**：PR 模式与本地合并模式互斥。选择 PR 模式后，Phase 6 步骤 20（本地 merge）必须被显式跳过；选择本地合并后，不得为同一变更再创建 PR 并执行 `gh pr merge`。决策点 4 的选择必须写入 `openspec/runtime-state.yaml` 的 `delivery_mode` 字段。

@@ -4,10 +4,10 @@ export function inferInstallKind(assetId: string): 'template' | 'static' {
   }
 
   if (
-    assetId === 'common-readme'
-    || assetId.endsWith('-command')
-    || assetId.endsWith('-docs')
-    || assetId.endsWith('-command-guide')
+    assetId === 'common-readme' ||
+    assetId.endsWith('-command') ||
+    assetId.endsWith('-docs') ||
+    assetId.endsWith('-command-guide')
   ) {
     return 'template';
   }

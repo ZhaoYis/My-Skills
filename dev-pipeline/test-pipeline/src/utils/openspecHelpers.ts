@@ -21,14 +21,19 @@ export async function isOpenspecAvailable(): Promise<{ available: boolean; versi
  * Equivalent to: openspec init . --tools none --force
  */
 export async function openspecInit(cwd: string): Promise<{ stdout: string; stderr: string }> {
-  const result = await execFileAsync('openspec', ['init', '.', '--tools', 'none', '--force'], { cwd });
+  const result = await execFileAsync('openspec', ['init', '.', '--tools', 'none', '--force'], {
+    cwd,
+  });
   return { stdout: result.stdout, stderr: result.stderr };
 }
 
 /**
  * Create a new OpenSpec change.
  */
-export async function openspecNewChange(cwd: string, changeName: string): Promise<{ stdout: string; stderr: string }> {
+export async function openspecNewChange(
+  cwd: string,
+  changeName: string,
+): Promise<{ stdout: string; stderr: string }> {
   const result = await execFileAsync('openspec', ['new', 'change', changeName], { cwd });
   return { stdout: result.stdout, stderr: result.stderr };
 }
@@ -37,9 +42,9 @@ export async function openspecNewChange(cwd: string, changeName: string): Promis
  * Get the status of an OpenSpec change as JSON.
  */
 export async function openspecChangeStatus(cwd: string, changeName: string): Promise<unknown> {
-  const result = await execFileAsync(
-    'openspec', ['status', '--change', changeName, '--json'], { cwd }
-  );
+  const result = await execFileAsync('openspec', ['status', '--change', changeName, '--json'], {
+    cwd,
+  });
   return JSON.parse(result.stdout);
 }
 
@@ -47,9 +52,7 @@ export async function openspecChangeStatus(cwd: string, changeName: string): Pro
  * List all OpenSpec changes as JSON.
  */
 export async function openspecListChanges(cwd: string): Promise<unknown> {
-  const result = await execFileAsync(
-    'openspec', ['list', '--json'], { cwd }
-  );
+  const result = await execFileAsync('openspec', ['list', '--json'], { cwd });
   return JSON.parse(result.stdout);
 }
 
@@ -58,7 +61,9 @@ export async function openspecListChanges(cwd: string): Promise<unknown> {
  */
 export async function openspecValidateChange(cwd: string, changeName: string): Promise<unknown> {
   const result = await execFileAsync(
-    'openspec', ['validate', '--type', 'change', changeName, '--json', '--no-interactive'], { cwd }
+    'openspec',
+    ['validate', '--type', 'change', changeName, '--json', '--no-interactive'],
+    { cwd },
   );
   return JSON.parse(result.stdout);
 }
@@ -68,7 +73,9 @@ export async function openspecValidateChange(cwd: string, changeName: string): P
  */
 export async function openspecValidateAll(cwd: string): Promise<unknown> {
   const result = await execFileAsync(
-    'openspec', ['validate', '--all', '--json', '--no-interactive'], { cwd }
+    'openspec',
+    ['validate', '--all', '--json', '--no-interactive'],
+    { cwd },
   );
   return JSON.parse(result.stdout);
 }
@@ -79,7 +86,7 @@ export async function openspecValidateAll(cwd: string): Promise<unknown> {
 export async function openspecArchive(
   cwd: string,
   changeName: string,
-  options?: { skipSpecs?: boolean; yes?: boolean }
+  options?: { skipSpecs?: boolean; yes?: boolean },
 ): Promise<{ stdout: string; stderr: string }> {
   const args = ['archive', changeName];
   if (options?.skipSpecs) args.push('--skip-specs');
@@ -94,7 +101,7 @@ export async function openspecArchive(
 export async function openspecInstructions(
   cwd: string,
   changeName: string,
-  artifactId?: string
+  artifactId?: string,
 ): Promise<unknown> {
   const args = ['instructions', changeName];
   if (artifactId) args.push(artifactId);

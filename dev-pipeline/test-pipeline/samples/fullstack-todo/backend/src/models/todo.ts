@@ -20,7 +20,7 @@ const todos: Map<string, Todo> = new Map();
 
 export function getAllTodos(): Todo[] {
   return Array.from(todos.values()).sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   );
 }
 
@@ -39,7 +39,10 @@ export function createTodo(title: string): Todo {
   return todo;
 }
 
-export function updateTodo(id: string, updates: Partial<Pick<Todo, 'title' | 'completed'>>): Todo | undefined {
+export function updateTodo(
+  id: string,
+  updates: Partial<Pick<Todo, 'title' | 'completed'>>,
+): Todo | undefined {
   const existing = todos.get(id);
   if (!existing) return undefined;
 

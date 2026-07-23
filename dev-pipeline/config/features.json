@@ -29,24 +29,6 @@
       "displayName": "Structural analysis hint (optional)",
       "description": "Opt-in guidance to prefer structural search (code graph / LSP / index MCP) over plain text search when available. Default off; references stay no-op when disabled.",
       "default": false
-    },
-    {
-      "id": "prototype",
-      "displayName": "Prototype / UI analysis skill (optional)",
-      "description": "Opt-in opsx-prototype skill that turns prototype links / screenshots / descriptions into structured requirements for opsx-analysis. Default off; depends on optional external browser/visual tools and degrades gracefully. No credentials are built in. Enable with `init --feature prototype`.",
-      "default": false
-    },
-    {
-      "id": "opsx-pr",
-      "displayName": "PR creation skill (optional)",
-      "description": "Opt-in opsx-pr skill for creating GitHub Pull Requests via gh CLI. Default off; degrades gracefully to platform-agnostic PR template when gh is unavailable. Enable with `init --feature opsx-pr`.",
-      "default": false
-    },
-    {
-      "id": "opsx-ci-triage",
-      "displayName": "CI triage skill (optional)",
-      "description": "Opt-in opsx-ci-triage skill for consuming CI results and classifying failures. Default off; degrades to manual log paste mode when CI data is unavailable. Enable with `init --feature opsx-ci-triage`.",
-      "default": false
     }
   ]
 }

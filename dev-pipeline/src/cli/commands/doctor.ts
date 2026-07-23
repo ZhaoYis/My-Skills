@@ -2,7 +2,12 @@ import pc from 'picocolors';
 import { checkKnowledgeHealth } from '../../core/doctor/checkKnowledgeHealth.js';
 import { checkStackHealth } from '../../core/doctor/checkStackHealth.js';
 import { applyKnowledgeHealthHistory } from '../../core/doctor/healthHistory.js';
-import type { HealthGrade, HealthStatus, KnowledgeHealthReport, StackHealthResult } from '../../core/doctor/types.js';
+import type {
+  HealthGrade,
+  HealthStatus,
+  KnowledgeHealthReport,
+  StackHealthResult,
+} from '../../core/doctor/types.js';
 import { readManifest } from '../../core/manifest/io.js';
 import { checkManifestVersion, mergeHealthStatus } from '../../core/manifest/versionCheck.js';
 import { MANIFEST_PACKAGE_JSON_KEY, PACKAGE_VERSION } from '../../core/runtime/meta.js';
@@ -77,12 +82,12 @@ function printKnowledgeReport(knowledge: KnowledgeHealthReport): void {
   if (knowledge.score) {
     const grade = knowledge.score.grade;
     console.log(
-      `health score: ${colorizeStatus(gradeColorStatus(grade), `${knowledge.score.value}/100 (${gradeLabel(grade)})`)}`
+      `health score: ${colorizeStatus(gradeColorStatus(grade), `${knowledge.score.value}/100 (${gradeLabel(grade)})`)}`,
     );
     for (const dimension of knowledge.score.dimensions) {
       const suffix = dimension.detail ? ` - ${dimension.detail}` : '';
       console.log(
-        `  - ${dimension.label} (w${dimension.weight}): ${colorizeStatus(dimension.status, String(dimension.score))}${suffix}`
+        `  - ${dimension.label} (w${dimension.weight}): ${colorizeStatus(dimension.status, String(dimension.score))}${suffix}`,
       );
     }
   }
@@ -124,17 +129,23 @@ function printStackReport(stack: StackHealthResult): void {
   if (!stack.stackFound) {
     console.log(pc.red('Stack profile: NOT FOUND'));
     console.log(pc.red('  openspec/config.yaml either does not exist or has no stack section.'));
-    console.log(pc.dim('  Add a stack section to openspec/config.yaml. See docs/stack-profile-schema.json for reference.'));
+    console.log(
+      pc.dim(
+        '  Add a stack section to openspec/config.yaml. See docs/stack-profile-schema.json for reference.',
+      ),
+    );
     return;
   }
 
   const statusIcon = stack.valid ? pc.green('✓') : pc.red('✗');
   console.log(`Stack profile: ${statusIcon} ${stack.valid ? 'VALID' : 'INVALID'}`);
   console.log(`  id: ${stack.stackId || '(missing)'}`);
-  console.log(`  services: ${stack.serviceCount ?? 0}${stack.stacks ? ` (${stack.stacks.join(', ')})` : ''}`);
+  console.log(
+    `  services: ${stack.serviceCount ?? 0}${stack.stacks ? ` (${stack.stacks.join(', ')})` : ''}`,
+  );
 
-  const errors = stack.issues.filter(i => i.severity === 'error');
-  const warnings = stack.issues.filter(i => i.severity === 'warning');
+  const errors = stack.issues.filter((i) => i.severity === 'error');
+  const warnings = stack.issues.filter((i) => i.severity === 'warning');
 
   if (errors.length > 0) {
     console.log(pc.red(`\n  Errors (${errors.length}):`));
@@ -158,13 +169,15 @@ function printStackReport(stack: StackHealthResult): void {
 export async function runDoctorCommand(
   dir: string = process.cwd(),
   json = false,
-  options: DoctorCommandOptions = {}
+  options: DoctorCommandOptions = {},
 ): Promise<HealthStatus> {
   // ── Stack-only mode ──
   if (options.stackOnly) {
     const stackHealth = await checkStackHealth(dir);
     if (json) {
-      console.log(JSON.stringify({ status: stackHealth.valid ? 'ok' : 'fail', stack: stackHealth }, null, 2));
+      console.log(
+        JSON.stringify({ status: stackHealth.valid ? 'ok' : 'fail', stack: stackHealth }, null, 2),
+      );
     } else {
       printStackReport(stackHealth);
     }
@@ -173,7 +186,7 @@ export async function runDoctorCommand(
 
   const manifestResult = await readManifest(dir);
   let knowledge = await checkKnowledgeHealth(dir, manifestResult?.manifest.managedAssets ?? [], {
-    staleDays: options.staleDays
+    staleDays: options.staleDays,
   });
 
   if (options.history) {
@@ -185,7 +198,9 @@ export async function runDoctorCommand(
     : undefined;
 
   let status: HealthStatus = !manifestResult
-    ? (knowledge.status === 'fail' ? 'fail' : 'warn')
+    ? knowledge.status === 'fail'
+      ? 'fail'
+      : 'warn'
     : knowledge.status;
 
   if (versionCheck) {
@@ -194,21 +209,22 @@ export async function runDoctorCommand(
 
   const manifest = manifestResult
     ? {
-        status: versionCheck?.healthStatus === 'ok' ? 'ok' as const : 'warn' as const,
+        status: versionCheck?.healthStatus === 'ok' ? ('ok' as const) : ('warn' as const),
         storage: manifestResult.storage,
-        path: manifestResult.storage === 'package-json'
-          ? `${manifestResult.path} (${MANIFEST_PACKAGE_JSON_KEY})`
-          : manifestResult.path,
+        path:
+          manifestResult.storage === 'package-json'
+            ? `${manifestResult.path} (${MANIFEST_PACKAGE_JSON_KEY})`
+            : manifestResult.path,
         tool: manifestResult.manifest.tool,
         features: manifestResult.manifest.features,
         templateVersion: manifestResult.manifest.templateVersion,
         currentVersion: PACKAGE_VERSION,
-        versionCheck
+        versionCheck,
       }
     : {
         status: 'warn' as const,
         path: null,
-        message: 'No opsx-dev-pipeline manifest found in target directory.'
+        message: 'No opsx-dev-pipeline manifest found in target directory.',
       };
 
   if (json) {
@@ -228,7 +244,12 @@ export async function runDoctorCommand(
     if (versionCheck) {
       console.log(colorizeStatus(versionCheck.healthStatus, `- version: ${versionCheck.message}`));
       if (versionCheck.recommendation) {
-        console.log(colorizeStatus(versionCheck.healthStatus, `  recommendation: ${versionCheck.recommendation}`));
+        console.log(
+          colorizeStatus(
+            versionCheck.healthStatus,
+            `  recommendation: ${versionCheck.recommendation}`,
+          ),
+        );
       }
     }
   } else {

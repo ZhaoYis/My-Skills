@@ -8,7 +8,7 @@ import type {
   HealthStatus,
   KnowledgeHealthReport,
   KnowledgeHealthScore,
-  KnowledgeHealthScoreDimension
+  KnowledgeHealthScoreDimension,
 } from './types.js';
 const DEFAULT_STALE_DAYS = 90;
 const linkExtensions = ['.md', '.sql', '.yaml', '.yml'];
@@ -20,7 +20,7 @@ const requiredFiles = [
   'business/README.md',
   'tech/README.md',
   'ops/README.md',
-  'risks/README.md'
+  'risks/README.md',
 ] as const;
 const requiredDirectories = ['config', 'tech/api', 'tech/db'] as const;
 const requiredIndexSections = [
@@ -30,7 +30,7 @@ const requiredIndexSections = [
   '外部服务索引',
   '风险 / 故障索引',
   '运维知识索引',
-  '开发规范 / 工作流'
+  '开发规范 / 工作流',
 ] as const;
 
 export interface KnowledgeHealthOptions {
@@ -43,7 +43,7 @@ function summarize(checks: HealthCheckResult[]): KnowledgeHealthReport['summary'
       summary[check.status] += 1;
       return summary;
     },
-    { ok: 0, warn: 0, fail: 0 }
+    { ok: 0, warn: 0, fail: 0 },
   );
 }
 
@@ -85,13 +85,16 @@ function dimensionStatus(score: number): HealthStatus {
 
 function computeScore(dimensions: KnowledgeHealthScoreDimension[]): KnowledgeHealthScore {
   const totalWeight = dimensions.reduce((sum, dimension) => sum + dimension.weight, 0);
-  const weighted = dimensions.reduce((sum, dimension) => sum + dimension.score * dimension.weight, 0);
+  const weighted = dimensions.reduce(
+    (sum, dimension) => sum + dimension.score * dimension.weight,
+    0,
+  );
   const value = totalWeight > 0 ? Math.round(weighted / totalWeight) : 0;
 
   return {
     value,
     grade: gradeFromValue(value),
-    dimensions
+    dimensions,
   };
 }
 
@@ -122,8 +125,7 @@ async function listKnowledgeFiles(rootPath: string): Promise<string[]> {
 function countKnowledgeDocuments(files: string[]): number {
   return files
     .filter((entry) => entry.endsWith('.md'))
-    .filter((entry) => path.basename(entry) !== 'README.md')
-    .length;
+    .filter((entry) => path.basename(entry) !== 'README.md').length;
 }
 
 function extractIndexReferences(content: string): string[] {
@@ -154,7 +156,7 @@ function extractIndexReferences(content: string): string[] {
 async function detectBrokenLinks(
   indexContent: string,
   rootPath: string,
-  targetDir: string
+  targetDir: string,
 ): Promise<string[]> {
   const references = extractIndexReferences(indexContent);
   const broken: string[] = [];
@@ -163,10 +165,7 @@ async function detectBrokenLinks(
     const normalized = reference.replace(/^\.\//, '');
     const candidates = path.isAbsolute(reference)
       ? [reference]
-      : [
-          path.join(rootPath, normalized),
-          path.join(targetDir, normalized)
-        ];
+      : [path.join(rootPath, normalized), path.join(targetDir, normalized)];
 
     let exists = false;
     for (const candidate of candidates) {
@@ -216,7 +215,7 @@ async function detectStaleFiles(
   files: string[],
   rootPath: string,
   staleDays: number,
-  now: number
+  now: number,
 ): Promise<string[]> {
   const stale: string[] = [];
   const thresholdMs = staleDays * 24 * 60 * 60 * 1000;
@@ -246,7 +245,7 @@ async function detectStaleFiles(
 export async function checkKnowledgeHealth(
   targetDir: string,
   managedAssets: ManagedAssetRecord[] = [],
-  options: KnowledgeHealthOptions = {}
+  options: KnowledgeHealthOptions = {},
 ): Promise<KnowledgeHealthReport> {
   const staleDays = options.staleDays ?? DEFAULT_STALE_DAYS;
   const now = Date.now();
@@ -254,7 +253,9 @@ export async function checkKnowledgeHealth(
   const resolvedKnowledge = await resolveKnowledgeDirectory(targetDir);
   const rootPath = resolvedKnowledge?.path ?? path.join(targetDir, KNOWLEDGE_DIR_CANDIDATES[0]);
   const checks: HealthCheckResult[] = [];
-  const knowledgeManaged = managedAssets.some((asset) => asset.id.startsWith('common-knowledge-skeleton:'));
+  const knowledgeManaged = managedAssets.some((asset) =>
+    asset.id.startsWith('common-knowledge-skeleton:'),
+  );
 
   if (!resolvedKnowledge) {
     checks.push({
@@ -263,7 +264,7 @@ export async function checkKnowledgeHealth(
       message: knowledgeManaged
         ? 'Knowledge directory is missing even though knowledge skeleton assets are managed.'
         : `Knowledge directory is not present (checked: ${KNOWLEDGE_DIR_CANDIDATES.join(', ')}).`,
-      path: rootPath
+      path: rootPath,
     });
 
     return {
@@ -271,17 +272,18 @@ export async function checkKnowledgeHealth(
       rootPath,
       checks,
       summary: summarize(checks),
-      generatedAt
+      generatedAt,
     };
   }
 
   checks.push({
     id: 'knowledge-directory-exists',
     status: resolvedKnowledge.relative === '.knowledge' ? 'ok' : 'warn',
-    message: resolvedKnowledge.relative === '.knowledge'
-      ? '.knowledge directory exists.'
-      : `Using alternate knowledge directory: ${resolvedKnowledge.relative}.`,
-    path: rootPath
+    message:
+      resolvedKnowledge.relative === '.knowledge'
+        ? '.knowledge directory exists.'
+        : `Using alternate knowledge directory: ${resolvedKnowledge.relative}.`,
+    path: rootPath,
   });
 
   const missingFiles: string[] = [];
@@ -301,11 +303,12 @@ export async function checkKnowledgeHealth(
   checks.push({
     id: 'knowledge-required-anchors',
     status: missingFiles.length > 0 ? 'warn' : 'ok',
-    message: missingFiles.length > 0
-      ? 'Some expected .knowledge anchor files or directories are missing.'
-      : 'Expected .knowledge anchor files and directories are present.',
+    message:
+      missingFiles.length > 0
+        ? 'Some expected .knowledge anchor files or directories are missing.'
+        : 'Expected .knowledge anchor files and directories are present.',
     path: rootPath,
-    missingFiles: missingFiles.length > 0 ? missingFiles : undefined
+    missingFiles: missingFiles.length > 0 ? missingFiles : undefined,
   });
 
   const knowledgeFiles = await listKnowledgeFiles(rootPath);
@@ -327,11 +330,12 @@ export async function checkKnowledgeHealth(
     checks.push({
       id: 'knowledge-index-sections',
       status: missingSections.length > 0 ? 'warn' : 'ok',
-      message: missingSections.length > 0
-        ? 'INDEX.md is missing expected sections.'
-        : 'INDEX.md contains the expected section anchors.',
+      message:
+        missingSections.length > 0
+          ? 'INDEX.md is missing expected sections.'
+          : 'INDEX.md contains the expected section anchors.',
       path: indexPath,
-      missingSections: missingSections.length > 0 ? missingSections : undefined
+      missingSections: missingSections.length > 0 ? missingSections : undefined,
     });
 
     const placeholderWarn = placeholderCount >= 4 && knowledgeDocumentCount > 3;
@@ -342,17 +346,18 @@ export async function checkKnowledgeHealth(
         ? 'INDEX.md still contains many placeholder rows and may need maintenance.'
         : 'INDEX.md placeholder usage looks reasonable for the current knowledge set.',
       path: indexPath,
-      placeholderCount
+      placeholderCount,
     });
 
     checks.push({
       id: 'knowledge-index-broken-links',
       status: brokenLinks.length > 0 ? 'warn' : 'ok',
-      message: brokenLinks.length > 0
-        ? 'INDEX.md references knowledge files that do not exist.'
-        : 'INDEX.md references resolve to existing files.',
+      message:
+        brokenLinks.length > 0
+          ? 'INDEX.md references knowledge files that do not exist.'
+          : 'INDEX.md references resolve to existing files.',
       path: indexPath,
-      brokenLinks: brokenLinks.length > 0 ? brokenLinks : undefined
+      brokenLinks: brokenLinks.length > 0 ? brokenLinks : undefined,
     });
   } else {
     checks.push({
@@ -360,7 +365,7 @@ export async function checkKnowledgeHealth(
       status: 'warn',
       message: 'INDEX.md is missing, so index section health cannot be checked.',
       path: indexPath,
-      missingFiles: ['INDEX.md']
+      missingFiles: ['INDEX.md'],
     });
   }
 
@@ -368,40 +373,43 @@ export async function checkKnowledgeHealth(
   checks.push({
     id: 'knowledge-duplicate-files',
     status: duplicateFiles.length > 0 ? 'warn' : 'ok',
-    message: duplicateFiles.length > 0
-      ? 'Multiple knowledge files share the same name in different directories.'
-      : 'No duplicate knowledge file names detected.',
+    message:
+      duplicateFiles.length > 0
+        ? 'Multiple knowledge files share the same name in different directories.'
+        : 'No duplicate knowledge file names detected.',
     path: rootPath,
-    duplicateFiles: duplicateFiles.length > 0 ? duplicateFiles : undefined
+    duplicateFiles: duplicateFiles.length > 0 ? duplicateFiles : undefined,
   });
 
   const staleFiles = await detectStaleFiles(knowledgeFiles, rootPath, staleDays, now);
   checks.push({
     id: 'knowledge-aging',
     status: staleFiles.length > 0 ? 'warn' : 'ok',
-    message: staleFiles.length > 0
-      ? `Some knowledge files have not been updated in more than ${staleDays} days.`
-      : 'No stale knowledge files detected.',
+    message:
+      staleFiles.length > 0
+        ? `Some knowledge files have not been updated in more than ${staleDays} days.`
+        : 'No stale knowledge files detected.',
     path: rootPath,
-    staleFiles: staleFiles.length > 0 ? staleFiles : undefined
+    staleFiles: staleFiles.length > 0 ? staleFiles : undefined,
   });
 
-  const anchorScore = totalAnchors > 0
-    ? Math.round((1 - missingFiles.length / totalAnchors) * 100)
-    : 100;
+  const anchorScore =
+    totalAnchors > 0 ? Math.round((1 - missingFiles.length / totalAnchors) * 100) : 100;
   const sectionScore = indexExists
     ? Math.round((1 - missingSections.length / requiredIndexSections.length) * 100)
     : 0;
   const linkScore = indexExists
-    ? (brokenLinks.length > 0 ? Math.max(0, 100 - brokenLinks.length * 20) : 100)
+    ? brokenLinks.length > 0
+      ? Math.max(0, 100 - brokenLinks.length * 20)
+      : 100
     : 0;
   const duplicateScore = Math.max(0, 100 - duplicateFiles.length * 25);
-  const agingScore = knowledgeDocumentCount > 0
-    ? Math.round((1 - staleFiles.length / knowledgeDocumentCount) * 100)
-    : 100;
-  const placeholderScore = knowledgeDocumentCount > 3
-    ? Math.max(0, 100 - Math.max(0, placeholderCount - 3) * 10)
-    : 100;
+  const agingScore =
+    knowledgeDocumentCount > 0
+      ? Math.round((1 - staleFiles.length / knowledgeDocumentCount) * 100)
+      : 100;
+  const placeholderScore =
+    knowledgeDocumentCount > 3 ? Math.max(0, 100 - Math.max(0, placeholderCount - 3) * 10) : 100;
 
   const dimensions: KnowledgeHealthScoreDimension[] = [
     {
@@ -410,7 +418,7 @@ export async function checkKnowledgeHealth(
       weight: 20,
       score: anchorScore,
       status: dimensionStatus(anchorScore),
-      detail: missingFiles.length > 0 ? `缺失 ${missingFiles.length} 个锚点` : undefined
+      detail: missingFiles.length > 0 ? `缺失 ${missingFiles.length} 个锚点` : undefined,
     },
     {
       id: 'index-sections',
@@ -419,8 +427,10 @@ export async function checkKnowledgeHealth(
       score: sectionScore,
       status: dimensionStatus(sectionScore),
       detail: indexExists
-        ? (missingSections.length > 0 ? `缺失 ${missingSections.length} 个区块` : undefined)
-        : 'INDEX.md 缺失'
+        ? missingSections.length > 0
+          ? `缺失 ${missingSections.length} 个区块`
+          : undefined
+        : 'INDEX.md 缺失',
     },
     {
       id: 'broken-links',
@@ -429,8 +439,10 @@ export async function checkKnowledgeHealth(
       score: linkScore,
       status: dimensionStatus(linkScore),
       detail: indexExists
-        ? (brokenLinks.length > 0 ? `${brokenLinks.length} 处断链` : undefined)
-        : 'INDEX.md 缺失'
+        ? brokenLinks.length > 0
+          ? `${brokenLinks.length} 处断链`
+          : undefined
+        : 'INDEX.md 缺失',
     },
     {
       id: 'duplicates',
@@ -438,7 +450,7 @@ export async function checkKnowledgeHealth(
       weight: 15,
       score: duplicateScore,
       status: dimensionStatus(duplicateScore),
-      detail: duplicateFiles.length > 0 ? `${duplicateFiles.length} 个重复文件` : undefined
+      detail: duplicateFiles.length > 0 ? `${duplicateFiles.length} 个重复文件` : undefined,
     },
     {
       id: 'aging',
@@ -446,7 +458,7 @@ export async function checkKnowledgeHealth(
       weight: 10,
       score: agingScore,
       status: dimensionStatus(agingScore),
-      detail: staleFiles.length > 0 ? `${staleFiles.length} 个文件超过 ${staleDays} 天` : undefined
+      detail: staleFiles.length > 0 ? `${staleFiles.length} 个文件超过 ${staleDays} 天` : undefined,
     },
     {
       id: 'placeholders',
@@ -454,8 +466,8 @@ export async function checkKnowledgeHealth(
       weight: 15,
       score: placeholderScore,
       status: dimensionStatus(placeholderScore),
-      detail: placeholderCount > 0 ? `占位 ${placeholderCount} 处` : undefined
-    }
+      detail: placeholderCount > 0 ? `占位 ${placeholderCount} 处` : undefined,
+    },
   ];
 
   return {
@@ -464,6 +476,6 @@ export async function checkKnowledgeHealth(
     checks,
     summary: summarize(checks),
     generatedAt,
-    score: computeScore(dimensions)
+    score: computeScore(dimensions),
   };
 }

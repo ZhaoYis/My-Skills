@@ -21,15 +21,19 @@ async function createTempDir(): Promise<string> {
 describe('runDoctorCommand', () => {
   it('includes versionCheck in JSON output and warns on outdated manifest', async () => {
     const dir = await createTempDir();
-    await fs.writeJson(path.join(dir, MANIFEST_FILE), {
-      schemaVersion: 1,
-      projectName: 'demo',
-      tool: 'claude',
-      features: ['base'],
-      templateVersion: '0.1.0',
-      packageName: 'opsx-dev-pipeline',
-      managedAssets: []
-    }, { spaces: 2 });
+    await fs.writeJson(
+      path.join(dir, MANIFEST_FILE),
+      {
+        schemaVersion: 1,
+        projectName: 'demo',
+        tool: 'claude',
+        features: ['base'],
+        templateVersion: '0.1.0',
+        packageName: 'opsx-dev-pipeline',
+        managedAssets: [],
+      },
+      { spaces: 2 },
+    );
 
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const status = await runDoctorCommand(dir, true);

@@ -4,7 +4,7 @@ import { resolveInstallConflicts } from '../../src/core/init/resolveInstallConfl
 import type { InstallPlan } from '../../src/core/init/types.js';
 
 vi.mock('prompts', () => ({
-  default: vi.fn()
+  default: vi.fn(),
 }));
 
 function createPlan(files?: Partial<InstallPlan['files'][number]>[]): InstallPlan {
@@ -19,23 +19,27 @@ function createPlan(files?: Partial<InstallPlan['files'][number]>[]): InstallPla
         description: 'Claude adapter',
         markers: ['.claude'],
         destinations: { root: '.', skills: '.claude/skills', commands: '.claude/commands' },
-        supports: ['base', 'skills', 'commands', 'docs']
+        supports: ['base', 'skills', 'commands', 'docs'],
       },
       detectFiles: () => ['.claude'],
       supports: () => true,
-      getDestination: (feature) => feature === 'skills' ? '.claude/skills' : '.claude/commands',
+      getDestination: (feature) => (feature === 'skills' ? '.claude/skills' : '.claude/commands'),
       getRoot: () => '.',
-      getPostInstallNotes: () => []
+      getPostInstallNotes: () => [],
     },
-    files: (files ?? [{
-      assetId: 'common-readme',
-      sourcePath: '/tmp/source',
-      destinationPath: '/tmp/README.md',
-      kind: 'template',
-      exists: true,
-      appendable: true,
-      resolution: 'unresolved'
-    }]).map((file, index) => ({
+    files: (
+      files ?? [
+        {
+          assetId: 'common-readme',
+          sourcePath: '/tmp/source',
+          destinationPath: '/tmp/README.md',
+          kind: 'template',
+          exists: true,
+          appendable: true,
+          resolution: 'unresolved',
+        },
+      ]
+    ).map((file, index) => ({
       assetId: `asset-${index}`,
       sourcePath: `/tmp/source-${index}`,
       destinationPath: `/tmp/file-${index}.md`,
@@ -43,12 +47,12 @@ function createPlan(files?: Partial<InstallPlan['files'][number]>[]): InstallPla
       exists: true,
       appendable: true,
       resolution: 'unresolved',
-      ...file
+      ...file,
     })),
     targetDir: '/tmp',
     dryRun: false,
     force: false,
-    mode: 'init'
+    mode: 'init',
   };
 }
 
@@ -69,10 +73,13 @@ describe('resolveInstallConflicts', () => {
 
   it('applies append-all-safe to appendable and non-appendable files', async () => {
     vi.mocked(prompts).mockResolvedValueOnce({ resolution: 'append-all-safe' });
-    const plan = await resolveInstallConflicts(createPlan([
-      { destinationPath: '/tmp/README.md', appendable: true },
-      { destinationPath: '/tmp/config.json', appendable: false }
-    ]), { yes: false, force: false });
+    const plan = await resolveInstallConflicts(
+      createPlan([
+        { destinationPath: '/tmp/README.md', appendable: true },
+        { destinationPath: '/tmp/config.json', appendable: false },
+      ]),
+      { yes: false, force: false },
+    );
 
     expect(plan.files[0]?.resolution).toBe('append');
     expect(plan.files[1]?.resolution).toBe('skip');
@@ -88,10 +95,10 @@ describe('resolveInstallConflicts', () => {
         choices: expect.arrayContaining([
           expect.objectContaining({ value: 'overwrite-all' }),
           expect.objectContaining({ value: 'skip-all' }),
-          expect.objectContaining({ value: 'append-all-safe' })
-        ])
+          expect.objectContaining({ value: 'append-all-safe' }),
+        ]),
       }),
-      expect.objectContaining({ onCancel: expect.any(Function) })
+      expect.objectContaining({ onCancel: expect.any(Function) }),
     );
   });
 });

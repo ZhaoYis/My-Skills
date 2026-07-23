@@ -13,13 +13,16 @@ function ensureHandlebarsHelpers(): void {
     'hasFeature',
     function hasFeature(this: { features?: FeatureId[] }, feature: FeatureId) {
       return this.features?.includes(feature) ?? false;
-    }
+    },
   );
 
   helpersRegistered = true;
 }
 
-export async function renderTemplate(filePath: string, context: Record<string, unknown>): Promise<string> {
+export async function renderTemplate(
+  filePath: string,
+  context: Record<string, unknown>,
+): Promise<string> {
   ensureHandlebarsHelpers();
   const source = await fs.readFile(filePath, 'utf8');
   return Handlebars.compile(source)(context);

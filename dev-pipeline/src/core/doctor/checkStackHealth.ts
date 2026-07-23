@@ -20,34 +20,63 @@ export async function checkStackHealth(targetDir: string): Promise<StackHealthRe
   const issues: StackIssue[] = [];
 
   if (!fs.existsSync(configPath)) {
-    return { valid: false, stackFound: false, configPath: null, issues: [{ path: 'openspec/config.yaml', severity: 'error', message: 'openspec/config.yaml not found' }] };
+    return {
+      valid: false,
+      stackFound: false,
+      configPath: null,
+      issues: [
+        {
+          path: 'openspec/config.yaml',
+          severity: 'error',
+          message: 'openspec/config.yaml not found',
+        },
+      ],
+    };
   }
 
   let raw: string;
-  try { raw = fs.readFileSync(configPath, 'utf-8'); } catch {
-    return { valid: false, stackFound: false, configPath, issues: [{ path: 'openspec/config.yaml', severity: 'error', message: 'Cannot read file' }] };
+  try {
+    raw = fs.readFileSync(configPath, 'utf-8');
+  } catch {
+    return {
+      valid: false,
+      stackFound: false,
+      configPath,
+      issues: [{ path: 'openspec/config.yaml', severity: 'error', message: 'Cannot read file' }],
+    };
   }
 
   const root = parseYaml(raw);
   const stackRoot = root['stack'];
   if (!stackRoot || typeof stackRoot !== 'object' || Array.isArray(stackRoot)) {
-    return { valid: false, stackFound: false, configPath, issues: [{ path: 'stack', severity: 'error', message: 'No stack section found' }] };
+    return {
+      valid: false,
+      stackFound: false,
+      configPath,
+      issues: [{ path: 'stack', severity: 'error', message: 'No stack section found' }],
+    };
   }
   const s = stackRoot as Record<string, unknown>;
 
   // stack.id
   const stackId = typeof s['id'] === 'string' ? s['id'] : undefined;
-  if (!stackId) issues.push({ path: 'stack.id', severity: 'error', message: 'stack.id is required' });
+  if (!stackId)
+    issues.push({ path: 'stack.id', severity: 'error', message: 'stack.id is required' });
 
   // stack.languages
   const languages = Array.isArray(s['languages']) ? s['languages'] : [];
-  if (languages.length === 0) issues.push({ path: 'stack.languages', severity: 'warning', message: 'No languages declared' });
+  if (languages.length === 0)
+    issues.push({ path: 'stack.languages', severity: 'warning', message: 'No languages declared' });
 
   // stack.services[]
   const services = Array.isArray(s['services']) ? s['services'] : [];
   const stacks: string[] = [];
   if (services.length === 0) {
-    issues.push({ path: 'stack.services', severity: 'error', message: 'At least one service is required' });
+    issues.push({
+      path: 'stack.services',
+      severity: 'error',
+      message: 'At least one service is required',
+    });
   } else {
     for (let i = 0; i < services.length; i++) {
       const svc = services[i];
@@ -56,14 +85,29 @@ export async function checkStackHealth(targetDir: string): Promise<StackHealthRe
       const prefix = `stack.services[${i}]`;
 
       const svcName = typeof svcObj['name'] === 'string' ? svcObj['name'] : '';
-      if (!svcName) { issues.push({ path: `${prefix}.name`, severity: 'error', message: `Service #${i} has no name` }); }
-      else { stacks.push(svcName); }
+      if (!svcName) {
+        issues.push({
+          path: `${prefix}.name`,
+          severity: 'error',
+          message: `Service #${i} has no name`,
+        });
+      } else {
+        stacks.push(svcName);
+      }
 
       const svcDir = typeof svcObj['path'] === 'string' ? svcObj['path'] : '';
       if (!svcDir) {
-        issues.push({ path: `${prefix}.path`, severity: 'error', message: `Service "${svcName}" has no path` });
+        issues.push({
+          path: `${prefix}.path`,
+          severity: 'error',
+          message: `Service "${svcName}" has no path`,
+        });
       } else if (!fs.existsSync(path.join(targetDir, svcDir))) {
-        issues.push({ path: `${prefix}.path`, severity: 'error', message: `Path "${svcDir}" does not exist on disk` });
+        issues.push({
+          path: `${prefix}.path`,
+          severity: 'error',
+          message: `Path "${svcDir}" does not exist on disk`,
+        });
       }
 
       // Validate command objects: dev, test, integration, e2e
@@ -83,7 +127,7 @@ export async function checkStackHealth(targetDir: string): Promise<StackHealthRe
   }
 
   return {
-    valid: issues.filter(i => i.severity === 'error').length === 0,
+    valid: issues.filter((i) => i.severity === 'error').length === 0,
     stackFound: true,
     configPath,
     stackId,
@@ -109,12 +153,20 @@ function validateCommand(
   const command = typeof c['command'] === 'string' ? c['command'] : '';
 
   if (!command && isRequired) {
-    issues.push({ path: `${jsonPath}.command`, severity: 'error', message: `${contextName}.${key} is required but has no command` });
+    issues.push({
+      path: `${jsonPath}.command`,
+      severity: 'error',
+      message: `${contextName}.${key} is required but has no command`,
+    });
   }
 
   const cwd = typeof c['cwd'] === 'string' ? c['cwd'] : '';
   if (cwd && !fs.existsSync(path.join(targetDir, cwd))) {
-    issues.push({ path: `${jsonPath}.cwd`, severity: 'warning', message: `cwd "${cwd}" does not exist on disk` });
+    issues.push({
+      path: `${jsonPath}.cwd`,
+      severity: 'warning',
+      message: `cwd "${cwd}" does not exist on disk`,
+    });
   }
 }
 
@@ -123,7 +175,9 @@ function validateCommand(
 function parseYaml(raw: string): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   const lines = raw.split('\n');
-  const pathStack: { indent: number; obj: Record<string, unknown> }[] = [{ indent: -1, obj: result }];
+  const pathStack: { indent: number; obj: Record<string, unknown> }[] = [
+    { indent: -1, obj: result },
+  ];
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -168,7 +222,11 @@ function parseYaml(raw: string): Record<string, unknown> {
     } else if (rawValue === '[]') {
       parent[key] = [];
     } else if (rawValue.startsWith('[') && rawValue.endsWith(']')) {
-      parent[key] = rawValue.slice(1, -1).split(',').map(s => s.trim().replace(/^["']|["']$/g, '')).filter(s => s.length > 0);
+      parent[key] = rawValue
+        .slice(1, -1)
+        .split(',')
+        .map((s) => s.trim().replace(/^["']|["']$/g, ''))
+        .filter((s) => s.length > 0);
     } else if (rawValue.startsWith('- ')) {
       // List item
       const existing = parent[key];

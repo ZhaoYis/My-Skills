@@ -13,7 +13,12 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { PipelineAgentOrchestrator } from '../../src/harness/PipelineAgentOrchestrator.js';
 import { ReportGenerator } from '../../src/report/ReportGenerator.js';
 import { PHASE_META } from '../../src/harness/types.js';
-import type { ScenarioConfig, TestEnvironment, AgentPhaseResult, PhaseId } from '../../src/harness/types.js';
+import type {
+  ScenarioConfig,
+  TestEnvironment,
+  AgentPhaseResult,
+  PhaseId,
+} from '../../src/harness/types.js';
 import { isOpenspecAvailable } from '../../src/utils/openspecHelpers.js';
 import path from 'node:path';
 import { readFile, fileExists } from '../../src/utils/tempDir.js';
@@ -178,7 +183,11 @@ rules:
     // Build assertions specific to fullstack schema
     const assertions = [
       { description: 'Git work tree is active', passed: env.isWorkTree },
-      { description: 'OpenSpec CLI is available', passed: env.openspecAvailable, detail: `v${env.openspecVersion}` },
+      {
+        description: 'OpenSpec CLI is available',
+        passed: env.openspecAvailable,
+        detail: `v${env.openspecVersion}`,
+      },
       { description: 'Schema config exists at openspec/config.yaml', passed: true },
       { description: 'Schema is custom (not spec-driven)', passed: true },
       { description: 'Stack includes "backend"', passed: true },
@@ -197,7 +206,8 @@ rules:
       status: 'pass',
       startedAt: new Date().toISOString(),
       durationMs: 0,
-      agentSummary: 'Agent detects fullstack schema: stacks=[backend, frontend], verify=./scripts/validate.sh all',
+      agentSummary:
+        'Agent detects fullstack schema: stacks=[backend, frontend], verify=./scripts/validate.sh all',
       assertions,
       artifacts: [
         { path: 'openspec/config.yaml', type: 'file', exists: true },
@@ -213,7 +223,9 @@ rules:
     expect(report.summary.overallScore).toBe(100);
     expect(report.summary.totalAssertions).toBe(12);
 
-    console.log(`✅ Fullstack schema: ${report.summary.totalAssertions} assertions, Score: ${report.summary.overallScore}/100`);
+    console.log(
+      `✅ Fullstack schema: ${report.summary.totalAssertions} assertions, Score: ${report.summary.overallScore}/100`,
+    );
   }, 30000);
 
   // ── Validate scripts support ─────────────────────────────────────
@@ -244,34 +256,38 @@ rules:
   // ── Final Report ─────────────────────────────────────────────────
 
   it('Generates complete fullstack schema report', async () => {
-    const report = orchestrator.buildReport([
-      {
-        phaseId: 'phase-0-entrance',
-        label: 'Phase 0 — Entrance',
-        status: 'pass',
-        startedAt: new Date().toISOString(),
-        durationMs: 150,
-        agentSummary: 'Fullstack schema detection: custom schema with backend + frontend stacks, workspace-based test/build',
-        assertions: [
-          { description: 'openspec/config.yaml exists', passed: true },
-          { description: 'Schema = custom', passed: true },
-          { description: 'Stacks = [backend, frontend]', passed: true },
-          { description: 'Stack-specific rules present', passed: true },
-          { description: 'Workspace test rule resolves', passed: true },
-          { description: 'Verify all stacks rule resolves', passed: true },
-          { description: 'Both package.json files present', passed: true },
-          { description: 'Scripts cover all stack targets', passed: true },
-        ],
-        artifacts: [
-          { path: 'openspec/config.yaml', type: 'file', exists: true },
-          { path: 'backend/package.json', type: 'file', exists: true },
-          { path: 'frontend/package.json', type: 'file', exists: true },
-          { path: 'scripts/validate.sh', type: 'file', exists: true },
-          { path: 'scripts/test.sh', type: 'file', exists: true },
-          { path: 'scripts/build.sh', type: 'file', exists: true },
-        ],
-      },
-    ], 200);
+    const report = orchestrator.buildReport(
+      [
+        {
+          phaseId: 'phase-0-entrance',
+          label: 'Phase 0 — Entrance',
+          status: 'pass',
+          startedAt: new Date().toISOString(),
+          durationMs: 150,
+          agentSummary:
+            'Fullstack schema detection: custom schema with backend + frontend stacks, workspace-based test/build',
+          assertions: [
+            { description: 'openspec/config.yaml exists', passed: true },
+            { description: 'Schema = custom', passed: true },
+            { description: 'Stacks = [backend, frontend]', passed: true },
+            { description: 'Stack-specific rules present', passed: true },
+            { description: 'Workspace test rule resolves', passed: true },
+            { description: 'Verify all stacks rule resolves', passed: true },
+            { description: 'Both package.json files present', passed: true },
+            { description: 'Scripts cover all stack targets', passed: true },
+          ],
+          artifacts: [
+            { path: 'openspec/config.yaml', type: 'file', exists: true },
+            { path: 'backend/package.json', type: 'file', exists: true },
+            { path: 'frontend/package.json', type: 'file', exists: true },
+            { path: 'scripts/validate.sh', type: 'file', exists: true },
+            { path: 'scripts/test.sh', type: 'file', exists: true },
+            { path: 'scripts/build.sh', type: 'file', exists: true },
+          ],
+        },
+      ],
+      200,
+    );
 
     const { jsonPath, markdownPath } = await reportGenerator.generate(report);
 

@@ -16,13 +16,17 @@ export async function runInit(options: InitOptions): Promise<void> {
   const registry = await loadToolRegistry(rootDir);
 
   if (options.tool && !registry.has(options.tool)) {
-    throw new Error(`Unsupported tool: ${options.tool}. Run "${PACKAGE_NAME} list-tools" to see supported ids.`);
+    throw new Error(
+      `Unsupported tool: ${options.tool}. Run "${PACKAGE_NAME} list-tools" to see supported ids.`,
+    );
   }
 
   const validation = await validateTarget(targetDir, registry);
 
   if (validation.existingEntries.length > 0 && !options.force && !options.dryRun) {
-    console.log(pc.yellow(`Target directory is not empty: ${validation.existingEntries.join(', ')}`));
+    console.log(
+      pc.yellow(`Target directory is not empty: ${validation.existingEntries.join(', ')}`),
+    );
     console.log(pc.yellow('Use --force to allow overwriting managed files.'));
   }
 
@@ -30,9 +34,9 @@ export async function runInit(options: InitOptions): Promise<void> {
     targetDir,
     {
       ...options,
-      tool: options.tool ?? validation.suggestedTool
+      tool: options.tool ?? validation.suggestedTool,
     },
-    registry
+    registry,
   );
   const plan = await buildInstallPlan({
     rootDir,
@@ -43,11 +47,11 @@ export async function runInit(options: InitOptions): Promise<void> {
     dryRun: Boolean(options.dryRun),
     force: Boolean(options.force),
     mode: 'init',
-    registry
+    registry,
   });
   const resolvedPlan = await resolveInstallConflicts(plan, {
     yes: Boolean(options.yes),
-    force: Boolean(options.force)
+    force: Boolean(options.force),
   });
 
   await executeInstallPlan(resolvedPlan);

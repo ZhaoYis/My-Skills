@@ -4,7 +4,9 @@ import type { InstallFile } from '../assets/types.js';
 const APPENDABLE_BASENAMES = new Set(['.gitignore', 'CLAUDE.md']);
 const APPENDABLE_EXTENSIONS = new Set(['.md', '.mdc', '.txt']);
 
-export function isAppendableInstallFile(file: Pick<InstallFile, 'kind' | 'destinationPath'>): boolean {
+export function isAppendableInstallFile(
+  file: Pick<InstallFile, 'kind' | 'destinationPath'>,
+): boolean {
   if (file.kind !== 'template') {
     return false;
   }

@@ -6,13 +6,17 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { runDoctorCommand } from '../../src/cli/commands/doctor.js';
 
 vi.mock('prompts', () => ({
-  default: vi.fn()
+  default: vi.fn(),
 }));
 import { runSyncCommand } from '../../src/cli/commands/sync.js';
 import { runUninstallCommand } from '../../src/cli/commands/uninstall.js';
 import { runUpgradeCommand } from '../../src/cli/commands/upgrade.js';
 import { runInit } from '../../src/core/init/runInit.js';
-import { MANIFEST_FILE, MANIFEST_PACKAGE_JSON_KEY, PACKAGE_JSON_FILE } from '../../src/core/runtime/meta.js';
+import {
+  MANIFEST_FILE,
+  MANIFEST_PACKAGE_JSON_KEY,
+  PACKAGE_JSON_FILE,
+} from '../../src/core/runtime/meta.js';
 import { readManifest as readStoredManifest } from '../../src/core/manifest/io.js';
 import type { PipelineManifest } from '../../src/core/manifest/types.js';
 
@@ -31,266 +35,143 @@ async function readManifest(dir: string): Promise<PipelineManifest> {
   return result.manifest;
 }
 
+async function listAllFiles(root: string): Promise<string[]> {
+  const results: string[] = [];
+  async function walk(currentDir: string): Promise<void> {
+    const entries = await fs.readdir(currentDir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(currentDir, entry.name);
+      results.push(fullPath);
+      if (entry.isDirectory()) {
+        await walk(fullPath);
+      }
+    }
+  }
+  await walk(root);
+  return results;
+}
+
+const RETAINED_SKILL = 'opsx-dev-pipeline';
+const RETAINED = [RETAINED_SKILL];
+const removed = [
+  'opsx-learn',
+  'opsx-analysis',
+  'opsx-design',
+  'opsx-verify',
+  'opsx-clarify',
+  'opsx-health',
+  'opsx-pr',
+  'opsx-prototype',
+  'opsx-ci-triage',
+  'git-commit-push',
+  'git-code-review',
+  'git-merge-branch',
+  'file-code-review',
+];
+
 const toolExpectations = {
   claude: [
-    'CLAUDE.md',
-    '.knowledge/README.md',
-    '.knowledge/INDEX.md',
-    '.knowledge/tech/development-experience.md',
-    '.claude/skills/opsx-dev-pipeline/SKILL.md',
-    '.claude/skills/opsx-dev-pipeline/references/phase-0-entrance.md',
-    '.claude/skills/opsx-dev-pipeline/assets/decision-point-index.md',
-    '.claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh',
-    '.claude/skills/opsx-learn/SKILL.md',
-    '.claude/skills/opsx-learn/references/phase-1-understand-goal.md',
-    '.claude/skills/opsx-learn/assets/write-targets.md',
-    '.claude/skills/opsx-learn/assets/preflight-json-contract.md',
-    '.claude/skills/opsx-learn/scripts/opsx-learn-preflight.sh',
-    '.claude/skills/opsx-analysis/SKILL.md',
-    '.claude/skills/opsx-analysis/references/phase-1-clarify-requirement.md',
-    '.claude/skills/opsx-analysis/references/phase-2-explore-context.md',
-    '.claude/skills/opsx-analysis/references/phase-3-split-capabilities.md',
-    '.claude/skills/opsx-analysis/references/phase-4-assess-impact.md',
-    '.claude/skills/opsx-analysis/references/phase-5-output-analysis.md',
-    '.claude/skills/opsx-analysis/assets/analysis-output-template.md',
-    '.claude/skills/opsx-analysis/assets/evidence-standards.md',
-    '.claude/skills/opsx-analysis/assets/maintenance-index.md',
-    '.claude/skills/opsx-analysis/assets/question-checklist.md',
-    '.claude/skills/opsx-analysis/scripts/opsx-analysis-preflight.sh',
-    '.claude/skills/opsx-design/SKILL.md',
-    '.claude/skills/opsx-design/references/phase-1-collect-context.md',
-    '.claude/skills/opsx-design/assets/section-skeleton.md',
-    '.claude/skills/opsx-verify/SKILL.md',
-    '.claude/skills/opsx-verify/references/phase-1-resolve-context.md',
-    '.claude/skills/opsx-verify/assets/verify-target-template.md',
-    '.claude/skills/opsx-verify/scripts/opsx-verify-preflight.sh',
-    '.claude/skills/opsx-clarify/SKILL.md',
-    '.claude/skills/opsx-clarify/references/phase-1-detect-ambiguity.md',
-    '.claude/skills/opsx-clarify/assets/question-list-template.md',
-    '.claude/skills/opsx-clarify/scripts/opsx-clarify-preflight.sh',
-    '.claude/skills/opsx-health/SKILL.md',
-    '.claude/skills/opsx-health/references/phase-1-run-doctor.md',
-    '.claude/skills/opsx-health/assets/report-template.md',
-    '.claude/skills/git-commit-push/SKILL.md',
-    '.claude/skills/git-code-review/SKILL.md',
-    '.claude/skills/git-code-review/references/convention-checklist.md',
-    '.claude/skills/git-merge-branch/SKILL.md',
-    '.claude/skills/file-code-review/SKILL.md',
-    '.claude/skills/file-code-review/references/convention-checklist.md',
-    '.claude/commands/opsx-dev-pipeline.md',
-    '.claude/commands/opsx-learn.md',
-    '.claude/commands/opsx-analysis.md',
-    '.claude/commands/opsx-design.md',
-    '.claude/commands/opsx-verify.md',
-    '.claude/commands/opsx-clarify.md',
-    '.claude/commands/opsx-health.md',
-    '.claude/commands/git-commit-push.md',
-    '.claude/commands/git-code-review.md',
-    '.claude/commands/git-merge-branch.md',
-    '.claude/commands/file-code-review.md'
+    { path: 'CLAUDE.md', present: true },
+    { path: '.knowledge/README.md', present: true },
+    { path: '.knowledge/INDEX.md', present: true },
+    { path: '.knowledge/tech/development-experience.md', present: true },
+    { path: '.claude/skills/opsx-dev-pipeline/SKILL.md', present: true },
+    { path: '.claude/skills/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
+    { path: '.claude/skills/opsx-dev-pipeline/assets/decision-point-index.md', present: true },
+    { path: '.claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', present: true },
+    { path: '.claude/commands/opsx-dev-pipeline.md', present: true },
   ],
   cursor: [
-    '.cursor/rules/opsx-dev-pipeline.mdc',
-    '.knowledge/README.md',
-    '.knowledge/INDEX.md',
-    '.knowledge/tech/development-experience.md',
-    '.cursor/rules/opsx-dev-pipeline/SKILL.md',
-    '.cursor/rules/opsx-dev-pipeline/references/phase-0-entrance.md',
-    '.cursor/rules/opsx-dev-pipeline/assets/decision-point-index.md',
-    '.cursor/rules/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh',
-    '.cursor/rules/opsx-learn/SKILL.md',
-    '.cursor/rules/opsx-learn/references/phase-1-understand-goal.md',
-    '.cursor/rules/opsx-learn/assets/write-targets.md',
-    '.cursor/rules/opsx-learn/assets/preflight-json-contract.md',
-    '.cursor/rules/opsx-learn/scripts/opsx-learn-preflight.sh',
-    '.cursor/rules/opsx-analysis/SKILL.md',
-    '.cursor/rules/opsx-analysis/references/phase-1-clarify-requirement.md',
-    '.cursor/rules/opsx-analysis/references/phase-2-explore-context.md',
-    '.cursor/rules/opsx-analysis/references/phase-3-split-capabilities.md',
-    '.cursor/rules/opsx-analysis/references/phase-4-assess-impact.md',
-    '.cursor/rules/opsx-analysis/references/phase-5-output-analysis.md',
-    '.cursor/rules/opsx-analysis/assets/analysis-output-template.md',
-    '.cursor/rules/opsx-analysis/assets/evidence-standards.md',
-    '.cursor/rules/opsx-analysis/assets/maintenance-index.md',
-    '.cursor/rules/opsx-analysis/assets/question-checklist.md',
-    '.cursor/rules/opsx-analysis/scripts/opsx-analysis-preflight.sh',
-    '.cursor/rules/opsx-design/SKILL.md',
-    '.cursor/rules/opsx-design/references/phase-1-collect-context.md',
-    '.cursor/rules/opsx-design/assets/section-skeleton.md',
-    '.cursor/rules/opsx-verify/SKILL.md',
-    '.cursor/rules/opsx-verify/references/phase-1-resolve-context.md',
-    '.cursor/rules/opsx-verify/assets/verify-target-template.md',
-    '.cursor/rules/opsx-verify/scripts/opsx-verify-preflight.sh',
-    '.cursor/rules/opsx-clarify/SKILL.md',
-    '.cursor/rules/opsx-clarify/references/phase-1-detect-ambiguity.md',
-    '.cursor/rules/opsx-clarify/assets/question-list-template.md',
-    '.cursor/rules/opsx-clarify/scripts/opsx-clarify-preflight.sh',
-    '.cursor/rules/opsx-health/SKILL.md',
-    '.cursor/rules/opsx-health/references/phase-1-run-doctor.md',
-    '.cursor/rules/opsx-health/assets/report-template.md',
-    '.cursor/rules/git-commit-push/SKILL.md',
-    '.cursor/rules/git-code-review/SKILL.md',
-    '.cursor/rules/git-code-review/references/convention-checklist.md',
-    '.cursor/rules/git-merge-branch/SKILL.md',
-    '.cursor/rules/file-code-review/SKILL.md',
-    '.cursor/rules/file-code-review/references/convention-checklist.md',
-    '.cursor/commands/opsx-dev-pipeline.md',
-    '.cursor/commands/opsx-learn.md',
-    '.cursor/commands/opsx-analysis.md',
-    '.cursor/commands/opsx-design.md',
-    '.cursor/commands/opsx-verify.md',
-    '.cursor/commands/opsx-clarify.md',
-    '.cursor/commands/opsx-health.md',
-    '.cursor/commands/git-commit-push.md',
-    '.cursor/commands/git-code-review.md',
-    '.cursor/commands/git-merge-branch.md',
-    '.cursor/commands/file-code-review.md',
-    '.cursor/commands/README.md'
+    { path: '.cursor/rules/opsx-dev-pipeline.mdc', present: true },
+    { path: '.knowledge/README.md', present: true },
+    { path: '.knowledge/INDEX.md', present: true },
+    { path: '.knowledge/tech/development-experience.md', present: true },
+    { path: '.cursor/rules/opsx-dev-pipeline/SKILL.md', present: true },
+    { path: '.cursor/rules/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
+    { path: '.cursor/rules/opsx-dev-pipeline/assets/decision-point-index.md', present: true },
+    { path: '.cursor/rules/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', present: true },
+    { path: '.cursor/commands/opsx-dev-pipeline.md', present: true },
+    { path: '.cursor/commands/README.md', present: true },
   ],
   codex: [
-    '.codex/prompts/opsx-dev-pipeline.md',
-    '.knowledge/README.md',
-    '.knowledge/INDEX.md',
-    '.knowledge/tech/development-experience.md',
-    '.codex/prompts/opsx-dev-pipeline/SKILL.md',
-    '.codex/prompts/opsx-dev-pipeline/references/phase-0-entrance.md',
-    '.codex/prompts/opsx-dev-pipeline/assets/decision-point-index.md',
-    '.codex/prompts/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh',
-    '.codex/prompts/opsx-learn/SKILL.md',
-    '.codex/prompts/opsx-learn/references/phase-1-understand-goal.md',
-    '.codex/prompts/opsx-learn/assets/write-targets.md',
-    '.codex/prompts/opsx-learn/assets/preflight-json-contract.md',
-    '.codex/prompts/opsx-learn/scripts/opsx-learn-preflight.sh',
-    '.codex/prompts/opsx-analysis/SKILL.md',
-    '.codex/prompts/opsx-analysis/references/phase-1-clarify-requirement.md',
-    '.codex/prompts/opsx-analysis/references/phase-2-explore-context.md',
-    '.codex/prompts/opsx-analysis/references/phase-3-split-capabilities.md',
-    '.codex/prompts/opsx-analysis/references/phase-4-assess-impact.md',
-    '.codex/prompts/opsx-analysis/references/phase-5-output-analysis.md',
-    '.codex/prompts/opsx-analysis/assets/analysis-output-template.md',
-    '.codex/prompts/opsx-analysis/assets/evidence-standards.md',
-    '.codex/prompts/opsx-analysis/assets/maintenance-index.md',
-    '.codex/prompts/opsx-analysis/assets/question-checklist.md',
-    '.codex/prompts/opsx-analysis/scripts/opsx-analysis-preflight.sh',
-    '.codex/prompts/opsx-design/SKILL.md',
-    '.codex/prompts/opsx-design/references/phase-1-collect-context.md',
-    '.codex/prompts/opsx-design/assets/section-skeleton.md',
-    '.codex/prompts/opsx-verify/SKILL.md',
-    '.codex/prompts/opsx-verify/references/phase-1-resolve-context.md',
-    '.codex/prompts/opsx-verify/assets/verify-target-template.md',
-    '.codex/prompts/opsx-verify/scripts/opsx-verify-preflight.sh',
-    '.codex/prompts/opsx-clarify/SKILL.md',
-    '.codex/prompts/opsx-clarify/references/phase-1-detect-ambiguity.md',
-    '.codex/prompts/opsx-clarify/assets/question-list-template.md',
-    '.codex/prompts/opsx-clarify/scripts/opsx-clarify-preflight.sh',
-    '.codex/prompts/opsx-health/SKILL.md',
-    '.codex/prompts/opsx-health/references/phase-1-run-doctor.md',
-    '.codex/prompts/opsx-health/assets/report-template.md',
-    '.codex/prompts/git-commit-push/SKILL.md',
-    '.codex/prompts/git-code-review/SKILL.md',
-    '.codex/prompts/git-code-review/references/convention-checklist.md',
-    '.codex/prompts/git-merge-branch/SKILL.md',
-    '.codex/prompts/file-code-review/SKILL.md',
-    '.codex/prompts/file-code-review/references/convention-checklist.md',
-    '.codex/commands/opsx-dev-pipeline.md',
-    '.codex/commands/opsx-learn.md',
-    '.codex/commands/opsx-analysis.md',
-    '.codex/commands/opsx-design.md',
-    '.codex/commands/opsx-verify.md',
-    '.codex/commands/opsx-clarify.md',
-    '.codex/commands/opsx-health.md',
-    '.codex/commands/git-commit-push.md',
-    '.codex/commands/git-code-review.md',
-    '.codex/commands/git-merge-branch.md',
-    '.codex/commands/file-code-review.md',
-    '.codex/commands/README.md'
+    { path: '.codex/prompts/opsx-dev-pipeline.md', present: true },
+    { path: '.knowledge/README.md', present: true },
+    { path: '.knowledge/INDEX.md', present: true },
+    { path: '.knowledge/tech/development-experience.md', present: true },
+    { path: '.codex/prompts/opsx-dev-pipeline/SKILL.md', present: true },
+    { path: '.codex/prompts/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
+    { path: '.codex/prompts/opsx-dev-pipeline/assets/decision-point-index.md', present: true },
+    { path: '.codex/prompts/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', present: true },
+    { path: '.codex/commands/opsx-dev-pipeline.md', present: true },
+    { path: '.codex/commands/README.md', present: true },
   ],
   generic: [
-    '.ai/README.md',
-    '.knowledge/README.md',
-    '.knowledge/INDEX.md',
-    '.knowledge/tech/development-experience.md',
-    '.ai/skills/opsx-dev-pipeline/SKILL.md',
-    '.ai/skills/opsx-dev-pipeline/references/phase-0-entrance.md',
-    '.ai/skills/opsx-dev-pipeline/assets/decision-point-index.md',
-    '.ai/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh',
-    '.ai/skills/opsx-learn/SKILL.md',
-    '.ai/skills/opsx-learn/references/phase-1-understand-goal.md',
-    '.ai/skills/opsx-learn/assets/write-targets.md',
-    '.ai/skills/opsx-learn/assets/preflight-json-contract.md',
-    '.ai/skills/opsx-learn/scripts/opsx-learn-preflight.sh',
-    '.ai/skills/opsx-analysis/SKILL.md',
-    '.ai/skills/opsx-analysis/references/phase-1-clarify-requirement.md',
-    '.ai/skills/opsx-analysis/references/phase-2-explore-context.md',
-    '.ai/skills/opsx-analysis/references/phase-3-split-capabilities.md',
-    '.ai/skills/opsx-analysis/references/phase-4-assess-impact.md',
-    '.ai/skills/opsx-analysis/references/phase-5-output-analysis.md',
-    '.ai/skills/opsx-analysis/assets/analysis-output-template.md',
-    '.ai/skills/opsx-analysis/assets/evidence-standards.md',
-    '.ai/skills/opsx-analysis/assets/maintenance-index.md',
-    '.ai/skills/opsx-analysis/assets/question-checklist.md',
-    '.ai/skills/opsx-analysis/scripts/opsx-analysis-preflight.sh',
-    '.ai/skills/opsx-design/SKILL.md',
-    '.ai/skills/opsx-design/references/phase-1-collect-context.md',
-    '.ai/skills/opsx-design/assets/section-skeleton.md',
-    '.ai/skills/opsx-verify/SKILL.md',
-    '.ai/skills/opsx-verify/references/phase-1-resolve-context.md',
-    '.ai/skills/opsx-verify/assets/verify-target-template.md',
-    '.ai/skills/opsx-verify/scripts/opsx-verify-preflight.sh',
-    '.ai/skills/opsx-clarify/SKILL.md',
-    '.ai/skills/opsx-clarify/references/phase-1-detect-ambiguity.md',
-    '.ai/skills/opsx-clarify/assets/question-list-template.md',
-    '.ai/skills/opsx-clarify/scripts/opsx-clarify-preflight.sh',
-    '.ai/skills/opsx-health/SKILL.md',
-    '.ai/skills/opsx-health/references/phase-1-run-doctor.md',
-    '.ai/skills/opsx-health/assets/report-template.md',
-    '.ai/skills/git-commit-push/SKILL.md',
-    '.ai/skills/git-code-review/SKILL.md',
-    '.ai/skills/git-code-review/references/convention-checklist.md',
-    '.ai/skills/git-merge-branch/SKILL.md',
-    '.ai/skills/file-code-review/SKILL.md',
-    '.ai/skills/file-code-review/references/convention-checklist.md',
-    '.ai/commands/opsx-dev-pipeline.md',
-    '.ai/commands/opsx-learn.md',
-    '.ai/commands/opsx-analysis.md',
-    '.ai/commands/opsx-design.md',
-    '.ai/commands/opsx-verify.md',
-    '.ai/commands/opsx-clarify.md',
-    '.ai/commands/opsx-health.md',
-    '.ai/commands/git-commit-push.md',
-    '.ai/commands/git-code-review.md',
-    '.ai/commands/git-merge-branch.md',
-    '.ai/commands/file-code-review.md'
-  ]
+    { path: '.ai/README.md', present: true },
+    { path: '.knowledge/README.md', present: true },
+    { path: '.knowledge/INDEX.md', present: true },
+    { path: '.knowledge/tech/development-experience.md', present: true },
+    { path: '.ai/skills/opsx-dev-pipeline/SKILL.md', present: true },
+    { path: '.ai/skills/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
+    { path: '.ai/skills/opsx-dev-pipeline/assets/decision-point-index.md', present: true },
+    { path: '.ai/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', present: true },
+    { path: '.ai/commands/opsx-dev-pipeline.md', present: true },
+  ],
 } as const;
 
 describe('tool matrix', () => {
-  it.each(Object.entries(toolExpectations))('initializes %s successfully', async (tool, expectedFiles) => {
+  it.each(
+    Object.entries(toolExpectations),
+  )('initializes %s successfully', async (tool, expectations) => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), `opsx-${tool}-`));
     createdDirs.push(dir);
 
-    await runInit({ dir, tool: tool as 'claude' | 'cursor' | 'codex' | 'generic', yes: true, force: false, dryRun: false });
+    await runInit({
+      dir,
+      tool: tool as 'claude' | 'cursor' | 'codex' | 'generic',
+      yes: true,
+      force: false,
+      dryRun: false,
+    });
 
-    for (const file of expectedFiles) {
-      expect(await fs.pathExists(path.join(dir, file))).toBe(true);
+    for (const { path: file, present } of expectations) {
+      if (present) {
+        expect(await fs.pathExists(path.join(dir, file))).toBe(true);
+      } else {
+        expect(await fs.pathExists(path.join(dir, file))).toBe(false);
+      }
+    }
+
+    // Negative: no removed preset skills or commands in any adapter output
+    const allFiles = await listAllFiles(dir);
+    for (const name of removed) {
+      expect(allFiles.filter((f) => f.includes(name))).toEqual([]);
     }
 
     expect(await fs.pathExists(path.join(dir, MANIFEST_FILE))).toBe(true);
-    expect(await fs.pathExists(path.join(dir, expectedFiles[1].split('/').slice(0, -1).join('/'), 'tests'))).toBe(false);
+    // Negative: no tests directory with leaked legacy content
+    expect(
+      await fs.pathExists(
+        path.join(dir, expectations[0].path.split('/').slice(0, -1).join('/'), 'tests'),
+      ),
+    ).toBe(false);
   });
 
-  it('does not generate the optional opsx-prototype skill by default', async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-prototype-default-'));
+  it('rejects removed optional features before installation', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-reject-removed-feature-'));
     createdDirs.push(dir);
 
-    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
-
-    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-prototype/SKILL.md'))).toBe(false);
-    expect(await fs.pathExists(path.join(dir, '.claude/commands/opsx-prototype.md'))).toBe(false);
-
-    const manifest = await readManifest(dir);
-    expect(manifest.features).not.toContain('prototype');
-    expect(manifest.managedAssets.some((asset) => asset.id.startsWith('opsx-prototype'))).toBe(false);
+    for (const removedFeature of ['prototype', 'opsx-pr', 'opsx-ci-triage']) {
+      await expect(
+        runInit({
+          dir,
+          tool: 'claude',
+          yes: true,
+          force: false,
+          dryRun: true,
+          feature: [removedFeature],
+        }),
+      ).rejects.toThrow(/Unknown feature/);
+    }
   });
 
   it('generates structural-analysis-hint when the feature is enabled', async () => {
@@ -303,11 +184,13 @@ describe('tool matrix', () => {
       yes: true,
       force: false,
       dryRun: false,
-      feature: ['structural-analysis-hint']
+      feature: ['structural-analysis-hint'],
     });
 
     const skillRoot = path.join(dir, '.claude/skills/opsx-dev-pipeline');
-    expect(await fs.pathExists(path.join(skillRoot, 'assets/structural-analysis-hint.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(skillRoot, 'assets/structural-analysis-hint.md'))).toBe(
+      true,
+    );
 
     const skillContent = await fs.readFile(path.join(skillRoot, 'SKILL.md'), 'utf8');
     expect(skillContent).toContain('structural-analysis-hint.md');
@@ -316,19 +199,32 @@ describe('tool matrix', () => {
     expect(manifest.features).toContain('structural-analysis-hint');
   });
 
-  it('generates the optional opsx-prototype skill when the prototype feature is enabled', async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-prototype-enabled-'));
+  it('structural-analysis-hint is the only optional feature', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-feature-optional-only-'));
     createdDirs.push(dir);
 
-    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false, feature: ['prototype'] });
+    // Default init should only have base features
+    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
+    const defaultManifest = await readManifest(dir);
+    expect(
+      defaultManifest.features.filter(
+        (f) => f !== 'base' && f !== 'skills' && f !== 'commands' && f !== 'docs',
+      ),
+    ).toEqual([]);
 
-    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-prototype/SKILL.md'))).toBe(true);
-    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-prototype/references/phase-1-collect-prototype.md'))).toBe(true);
-    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-prototype/assets/structured-requirement-template.md'))).toBe(true);
-    expect(await fs.pathExists(path.join(dir, '.claude/commands/opsx-prototype.md'))).toBe(true);
-
-    const manifest = await readManifest(dir);
-    expect(manifest.features).toContain('prototype');
+    // structural-analysis-hint can be enabled
+    const dir2 = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-feature-sah-on-'));
+    createdDirs.push(dir2);
+    await runInit({
+      dir: dir2,
+      tool: 'claude',
+      yes: true,
+      force: false,
+      dryRun: false,
+      feature: ['structural-analysis-hint'],
+    });
+    const sahManifest = await readManifest(dir2);
+    expect(sahManifest.features).toContain('structural-analysis-hint');
   });
 
   it('embeds manifest in package.json when package.json exists', async () => {
@@ -337,7 +233,7 @@ describe('tool matrix', () => {
 
     await fs.writeJson(path.join(dir, PACKAGE_JSON_FILE), {
       name: 'demo-app',
-      version: '1.0.0'
+      version: '1.0.0',
     });
 
     await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
@@ -389,36 +285,18 @@ describe('tool matrix', () => {
     expect(payload.manifest.versionCheck.status).toBe('current');
   });
 
-  it('doctor supports json output with knowledge report', async () => {
+  it('doctor emits JSON with knowledge and manifest status', async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-doctor-json-'));
     createdDirs.push(dir);
 
     await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
 
-    const skillContent = await fs.readFile(path.join(dir, '.claude/skills/opsx-learn/SKILL.md'), 'utf8');
-    const preflightContent = await fs.readFile(path.join(dir, '.claude/skills/opsx-learn/scripts/opsx-learn-preflight.sh'), 'utf8');
-    const phaseFiveContent = await fs.readFile(path.join(dir, '.claude/skills/opsx-learn/references/phase-5-review-and-write.md'), 'utf8');
-    const writeTargetsContent = await fs.readFile(path.join(dir, '.claude/skills/opsx-learn/assets/write-targets.md'), 'utf8');
-    const maintenanceContent = await fs.readFile(path.join(dir, '.claude/skills/opsx-learn/assets/maintenance-index.md'), 'utf8');
-    const contractContent = await fs.readFile(path.join(dir, '.claude/skills/opsx-learn/assets/preflight-json-contract.md'), 'utf8');
-
-    expect(skillContent).toContain('knowledgeHealth');
-    expect(preflightContent).toContain('opsx-dev-pipeline doctor --json');
-    expect(preflightContent).toContain('npx --yes opsx-dev-pipeline');
-    expect(preflightContent).toContain('knowledgeHealthSource');
-    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-resolve-cli.sh'))).toBe(true);
-    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-health/scripts/opsx-health-run-doctor.sh'))).toBe(true);
-    expect(preflightContent).toContain('knowledgeHealthStatus');
-    expect(preflightContent).toContain('knowledgeHealthSummary');
-    expect(preflightContent).toContain('knowledgeHealthHighlights');
-    expect(phaseFiveContent).toContain('knowledgeHealthSummary');
-    expect(writeTargetsContent).toContain('knowledgeHealthSummary');
-    expect(writeTargetsContent).toContain('knowledgeHealthHighlights');
-    expect(maintenanceContent).toContain('先看 `knowledgeHealthSummary`');
-    expect(maintenanceContent).toContain('assets/preflight-json-contract.md');
-    expect(contractContent).toContain('## 顶层字段');
-    expect(contractContent).toContain('knowledgeHealthAvailable');
-    expect(contractContent).toContain('## 降级语义');
+    // Verify retained assets exist
+    expect(
+      await fs.pathExists(
+        path.join(dir, '.claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-resolve-cli.sh'),
+      ),
+    ).toBe(true);
 
     const spy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
@@ -435,29 +313,45 @@ describe('tool matrix', () => {
 
   const overlayExpectations = {
     claude: { overlay: 'CLAUDE.md', skillsDir: '.claude/skills', expectAlwaysApply: false },
-    cursor: { overlay: '.cursor/rules/opsx-dev-pipeline.mdc', skillsDir: '.cursor/rules', expectAlwaysApply: true },
-    codex: { overlay: '.codex/prompts/opsx-dev-pipeline.md', skillsDir: '.codex/prompts', expectAlwaysApply: false },
-    generic: { overlay: '.ai/README.md', skillsDir: '.ai/skills', expectAlwaysApply: false }
+    cursor: {
+      overlay: '.cursor/rules/opsx-dev-pipeline.mdc',
+      skillsDir: '.cursor/rules',
+      expectAlwaysApply: true,
+    },
+    codex: {
+      overlay: '.codex/prompts/opsx-dev-pipeline.md',
+      skillsDir: '.codex/prompts',
+      expectAlwaysApply: false,
+    },
+    generic: { overlay: '.ai/README.md', skillsDir: '.ai/skills', expectAlwaysApply: false },
   } as const;
 
-  it.each(Object.entries(overlayExpectations))(
-    'injects the knowledge-first rule into the %s overlay',
-    async (tool, { overlay, expectAlwaysApply }) => {
-      const dir = await fs.mkdtemp(path.join(os.tmpdir(), `opsx-overlay-${tool}-`));
-      createdDirs.push(dir);
+  it.each(
+    Object.entries(overlayExpectations),
+  )('injects the knowledge-first rule into the %s overlay', async (tool, {
+    overlay,
+    expectAlwaysApply,
+  }) => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), `opsx-overlay-${tool}-`));
+    createdDirs.push(dir);
 
-      await runInit({ dir, tool: tool as 'claude' | 'cursor' | 'codex' | 'generic', yes: true, force: false, dryRun: false });
+    await runInit({
+      dir,
+      tool: tool as 'claude' | 'cursor' | 'codex' | 'generic',
+      yes: true,
+      force: false,
+      dryRun: false,
+    });
 
-      const content = await fs.readFile(path.join(dir, overlay), 'utf8');
-      expect(content).toContain('知识优先');
-      expect(content).toContain('.knowledge/INDEX.md');
-      expect(content).toContain('追加不覆盖');
+    const content = await fs.readFile(path.join(dir, overlay), 'utf8');
+    expect(content).toContain('知识优先');
+    expect(content).toContain('.knowledge/INDEX.md');
+    expect(content).toContain('追加不覆盖');
 
-      if (expectAlwaysApply) {
-        expect(content).toContain('alwaysApply: true');
-      }
+    if (expectAlwaysApply) {
+      expect(content).toContain('alwaysApply: true');
     }
-  );
+  });
 
   it('embeds the new pipeline gates and decision points in skill references', async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-pipeline-gates-'));
@@ -467,7 +361,10 @@ describe('tool matrix', () => {
 
     const skillRoot = path.join(dir, '.claude/skills/opsx-dev-pipeline');
 
-    const archive = await fs.readFile(path.join(skillRoot, 'references/phase-4-archive.md'), 'utf8');
+    const archive = await fs.readFile(
+      path.join(skillRoot, 'references/phase-4-archive.md'),
+      'utf8',
+    );
     expect(archive).toContain('步骤 15.5');
     expect(archive).toContain('决策点 4c');
     expect(archive).toContain('知识沉淀');
@@ -477,84 +374,41 @@ describe('tool matrix', () => {
     expect(apply).toContain('自审查硬门禁');
     expect(apply).toContain('apply-quality-gate.md');
 
-    const propose = await fs.readFile(path.join(skillRoot, 'references/phase-1-propose.md'), 'utf8');
+    const propose = await fs.readFile(
+      path.join(skillRoot, 'references/phase-1-propose.md'),
+      'utf8',
+    );
     expect(propose).toContain('决策点 1c');
     expect(propose).toContain('需求理解确认');
 
     expect(await fs.pathExists(path.join(skillRoot, 'assets/apply-quality-gate.md'))).toBe(true);
-    expect(await fs.pathExists(path.join(skillRoot, 'assets/structural-analysis-hint.md'))).toBe(false);
+    expect(await fs.pathExists(path.join(skillRoot, 'assets/structural-analysis-hint.md'))).toBe(
+      false,
+    );
 
     const skillContent = await fs.readFile(path.join(skillRoot, 'SKILL.md'), 'utf8');
     expect(skillContent).not.toContain('structural-analysis-hint.md');
 
-    const decisionIndex = await fs.readFile(path.join(skillRoot, 'assets/decision-point-index.md'), 'utf8');
+    const decisionIndex = await fs.readFile(
+      path.join(skillRoot, 'assets/decision-point-index.md'),
+      'utf8',
+    );
     expect(decisionIndex).toContain('| 4c |');
     expect(decisionIndex).toContain('| 1c |');
   });
 
-  it('decouples the review skills from a fixed stack and neutralizes tool identity', async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-review-decoupling-'));
+  it('renders tool display name in retained skills without template variables', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-tool-displayname-'));
     createdDirs.push(dir);
 
     await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
 
-    // The rendered tool display name for the claude adapter (adapter.definition.displayName).
-    const toolDisplayName = 'Claude Code';
-    const forbiddenStackIdentifiers = ['YzwResult', '@Authority', 'PurWebContractPaymentBaseController', '*BizService'];
-    const forbiddenModelIdentity = 'Claude Opus 4.8';
-
-    const reviewSkillPaths = {
-      git: path.join(dir, '.claude/skills/git-code-review/SKILL.md'),
-      file: path.join(dir, '.claude/skills/file-code-review/SKILL.md')
-    } as const;
-
-    for (const skillPath of Object.values(reviewSkillPaths)) {
-      const content = await fs.readFile(skillPath, 'utf8');
-
-      // 1. Mandatory body is decoupled: no stack-specific or company-specific identifiers, no model-version identity.
-      for (const forbidden of forbiddenStackIdentifiers) {
-        expect(content).not.toContain(forbidden);
-      }
-      expect(content).not.toContain(forbiddenModelIdentity);
-
-      // 2. Points at the single-source authoritative checklist via 权威来源地图.
-      expect(content).toContain('权威来源地图');
-      expect(content).toContain('references/convention-checklist.md');
-
-      // 3. Instructs Chinese output and retains the baseline fallback chain + 规范基准 disclosure.
-      expect(content).toContain('审查报告必须使用中文输出');
-      expect(content).toContain('README.md');
-      expect(content).toContain('CLAUDE.md');
-      expect(content).toContain('AGENTS.md');
-      expect(content).toContain('邻近架构文档');
-      expect(content).toContain('未找到项目基准');
-      expect(content).toContain('规范基准');
-
-      // 4. Renders the tool display name (not the raw template variable) in the report 审查人 field.
-      expect(content).toContain(`**审查人:** ${toolDisplayName}`);
-      expect(content).not.toContain('{{toolName}}');
-    }
-
-    // git-commit-push neutralizes model identity and renders the display name in the commit trailer.
-    const commitPushContent = await fs.readFile(path.join(dir, '.claude/skills/git-commit-push/SKILL.md'), 'utf8');
-    expect(commitPushContent).not.toContain(forbiddenModelIdentity);
-    expect(commitPushContent).toContain(`Co-Authored-By: ${toolDisplayName} <noreply@opsx-dev-pipeline.local>`);
-    expect(commitPushContent).not.toContain('{{toolName}}');
-
-    // 5. Any retained Java/Spring enterprise content lives ONLY under the optional-example marker
-    //    in the shared checklist; the mandatory body above the marker is stack-agnostic.
-    const checklistContent = await fs.readFile(
-      path.join(dir, '.claude/skills/git-code-review/references/convention-checklist.md'),
-      'utf8'
+    // Verify retained pipeline skill does not leak raw template variables
+    const skillContent = await fs.readFile(
+      path.join(dir, '.claude/skills/opsx-dev-pipeline/SKILL.md'),
+      'utf8',
     );
-    const optionalMarkerIndex = checklistContent.indexOf('非强制');
-    expect(optionalMarkerIndex).toBeGreaterThan(-1);
-    const mandatoryChecklistBody = checklistContent.slice(0, optionalMarkerIndex);
-    for (const javaToken of ['@RestController', '*ServiceImpl', '@Transactional']) {
-      // Retained as an optional example only — never in the mandatory body.
-      expect(mandatoryChecklistBody).not.toContain(javaToken);
-      expect(checklistContent).toContain(javaToken);
-    }
+    expect(skillContent).not.toContain('{{toolName}}');
   });
 
   it('writes a concise root README for new projects', async () => {
@@ -579,7 +433,9 @@ describe('tool matrix', () => {
     await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
 
     expect(await fs.readFile(existingReadme, 'utf8')).toBe(originalContent);
-    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-dev-pipeline/SKILL.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-dev-pipeline/SKILL.md'))).toBe(
+      true,
+    );
 
     const manifest = await readManifest(dir);
     expect(manifest.managedAssets.some((asset) => asset.id === 'common-readme')).toBe(false);
@@ -625,7 +481,9 @@ describe('tool matrix', () => {
     await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
 
     expect(await fs.readFile(existingGitignore, 'utf8')).toBe(originalContent);
-    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-dev-pipeline/SKILL.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-dev-pipeline/SKILL.md'))).toBe(
+      true,
+    );
 
     const manifest = await readManifest(dir);
     expect(manifest.managedAssets.some((asset) => asset.id === 'common-gitignore')).toBe(false);
@@ -708,7 +566,9 @@ describe('tool matrix', () => {
     await fs.remove(path.join(dir, '.knowledge'));
 
     const manifest = await readManifest(dir);
-    manifest.managedAssets = manifest.managedAssets.filter((asset) => !asset.id.startsWith('common-knowledge-skeleton:'));
+    manifest.managedAssets = manifest.managedAssets.filter(
+      (asset) => !asset.id.startsWith('common-knowledge-skeleton:'),
+    );
     await fs.writeJson(path.join(dir, MANIFEST_FILE), manifest, { spaces: 2 });
 
     await runUpgradeCommand({ dir, yes: true, force: false, dryRun: false });
@@ -726,7 +586,9 @@ describe('tool matrix', () => {
     await fs.ensureDir(path.join(dir, 'docs/knowledge'));
 
     const manifest = await readManifest(dir);
-    manifest.managedAssets = manifest.managedAssets.filter((asset) => !asset.id.startsWith('common-knowledge-skeleton:'));
+    manifest.managedAssets = manifest.managedAssets.filter(
+      (asset) => !asset.id.startsWith('common-knowledge-skeleton:'),
+    );
     await fs.writeJson(path.join(dir, MANIFEST_FILE), manifest, { spaces: 2 });
 
     await runUpgradeCommand({ dir, yes: true, force: false, dryRun: false });
@@ -756,8 +618,12 @@ describe('tool matrix', () => {
     await runUninstallCommand({ dir, yes: true, dryRun: false });
 
     expect(await readStoredManifest(dir)).toBeNull();
-    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-dev-pipeline/SKILL.md'))).toBe(false);
-    expect(await fs.pathExists(path.join(dir, '.claude/commands/opsx-dev-pipeline.md'))).toBe(false);
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-dev-pipeline/SKILL.md'))).toBe(
+      false,
+    );
+    expect(await fs.pathExists(path.join(dir, '.claude/commands/opsx-dev-pipeline.md'))).toBe(
+      false,
+    );
     expect(await fs.pathExists(path.join(dir, 'CLAUDE.md'))).toBe(false);
   });
 
@@ -770,10 +636,14 @@ describe('tool matrix', () => {
     await runUninstallCommand({ dir, yes: true, dryRun: false, keepKnowledge: true });
 
     expect(await fs.pathExists(path.join(dir, '.knowledge/README.md'))).toBe(true);
-    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-dev-pipeline/SKILL.md'))).toBe(false);
+    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-dev-pipeline/SKILL.md'))).toBe(
+      false,
+    );
 
     const manifest = await readManifest(dir);
-    expect(manifest?.managedAssets.every((asset) => asset.id.startsWith('common-knowledge-skeleton:'))).toBe(true);
+    expect(
+      manifest?.managedAssets.every((asset) => asset.id.startsWith('common-knowledge-skeleton:')),
+    ).toBe(true);
   });
 
   it('sync prompts for conflicts without yes or force', async () => {

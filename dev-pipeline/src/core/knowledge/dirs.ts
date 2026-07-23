@@ -5,7 +5,7 @@ export const KNOWLEDGE_DIR_CANDIDATES = [
   '.knowledge',
   'docs/knowledge',
   'knowledge',
-  'docs/domain'
+  'docs/domain',
 ] as const;
 
 export type KnowledgeDirCandidate = (typeof KNOWLEDGE_DIR_CANDIDATES)[number];
@@ -20,7 +20,7 @@ export async function hasExistingKnowledgeDirectory(targetDir: string): Promise<
 }
 
 export async function resolveKnowledgeDirectory(
-  targetDir: string
+  targetDir: string,
 ): Promise<ResolvedKnowledgeDirectory | null> {
   for (const candidate of KNOWLEDGE_DIR_CANDIDATES) {
     const fullPath = path.join(targetDir, candidate);

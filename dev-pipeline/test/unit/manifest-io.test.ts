@@ -6,7 +6,7 @@ import {
   LEGACY_MANIFEST_FILE,
   MANIFEST_FILE,
   MANIFEST_PACKAGE_JSON_KEY,
-  PACKAGE_JSON_FILE
+  PACKAGE_JSON_FILE,
 } from '../../src/core/runtime/meta.js';
 import { readManifest, writeManifest } from '../../src/core/manifest/io.js';
 import type { PipelineManifest } from '../../src/core/manifest/types.js';
@@ -20,7 +20,7 @@ const sampleManifest: PipelineManifest = {
   features: ['base'],
   templateVersion: '0.1.5',
   packageName: 'opsx-dev-pipeline',
-  managedAssets: [{ id: 'common-readme', destination: 'README.md' }]
+  managedAssets: [{ id: 'common-readme', destination: 'README.md' }],
 };
 
 afterEach(async () => {
@@ -46,7 +46,7 @@ describe('manifest io', () => {
 
     await fs.writeJson(path.join(dir, PACKAGE_JSON_FILE), {
       name: 'demo-app',
-      version: '1.0.0'
+      version: '1.0.0',
     });
 
     await writeManifest(dir, sampleManifest);
@@ -70,12 +70,12 @@ describe('manifest io', () => {
     await fs.writeJson(path.join(dir, MANIFEST_FILE), sampleManifest);
     await fs.writeJson(path.join(dir, PACKAGE_JSON_FILE), {
       name: 'demo-app',
-      version: '1.0.0'
+      version: '1.0.0',
     });
 
     await writeManifest(dir, {
       ...sampleManifest,
-      projectName: 'migrated-demo'
+      projectName: 'migrated-demo',
     });
 
     expect(await fs.pathExists(path.join(dir, MANIFEST_FILE))).toBe(false);
@@ -96,7 +96,7 @@ describe('manifest io', () => {
       features: ['base'],
       templateVersion: '0.1.0',
       packageName: 'opsx-dev-pipeline',
-      managedAssets: []
+      managedAssets: [],
     });
 
     const result = await readManifest(dir);
@@ -105,21 +105,37 @@ describe('manifest io', () => {
     expect(result?.manifest.projectName).toBe('legacy-demo');
   });
 
+  it.each([
+    'prototype',
+    'opsx-pr',
+    'opsx-ci-triage',
+  ])('rejects manifests containing the removed %s feature', async (feature) => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-manifest-'));
+    createdDirs.push(dir);
+
+    await fs.writeJson(path.join(dir, MANIFEST_FILE), {
+      ...sampleManifest,
+      features: ['base', feature],
+    });
+
+    await expect(readManifest(dir)).rejects.toThrow();
+  });
+
   it('prefers package.json embedded manifest over standalone files', async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-manifest-'));
     createdDirs.push(dir);
 
     await fs.writeJson(path.join(dir, MANIFEST_FILE), {
       ...sampleManifest,
-      projectName: 'standalone-demo'
+      projectName: 'standalone-demo',
     });
     await fs.writeJson(path.join(dir, PACKAGE_JSON_FILE), {
       name: 'demo-app',
       version: '1.0.0',
       [MANIFEST_PACKAGE_JSON_KEY]: {
         ...sampleManifest,
-        projectName: 'embedded-demo'
-      }
+        projectName: 'embedded-demo',
+      },
     });
 
     const result = await readManifest(dir);

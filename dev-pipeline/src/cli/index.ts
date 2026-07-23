@@ -17,7 +17,7 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--yes', 'Skip prompts and use defaults/flags')
     .option('--force', 'Overwrite existing files when allowed')
     .option('--dry-run', 'Preview generated files without writing them')
-    .option('--feature <feature>', 'Enable an optional feature (e.g. prototype, structural-analysis-hint)')
+    .option('--feature <feature>', 'Enable an optional feature (e.g. structural-analysis-hint)')
     .option(...dirOption)
     .action(async (options) => {
       await runInitCommand(options);
@@ -34,7 +34,10 @@ export async function runCli(argv: string[]): Promise<void> {
     });
 
   cli
-    .command('upgrade', 'Upgrade managed files using the current opsx-dev-pipeline package templates')
+    .command(
+      'upgrade',
+      'Upgrade managed files using the current opsx-dev-pipeline package templates',
+    )
     .option('--yes', 'Skip conflict prompts and preserve existing files when possible')
     .option('--force', 'Overwrite existing managed files')
     .option('--dry-run', 'Preview upgraded files without writing them')
@@ -61,10 +64,19 @@ export async function runCli(argv: string[]): Promise<void> {
     });
 
   cli
-    .command('doctor', 'Inspect current directory for opsx-dev-pipeline metadata and .knowledge health')
+    .command(
+      'doctor',
+      'Inspect current directory for opsx-dev-pipeline metadata and .knowledge health',
+    )
     .option('--json', 'Print doctor report as JSON')
-    .option('--history', 'Persist a health snapshot and report score trend vs the previous snapshot')
-    .option('--stale-days <days>', 'Days after which a knowledge file is considered stale (default 90)')
+    .option(
+      '--history',
+      'Persist a health snapshot and report score trend vs the previous snapshot',
+    )
+    .option(
+      '--stale-days <days>',
+      'Days after which a knowledge file is considered stale (default 90)',
+    )
     .option('--stack', 'Only validate the stack profile in openspec/config.yaml')
     .option(...dirOption)
     .action(async (options) => {

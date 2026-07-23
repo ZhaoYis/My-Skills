@@ -19,11 +19,7 @@ export class AgentPhaseRunner {
   /**
    * Build the agent prompt for a specific phase.
    */
-  buildPhasePrompt(
-    phaseId: PhaseId,
-    changeName: string,
-    featureDescription: string
-  ): string {
+  buildPhasePrompt(phaseId: PhaseId, changeName: string, featureDescription: string): string {
     const meta = PHASE_META[phaseId];
     const skillAbsPath = path.join(this.env.skillsRoot, meta.skillPath);
 
@@ -72,9 +68,9 @@ export class AgentPhaseRunner {
         const status = result.status === 'pass' ? '✅' : result.status === 'fail' ? '❌' : '⚠️';
         lines.push(`\n### ${result.label} ${status}`);
         lines.push(result.agentSummary);
-        if (result.artifacts.filter(a => a.exists).length > 0) {
+        if (result.artifacts.filter((a) => a.exists).length > 0) {
           lines.push('\n**Artifacts generated:**');
-          for (const a of result.artifacts.filter(a => a.exists)) {
+          for (const a of result.artifacts.filter((a) => a.exists)) {
             lines.push(`  - ${a.path}`);
           }
         }
@@ -164,47 +160,17 @@ ${params.previousContext}
 /**
  * Phase-specific prompt customizations.
  */
-export function getPhaseSpecificInstructions(phaseId: PhaseId, context: {
-  changeName: string;
-  featureDescription: string;
-  projectRoot: string;
-}): string {
+export function getPhaseSpecificInstructions(
+  phaseId: PhaseId,
+  context: {
+    changeName: string;
+    featureDescription: string;
+    projectRoot: string;
+  },
+): string {
   const { changeName, featureDescription, projectRoot } = context;
 
   switch (phaseId) {
-    case 'opsx-learn':
-      return `\
-## Specific Tasks for opsx-learn
-
-1. Run the preflight script: \`bash .claude/skills/opsx-learn/scripts/opsx-learn-preflight.sh\`
-2. Explore the project structure under \`${projectRoot}\`
-3. Identify key modules: backend (Express API), frontend (React SPA), shared types
-4. Document API endpoints in \`.knowledge/tech/api/\`
-5. Document data models in \`.knowledge/tech/db/\`
-6. Update \`.knowledge/INDEX.md\` with new entries`;
-
-    case 'opsx-analysis':
-      return `\
-## Specific Tasks for opsx-analysis
-
-1. Run the preflight script: \`bash .claude/skills/opsx-analysis/scripts/opsx-analysis-preflight.sh\`
-2. Read the knowledge base under \`.knowledge/\`
-3. Analyze the feature: "${featureDescription}"
-4. Identify affected modules, APIs, and components
-5. Produce a structured analysis with facts/inferences/open-questions
-6. Output to \`openspec/analysis/${changeName}.md\``;
-
-    case 'opsx-design':
-      return `\
-## Specific Tasks for opsx-design
-
-1. Collect context from analysis and knowledge base
-2. Follow the design section skeleton
-3. Apply relevance filter per section
-4. Run quality gate self-check
-5. Include verification assertion fields for opsx-verify
-6. Output to \`openspec/changes/${changeName}/design.md\``;
-
     case 'phase-0-entrance':
       return `\
 ## Specific Tasks for Phase 0 — Entrance
@@ -248,7 +214,7 @@ export function getPhaseSpecificInstructions(phaseId: PhaseId, context: {
 2. Get git diff: \`git diff HEAD~1 --stat\` and \`git diff HEAD~1\`
 3. Perform code review covering:
    - Secret scanning
-   - Convention compliance (convention-checklist.md)
+   - Convention compliance
    - Correctness
    - Security
    - Performance
@@ -286,24 +252,6 @@ export function getPhaseSpecificInstructions(phaseId: PhaseId, context: {
 4. Commit with conventional commit format: \`feat(${context.changeName}): <description>\`
 5. Push: \`git push origin <branch>\`
 6. Display final summary`;
-
-    case 'opsx-verify':
-      return `\
-## Specific Tasks for opsx-verify
-
-1. Run: \`bash .claude/skills/opsx-verify/scripts/opsx-verify-preflight.sh\`
-2. Resolve verification targets from design verification assertions
-3. Build and start the project (auto-verify items)
-4. Run smoke/contract/data checks
-5. Run regression checks on affected surfaces`;
-
-    case 'opsx-health':
-      return `\
-## Specific Tasks for opsx-health
-
-1. Run: \`bash .claude/skills/opsx-health/scripts/opsx-health-run-doctor.sh\`
-2. Parse the doctor JSON output
-3. Generate structured report with P0-P3 fix suggestions`;
 
     default:
       return '';

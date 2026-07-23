@@ -6,24 +6,6 @@ change_id: ''
 branch: ''
 current_phase: phase0_entrance
 last_completed_gate: ''
-delivery_mode: ''
-
-pr:
-  number: null
-  url: null
-  status: null
-  title: null
-  base_branch: null
-  created_at: null
-
-ci:
-  status: unknown
-  last_checked_at: null
-  checks_url: null
-  failure_category: null
-  total_checks: null
-  passed_checks: null
-  failed_checks: null
 
 pending_action:
   type: ready

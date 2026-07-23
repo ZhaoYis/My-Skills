@@ -19,7 +19,7 @@ async function createTempDir(prefix: string): Promise<string> {
 
 const managedKnowledgeAssets: ManagedAssetRecord[] = [
   { id: 'common-knowledge-skeleton:README.md.hbs', destination: '.knowledge/README.md' },
-  { id: 'common-knowledge-skeleton:INDEX.md', destination: '.knowledge/INDEX.md' }
+  { id: 'common-knowledge-skeleton:INDEX.md', destination: '.knowledge/INDEX.md' },
 ];
 
 describe('checkKnowledgeHealth', () => {
@@ -57,8 +57,8 @@ describe('checkKnowledgeHealth', () => {
         '## 外部服务索引',
         '## 风险 / 故障索引',
         '## 运维知识索引',
-        '## 开发规范 / 工作流'
-      ].join('\n')
+        '## 开发规范 / 工作流',
+      ].join('\n'),
     );
 
     const report = await checkKnowledgeHealth(dir, managedKnowledgeAssets);
@@ -106,7 +106,10 @@ describe('checkKnowledgeHealth', () => {
     await fs.writeFile(path.join(dir, '.knowledge/risks/README.md'), '# Risks\n');
     await fs.writeFile(path.join(dir, '.knowledge/tech/development-experience.md'), '# Dev\n');
     await fs.writeFile(path.join(dir, '.knowledge/risks/known-issues.md'), '# Issues\n');
-    await fs.writeFile(path.join(dir, '.knowledge/ops/deployment-checklist-template.md'), '# Deploy\n');
+    await fs.writeFile(
+      path.join(dir, '.knowledge/ops/deployment-checklist-template.md'),
+      '# Deploy\n',
+    );
     await fs.writeFile(
       path.join(dir, '.knowledge/INDEX.md'),
       [
@@ -123,12 +126,14 @@ describe('checkKnowledgeHealth', () => {
         '| 待补充 | 待补充 |',
         '## 运维知识索引',
         '| 待补充 | 待补充 |',
-        '## 开发规范 / 工作流'
-      ].join('\n')
+        '## 开发规范 / 工作流',
+      ].join('\n'),
     );
 
     const report = await checkKnowledgeHealth(dir, managedKnowledgeAssets);
-    const placeholderCheck = report.checks.find((check) => check.id === 'knowledge-index-placeholders');
+    const placeholderCheck = report.checks.find(
+      (check) => check.id === 'knowledge-index-placeholders',
+    );
     expect(placeholderCheck?.status).toBe('warn');
     expect(placeholderCheck?.placeholderCount).toBeGreaterThanOrEqual(4);
   });
@@ -158,8 +163,8 @@ describe('checkKnowledgeHealth', () => {
         '## 风险 / 故障索引',
         '## 运维知识索引',
         '## 开发规范 / 工作流',
-        indexExtra
-      ].join('\n')
+        indexExtra,
+      ].join('\n'),
     );
   }
 
@@ -177,7 +182,10 @@ describe('checkKnowledgeHealth', () => {
 
   it('detects broken links referenced from INDEX.md', async () => {
     const dir = await createTempDir('opsx-knowledge-brokenlinks-');
-    await writeCompleteSkeleton(dir, '\n- [缺失文档](tech/api/missing.md)\n- `tech/db/also-missing.md`\n');
+    await writeCompleteSkeleton(
+      dir,
+      '\n- [缺失文档](tech/api/missing.md)\n- `tech/db/also-missing.md`\n',
+    );
 
     const report = await checkKnowledgeHealth(dir, managedKnowledgeAssets);
     const brokenCheck = report.checks.find((check) => check.id === 'knowledge-index-broken-links');

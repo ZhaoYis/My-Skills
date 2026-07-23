@@ -1,7 +1,7 @@
 ---
 name: phase-1-propose
 description: 全局步骤 2.9–4，含决策点 1c（制品生成前的需求理解确认）与决策点 1（提案门禁）。用户确认「确认提案，开始实施」后进入 phase-2-apply.md 步骤 5。
-compatibility: 需要 openspec CLI、git 与已初始化 OpenSpec 的项目；Cursor 中推荐 AskQuestion；需求理解确认可复用 opsx-analysis 输出。
+compatibility: 需要 openspec CLI、git 与已初始化 OpenSpec 的项目；Cursor 中推荐 AskQuestion。
 ---
 
 ## Phase 1: 提案编写 (Propose)
@@ -12,8 +12,8 @@ compatibility: 需要 openspec CLI、git 与已初始化 OpenSpec 的项目；Cu
 
 1. **优先复用，不重复定义**
 
-    - 若已运行过 `opsx-analysis` 并产出结构化分析：**直接复用**其需求目标、边界、影响面与待确认问题，不重复梳理。
-    - 若没有现成分析：在本步骤做一次**轻量澄清**（不强制完整跑 `opsx-analysis`），用中性表述给出：
+    - 若已有结构化需求分析：**直接复用**其需求目标、边界、影响面与待确认问题，不重复梳理。
+    - 若没有现成分析：在本步骤做一次**轻量澄清**，用中性表述给出：
         - **影响范围**：涉及的模块 / 能力 / 数据 / 外部依赖（不绑定具体分层或技术栈）
         - **关键链路**：主要调用 / 数据流向的简要描述
         - **待确认问题**：逐条列出仍不明确、需用户拍板的点
@@ -64,7 +64,7 @@ compatibility: 需要 openspec CLI、git 与已初始化 OpenSpec 的项目；Cu
 4. **按依赖顺序创建制品**
 
     - 对每个 `ready` 状态的制品，运行 `bash <SKILL_ROOT>/scripts/dev-pipeline-instructions.sh "<name>" <artifact-id>`（或 `openspec instructions <artifact-id> --change "<name>" --json`）获取指令，读取依赖制品，按 `template` 结构创建文件
-    - **撰写 design 制品时**：若同级安装了 `opsx-design` 技能，加载其 `assets/section-skeleton.md` 章节骨架与 `assets/quality-checklist.md` 质量门禁来撰写并自检设计（相关性过滤、受众标注、改动影响汇总含"不受影响"项、验证断言字段、任务=一文件）；无该技能时按上述纪律内联执行。`opsx-design` 是"如何写好设计"的能力库，本步骤仍是"何时必须产出 design"的门禁权威，不在此复制其正文。
+    - **撰写 design 制品时**：按章节骨架与质量门禁撰写并自检设计（相关性过滤、受众标注、改动影响汇总含"不受影响"项、验证断言字段、任务=一文件）。
     - 已完成的制品保持不变
     - 循环直到所有 `applyRequires` 制品完成
     - 若检测到自定义 schema：

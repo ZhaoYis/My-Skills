@@ -28,9 +28,9 @@ function buildReport(value: number, dimensionScore = value): KnowledgeHealthRepo
       value,
       grade: value >= 80 ? 'healthy' : value >= 60 ? 'fair' : 'attention',
       dimensions: [
-        { id: 'anchors', label: '结构锚点完整度', weight: 20, score: dimensionScore, status: 'ok' }
-      ]
-    }
+        { id: 'anchors', label: '结构锚点完整度', weight: 20, score: dimensionScore, status: 'ok' },
+      ],
+    },
   };
 }
 
@@ -58,7 +58,7 @@ describe('applyKnowledgeHealthHistory', () => {
       generatedAt: '2000-01-01T00:00:00.000Z',
       value: 50,
       grade: 'attention',
-      dimensions: [{ id: 'anchors', score: 50 }]
+      dimensions: [{ id: 'anchors', score: 50 }],
     });
 
     const result = await applyKnowledgeHealthHistory(dir, buildReport(90), { persist: false });
@@ -75,7 +75,7 @@ describe('applyKnowledgeHealthHistory', () => {
       status: 'warn',
       rootPath: '.knowledge',
       checks: [],
-      summary: { ok: 0, warn: 1, fail: 0 }
+      summary: { ok: 0, warn: 1, fail: 0 },
     };
 
     const result = await applyKnowledgeHealthHistory(dir, report, { persist: true });

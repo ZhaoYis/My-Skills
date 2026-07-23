@@ -6,9 +6,11 @@ import { inferInstallKind } from './inferInstallKind.js';
 import type { UninstallFile, UninstallPlan } from './types.js';
 
 function isKnowledgeAsset(assetId: string, destination: string): boolean {
-  return assetId.startsWith('common-knowledge-skeleton:')
-    || destination === '.knowledge'
-    || destination.startsWith('.knowledge/');
+  return (
+    assetId.startsWith('common-knowledge-skeleton:') ||
+    destination === '.knowledge' ||
+    destination.startsWith('.knowledge/')
+  );
 }
 
 export interface BuildUninstallPlanInput {
@@ -34,9 +36,9 @@ export async function buildUninstallPlan(input: BuildUninstallPlanInput): Promis
           destinationPath,
           exists,
           appendable,
-          resolution: !exists ? 'skip' : (input.yes ? 'remove' : 'unresolved')
+          resolution: !exists ? 'skip' : input.yes ? 'remove' : 'unresolved',
         };
-      })
+      }),
   );
 
   return {
@@ -46,6 +48,6 @@ export async function buildUninstallPlan(input: BuildUninstallPlanInput): Promis
     dryRun: input.dryRun,
     keepKnowledge: input.keepKnowledge,
     manifestPath: input.manifestResult.path,
-    manifestStorage: input.manifestResult.storage
+    manifestStorage: input.manifestResult.storage,
   };
 }
