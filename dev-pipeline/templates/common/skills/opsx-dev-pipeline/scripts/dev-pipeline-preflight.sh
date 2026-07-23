@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Phase 0: openspec + git 仓库预检，含 git 配置与 openspec 初始化状态。
+# Phase0: openspec + git 仓库预检，含 git 配置与 openspec 初始化状态。
 # 成功输出 JSON 到 stdout；失败输出 JSON 到 stderr 并返回稳定退出码。
 #
 # JSON 错误输出约定（所有 dev-pipeline-*.sh 脚本共享）：

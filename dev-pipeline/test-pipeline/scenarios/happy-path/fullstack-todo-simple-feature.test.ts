@@ -97,7 +97,7 @@ describe('Simple Feature — Backend Only', () => {
 
   // ── Pipeline Phases ─────────────────────────────────────────────
 
-  it('Phase 0: Entrance — preflight passes', async () => {
+  it('Phase0: Entrance — preflight passes', async () => {
     const phaseId: PhaseId = 'phase-0-entrance';
     const meta = PHASE_META[phaseId];
 
@@ -111,7 +111,7 @@ describe('Simple Feature — Backend Only', () => {
       status: assertions.every((a) => a.passed) ? 'pass' : 'fail',
       startedAt: new Date().toISOString(),
       durationMs: 0,
-      agentSummary: `Phase 0: git=${env.isWorkTree}, openspec=${env.openspecAvailable}`,
+      agentSummary: `Phase0: git=${env.isWorkTree}, openspec=${env.openspecAvailable}`,
       assertions,
       artifacts,
     };
@@ -122,7 +122,7 @@ describe('Simple Feature — Backend Only', () => {
     console.log(`  ✅ ${meta.label}`);
   }, 15000);
 
-  it('Phase 1: Propose — change directory structure is correct', async () => {
+  it('Phase1: Propose — change directory structure is correct', async () => {
     const phaseId: PhaseId = 'phase-1-propose';
     const meta = PHASE_META[phaseId];
 
@@ -147,7 +147,7 @@ describe('Simple Feature — Backend Only', () => {
     console.log(`  ℹ️  ${meta.label}`);
   }, 10000);
 
-  it('Phase 2: Apply — code changes would add GET /:id route', async () => {
+  it('Phase2: Apply — code changes would add GET /:id route', async () => {
     const phaseId: PhaseId = 'phase-2-apply';
     const meta = PHASE_META[phaseId];
 
@@ -177,8 +177,8 @@ describe('Simple Feature — Backend Only', () => {
 
   // ── Skip-heavy phases for simple features ───────────────────────
 
-  it('Phase 3–6: Validators exist for full pipeline', async () => {
-    // Verify that all remaining phase validators are registered and callable
+  it('Phase3–6: Validators exist for full pipeline', async () => {
+    // Verify that all remaining Phasevalidators are registered and callable
     const remainingPhases: PhaseId[] = [
       'phase-3-review',
       'phase-4-unit-tests',
@@ -208,7 +208,7 @@ describe('Simple Feature — Backend Only', () => {
     }
 
     expect(collectedResults.length).toBe(ALL_PHASES.length); // All phases
-    console.log(`  ✅ All ${ALL_PHASES.length} phase validators registered and callable`);
+    console.log(`  ✅ All ${ALL_PHASES.length} Phasevalidators registered and callable`);
   }, 30000);
 
   // ── Final Report ────────────────────────────────────────────────

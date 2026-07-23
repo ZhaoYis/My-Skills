@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Phase 1: 获取某制品模板 instructions；artifact 省略时用 status 中第一件 ready 制品（openspec CLI 常要求显式 artifact）。
-# Phase 2: 对 apply 使用 dev-pipeline-instructions-apply.sh 更便捷。
+# Phase1: 获取某制品模板 instructions；artifact 省略时用 status 中第一件 ready 制品（openspec CLI 常要求显式 artifact）。
+# Phase2: 对 apply 使用 dev-pipeline-instructions-apply.sh 更便捷。
 set -euo pipefail
 change="${1:?用法: $0 <change-name> [artifact-id]}"
 artifact="${2:-}"

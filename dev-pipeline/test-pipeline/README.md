@@ -8,13 +8,13 @@
 Test Scenario (vitest)
   → EnvironmentFactory: 创建临时全栈项目 (git init + openspec init + pipeline init)
   → PipelineAgentOrchestrator: 按序启动 Agent 执行各阶段
-    ├─ Phase 0 (Entrance) — 环境预检 + Schema 检测
-    ├─ Phase 1 (Propose) — 创建 change + proposal/tasks/specs
-    ├─ Phase 2 (Apply) — 逐任务实现 + self-review
-    ├─ Phase 3 (Review) — 多维代码审查
-    ├─ Phase 4 (Archive) — 验证 + 归档
-    ├─ Phase 5 (Unit Tests) — 单元测试门禁
-    └─ Phase 6 (Merge & Push) — commit + push + merge
+    ├─ Phase0 (Entrance) — 环境预检 + Schema 检测
+    ├─ Phase1 (Propose) — 创建 change + proposal/tasks/specs
+    ├─ Phase2 (Apply) — 逐任务实现 + self-review
+    ├─ Phase3 (Review) — 多维代码审查
+    ├─ Phase4 (Archive) — 验证 + 归档
+    ├─ Phase5 (Unit Tests) — 单元测试门禁
+    └─ Phase6 (Merge & Push) — commit + push + merge
   → PhaseValidator: 验证每个阶段产物
   → ReportGenerator: 生成 JSON + Markdown 报告
 ```

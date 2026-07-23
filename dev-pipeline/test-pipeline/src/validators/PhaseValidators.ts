@@ -13,7 +13,7 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 
 /**
- * Validate Phase 0 (Entrance) outputs.
+ * Validate Phase0 (Entrance) outputs.
  */
 export async function validatePhase0(env: TestEnvironment): Promise<{
   assertions: AssertionResult[];
@@ -41,7 +41,7 @@ export async function validatePhase0(env: TestEnvironment): Promise<{
 }
 
 /**
- * Validate Phase 1 (Propose) outputs.
+ * Validate Phase1 (Propose) outputs.
  */
 export async function validatePhase1(
   env: TestEnvironment,
@@ -82,7 +82,7 @@ export async function validatePhase1(
 }
 
 /**
- * Validate Phase 2 (Apply) outputs.
+ * Validate Phase2 (Apply) outputs.
  */
 export async function validatePhase2(
   env: TestEnvironment,
@@ -112,7 +112,7 @@ export async function validatePhase2(
 }
 
 /**
- * Validate Phase 3 (Review) outputs.
+ * Validate Phase3 (Review) outputs.
  */
 export async function validatePhase3(
   env: TestEnvironment,
@@ -176,7 +176,7 @@ export async function validatePhase3(
 }
 
 /**
- * Validate Phase 5 (Archive) outputs.
+ * Validate Phase5 (Archive) outputs.
  */
 export async function validateArchive(
   env: TestEnvironment,
@@ -234,7 +234,7 @@ export async function validateArchive(
 }
 
 /**
- * Validate Phase 4 (Unit Tests) outputs.
+ * Validate Phase4 (Unit Tests) outputs.
  */
 export async function validateUnitTests(env: TestEnvironment): Promise<{
   assertions: AssertionResult[];
@@ -242,7 +242,7 @@ export async function validateUnitTests(env: TestEnvironment): Promise<{
 }> {
   const assertions: AssertionResult[] = [];
 
-  // This phase is primarily verified by the agent returning the test execution results.
+  // This Phaseis primarily verified by the agent returning the test execution results.
   // We check that a test command can be identified.
   const packageJsonPath = path.join(env.rootDir, 'package.json');
   assertions.push(
@@ -254,7 +254,7 @@ export async function validateUnitTests(env: TestEnvironment): Promise<{
 }
 
 /**
- * Validate Phase 6 (Merge & Push) outputs.
+ * Validate Phase6 (Merge & Push) outputs.
  */
 export async function validatePhase6(env: TestEnvironment): Promise<{
   assertions: AssertionResult[];
@@ -279,7 +279,7 @@ export async function validatePhase6(env: TestEnvironment): Promise<{
 }
 
 /**
- * Validator registry — maps phase IDs to their validation functions.
+ * Validator registry — maps PhaseIDs to their validation functions.
  */
 export const PHASE_VALIDATORS: Record<
   string,

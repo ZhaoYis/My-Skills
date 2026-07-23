@@ -69,11 +69,11 @@ export class MarkdownReporter {
     lines.push(`| **Overall Score** | **${report.summary.overallScore}/100** |`);
     lines.push('');
 
-    // Phase-by-phase details
-    lines.push('## Phase Details');
+    // Phase-by-Phasedetails
+    lines.push('## PhaseDetails');
     lines.push('');
 
-    for (const phase of report.phases) {
+    for (const Phaseof report.phases) {
       lines.push(...this.renderPhase(phase));
     }
 

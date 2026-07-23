@@ -4,9 +4,9 @@
  * This test validates the ENTIRE test harness framework:
  * - EnvironmentFactory creates correct environments
  * - Agent prompts are correctly generated for each phase
- * - Phase validators produce correct assertions
+ * - Phasevalidators produce correct assertions
  * - Report generator produces valid JSON + Markdown reports
- * - Phase sequencing and result recording works
+ * - Phasesequencing and result recording works
  *
  * When AI Agents are actually invoked via the Agent tool, each phase's
  * agent would read its SKILL.md, execute the phase, and the validators
@@ -114,9 +114,9 @@ describe('Pipeline Framework — Full Verification', () => {
     }
   });
 
-  // ─── Pipeline Phase Tests ─────────────────────────────────────
+  // ─── Pipeline PhaseTests ─────────────────────────────────────
 
-  it('Phase 0: Entrance — preflight + schema detection', async () => {
+  it('Phase0: Entrance — preflight + schema detection', async () => {
     const phaseId: PhaseId = 'phase-0-entrance';
     const meta = PHASE_META[phaseId];
 
@@ -130,7 +130,7 @@ describe('Pipeline Framework — Full Verification', () => {
       status: assertions.every((a) => a.passed) ? 'pass' : 'fail',
       startedAt: new Date().toISOString(),
       durationMs: 0,
-      agentSummary: `Phase 0: git=${env.isWorkTree}, openspec=${env.openspecAvailable}`,
+      agentSummary: `Phase0: git=${env.isWorkTree}, openspec=${env.openspecAvailable}`,
       assertions,
       artifacts,
     };
@@ -142,7 +142,7 @@ describe('Pipeline Framework — Full Verification', () => {
     console.log(`  ✅ ${meta.label}: ${result.agentSummary}`);
   }, 15000);
 
-  it('Phase 1: Propose — validates change creation structure', async () => {
+  it('Phase1: Propose — validates change creation structure', async () => {
     const phaseId: PhaseId = 'phase-1-propose';
     const meta = PHASE_META[phaseId];
 
@@ -166,7 +166,7 @@ describe('Pipeline Framework — Full Verification', () => {
     console.log(`  ℹ️  ${meta.label}: ${result.agentSummary}`);
   }, 10000);
 
-  it('Phase 2: Apply — validates code change assertions', async () => {
+  it('Phase2: Apply — validates code change assertions', async () => {
     const phaseId: PhaseId = 'phase-2-apply';
     const meta = PHASE_META[phaseId];
 
@@ -190,7 +190,7 @@ describe('Pipeline Framework — Full Verification', () => {
     console.log(`  ℹ️  ${meta.label}: ${result.agentSummary}`);
   }, 10000);
 
-  it('Phase 3: Review — validates review report structure', async () => {
+  it('Phase3: Review — validates review report structure', async () => {
     const phaseId: PhaseId = 'phase-3-review';
     const meta = PHASE_META[phaseId];
 
@@ -214,7 +214,7 @@ describe('Pipeline Framework — Full Verification', () => {
     console.log(`  ℹ️  ${meta.label}: ${result.agentSummary}`);
   }, 10000);
 
-  it('Phase 4: Unit Tests — validates test infrastructure', async () => {
+  it('Phase4: Unit Tests — validates test infrastructure', async () => {
     const phaseId: PhaseId = 'phase-4-unit-tests';
     const meta = PHASE_META[phaseId];
 
@@ -242,7 +242,7 @@ describe('Pipeline Framework — Full Verification', () => {
     console.log(`  ✅ ${meta.label}: test script found`);
   }, 15000);
 
-  it('Phase 5: Archive — validates archive structure', async () => {
+  it('Phase5: Archive — validates archive structure', async () => {
     const phaseId: PhaseId = 'phase-5-archive';
     const meta = PHASE_META[phaseId];
 
@@ -266,7 +266,7 @@ describe('Pipeline Framework — Full Verification', () => {
     console.log(`  ℹ️  ${meta.label}: ${result.agentSummary}`);
   }, 10000);
 
-  it('Phase 6: Merge & Push — validates git environment', async () => {
+  it('Phase6: Merge & Push — validates git environment', async () => {
     const phaseId: PhaseId = 'phase-6-merge-push';
     const meta = PHASE_META[phaseId];
 
@@ -305,8 +305,8 @@ describe('Pipeline Framework — Full Verification', () => {
     expect(report.summary.totalPhases).toBe(ALL_PHASES.length);
     expect(report.summary.totalAssertions).toBeGreaterThan(0);
 
-    // Verify each phase has required fields
-    for (const phase of report.phases) {
+    // Verify each Phasehas required fields
+    for (const Phaseof report.phases) {
       expect(phase.phaseId).toBeTruthy();
       expect(phase.label).toBeTruthy();
       expect(phase.status).toBeTruthy();

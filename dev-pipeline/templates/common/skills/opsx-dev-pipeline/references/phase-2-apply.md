@@ -1,4 +1,4 @@
-# Phase 2: 提案应用 (Apply)
+# Phase2: 提案应用 (Apply)
 
 ## Step6：获取实施指令
 
@@ -7,8 +7,8 @@ bash <SKILL_ROOT>/scripts/dev-pipeline-instructions-apply.sh "<name>"
 ```
 
 返回状态处理：
-- `state: "blocked"` → **AskQuestion**：`回到 Phase 1 补充制品` / `终止流程`
-- `state: "all_done"` → 跳到 Phase 3
+- `state: "blocked"` → **AskQuestion**：`回到 Phase1 补充制品` / `终止流程`
+- `state: "all_done"` → 跳到 Phase3
 - 其他 → 读取 `contextFiles` 继续实施
 
 ## Step7：逐任务实施
@@ -34,12 +34,12 @@ bash <SKILL_ROOT>/scripts/dev-pipeline-instructions-apply.sh "<name>"
 
 **有一条不满足 → 不允许标记完成**，先改到满足。
 
-遇到阻塞时 **AskQuestion**：`提供补充说明` / `回到 Phase 1 修改提案` / `跳过此任务`（标记 `[~]`） / `终止流程`
+遇到阻塞时 **AskQuestion**：`提供补充说明` / `回到 Phase1 修改提案` / `跳过此任务`（标记 `[~]`） / `终止流程`
 
 ## Step8：[决策点 2] 实施完成确认
 
 展示实施摘要（完成任务数、跳过任务数、变更文件列表），**AskQuestion**：
-- `进入代码审查` → Phase 3
+- `进入代码审查` → Phase3
 - `暂停流水线，手动调整后继续` → 展示恢复指引后退出
-- `跳过审查，继续后续流程` → Phase 4（完成后进入 Phase 5）
+- `跳过审查，继续后续流程` → Phase4（完成后进入 Phase5）
 - `终止流程` → 退出

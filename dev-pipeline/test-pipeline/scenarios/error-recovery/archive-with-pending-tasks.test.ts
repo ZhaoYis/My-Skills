@@ -77,7 +77,7 @@ describe('Error Recovery — Archive with Pending Tasks', () => {
       status: assertions.every((a) => a.passed) ? 'pass' : 'fail',
       startedAt: new Date().toISOString(),
       durationMs: 0,
-      agentSummary: `Phase 0 preflight: git=${env.isWorkTree}, openspec=${env.openspecAvailable}`,
+      agentSummary: `Phase0 preflight: git=${env.isWorkTree}, openspec=${env.openspecAvailable}`,
       assertions,
       artifacts,
     };
@@ -292,9 +292,9 @@ Test the error recovery when archiving incomplete work.
 
     if (recoveryExists) {
       const content = await fs.readFile(recoveryPath, 'utf-8');
-      // Check for Phase 4 recovery entries (R4-*)
-      const hasPhase4Entries = content.includes('R4-') || content.includes('Phase 4');
-      console.log(`   Failure recovery has Phase 4 entries: ${hasPhase4Entries}`);
+      // Check for Phase4 recovery entries (R4-*)
+      const hasPhase4Entries = content.includes('R4-') || content.includes('Phase4');
+      console.log(`   Failure recovery has Phase4 entries: ${hasPhase4Entries}`);
     } else {
       console.log('   ⚠ failure-recovery-index.md not found');
     }
@@ -308,8 +308,8 @@ Test the error recovery when archiving incomplete work.
     expect(report.meta.scenarioName).toBe(ARCHIVE_ERROR_SCENARIO.name);
     expect(report.meta.overallStatus).toBe('fail'); // Archive should be in fail state
 
-    // Verify the archive phase is recorded as failed
-    const archivePhase = report.phases.find((p) => p.phaseId === 'phase-5-archive');
+    // Verify the archive Phaseis recorded as failed
+    const archivePhase= report.phases.find((p) => p.phaseId === 'phase-5-archive');
     expect(archivePhase).toBeDefined();
     expect(archivePhase!.status).toBe('fail');
 
@@ -323,7 +323,7 @@ Test the error recovery when archiving incomplete work.
     // Verify recommendations mention the failure
     expect(report.summary.recommendations.length).toBeGreaterThan(0);
     const hasArchiveRec = report.summary.recommendations.some(
-      (r) => r.includes('Phase 4') || r.includes('archive') || r.includes('Archive'),
+      (r) => r.includes('Phase4') || r.includes('archive') || r.includes('Archive'),
     );
     // At minimum, there should be a recommendation about the failed phase
     expect(report.summary.failedPhases).toBeGreaterThan(0);

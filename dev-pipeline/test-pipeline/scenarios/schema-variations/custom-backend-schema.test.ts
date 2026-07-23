@@ -65,7 +65,7 @@ describe('Schema Variation — Custom Backend Schema', () => {
     console.log('✅ Custom backend schema config verified');
   });
 
-  it('Phase 0 preflight detects correct environment', async () => {
+  it('Phase0 preflight detects correct environment', async () => {
     const phaseId: PhaseId = 'phase-0-entrance';
     const meta = PHASE_META[phaseId];
 
@@ -121,7 +121,7 @@ describe('Schema Variation — Custom Backend Schema', () => {
       [
         {
           phaseId: 'phase-0-entrance',
-          label: 'Phase 0 — Entrance',
+          label: 'Phase0 — Entrance',
           status: 'pass',
           startedAt: new Date().toISOString(),
           durationMs: 100,

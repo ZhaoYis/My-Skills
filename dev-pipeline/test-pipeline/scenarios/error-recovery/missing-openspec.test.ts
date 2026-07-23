@@ -80,7 +80,7 @@ describe('Error Recovery — Graceful Degradation', () => {
     console.log(`  ✅ Environment root: ${env.rootDir}`);
   }, 15000);
 
-  it('Phase 0 can run preflight checks', async () => {
+  it('Phase0 can run preflight checks', async () => {
     const phaseId: PhaseId = 'phase-0-entrance';
     const meta = PHASE_META[phaseId];
 
@@ -94,7 +94,7 @@ describe('Error Recovery — Graceful Degradation', () => {
       status: validation.assertions.every((a) => a.passed) ? 'pass' : 'fail',
       startedAt: new Date().toISOString(),
       durationMs: 0,
-      agentSummary: 'Phase 0 preflight checks completed',
+      agentSummary: 'Phase0 preflight checks completed',
       assertions: validation.assertions,
       artifacts: validation.artifacts,
     };

@@ -1,4 +1,4 @@
-# Phase 3: 代码审查 (Review)
+# Phase3: 代码审查 (Review)
 
 ## Step9：加载项目规范
 
@@ -8,7 +8,7 @@
 
 - 有未提交变更：`git diff HEAD` + `git diff --stat HEAD`
 - 无未提交变更：检查未推送提交 `git log origin/<branch>..HEAD --oneline`
-- 无任何变更：提示后进入 Phase 4
+- 无任何变更：提示后进入 Phase4
 
 ## Step11：执行代码审查
 
@@ -30,18 +30,18 @@
 ### 有严重或重要问题 → AskQuestion：
 - `生成修复提案并应用` → 执行下方「修复子流程」后重新审查
 - `直接修复并重新审查` → 直接改代码后重新审查
-- `回到 Phase 2 重新实施` → 回到 Phase 2
+- `回到 Phase2 重新实施` → 回到 Phase2
 - `暂停流水线，手动调整后继续` → 展示恢复指引后退出
-- `继续后续流程` → Phase 4（完成后进入 Phase 5）
+- `继续后续流程` → Phase4（完成后进入 Phase5）
 - `终止流程` → 退出
 
 ### 仅有一般问题或建议 → AskQuestion：
-- `继续后续流程` → Phase 4
+- `继续后续流程` → Phase4
 - `生成修复提案并应用` → 执行修复子流程
 - `暂停流水线，手动调整后继续` → 退出
 - `终止流程` → 退出
 
-### 审查无问题 → 直接进入 Phase 4
+### 审查无问题 → 直接进入 Phase4
 
 **修复循环最多 3 轮**（每轮 = 一次"生成修复提案并应用"或一次"直接修复" → 重新审查），超过强制暂停并提示人工介入。
 
@@ -50,8 +50,8 @@
 ## 修复子流程（「生成修复提案并应用」）
 
 1. 根据审查报告确定修复 scope，名称 `fix-cr-<type>`（如 `fix-cr-security`）
-2. 新建修复 change 并生成制品（同 Phase 1 Step4）
-3. **修复提案门禁**：严格按 Phase 1 决策点 1 使用 AskQuestion（三选项一致）
-4. 逐任务实施修复（同 Phase 2 Step6-7）
+2. 新建修复 change 并生成制品（同 Phase1 Step4）
+3. **修复提案门禁**：严格按 Phase1 决策点 1 使用 AskQuestion（三选项一致）
+4. 逐任务实施修复（同 Phase2 Step6-7）
 5. 归档修复 change：`bash <SKILL_ROOT>/scripts/dev-pipeline-archive.sh "fix-cr-<type>" -y --skip-specs`
 6. 回到Step10 重新审查

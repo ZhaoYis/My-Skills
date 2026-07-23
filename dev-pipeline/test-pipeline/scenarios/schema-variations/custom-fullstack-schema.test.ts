@@ -174,9 +174,9 @@ rules:
     console.log('✅ Root package.json: npm workspaces with backend + frontend');
   });
 
-  // ── Phase 0 with Fullstack Schema ────────────────────────────────
+  // ── Phase0 with Fullstack Schema ────────────────────────────────
 
-  it('Phase 0 preflight detects fullstack multi-stack environment', async () => {
+  it('Phase0 preflight detects fullstack multi-stack environment', async () => {
     const phaseId: PhaseId = 'phase-0-entrance';
     const meta = PHASE_META[phaseId];
 
@@ -260,7 +260,7 @@ rules:
       [
         {
           phaseId: 'phase-0-entrance',
-          label: 'Phase 0 — Entrance',
+          label: 'Phase0 — Entrance',
           status: 'pass',
           startedAt: new Date().toISOString(),
           durationMs: 150,

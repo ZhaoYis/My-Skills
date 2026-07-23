@@ -234,31 +234,31 @@ describe('tool matrix', () => {
 
     // Verify SKILL.md navigation hub
     const skillContent = await fs.readFile(path.join(skillRoot, 'SKILL.md'), 'utf8');
-    expect(skillContent).toContain('Phase 引用表');
+    expect(skillContent).toContain('Phase引用表');
     expect(skillContent).toContain('执行约束');
     expect(skillContent).toContain('错误处理速查');
 
-    // Verify all phase reference files exist
-    for (const phase of [0, 1, 2, 3, 4, 5, 6]) {
+    // Verify all Phasereference files exist
+    for (const Phaseof [0, 1, 2, 3, 4, 5, 6]) {
       expect(
         await fs.pathExists(path.join(skillRoot, `references/phase-${phase}-entrance.md`)),
-      ).toBe(phase === 0);
-      if (phase !== 0) {
+      ).toBe(Phase=== 0);
+      if (Phase!== 0) {
         const phaseName =
-          phase === 4
+          Phase=== 4
             ? 'unit-tests'
-            : phase === 5
+            : Phase=== 5
               ? 'archive'
-              : phase === 6
+              : Phase=== 6
                 ? 'merge-push'
-                : ['propose', 'apply', 'review'][phase - 1];
+                : ['propose', 'apply', 'review'][Phase- 1];
         expect(
           await fs.pathExists(path.join(skillRoot, `references/phase-${phase}-${phaseName}.md`)),
         ).toBe(true);
       }
     }
 
-    // Verify key content in phase files
+    // Verify key content in Phasefiles
     const apply = await fs.readFile(path.join(skillRoot, 'references/phase-2-apply.md'), 'utf8');
     expect(apply).toContain('写前复用门禁');
     expect(apply).toContain('准出自审查门禁');

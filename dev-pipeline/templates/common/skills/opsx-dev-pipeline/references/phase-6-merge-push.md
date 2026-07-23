@@ -1,4 +1,4 @@
-# Phase 6: 提交合并推送 (Merge & Push)
+# Phase6: 提交合并推送 (Merge & Push)
 
 ## Step20：预提交检查
 

@@ -56,9 +56,9 @@ npx opsx-dev-pipeline list-tools --json
 | ------------------- | ----- | -------------------------------------------- |
 | `opsx-dev-pipeline` | skill | OpenSpec + Git 需求开发全流程（提案 → 应用 → 审查 → 单测 → 归档 → 推送/合并） |
 
-`opsx-dev-pipeline` 是唯一的流水线门禁权威，覆盖 **Phase 0–6**：
+`opsx-dev-pipeline` 是唯一的流水线门禁权威，覆盖 **Phase0–6**：
 
-| Phase | 说明                |
+| Phase| 说明                |
 | ----- | ----------------- |
 | 0     | 入口判断              |
 | 1     | 提案编写 (Propose)    |
@@ -68,23 +68,23 @@ npx opsx-dev-pipeline list-tools --json
 | 5     | 提案归档 (Archive)    |
 | 6     | 提交合并推送 (Merge & Push) |
 
-Phase 6 是流水线的最终阶段，支持 commit + push，并按决策点 5 的选择决定是否执行本地 merge。
+Phase6 是流水线的最终阶段，支持 commit + push，并按决策点 5 的选择决定是否执行本地 merge。
 
 ## 研发流程
 
 ```mermaid
 flowchart TD
-  START(["新需求 / 变更"]) --> P0["Phase 0 预检与入口"]
+  START(["新需求 / 变更"]) --> P0["Phase0 预检与入口"]
 
-  P0 --> P1["Phase 1 提案 Propose"]
+  P0 --> P1["Phase1 提案 Propose"]
 
   P1 --> DP1{"决策点 1a / 1"}
-  DP1 -->|确认提案| P2["Phase 2 应用 Apply"]
+  DP1 -->|确认提案| P2["Phase2 应用 Apply"]
   DP1 -->|补充修改| P1
 
   P2 --> DP2{"决策点 2"}
-  DP2 -->|进入审查| P3["Phase 3 审查 Review"]
-  DP2 -->|跳过审查| P4["Phase 4 单测门禁"]
+  DP2 -->|进入审查| P3["Phase3 审查 Review"]
+  DP2 -->|跳过审查| P4["Phase4 单测门禁"]
   DP2 -->|需求有误，回退| P1
 
   P3 --> DP3{"决策点 3"}
@@ -94,15 +94,15 @@ flowchart TD
 
   P4 --> DP4{"决策点 4"}
   DP4 -->|需要单测| UT["编写并运行单测"]
-  UT --> P5["Phase 5 归档 Archive"]
+  UT --> P5["Phase5 归档 Archive"]
   DP4 -->|跳过单测| P5
 
-  P5 -->|验证未过| VFIX["失败回路 → Phase 1 或 Phase 2"]
+  P5 -->|验证未过| VFIX["失败回路 → Phase1 或 Phase2"]
   VFIX --> P1
   VFIX --> P2
   P5 -->|归档完成| DP5{"决策点 5"}
-  DP5 -->|仅推送| P6["Phase 6 提交 / 推送"]
-  DP5 -->|合并| P6MERGE["Phase 6 提交 / 推送 / 合并"]
+  DP5 -->|仅推送| P6["Phase6 提交 / 推送"]
+  DP5 -->|合并| P6MERGE["Phase6 提交 / 推送 / 合并"]
 
   P6 --> DONE(["交付完成"])
 

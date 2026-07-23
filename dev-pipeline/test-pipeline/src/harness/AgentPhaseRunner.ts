@@ -41,7 +41,7 @@ export class AgentPhaseRunner {
   }
 
   /**
-   * Record a phase result and store it for subsequent phases.
+   * Record a Phaseresult and store it for subsequent phases.
    */
   recordResult(result: AgentPhaseResult): void {
     this.previousResults.set(result.phaseId, result);
@@ -55,13 +55,13 @@ export class AgentPhaseRunner {
   }
 
   /**
-   * Build a summary of previous phase outputs for agent context.
+   * Build a summary of previous Phaseoutputs for agent context.
    */
   private buildPreviousContext(currentPhase: PhaseId): string {
     const phases = this.getPrecedingPhases(currentPhase);
     if (phases.length === 0) return '';
 
-    const lines: string[] = ['## Previous Phase Outputs'];
+    const lines: string[] = ['## Previous PhaseOutputs'];
     for (const phaseId of phases) {
       const result = this.previousResults.get(phaseId);
       if (result) {
@@ -117,7 +117,7 @@ ${params.phaseDescription}
 
 ## Instructions
 
-1. **Read the skill definition**: The canonical instructions for this phase are at:
+1. **Read the skill definition**: The canonical instructions for this Phaseare at:
    \`${params.skillPath}\`
 
 2. **Read the phase-specific reference**: For pipeline phases, the detailed steps are under:
@@ -127,7 +127,7 @@ ${params.phaseDescription}
 
 4. **Report your results**: After completing the phase, provide a structured summary:
 
-### Phase Result Format
+### PhaseResult Format
 
 \`\`\`json
 {
@@ -149,11 +149,11 @@ ${params.previousContext}
 
 ## Key Rules
 
-- Follow the SKILL.md and its phase reference exactly.
+- Follow the SKILL.md and its Phasereference exactly.
 - Do not skip decision points — pause and ask when needed.
-- For Phase 2 (Apply), write actual code changes to the filesystem.
-- For Phase 4 (Unit Tests), actually run \`npm test\`.
-- Always verify your work before declaring the phase complete.`;
+- For Phase2 (Apply), write actual code changes to the filesystem.
+- For Phase4 (Unit Tests), actually run \`npm test\`.
+- Always verify your work before declaring the Phasecomplete.`;
   }
 }
 
@@ -173,17 +173,17 @@ export function getPhaseSpecificInstructions(
   switch (phaseId) {
     case 'phase-0-entrance':
       return `\
-## Specific Tasks for Phase 0 — Entrance
+## Specific Tasks for Phase0 — Entrance
 
 1. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh\`
 2. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-detect-schema.sh\`
 3. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-list-changes.sh\`
 4. Verify all scripts exit 0 and return valid JSON
-5. Determine the entry route: new change → Phase 1`;
+5. Determine the entry route: new change → Phase1`;
 
     case 'phase-1-propose':
       return `\
-## Specific Tasks for Phase 1 — Propose
+## Specific Tasks for Phase1 — Propose
 
 1. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-new-change.sh "${changeName}"\`
 2. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-change-status.sh "${changeName}"\`
@@ -195,7 +195,7 @@ export function getPhaseSpecificInstructions(
 
     case 'phase-2-apply':
       return `\
-## Specific Tasks for Phase 2 — Apply
+## Specific Tasks for Phase2 — Apply
 
 1. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-instructions-apply.sh "${changeName}"\`
 2. Read tasks.md and implement each task in order
@@ -208,7 +208,7 @@ export function getPhaseSpecificInstructions(
 
     case 'phase-3-review':
       return `\
-## Specific Tasks for Phase 3 — Review
+## Specific Tasks for Phase3 — Review
 
 1. Load project conventions from \`CLAUDE.md\`
 2. Get git diff: \`git diff HEAD~1 --stat\` and \`git diff HEAD~1\`
@@ -223,7 +223,7 @@ export function getPhaseSpecificInstructions(
 
     case 'phase-4-unit-tests':
       return `\
-## Specific Tasks for Phase 4 — Unit Tests
+## Specific Tasks for Phase4 — Unit Tests
 
 1. Identify the test command (from package.json or openspec/config.yaml)
 2. Present decision point: run tests or skip?
@@ -233,7 +233,7 @@ export function getPhaseSpecificInstructions(
 
     case 'phase-5-archive':
       return `\
-## Specific Tasks for Phase 5 — Archive
+## Specific Tasks for Phase5 — Archive
 
 1. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-change-status.sh "${changeName}"\`
 2. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-resolve-verify.sh "${changeName}"\`
@@ -243,7 +243,7 @@ export function getPhaseSpecificInstructions(
 
     case 'phase-6-merge-push':
       return `\
-## Specific Tasks for Phase 6 — Merge & Push
+## Specific Tasks for Phase6 — Merge & Push
 
 1. Pre-commit checks: \`git status\`, \`git fetch\`
 2. Scan for sensitive files

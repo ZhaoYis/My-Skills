@@ -1,7 +1,7 @@
 #!/bin/bash
 # Validate script for fullstack-todo
 # Usage: ./validate.sh [backend|frontend|all]
-# Used by opsx-verify and opsx-dev-pipeline Phase 4
+# Used by opsx-verify and opsx-dev-pipeline Phase4
 
 set -e
 

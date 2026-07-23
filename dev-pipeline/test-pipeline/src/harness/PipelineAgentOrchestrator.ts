@@ -12,7 +12,7 @@ import type { EnvironmentConfig } from './types.js';
 
 /**
  * Orchestrates the full pipeline delivery flow test.
- * Creates the test environment, runs each phase via AI Agent,
+ * Creates the test environment, runs each Phasevia AI Agent,
  * validates outputs, and generates a structured report.
  */
 export class PipelineAgentOrchestrator {
@@ -43,7 +43,7 @@ export class PipelineAgentOrchestrator {
 
     this.runner = new AgentPhaseRunner(this.env);
 
-    // 2. Run each phase in order
+    // 2. Run each Phasein order
     const phaseResults: AgentPhaseResult[] = [];
 
     for (const phaseId of this.scenario.phases) {
@@ -52,14 +52,14 @@ export class PipelineAgentOrchestrator {
       this.results.set(phaseId, result);
       this.runner.recordResult(result);
 
-      // If a phase fails, decide whether to continue
+      // If a Phasefails, decide whether to continue
       if (result.status === 'fail' || result.status === 'error') {
         // Mark remaining phases as skipped
         const remainingPhases = this.scenario.phases.slice(
           this.scenario.phases.indexOf(phaseId) + 1,
         );
         for (const skippedId of remainingPhases) {
-          const skippedResult = this.createSkippedResult(skippedId, `Phase ${phaseId} failed`);
+          const skippedResult = this.createSkippedResult(skippedId, `Phase${phaseId} failed`);
           phaseResults.push(skippedResult);
           this.results.set(skippedId, skippedResult);
         }
@@ -73,7 +73,7 @@ export class PipelineAgentOrchestrator {
   }
 
   /**
-   * Execute a single phase via AI Agent.
+   * Execute a single Phasevia AI Agent.
    */
   private async executeAgentPhase(phaseId: PhaseId): Promise<AgentPhaseResult> {
     const meta = PHASE_META[phaseId];
@@ -154,12 +154,12 @@ export class PipelineAgentOrchestrator {
 
     return {
       status: 'pass',
-      summary: `Phase ${phaseId} completed. Agent would execute the prompt above.`,
+      summary: `Phase${phaseId} completed. Agent would execute the prompt above.`,
     };
   }
 
   /**
-   * Get the full prompt for an agent phase (exposed for test files).
+   * Get the full prompt for an agent Phase(exposed for test files).
    */
   getAgentPrompt(phaseId: PhaseId): string {
     const basePrompt = this.runner.buildPhasePrompt(
@@ -192,7 +192,7 @@ export class PipelineAgentOrchestrator {
   }
 
   /**
-   * Record a phase result (called by test after agent completes).
+   * Record a Phaseresult (called by test after agent completes).
    */
   recordPhaseResult(result: AgentPhaseResult): void {
     this.results.set(result.phaseId, result);
@@ -230,7 +230,7 @@ export class PipelineAgentOrchestrator {
     }
     for (const r of phaseResults) {
       if (r.errors && r.errors.length > 0) {
-        recommendations.push(`Phase "${r.label}" has ${r.errors.length} error(s)`);
+        recommendations.push(`Phase"${r.label}" has ${r.errors.length} error(s)`);
       }
     }
 

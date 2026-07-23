@@ -1,5 +1,5 @@
 /**
- * Phase identifiers for the pipeline delivery flow.
+ * Phaseidentifiers for the pipeline delivery flow.
  */
 export type PhaseId =
   | 'phase-0-entrance'
@@ -24,7 +24,7 @@ export const ALL_PHASES: PhaseId[] = [
 ];
 
 /**
- * Phase metadata.
+ * Phasemetadata.
  */
 export interface PhaseMeta {
   id: PhaseId;
@@ -32,7 +32,7 @@ export interface PhaseMeta {
   description: string;
   /** Path to the skill SKILL.md relative to the skills directory */
   skillPath: string;
-  /** Readable name for the phase */
+  /** Readable name for the Phase*/
   skillName: string;
 }
 
@@ -42,49 +42,49 @@ export interface PhaseMeta {
 export const PHASE_META: Record<PhaseId, PhaseMeta> = {
   'phase-0-entrance': {
     id: 'phase-0-entrance',
-    label: 'Phase 0 — Entrance',
+    label: 'Phase0 — Entrance',
     description: '环境预检 + Schema 检测 + 入口路由',
     skillPath: 'opsx-dev-pipeline/SKILL.md',
     skillName: 'opsx-dev-pipeline',
   },
   'phase-1-propose': {
     id: 'phase-1-propose',
-    label: 'Phase 1 — Propose',
+    label: 'Phase1 — Propose',
     description: '创建 change + 生成 proposal/design/specs/tasks',
     skillPath: 'opsx-dev-pipeline/SKILL.md',
     skillName: 'opsx-dev-pipeline',
   },
   'phase-2-apply': {
     id: 'phase-2-apply',
-    label: 'Phase 2 — Apply',
+    label: 'Phase2 — Apply',
     description: '获取 apply 指令 + 逐任务实现 + self-review',
     skillPath: 'opsx-dev-pipeline/SKILL.md',
     skillName: 'opsx-dev-pipeline',
   },
   'phase-3-review': {
     id: 'phase-3-review',
-    label: 'Phase 3 — Review',
+    label: 'Phase3 — Review',
     description: '代码审查 + secret/convention/correctness/security/perf',
     skillPath: 'opsx-dev-pipeline/SKILL.md',
     skillName: 'opsx-dev-pipeline',
   },
   'phase-4-unit-tests': {
     id: 'phase-4-unit-tests',
-    label: 'Phase 4 — Unit Tests',
+    label: 'Phase4 — Unit Tests',
     description: '单元测试门禁',
     skillPath: 'opsx-dev-pipeline/SKILL.md',
     skillName: 'opsx-dev-pipeline',
   },
   'phase-5-archive': {
     id: 'phase-5-archive',
-    label: 'Phase 5 — Archive',
+    label: 'Phase5 — Archive',
     description: '验证 + 提案归档 + knowledge 沉淀',
     skillPath: 'opsx-dev-pipeline/SKILL.md',
     skillName: 'opsx-dev-pipeline',
   },
   'phase-6-merge-push': {
     id: 'phase-6-merge-push',
-    label: 'Phase 6 — Merge & Push',
+    label: 'Phase6 — Merge & Push',
     description: 'commit + push + merge',
     skillPath: 'opsx-dev-pipeline/SKILL.md',
     skillName: 'opsx-dev-pipeline',
@@ -92,7 +92,7 @@ export const PHASE_META: Record<PhaseId, PhaseMeta> = {
 };
 
 /**
- * Status of a phase execution.
+ * Status of a Phaseexecution.
  */
 export type PhaseStatus = 'pass' | 'fail' | 'skipped' | 'error';
 
@@ -116,7 +116,7 @@ export interface ArtifactInfo {
 }
 
 /**
- * Result of a single phase execution.
+ * Result of a single Phaseexecution.
  */
 export interface AgentPhaseResult {
   phaseId: PhaseId;
@@ -126,9 +126,9 @@ export interface AgentPhaseResult {
   durationMs: number;
   /** Summary of agent output/decisions */
   agentSummary: string;
-  /** Structured assertions on phase output */
+  /** Structured assertions on Phaseoutput */
   assertions: AssertionResult[];
-  /** Files/directories generated during this phase */
+  /** Files/directories generated during this Phase*/
   artifacts: ArtifactInfo[];
   /** Errors encountered */
   errors?: string[];
