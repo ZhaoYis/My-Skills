@@ -29,7 +29,7 @@ bash <SKILL_ROOT>/scripts/dev-pipeline-preflight.sh
 ### 2.b 用户提供了需求描述
 
 - 从描述推导 kebab-case 的 change 名称
-- 进入 **Phase 1 步骤 2.9（决策点 1c）**
+- 进入 **Phase 1 步骤 2.9（决策点 1a）**
 
 ### 2.c 用户未提供任何输入
 

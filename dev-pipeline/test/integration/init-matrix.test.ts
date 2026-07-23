@@ -267,7 +267,7 @@ describe('tool matrix', () => {
       path.join(skillRoot, 'references/phase-1-propose.md'),
       'utf8',
     );
-    expect(propose).toContain('决策点 1c');
+    expect(propose).toContain('决策点 1a');
     expect(propose).toContain('需求理解确认');
 
     // Verify scripts directory exists with essential scripts

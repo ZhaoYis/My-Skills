@@ -20,7 +20,7 @@ git add -A
 - 排除编译产物、IDE 配置；始终包含 openspec 文件
 - 使用 conventional commit 格式（`feat`/`fix`/`perf`/`refactor`/`docs`/`test`/`chore`）
 
-展示提交信息，**[决策点 5] AskQuestion**：
+展示提交信息，**[决策点 6] AskQuestion**：
 - `确认提交` → 提交
 - `修改提交信息` → 文本消息收集后提交
 - `终止流程` → 不提交，展示恢复指引
@@ -33,7 +33,7 @@ git push origin <current-branch>
 
 推送失败 → **AskQuestion**：`执行 pull --rebase 后重试` / `终止流程`
 
-## 步骤 20：[决策点 6] 合并分支（仅当决策点 4 选择「合并」时执行）
+## 步骤 20：[决策点 7] 合并分支（仅当决策点 5 选择「合并」时执行）
 
 列出可用分支，**AskQuestion** 询问目标分支（`master`/`main`/`qa`/`develop`/其他）。
 
