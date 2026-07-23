@@ -16,7 +16,6 @@ export interface UninstallPlan {
   tool: ToolId;
   files: UninstallFile[];
   dryRun: boolean;
-  keepKnowledge: boolean;
   manifestPath: string;
   manifestStorage: ManifestStorage;
 }
@@ -25,7 +24,6 @@ export interface UninstallOptions {
   dir?: string;
   dryRun?: boolean;
   yes?: boolean;
-  keepKnowledge?: boolean;
 }
 
 export interface ResolveUninstallConflictsOptions {

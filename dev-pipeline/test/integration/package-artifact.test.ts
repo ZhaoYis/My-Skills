@@ -87,11 +87,6 @@ describe('packaged artifact', () => {
     expect(pkg.opsxDevPipeline.tool).toBe('cursor');
 
     // Retained assets exist
-    expect(await fs.pathExists(path.join(targetDir, '.knowledge/README.md'))).toBe(true);
-    expect(await fs.pathExists(path.join(targetDir, '.knowledge/INDEX.md'))).toBe(true);
-    expect(
-      await fs.pathExists(path.join(targetDir, '.knowledge/tech/development-experience.md')),
-    ).toBe(true);
     expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-dev-pipeline.mdc'))).toBe(
       true,
     );

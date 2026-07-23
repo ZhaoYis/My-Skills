@@ -92,7 +92,7 @@ describe('manifest io', () => {
     await fs.writeJson(path.join(dir, LEGACY_MANIFEST_FILE), {
       schemaVersion: 1,
       projectName: 'legacy-demo',
-      tool: 'generic',
+      tool: 'claude',
       features: ['base'],
       templateVersion: '0.1.0',
       packageName: 'opsx-dev-pipeline',

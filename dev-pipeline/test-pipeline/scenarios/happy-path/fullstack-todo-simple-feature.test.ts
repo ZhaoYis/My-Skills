@@ -95,14 +95,6 @@ describe('Simple Feature — Backend Only', () => {
     );
   }, 15000);
 
-  // ── Knowledge Validation ───────────────────────────────────────
-
-  it('Knowledge skeleton is ready after init', async () => {
-    // Verify knowledge base exists after pipeline init
-    expect(env.knowledgeRoot).toBeTruthy();
-    console.log(`  ✅ Knowledge base root: ${env.knowledgeRoot}`);
-  }, 15000);
-
   // ── Pipeline Phases ─────────────────────────────────────────────
 
   it('Phase 0: Entrance — preflight passes', async () => {
@@ -229,8 +221,7 @@ describe('Simple Feature — Backend Only', () => {
     expect(report.phases).toHaveLength(ALL_PHASES.length);
     expect(report.summary.passedPhases).toBe(ALL_PHASES.length);
     expect(report.summary.totalAssertions).toBeGreaterThan(0);
-    // Score won't be 100 because knowledge skeleton checks for non-template entries
-    // which don't exist in a fresh skeleton
+    // Score may vary based on pipeline init output
     expect(report.summary.overallScore).toBeGreaterThan(0);
 
     console.log(`\n📊 Simple Feature Report:`);

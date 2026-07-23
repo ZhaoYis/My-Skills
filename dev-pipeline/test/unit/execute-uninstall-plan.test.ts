@@ -24,7 +24,6 @@ function createPlan(targetDir: string, overrides?: Partial<UninstallPlan>): Unin
     targetDir,
     tool: 'claude',
     dryRun: false,
-    keepKnowledge: false,
     manifestPath: path.join(targetDir, MANIFEST_FILE),
     manifestStorage: 'standalone',
     files: [],
@@ -129,51 +128,6 @@ describe('executeUninstallPlan', () => {
     >;
     expect(pkg[MANIFEST_PACKAGE_JSON_KEY]).toBeUndefined();
     expect(await readManifest(targetDir)).toBeNull();
-  });
-
-  it('updates manifest when keepKnowledge leaves managed knowledge assets', async () => {
-    const targetDir = await createTempDir();
-    await fs.ensureDir(path.join(targetDir, '.knowledge'));
-    await fs.writeFile(path.join(targetDir, '.knowledge/README.md'), '# knowledge\n');
-    await fs.writeFile(path.join(targetDir, 'README.md'), '# demo\n');
-    await fs.writeJson(
-      path.join(targetDir, MANIFEST_FILE),
-      {
-        schemaVersion: 1,
-        projectName: 'demo',
-        tool: 'claude',
-        features: ['base'],
-        templateVersion: '0.1.5',
-        packageName: 'opsx-dev-pipeline',
-        managedAssets: [
-          { id: 'common-readme', destination: 'README.md' },
-          { id: 'common-knowledge-skeleton:README.md.hbs', destination: '.knowledge/README.md' },
-        ],
-      },
-      { spaces: 2 },
-    );
-
-    await executeUninstallPlan(
-      createPlan(targetDir, {
-        keepKnowledge: true,
-        files: [
-          {
-            assetId: 'common-readme',
-            destinationPath: path.join(targetDir, 'README.md'),
-            exists: true,
-            appendable: true,
-            resolution: 'remove',
-          },
-        ],
-      }),
-    );
-
-    const manifest = await readManifest(targetDir);
-    expect(manifest?.manifest.managedAssets).toEqual([
-      { id: 'common-knowledge-skeleton:README.md.hbs', destination: '.knowledge/README.md' },
-    ]);
-    expect(await fs.pathExists(path.join(targetDir, '.knowledge/README.md'))).toBe(true);
-    expect(await fs.pathExists(path.join(targetDir, 'README.md'))).toBe(false);
   });
 
   it('does not write files during dry run', async () => {

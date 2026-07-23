@@ -20,7 +20,6 @@ export interface BuildInstallPlanInput {
   force: boolean;
   mode: 'init' | 'sync' | 'upgrade';
   managedAssets?: ManagedAssetRecord[];
-  allowUpgradeAdoption?: boolean;
   registry: Parameters<typeof getToolAdapter>[0];
 }
 
@@ -54,17 +53,9 @@ function isBundleFileGated(asset: AssetDefinition, entry: string, features: Feat
   );
 }
 
-function isAssetInUpgradeScope(
-  asset: AssetDefinition,
-  managed: ManagedAssetIndex,
-  allowUpgradeAdoption: boolean,
-): boolean {
+function isAssetInUpgradeScope(asset: AssetDefinition, managed: ManagedAssetIndex): boolean {
   if (managed.topLevelIds.has(asset.id) || managed.bundleIds.has(asset.id)) {
     return true;
-  }
-
-  if (asset.adoptOnUpgrade) {
-    return allowUpgradeAdoption;
   }
 
   return true;
@@ -153,12 +144,11 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
     .filter((asset) => !asset.tools || asset.tools.includes(input.tool));
 
   const managed = indexManagedAssets(input.managedAssets);
-  const allowUpgradeAdoption = Boolean(input.allowUpgradeAdoption);
 
   const upgradeAssetIds = new Set(
     input.mode === 'upgrade'
       ? selectedAssets
-          .filter((asset) => isAssetInUpgradeScope(asset, managed, allowUpgradeAdoption))
+          .filter((asset) => isAssetInUpgradeScope(asset, managed))
           .map((asset) => asset.id)
       : [],
   );
@@ -193,17 +183,6 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
       .map(async (file) => {
         const exists = await fs.pathExists(file.destinationPath);
         const appendable = isAppendableInstallFile(file);
-        const isManaged = managed.assetIds.has(file.assetId);
-        const allowAdoption = input.mode === 'upgrade' && allowUpgradeAdoption && !isManaged;
-
-        if (exists && allowAdoption) {
-          return {
-            ...file,
-            exists,
-            appendable,
-            resolution: 'skip',
-          } satisfies InstallFile;
-        }
 
         return {
           ...file,

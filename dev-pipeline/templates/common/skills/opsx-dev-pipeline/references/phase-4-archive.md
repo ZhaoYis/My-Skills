@@ -1,7 +1,7 @@
 ---
 name: phase-4-archive
-description: 全局步骤 12–16，含决策点 4c（知识沉淀）与决策点 4。本阶段在 phase-5-unit-tests.md 步骤 16 完成后执行；归档完成后先经步骤 15.5 知识沉淀决策点，再按决策点 4 进入 Phase 6 或终止。
-compatibility: 需要 openspec CLI、git；归档推荐 dev-pipeline-archive.sh 或等价 openspec archive；知识沉淀按通用约定执行（无知识库时自动降级跳过）。
+description: 全局步骤 12–16，含决策点 4。本阶段在 phase-5-unit-tests.md 步骤 16 完成后执行；归档完成后按决策点 4 进入 Phase 6 或终止。
+compatibility: 需要 openspec CLI、git；归档推荐 dev-pipeline-archive.sh 或等价 openspec archive。
 ---
 
 ## Phase 4: 提案归档 (Archive)
@@ -93,36 +93,7 @@ compatibility: 需要 openspec CLI、git；归档推荐 dev-pipeline-archive.sh 
 
 **降级**：若 `openspec archive` 不可用或失败，可退回手动流程：`mkdir -p openspec/changes/archive`，生成 `YYYY-MM-DD-<change-name>`（冲突则追加 `-N`），再 `mv openspec/changes/<name> openspec/changes/archive/<目标目录>`（**不**含自动合并 specs，须与 **步骤 14** 用户意图一致）；若当前用户不接受手动归档，则应返回本步骤并由用户选择重试或终止。
 
-### 步骤 15.5：[决策点 4c] 知识沉淀（归档后回写知识库）
-
-把「开发完 → 归档」延伸为「开发完 → 归档 → 沉淀知识」，让前向学习与归档时的反向沉淀形成闭环。该选择属于附录定义的 **B 类：可推荐，不可静默代选**；可给出推荐项，但**不得**替用户自动写入知识库。
-
-1. **前置判断（无副作用降级）**
-
-    - 若目标仓库**不存在**任何知识库（既无 `.knowledge/`，也无项目既有知识目录约定）：跳过本步骤，直接进入 **步骤 16**，不报错。
-    - 若存在知识库：仍可执行沉淀，按本步骤内联的通用约定操作。写入目标、去重与条目格式以通用约定为准。
-
-2. **输入**
-
-    - 本 change 的制品：`openspec/changes/<name>/`（归档后位于 `openspec/changes/archive/<日期>-<name>/`）下的 `proposal.md` / `design.md` / delta `specs/` / `tasks.md`。
-    - 变更证据：`git diff`（对比归档基线，如 `HEAD~1` 或本次提交前基线）。**git 不可用时**仅基于 `design.md` / `proposal.md` 提取，不强行解析 diff。
-
-3. **使用 AskQuestion tool**
-
-    - `沉淀知识到知识库（推荐）` — 从设计与 diff 中提取「能力 / 接口 / 数据模型 / 外部依赖 / 风险 / 经验」六类中性维度的条目，**追加（不覆盖）**到对应知识文件，并按需同步 `.knowledge/INDEX.md`；写前先按去重规则判重。
-    - `跳过沉淀，直接结束归档` — 不写入任何知识文件，进入 **步骤 16**。
-
-4. **执行「沉淀知识」时遵循**
-
-    - **写入目标**：按通用落位（能力/业务 → `.knowledge/business/`；接口 → `.knowledge/tech/api/`；数据模型 → `.knowledge/tech/db/`；外部依赖 → 对应技术主题；经验 → `.knowledge/tech/development-experience.md`；风险 → `.knowledge/risks/known-issues.md`）。
-    - **去重规则**：完全重复则跳过并说明；已有条目更完整则仅补缺；有新事实则合并并标注新增；疑似过时标「建议修订」不静默覆盖。
-    - **条目格式**：按六类维度（功能说明、API 契约、数据模型、外部依赖、开发经验、风险评估）选对应模板。
-    - **护栏**：仅**追加** + 写入日期时间戳 + 来源标记 `<!-- 来源: dev-pipeline archive: <name> @ <date> -->`；**只记已落地的事实，不记未完成项 / 猜测**；不覆盖用户手工维护内容。
-    - **索引同步**：当本次沉淀新增 API 路径、功能域、数据模型、外部服务、风险或运维主题时，同步更新 `.knowledge/INDEX.md` 对应区块；若项目已有其他知识索引约定，遵循既有约定，不重复维护第二套索引。
-
-5. **完成后**：简述写入/合并/跳过的条目数与落位，进入 **步骤 16**。
-
-### 步骤 16：[决策点 4] 归档后操作
+### 步骤 15.5：[决策点 4] 归档后操作
 
 使用 **AskQuestion tool**。
 

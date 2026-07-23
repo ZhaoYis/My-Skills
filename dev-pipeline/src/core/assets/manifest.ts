@@ -18,16 +18,6 @@ export const assetManifest: AssetDefinition[] = [
     destination: '.gitignore',
   },
   {
-    id: 'common-knowledge-skeleton',
-    kind: 'bundle',
-    scope: 'common',
-    feature: 'base',
-    source: 'templates/common/knowledge',
-    destination: '.knowledge',
-    includeExtensions: ['.md', '.hbs'],
-    adoptOnUpgrade: true,
-  },
-  {
     id: 'opsx-dev-pipeline-skill-bundle',
     kind: 'bundle',
     scope: 'common',
@@ -93,14 +83,5 @@ export const assetManifest: AssetDefinition[] = [
     tools: ['codex'],
     source: 'templates/tools/codex/overlay/.codex/commands/README.md.hbs',
     destination: '.codex/commands/README.md',
-  },
-  {
-    id: 'generic-docs',
-    kind: 'template',
-    scope: 'tool',
-    feature: 'docs',
-    tools: ['generic'],
-    source: 'templates/tools/generic/overlay/.ai/README.md.hbs',
-    destination: '.ai/README.md',
   },
 ];

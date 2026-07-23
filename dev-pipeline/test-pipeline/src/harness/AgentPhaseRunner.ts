@@ -210,7 +210,7 @@ export function getPhaseSpecificInstructions(
       return `\
 ## Specific Tasks for Phase 3 — Review
 
-1. Load project conventions from \`.knowledge/\` and \`CLAUDE.md\`
+1. Load project conventions from \`CLAUDE.md\`
 2. Get git diff: \`git diff HEAD~1 --stat\` and \`git diff HEAD~1\`
 3. Perform code review covering:
    - Secret scanning
@@ -229,8 +229,7 @@ export function getPhaseSpecificInstructions(
 2. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-resolve-verify.sh "${changeName}"\`
 3. Run verify as determined above
 4. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-archive.sh "${changeName}" -y\`
-5. Handle knowledge precipitation (decision point 4c)
-6. Determine post-archive operation (decision point 4)`;
+5. Determine post-archive operation (decision point 4)`;
 
     case 'phase-5-unit-tests':
       return `\

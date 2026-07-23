@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type { FeatureId, ToolAdapter, ToolDefinition, ToolId } from './types.js';
 
 const toolSchema = z.object({
-  id: z.enum(['claude', 'cursor', 'codex', 'generic']),
+  id: z.enum(['claude', 'cursor', 'codex']),
   displayName: z.string(),
   description: z.string(),
   markers: z.array(z.string()),

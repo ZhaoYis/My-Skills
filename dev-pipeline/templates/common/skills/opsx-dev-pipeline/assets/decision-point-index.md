@@ -27,7 +27,6 @@
 | 3a | Phase 3.1 | 用户选择生成修复提案并应用 | 确认提案，开始实施 / 提案不符合预期，我要补充/修改 / 终止流程 | 确认后执行 fix change 的 Phase 2；修改则留在子流程；终止则退出子流程 | fix 子流程内部或回原 change 的 Phase 5 | `references/phase-3.1-fix-review.md` | 复用 Phase 1 的三选项语义 |
 | 4a | Phase 4 | 归档前发现未完成任务 | 继续归档 / 回到实施阶段 / 终止流程 | 继续归档、回 Phase 2 或退出 | Phase 2 | `references/phase-4-archive.md` | 高风险归档前分支 |
 | 4b | Phase 5 | 审查完成、进入归档前单元测试门禁 | 编写/补充单元测试并运行通过 / 跳过单测 / 暂停流水线 | 通过或跳过后进 Phase 4 | Phase 5 | `references/phase-5-unit-tests.md` | 必经门禁，不得默认跳过 |
-| 4c | Phase 4 | 归档完成后、决策点 4 之前（存在知识库时） | 沉淀知识到知识库（推荐） / 跳过沉淀，直接结束归档 | 沉淀后进决策点 4；跳过则直接进决策点 4 | Phase 4 步骤 16 | `references/phase-4-archive.md` | B 类：追加不覆盖；无知识库时自动跳过 |
 | 4 | Phase 4 | 归档完成后 | 提交代码并合并到目标分支 / 仅提交并推送（不合并） / 终止流程 | 进入 Phase 6 或退出 | Phase 6 | `references/phase-4-archive.md` | 提交与合并的选择 |
 | 5a | Phase 6 | 预提交检查发现分支落后或分叉 | pull --rebase / 继续后续流程（不先 rebase） / 终止流程 | 继续提交、保留风险继续或退出 | 当前 Phase 6 | `references/phase-6-merge-push.md` | 条件触发决策点 |
 | 5b | Phase 6 | 预提交检查发现敏感文件 | 排除敏感文件后继续后续流程 / 继续后续流程（包含敏感文件） / 终止流程 | 继续或退出 | 当前 Phase 6 | `references/phase-6-merge-push.md` | 必须显式警告 |

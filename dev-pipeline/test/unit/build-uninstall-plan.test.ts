@@ -54,7 +54,6 @@ describe('buildUninstallPlan', () => {
       ]),
       dryRun: false,
       yes: true,
-      keepKnowledge: false,
     });
 
     expect(plan.files).toHaveLength(2);
@@ -73,7 +72,6 @@ describe('buildUninstallPlan', () => {
       ]),
       dryRun: false,
       yes: false,
-      keepKnowledge: false,
     });
 
     expect(plan.files.find((file) => file.assetId === 'common-readme')?.resolution).toBe(
@@ -82,26 +80,5 @@ describe('buildUninstallPlan', () => {
     expect(plan.files.find((file) => file.assetId === 'opsx-learn-command')?.resolution).toBe(
       'skip',
     );
-  });
-
-  it('excludes knowledge skeleton assets when keepKnowledge is enabled', async () => {
-    const targetDir = await createTempDir();
-    await fs.ensureDir(path.join(targetDir, '.knowledge'));
-    await fs.writeFile(path.join(targetDir, '.knowledge/README.md'), '# knowledge\n');
-    await fs.writeFile(path.join(targetDir, 'README.md'), '# demo\n');
-
-    const plan = await buildUninstallPlan({
-      targetDir,
-      manifestResult: createManifestResult(targetDir, [
-        { id: 'common-readme', destination: 'README.md' },
-        { id: 'common-knowledge-skeleton:README.md.hbs', destination: '.knowledge/README.md' },
-      ]),
-      dryRun: false,
-      yes: true,
-      keepKnowledge: true,
-    });
-
-    expect(plan.files).toHaveLength(1);
-    expect(plan.files[0]?.assetId).toBe('common-readme');
   });
 });

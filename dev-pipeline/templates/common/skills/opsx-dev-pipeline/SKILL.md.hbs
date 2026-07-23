@@ -99,9 +99,7 @@ flowchart TD
   R3 -->|修复回路未结束| REVIEW
   R3 -->|进入单元测试| UT
   UT --> ARCHIVE["Phase 4：归档 Archive"]
-  ARCHIVE --> SINK{"决策点 4c（步骤 15.5）：知识沉淀?"}
-  SINK -->|沉淀知识·追加回写知识库| D4{"Phase 4 决策点 4"}
-  SINK -->|跳过沉淀 / 无知识库自动跳过| D4
+  ARCHIVE --> D4{"Phase 4 决策点 4"}
   D4 -->|终止流程| ENDNODE
   D4 -->|仅提交并推送| P6PRE["Phase 6：步骤 17–18 预提交与提交"]
   D4 -->|提交代码并合并| P6PRE

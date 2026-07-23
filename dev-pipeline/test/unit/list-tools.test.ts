@@ -15,12 +15,7 @@ describe('runListToolsCommand', () => {
     };
 
     expect(payload.packageVersion).toBe(PACKAGE_VERSION);
-    expect(payload.tools.map((tool) => tool.id).sort()).toEqual([
-      'claude',
-      'codex',
-      'cursor',
-      'generic',
-    ]);
+    expect(payload.tools.map((tool) => tool.id).sort()).toEqual(['claude', 'codex', 'cursor']);
     expect(payload.tools[0]).toMatchObject({
       destinations: expect.objectContaining({
         skills: expect.any(String),

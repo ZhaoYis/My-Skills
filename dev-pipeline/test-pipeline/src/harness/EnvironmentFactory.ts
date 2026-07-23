@@ -118,7 +118,6 @@ export async function createTestEnvironment(
   // Determine paths
   const skillsRoot = path.join(rootDir, '.claude', 'skills');
   const commandsRoot = path.join(rootDir, '.claude', 'commands');
-  const knowledgeRoot = path.join(rootDir, '.knowledge');
 
   return {
     rootDir,
@@ -126,7 +125,6 @@ export async function createTestEnvironment(
     sampleProject,
     skillsRoot,
     commandsRoot,
-    knowledgeRoot,
     isWorkTree,
     openspecAvailable: openspecCheck.available,
     openspecVersion: openspecCheck.version,

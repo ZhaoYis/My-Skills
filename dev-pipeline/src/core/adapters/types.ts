@@ -15,7 +15,7 @@ export const ALL_FEATURE_IDS = [
   ...DEFAULT_FEATURES,
   ...OPTIONAL_FEATURES,
 ] as const satisfies readonly FeatureId[];
-export type ToolId = 'claude' | 'cursor' | 'codex' | 'generic';
+export type ToolId = 'claude' | 'cursor' | 'codex';
 
 export interface ToolDestinations {
   root: string;

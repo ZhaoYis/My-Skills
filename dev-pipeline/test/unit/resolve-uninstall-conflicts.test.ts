@@ -12,7 +12,6 @@ function createPlan(files?: Partial<UninstallPlan['files'][number]>[]): Uninstal
     targetDir: '/tmp/demo',
     tool: 'claude',
     dryRun: false,
-    keepKnowledge: false,
     manifestPath: '/tmp/demo/opsx-dev-pipeline.json',
     manifestStorage: 'standalone',
     files: (

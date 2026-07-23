@@ -1,6 +1,5 @@
 import path from 'node:path';
 import { loadToolRegistry } from '../../core/adapters/registry.js';
-import { hasExistingKnowledgeDirectory } from '../../core/knowledge/dirs.js';
 import { readManifest } from '../../core/manifest/io.js';
 import { checkManifestVersion } from '../../core/manifest/versionCheck.js';
 import { resolvePackageRoot } from '../../core/runtime/resolvePackageRoot.js';
@@ -35,7 +34,6 @@ export async function runUpgradeCommand(options: InitOptions): Promise<void> {
     force: Boolean(options.force),
     mode: 'upgrade',
     managedAssets: result.manifest.managedAssets,
-    allowUpgradeAdoption: !(await hasExistingKnowledgeDirectory(targetDir)),
     registry,
   });
   const resolvedPlan = await resolveInstallConflicts(plan, {

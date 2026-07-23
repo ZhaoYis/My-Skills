@@ -76,7 +76,6 @@ describe('Pipeline Framework — Full Verification', () => {
     expect(env.rootDir).toBeTruthy();
     expect(env.skillsRoot).toContain('.claude/skills');
     expect(env.commandsRoot).toContain('.claude/commands');
-    expect(env.knowledgeRoot).toContain('.knowledge');
     expect(env.toolId).toBe('claude');
     expect(env.sampleProject).toBe('fullstack-todo');
     expect(env.isWorkTree).toBe(true);
@@ -257,7 +256,7 @@ describe('Pipeline Framework — Full Verification', () => {
       status: 'pass',
       startedAt: new Date().toISOString(),
       durationMs: 0,
-      agentSummary: 'Agent would verify, archive change, and precipitate knowledge',
+      agentSummary: 'Agent would verify and archive the change',
       assertions,
       artifacts,
     };

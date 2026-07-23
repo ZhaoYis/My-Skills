@@ -26,7 +26,7 @@
       "supports": ["base", "skills", "commands", "docs"],
       "postInstallNotes": [
         "Use Cursor commands under .cursor/commands/ (e.g. opsx-dev-pipeline).",
-        "The opsx-dev-pipeline rule is always applied; review .knowledge/ before large tasks."
+        "The opsx-dev-pipeline rule is always applied."
       ]
     },
     {
@@ -43,22 +43,6 @@
       "postInstallNotes": [
         "Open .codex/prompts/opsx-dev-pipeline.md as the pipeline entry prompt.",
         "Commands live under .codex/commands/ for quick invocation."
-      ]
-    },
-    {
-      "id": "generic",
-      "displayName": "Generic AI Tool",
-      "description": "Install a generic AI workspace layout under .ai.",
-      "markers": [".ai"],
-      "destinations": {
-        "root": ".ai",
-        "skills": ".ai/skills",
-        "commands": ".ai/commands"
-      },
-      "supports": ["base", "skills", "commands", "docs"],
-      "postInstallNotes": [
-        "Read .ai/README.md for the generic workspace layout.",
-        "Skills and commands are under .ai/skills/ and .ai/commands/."
       ]
     }
   ]

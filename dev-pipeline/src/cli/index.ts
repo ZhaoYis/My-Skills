@@ -50,7 +50,6 @@ export async function runCli(argv: string[]): Promise<void> {
     .command('uninstall', 'Remove managed files tracked by opsx-dev-pipeline manifest')
     .option('--yes', 'Remove all matched managed files without prompts')
     .option('--dry-run', 'Preview files that would be removed without deleting them')
-    .option('--keep-knowledge', 'Keep .knowledge skeleton files on disk')
     .option(...dirOption)
     .action(async (options) => {
       await runUninstallCommand(options);
@@ -64,33 +63,12 @@ export async function runCli(argv: string[]): Promise<void> {
     });
 
   cli
-    .command(
-      'doctor',
-      'Inspect current directory for opsx-dev-pipeline metadata and .knowledge health',
-    )
+    .command('doctor', 'Inspect current directory for opsx-dev-pipeline metadata')
     .option('--json', 'Print doctor report as JSON')
-    .option(
-      '--history',
-      'Persist a health snapshot and report score trend vs the previous snapshot',
-    )
-    .option(
-      '--stale-days <days>',
-      'Days after which a knowledge file is considered stale (default 90)',
-    )
     .option('--stack', 'Only validate the stack profile in openspec/config.yaml')
     .option(...dirOption)
     .action(async (options) => {
-      let staleDays: number | undefined;
-      if (options.staleDays !== undefined) {
-        staleDays = Number(options.staleDays);
-        if (!Number.isFinite(staleDays) || staleDays < 1) {
-          throw new Error('Invalid --stale-days value. Must be a positive number.');
-        }
-      }
-
       const status = await runDoctorCommand(options.dir, Boolean(options.json), {
-        history: Boolean(options.history),
-        staleDays,
         stackOnly: Boolean(options.stack),
       });
 

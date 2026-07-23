@@ -74,7 +74,6 @@ describe('buildInstallPlan', () => {
     ['claude', '.claude/skills', '.claude/commands', 'CLAUDE.md'],
     ['cursor', '.cursor/rules', '.cursor/commands', '.cursor/rules/opsx-dev-pipeline.mdc'],
     ['codex', '.codex/prompts', '.codex/commands', '.codex/prompts/opsx-dev-pipeline.md'],
-    ['generic', '.ai/skills', '.ai/commands', '.ai/README.md'],
   ] as const)('maps assets for %s including bundle skill', async (tool, skillsDir, commandsDir, docsPath) => {
     const adapter = createAdapter(tool, skillsDir, commandsDir, tool);
     const registry = new Map<ToolId, ToolAdapter>([[tool, adapter]]);
@@ -93,23 +92,6 @@ describe('buildInstallPlan', () => {
 
     expect(
       plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', docsPath)),
-    ).toBe(true);
-    expect(
-      plan.files.some(
-        (file) => file.destinationPath === path.join('/tmp/demo', '.knowledge', 'README.md'),
-      ),
-    ).toBe(true);
-    expect(
-      plan.files.some(
-        (file) => file.destinationPath === path.join('/tmp/demo', '.knowledge', 'INDEX.md'),
-      ),
-    ).toBe(true);
-    expect(
-      plan.files.some(
-        (file) =>
-          file.destinationPath ===
-          path.join('/tmp/demo', '.knowledge', 'tech', 'development-experience.md'),
-      ),
     ).toBe(true);
     expect(
       plan.files.some(
@@ -280,43 +262,11 @@ describe('buildInstallPlan', () => {
     const plan = await buildInstallPlan({
       ...createPlanInput(managedAssets),
       mode: 'upgrade',
-      allowUpgradeAdoption: false,
     });
 
     expect(plan.files.some((file) => file.assetId === 'opsx-dev-pipeline-command')).toBe(true);
     expect(
       plan.files.some((file) => file.assetId.startsWith('opsx-dev-pipeline-skill-bundle:')),
     ).toBe(true);
-  });
-
-  it('adopts knowledge skeleton files during upgrade when allowed', async () => {
-    const managedAssets: ManagedAssetRecord[] = [{ id: 'common-readme', destination: 'README.md' }];
-
-    const plan = await buildInstallPlan({
-      ...createPlanInput(managedAssets),
-      mode: 'upgrade',
-      allowUpgradeAdoption: true,
-    });
-
-    expect(plan.files.some((file) => file.assetId === 'common-readme')).toBe(true);
-    expect(
-      plan.files.some((file) => file.assetId === 'common-knowledge-skeleton:README.md.hbs'),
-    ).toBe(true);
-    expect(plan.files.some((file) => file.assetId === 'common-knowledge-skeleton:INDEX.md')).toBe(
-      true,
-    );
-  });
-
-  it('does not adopt knowledge skeleton files during sync for legacy manifests', async () => {
-    const managedAssets: ManagedAssetRecord[] = [{ id: 'common-readme', destination: 'README.md' }];
-
-    const plan = await buildInstallPlan({
-      ...createPlanInput(managedAssets),
-      mode: 'sync',
-    });
-
-    expect(plan.files.some((file) => file.assetId.startsWith('common-knowledge-skeleton:'))).toBe(
-      false,
-    );
   });
 });

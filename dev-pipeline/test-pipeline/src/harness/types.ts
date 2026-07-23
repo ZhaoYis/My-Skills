@@ -147,7 +147,7 @@ export interface ScenarioConfig {
   /** Which phases to run */
   phases: PhaseId[];
   /** Tool adapter to use */
-  toolId: 'claude' | 'cursor' | 'codex' | 'generic';
+  toolId: 'claude' | 'cursor' | 'codex';
   /** Feature flags */
   features?: string[];
   /** Custom schema config key */
@@ -169,7 +169,6 @@ export interface TestEnvironment {
   sampleProject: string;
   skillsRoot: string;
   commandsRoot: string;
-  knowledgeRoot: string;
   isWorkTree: boolean;
   openspecAvailable: boolean;
   openspecVersion?: string;
@@ -183,7 +182,7 @@ export interface TestEnvironment {
  */
 export interface EnvironmentConfig {
   sampleProject?: string;
-  toolId?: 'claude' | 'cursor' | 'codex' | 'generic';
+  toolId?: 'claude' | 'cursor' | 'codex';
   features?: string[];
   schemaConfig?: string;
   skipPipelineInit?: boolean;

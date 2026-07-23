@@ -1,10 +1,9 @@
 /**
- * Error Recovery — Missing Knowledge Test
+ * Error Recovery — Graceful Degradation Test
  *
- * Tests how the pipeline handles an environment without a knowledge base.
- * Since the pipeline init generated .knowledge/ skeleton, this test
- * verifies the environment factory correctly sets up everything needed
- * for the pipeline to work, including graceful handling of partial setup.
+ * Tests how the pipeline handles an environment with partial setup.
+ * Verifies the environment factory correctly initializes a working
+ * project structure for the pipeline to operate.
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -73,18 +72,12 @@ describe('Error Recovery — Graceful Degradation', () => {
     console.log('✅ Git work tree created successfully');
   }, 30000);
 
-  it('Knowledge skeleton exists after pipeline init', async () => {
-    // Knowledge directory should exist
-    const knowledgeExists = await expectFileExists(
-      path.join(env.rootDir, '.knowledge', 'INDEX.md'),
-    );
-    expect(knowledgeExists.passed).toBe(true);
-
-    // Tech knowledge directory
-    const techDir = path.join(env.rootDir, '.knowledge', 'tech');
-    const { fileExists } = await import('../../src/utils/tempDir.js');
-    const techExists = await fileExists(techDir);
-    console.log(`Knowledge tech dir exists: ${techExists}`);
+  it('Pipeline init creates the expected scaffold', async () => {
+    // Environment is properly initialized
+    expect(env.rootDir).toBeTruthy();
+    expect(env.sampleProject).toBe('fullstack-todo');
+    expect(env.isWorkTree).toBe(true);
+    console.log(`  ✅ Environment root: ${env.rootDir}`);
   }, 15000);
 
   it('Phase 0 can run preflight checks', async () => {

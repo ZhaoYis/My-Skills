@@ -72,9 +72,6 @@ const removed = [
 const toolExpectations = {
   claude: [
     { path: 'CLAUDE.md', present: true },
-    { path: '.knowledge/README.md', present: true },
-    { path: '.knowledge/INDEX.md', present: true },
-    { path: '.knowledge/tech/development-experience.md', present: true },
     { path: '.claude/skills/opsx-dev-pipeline/SKILL.md', present: true },
     { path: '.claude/skills/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
     { path: '.claude/skills/opsx-dev-pipeline/assets/decision-point-index.md', present: true },
@@ -83,9 +80,6 @@ const toolExpectations = {
   ],
   cursor: [
     { path: '.cursor/rules/opsx-dev-pipeline.mdc', present: true },
-    { path: '.knowledge/README.md', present: true },
-    { path: '.knowledge/INDEX.md', present: true },
-    { path: '.knowledge/tech/development-experience.md', present: true },
     { path: '.cursor/rules/opsx-dev-pipeline/SKILL.md', present: true },
     { path: '.cursor/rules/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
     { path: '.cursor/rules/opsx-dev-pipeline/assets/decision-point-index.md', present: true },
@@ -95,26 +89,12 @@ const toolExpectations = {
   ],
   codex: [
     { path: '.codex/prompts/opsx-dev-pipeline.md', present: true },
-    { path: '.knowledge/README.md', present: true },
-    { path: '.knowledge/INDEX.md', present: true },
-    { path: '.knowledge/tech/development-experience.md', present: true },
     { path: '.codex/prompts/opsx-dev-pipeline/SKILL.md', present: true },
     { path: '.codex/prompts/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
     { path: '.codex/prompts/opsx-dev-pipeline/assets/decision-point-index.md', present: true },
     { path: '.codex/prompts/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', present: true },
     { path: '.codex/commands/opsx-dev-pipeline.md', present: true },
     { path: '.codex/commands/README.md', present: true },
-  ],
-  generic: [
-    { path: '.ai/README.md', present: true },
-    { path: '.knowledge/README.md', present: true },
-    { path: '.knowledge/INDEX.md', present: true },
-    { path: '.knowledge/tech/development-experience.md', present: true },
-    { path: '.ai/skills/opsx-dev-pipeline/SKILL.md', present: true },
-    { path: '.ai/skills/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
-    { path: '.ai/skills/opsx-dev-pipeline/assets/decision-point-index.md', present: true },
-    { path: '.ai/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', present: true },
-    { path: '.ai/commands/opsx-dev-pipeline.md', present: true },
   ],
 } as const;
 
@@ -127,7 +107,7 @@ describe('tool matrix', () => {
 
     await runInit({
       dir,
-      tool: tool as 'claude' | 'cursor' | 'codex' | 'generic',
+      tool: tool as 'claude' | 'cursor' | 'codex',
       yes: true,
       force: false,
       dryRun: false,
@@ -257,7 +237,7 @@ describe('tool matrix', () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-lifecycle-'));
     createdDirs.push(dir);
 
-    await runInit({ dir, tool: 'generic', yes: true, force: false, dryRun: false });
+    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
     await runDoctorCommand(dir);
     await runSyncCommand({ dir, force: true, dryRun: false });
     await runUpgradeCommand({ dir, force: true, dryRun: false });
@@ -285,74 +265,6 @@ describe('tool matrix', () => {
     expect(payload.manifest.versionCheck.status).toBe('current');
   });
 
-  it('doctor emits JSON with knowledge and manifest status', async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-doctor-json-'));
-    createdDirs.push(dir);
-
-    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
-
-    // Verify retained assets exist
-    expect(
-      await fs.pathExists(
-        path.join(dir, '.claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-resolve-cli.sh'),
-      ),
-    ).toBe(true);
-
-    const spy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
-
-    await runDoctorCommand(dir, true);
-
-    const payload = spy.mock.calls.map(([value]) => String(value)).join('\n');
-    spy.mockRestore();
-
-    const parsed = JSON.parse(payload);
-    expect(parsed.knowledge).toBeDefined();
-    expect(['ok', 'warn']).toContain(parsed.knowledge.status);
-    expect(parsed.manifest.status).toBe('ok');
-  });
-
-  const overlayExpectations = {
-    claude: { overlay: 'CLAUDE.md', skillsDir: '.claude/skills', expectAlwaysApply: false },
-    cursor: {
-      overlay: '.cursor/rules/opsx-dev-pipeline.mdc',
-      skillsDir: '.cursor/rules',
-      expectAlwaysApply: true,
-    },
-    codex: {
-      overlay: '.codex/prompts/opsx-dev-pipeline.md',
-      skillsDir: '.codex/prompts',
-      expectAlwaysApply: false,
-    },
-    generic: { overlay: '.ai/README.md', skillsDir: '.ai/skills', expectAlwaysApply: false },
-  } as const;
-
-  it.each(
-    Object.entries(overlayExpectations),
-  )('injects the knowledge-first rule into the %s overlay', async (tool, {
-    overlay,
-    expectAlwaysApply,
-  }) => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), `opsx-overlay-${tool}-`));
-    createdDirs.push(dir);
-
-    await runInit({
-      dir,
-      tool: tool as 'claude' | 'cursor' | 'codex' | 'generic',
-      yes: true,
-      force: false,
-      dryRun: false,
-    });
-
-    const content = await fs.readFile(path.join(dir, overlay), 'utf8');
-    expect(content).toContain('知识优先');
-    expect(content).toContain('.knowledge/INDEX.md');
-    expect(content).toContain('追加不覆盖');
-
-    if (expectAlwaysApply) {
-      expect(content).toContain('alwaysApply: true');
-    }
-  });
-
   it('embeds the new pipeline gates and decision points in skill references', async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-pipeline-gates-'));
     createdDirs.push(dir);
@@ -366,8 +278,7 @@ describe('tool matrix', () => {
       'utf8',
     );
     expect(archive).toContain('步骤 15.5');
-    expect(archive).toContain('决策点 4c');
-    expect(archive).toContain('知识沉淀');
+    expect(archive).toContain('决策点 4');
 
     const apply = await fs.readFile(path.join(skillRoot, 'references/phase-2-apply.md'), 'utf8');
     expect(apply).toContain('写前复用门禁');
@@ -393,7 +304,6 @@ describe('tool matrix', () => {
       path.join(skillRoot, 'assets/decision-point-index.md'),
       'utf8',
     );
-    expect(decisionIndex).toContain('| 4c |');
     expect(decisionIndex).toContain('| 1c |');
   });
 
@@ -558,45 +468,6 @@ describe('tool matrix', () => {
     expect(await fs.readFile(path.join(dir, 'CLAUDE.md'), 'utf8')).not.toBe('custom\n');
   });
 
-  it('upgrade adopts the knowledge skeleton for legacy projects without existing knowledge directories', async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-upgrade-knowledge-adopt-'));
-    createdDirs.push(dir);
-
-    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
-    await fs.remove(path.join(dir, '.knowledge'));
-
-    const manifest = await readManifest(dir);
-    manifest.managedAssets = manifest.managedAssets.filter(
-      (asset) => !asset.id.startsWith('common-knowledge-skeleton:'),
-    );
-    await fs.writeJson(path.join(dir, MANIFEST_FILE), manifest, { spaces: 2 });
-
-    await runUpgradeCommand({ dir, yes: true, force: false, dryRun: false });
-
-    expect(await fs.pathExists(path.join(dir, '.knowledge/README.md'))).toBe(true);
-    expect(await fs.pathExists(path.join(dir, '.knowledge/INDEX.md'))).toBe(true);
-  });
-
-  it('upgrade skips knowledge skeleton adoption when another knowledge directory already exists', async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-upgrade-knowledge-skip-'));
-    createdDirs.push(dir);
-
-    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
-    await fs.remove(path.join(dir, '.knowledge'));
-    await fs.ensureDir(path.join(dir, 'docs/knowledge'));
-
-    const manifest = await readManifest(dir);
-    manifest.managedAssets = manifest.managedAssets.filter(
-      (asset) => !asset.id.startsWith('common-knowledge-skeleton:'),
-    );
-    await fs.writeJson(path.join(dir, MANIFEST_FILE), manifest, { spaces: 2 });
-
-    await runUpgradeCommand({ dir, yes: true, force: false, dryRun: false });
-
-    expect(await fs.pathExists(path.join(dir, '.knowledge/README.md'))).toBe(false);
-    expect(await fs.pathExists(path.join(dir, 'docs/knowledge'))).toBe(true);
-  });
-
   it('upgrade inherits sync conflict behavior when yes is enabled', async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-upgrade-yes-'));
     createdDirs.push(dir);
@@ -625,25 +496,6 @@ describe('tool matrix', () => {
       false,
     );
     expect(await fs.pathExists(path.join(dir, 'CLAUDE.md'))).toBe(false);
-  });
-
-  it('uninstall can preserve knowledge skeleton with keep-knowledge', async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-uninstall-keep-knowledge-'));
-    createdDirs.push(dir);
-
-    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
-
-    await runUninstallCommand({ dir, yes: true, dryRun: false, keepKnowledge: true });
-
-    expect(await fs.pathExists(path.join(dir, '.knowledge/README.md'))).toBe(true);
-    expect(await fs.pathExists(path.join(dir, '.claude/skills/opsx-dev-pipeline/SKILL.md'))).toBe(
-      false,
-    );
-
-    const manifest = await readManifest(dir);
-    expect(
-      manifest?.managedAssets.every((asset) => asset.id.startsWith('common-knowledge-skeleton:')),
-    ).toBe(true);
   });
 
   it('sync prompts for conflicts without yes or force', async () => {

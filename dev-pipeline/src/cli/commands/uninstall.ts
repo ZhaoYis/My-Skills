@@ -18,7 +18,6 @@ export async function runUninstallCommand(options: UninstallOptions): Promise<vo
     manifestResult,
     dryRun: Boolean(options.dryRun),
     yes: Boolean(options.yes),
-    keepKnowledge: Boolean(options.keepKnowledge),
   });
 
   if (plan.files.length === 0) {

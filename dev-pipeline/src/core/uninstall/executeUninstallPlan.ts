@@ -64,18 +64,6 @@ export async function executeUninstallPlan(plan: UninstallPlan): Promise<void> {
       console.log(`- ${path.relative(plan.targetDir, file.destinationPath)}`);
     }
 
-    if (plan.keepKnowledge) {
-      const keptKnowledge = plan.files.filter((file) =>
-        file.assetId.startsWith('common-knowledge-skeleton:'),
-      );
-      if (keptKnowledge.length > 0) {
-        console.log(pc.cyan('Knowledge files kept by --keep-knowledge:'));
-        for (const file of keptKnowledge) {
-          console.log(`- ${path.relative(plan.targetDir, file.destinationPath)}`);
-        }
-      }
-    }
-
     const manifestResult = await readManifest(plan.targetDir);
     const removedAssetIds = new Set(filesToRemove.map((file) => file.assetId));
     const remainingAssets =
@@ -110,8 +98,4 @@ export async function executeUninstallPlan(plan: UninstallPlan): Promise<void> {
   console.log(pc.green(`Uninstalled ${PACKAGE_NAME} managed files.`));
   console.log(`- removed: ${filesToRemove.length}`);
   console.log(`- skipped: ${filesToSkip.length}`);
-
-  if (plan.keepKnowledge) {
-    console.log('- knowledge skeleton preserved (--keep-knowledge)');
-  }
 }

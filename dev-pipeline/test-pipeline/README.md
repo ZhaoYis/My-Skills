@@ -8,18 +8,13 @@
 Test Scenario (vitest)
   → EnvironmentFactory: 创建临时全栈项目 (git init + openspec init + pipeline init)
   → PipelineAgentOrchestrator: 按序启动 Agent 执行各阶段
-    ├─ opsx-learn — 知识沉淀到 .knowledge/
-    ├─ opsx-analysis — 结构化需求分析
-    ├─ opsx-design — 设计文档 + 质量门禁
     ├─ Phase 0 (Entrance) — 环境预检 + Schema 检测
     ├─ Phase 1 (Propose) — 创建 change + proposal/tasks/specs
     ├─ Phase 2 (Apply) — 逐任务实现 + self-review
     ├─ Phase 3 (Review) — 多维代码审查
-    ├─ Phase 4 (Archive) — 验证 + 归档 + 知识沉淀
+    ├─ Phase 4 (Archive) — 验证 + 归档
     ├─ Phase 5 (Unit Tests) — 单元测试门禁
-    ├─ Phase 6 (Merge & Push) — commit + push + merge
-    ├─ opsx-verify — 冒烟/契约/回归验证
-    └─ opsx-health — 知识库健康巡检
+    └─ Phase 6 (Merge & Push) — commit + push + merge
   → PhaseValidator: 验证每个阶段产物
   → ReportGenerator: 生成 JSON + Markdown 报告
 ```
@@ -63,10 +58,10 @@ test-pipeline/reports/
 
 | 分类 | 场景文件 | 描述 | 测试数 |
 |------|---------|------|--------|
-| happy-path | `fullstack-todo-full-flow.test.ts` | 完整 12 阶段交付流程框架验证 | 17 |
+| happy-path | `fullstack-todo-full-flow.test.ts` | 完整交付流程框架验证 | 17 |
 | happy-path | `fullstack-todo-simple-feature.test.ts` | 简单后端特性 (只改 API) | 10 |
 | pr-mode | `pr-delivery-flow.test.ts` | PR/CI 交付模式基础设施验收 | 12 |
-| error-recovery | `missing-openspec.test.ts` | 缺失知识库/OpenSpec 时的降级处理 | 3 |
+| error-recovery | `missing-openspec.test.ts` | 缺失 OpenSpec 时的降级处理 | 3 |
 | error-recovery | `archive-with-pending-tasks.test.ts` | 未完成任务归档时的阻断与恢复 | 7 |
 | schema-variations | `custom-backend-schema.test.ts` | 自定义 backend-only schema | 4 |
 | schema-variations | `custom-fullstack-schema.test.ts` | 自定义 backend+frontend 多栈 schema | 8 |
