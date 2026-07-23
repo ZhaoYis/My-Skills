@@ -108,6 +108,19 @@ describe('buildInstallPlan', () => {
             '/tmp/demo',
             skillsDir,
             'opsx-dev-pipeline',
+            'references',
+            'phase-0-entrance.md',
+          ),
+      ),
+    ).toBe(true);
+    expect(
+      plan.files.some(
+        (file) =>
+          file.destinationPath ===
+          path.join(
+            '/tmp/demo',
+            skillsDir,
+            'opsx-dev-pipeline',
             'scripts',
             'dev-pipeline-archive.sh',
           ),
