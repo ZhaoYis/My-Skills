@@ -29,7 +29,7 @@ import fs from 'fs-extra';
 const ARCHIVE_ERROR_SCENARIO: ScenarioConfig = {
   name: 'archive-with-pending-tasks',
   sampleProject: 'fullstack-todo',
-  phases: ['phase-0-entrance', 'phase-1-propose', 'phase-4-archive'],
+  phases: ['phase-0-entrance', 'phase-1-propose', 'phase-5-archive'],
   toolId: 'claude',
   features: [],
   changeName: 'incomplete-feature',
@@ -166,7 +166,7 @@ Test the error recovery when archiving incomplete work.
   // ── Test archive behavior with pending tasks ─────────────────────
 
   it('Archive validator detects pending tasks and flags them', async () => {
-    const phaseId: PhaseId = 'phase-4-archive';
+    const phaseId: PhaseId = 'phase-5-archive';
     const meta = PHASE_META[phaseId];
 
     // Read tasks file to check for pending items
@@ -309,7 +309,7 @@ Test the error recovery when archiving incomplete work.
     expect(report.meta.overallStatus).toBe('fail'); // Archive should be in fail state
 
     // Verify the archive phase is recorded as failed
-    const archivePhase = report.phases.find((p) => p.phaseId === 'phase-4-archive');
+    const archivePhase = report.phases.find((p) => p.phaseId === 'phase-5-archive');
     expect(archivePhase).toBeDefined();
     expect(archivePhase!.status).toBe('fail');
 

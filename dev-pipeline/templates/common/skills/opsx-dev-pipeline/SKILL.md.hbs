@@ -25,6 +25,10 @@ metadata:
 - 暂停/终止时展示：change 名称、中断阶段、各 Phase 完成状态、恢复指引（重新触发技能并传入 change 名称即可续跑）。
 
 **`<SKILL_ROOT>`**：本技能安装根目录（内含 `scripts/`）。命令在目标 git 仓库根目录执行。
+- 对于 Claude Code 安装：`<SKILL_ROOT>` = `.claude/skills/opsx-dev-pipeline`
+- 对于 Cursor 安装：`<SKILL_ROOT>` = `.cursor/rules/opsx-dev-pipeline`
+- 脚本路径示例：`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh`
+- 引用前先确认目录存在：`test -d "<SKILL_ROOT>/scripts" || echo "scripts not found"`
 
 ## Phase 引用表
 
@@ -35,7 +39,7 @@ metadata:
 | 2 | 提案应用 (Apply) | `references/phase-2-apply.md` | 决策点 2 |
 | 3 | 代码审查 (Review) | `references/phase-3-review.md` | 决策点 3 |
 | 4 | 单元测试门禁 | `references/phase-4-unit-tests.md` | 决策点 4 |
-| 5 | 提案归档 (Archive) | `references/phase-5-archive.md` | 决策点 5（失败回路可到 Phase 1 或 Phase 2） |
+| 5 | 提案归档 (Archive) | `references/phase-5-archive.md` | 决策点 5a（verify 失败回路可到 Phase 1 或 Phase 2）、决策点 5b（merge vs 仅推送） |
 | 6 | 提交合并推送 | `references/phase-6-merge-push.md` | 决策点 6、决策点 7、标签创建（可选） |
 
 ## 流程概览

@@ -1,6 +1,6 @@
 # Phase 2: 提案应用 (Apply)
 
-## 步骤 6：获取实施指令
+## Step6：获取实施指令
 
 ```bash
 bash <SKILL_ROOT>/scripts/dev-pipeline-instructions-apply.sh "<name>"
@@ -11,7 +11,7 @@ bash <SKILL_ROOT>/scripts/dev-pipeline-instructions-apply.sh "<name>"
 - `state: "all_done"` → 跳到 Phase 3
 - 其他 → 读取 `contextFiles` 继续实施
 
-## 步骤 7：逐任务实施
+## Step7：逐任务实施
 
 遍历 `tasks.md`，每个任务动手前执行**写前复用门禁**：在仓库内检索已有相近函数/模块/类型/常量，命中则复用，不造重复轮子。
 
@@ -36,7 +36,7 @@ bash <SKILL_ROOT>/scripts/dev-pipeline-instructions-apply.sh "<name>"
 
 遇到阻塞时 **AskQuestion**：`提供补充说明` / `回到 Phase 1 修改提案` / `跳过此任务`（标记 `[~]`） / `终止流程`
 
-## 步骤 8：[决策点 2] 实施完成确认
+## Step8：[决策点 2] 实施完成确认
 
 展示实施摘要（完成任务数、跳过任务数、变更文件列表），**AskQuestion**：
 - `进入代码审查` → Phase 3

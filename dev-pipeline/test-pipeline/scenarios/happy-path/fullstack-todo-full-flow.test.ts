@@ -214,8 +214,8 @@ describe('Pipeline Framework — Full Verification', () => {
     console.log(`  ℹ️  ${meta.label}: ${result.agentSummary}`);
   }, 10000);
 
-  it('Phase 5: Unit Tests — validates test infrastructure', async () => {
-    const phaseId: PhaseId = 'phase-5-unit-tests';
+  it('Phase 4: Unit Tests — validates test infrastructure', async () => {
+    const phaseId: PhaseId = 'phase-4-unit-tests';
     const meta = PHASE_META[phaseId];
 
     const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](env, {
@@ -242,8 +242,8 @@ describe('Pipeline Framework — Full Verification', () => {
     console.log(`  ✅ ${meta.label}: test script found`);
   }, 15000);
 
-  it('Phase 4: Archive — validates archive structure', async () => {
-    const phaseId: PhaseId = 'phase-4-archive';
+  it('Phase 5: Archive — validates archive structure', async () => {
+    const phaseId: PhaseId = 'phase-5-archive';
     const meta = PHASE_META[phaseId];
 
     const { assertions, artifacts } = await PHASE_VALIDATORS[phaseId](env, {

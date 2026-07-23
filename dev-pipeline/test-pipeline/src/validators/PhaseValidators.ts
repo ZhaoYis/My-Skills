@@ -10,6 +10,7 @@ import { fileExists, listFilesRecursive } from '../utils/tempDir.js';
 import { gitStatus, gitLastCommitMessage } from '../utils/gitHelpers.js';
 import type { TestEnvironment } from '../harness/types.js';
 import path from 'node:path';
+import fs from 'node:fs/promises';
 
 /**
  * Validate Phase 0 (Entrance) outputs.
@@ -122,12 +123,35 @@ export async function validatePhase3(
 }> {
   const assertions: AssertionResult[] = [];
 
-  // Review report
-  const reviewPath = path.join(env.rootDir, 'openspec', 'review', `${changeName}-review.md`);
-  const reviewExists = await expectFileExists(reviewPath);
+  // Review report — supports both timestamp-based (SKILL.md convention) and
+  // change-name-based (legacy) naming patterns.
+  const reviewDir = path.join(env.rootDir, 'openspec', 'review');
+  let reviewPath: string | null = null;
+
+  try {
+    const entries = await fs.readdir(reviewDir);
+    // Prefer timestamp-based pattern: YYYY-MM-DD-HH-mm-<branch-safe>-pipeline-review.md
+    const timestamped = entries.find(
+      (f) => f.endsWith('-pipeline-review.md') || f.endsWith('-pipeline-review-round-1.md'),
+    );
+    // Fall back to change-name-based pattern
+    const byChange = entries.find(
+      (f) => f === `${changeName}-review.md`,
+    );
+    const matched = timestamped ?? byChange;
+    if (matched) {
+      reviewPath = path.join(reviewDir, matched);
+    }
+  } catch {
+    // Directory doesn't exist yet
+  }
+
+  const reviewExists: AssertionResult = reviewPath
+    ? { description: 'Review report exists', passed: true, detail: reviewPath }
+    : { description: 'Review report exists', passed: false, detail: 'No review report found' };
   assertions.push(reviewExists);
 
-  if (reviewExists.passed) {
+  if (reviewExists.passed && reviewPath) {
     assertions.push(
       await expectFileContains(reviewPath, /security|安全|secret/, 'Review covers security'),
     );
@@ -144,7 +168,7 @@ export async function validatePhase3(
   }
 
   const artifacts: ArtifactInfo[] = [];
-  if (await fileExists(reviewPath)) {
+  if (reviewPath && (await fileExists(reviewPath))) {
     artifacts.push({ path: path.relative(env.rootDir, reviewPath), type: 'file', exists: true });
   }
 
@@ -152,9 +176,9 @@ export async function validatePhase3(
 }
 
 /**
- * Validate Phase 4 (Archive) outputs.
+ * Validate Phase 5 (Archive) outputs.
  */
-export async function validatePhase4(
+export async function validateArchive(
   env: TestEnvironment,
   changeName: string,
 ): Promise<{
@@ -162,6 +186,20 @@ export async function validatePhase4(
   artifacts: ArtifactInfo[];
 }> {
   const assertions: AssertionResult[] = [];
+
+  // Pre-archive check: all tasks should be completed before archive
+  const tasksPath = path.join(env.rootDir, 'openspec', 'changes', changeName, 'tasks.md');
+  if (await fileExists(tasksPath)) {
+    const tasksContent = await fs.readFile(tasksPath, 'utf-8');
+    const hasPendingTasks = /\[ \]/.test(tasksContent);
+    assertions.push({
+      description: 'All tasks are completed before archive',
+      passed: !hasPendingTasks,
+      detail: hasPendingTasks
+        ? 'Archive blocked: there are incomplete tasks in tasks.md'
+        : 'All tasks completed, archive can proceed',
+    });
+  }
 
   // Change should be in archive
   const archiveDirs = await listFilesRecursive(
@@ -196,9 +234,9 @@ export async function validatePhase4(
 }
 
 /**
- * Validate Phase 5 (Unit Tests) outputs.
+ * Validate Phase 4 (Unit Tests) outputs.
  */
-export async function validatePhase5(env: TestEnvironment): Promise<{
+export async function validateUnitTests(env: TestEnvironment): Promise<{
   assertions: AssertionResult[];
   artifacts: ArtifactInfo[];
 }> {
@@ -257,7 +295,7 @@ export const PHASE_VALIDATORS: Record<
   'phase-1-propose': (env, ctx) => validatePhase1(env, ctx.changeName),
   'phase-2-apply': (env, ctx) => validatePhase2(env, ctx.changeName),
   'phase-3-review': (env, ctx) => validatePhase3(env, ctx.changeName),
-  'phase-4-archive': (env, ctx) => validatePhase4(env, ctx.changeName),
-  'phase-5-unit-tests': (env) => validatePhase5(env),
+  'phase-4-unit-tests': (env) => validateUnitTests(env),
+  'phase-5-archive': (env, ctx) => validateArchive(env, ctx.changeName),
   'phase-6-merge-push': (env) => validatePhase6(env),
 };

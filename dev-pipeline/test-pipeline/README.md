@@ -60,13 +60,12 @@ test-pipeline/reports/
 |------|---------|------|--------|
 | happy-path | `fullstack-todo-full-flow.test.ts` | 完整交付流程框架验证 | 17 |
 | happy-path | `fullstack-todo-simple-feature.test.ts` | 简单后端特性 (只改 API) | 10 |
-| pr-mode | `pr-delivery-flow.test.ts` | PR/CI 交付模式基础设施验收 | 12 |
 | error-recovery | `missing-openspec.test.ts` | 缺失 OpenSpec 时的降级处理 | 3 |
 | error-recovery | `archive-with-pending-tasks.test.ts` | 未完成任务归档时的阻断与恢复 | 7 |
 | schema-variations | `custom-backend-schema.test.ts` | 自定义 backend-only schema | 4 |
 | schema-variations | `custom-fullstack-schema.test.ts` | 自定义 backend+frontend 多栈 schema | 8 |
 
-**总计: 7 个场景, 59 个测试** (运行 `npm test` 全部通过)
+**总计: 6 个场景, 49 个测试** (运行 `npm test` 全部通过)
 
 ## 报告示例
 

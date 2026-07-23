@@ -1,15 +1,15 @@
 # Phase 1: 提案编写 (Propose)
 
-## 步骤 3：[决策点 1a] 需求理解确认（制品生成前）
+## Step3：[决策点 1a] 需求理解确认（制品生成前）
 
 在生成制品前先确认理解正确。用中性表述给出：影响范围、关键链路、待确认问题。
 
 使用 **AskQuestion**：
-- `确认需求理解，开始生成制品（推荐）` → 进入步骤 4
+- `确认需求理解，开始生成制品（推荐）` → 进入Step4
 - `补充/修改需求理解` → 文本对话澄清后回到本决策点
 - `终止流程` → 退出
 
-## 步骤 4：创建 change 并生成制品
+## Step4：创建 change 并生成制品
 
 **续接已有 change**：跳过创建，仅对未完成制品执行生成。
 
@@ -27,7 +27,7 @@ bash <SKILL_ROOT>/scripts/dev-pipeline-instructions.sh "<name>" <artifact-id>
 
 （可选）在决策点 1 前运行 `bash <SKILL_ROOT>/scripts/dev-pipeline-validate-change.sh "<name>"` 做结构校验。
 
-## 步骤 5：[决策点 1] 确认提案（必过门禁）
+## Step5：[决策点 1] 确认提案（必过门禁）
 
 **硬性规则：用户明确选择「确认提案，开始实施」前，禁止进入 Phase 2。**
 

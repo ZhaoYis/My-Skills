@@ -152,7 +152,7 @@ ${params.previousContext}
 - Follow the SKILL.md and its phase reference exactly.
 - Do not skip decision points — pause and ask when needed.
 - For Phase 2 (Apply), write actual code changes to the filesystem.
-- For Phase 5 (Unit Tests), actually run \`npm test\`.
+- For Phase 4 (Unit Tests), actually run \`npm test\`.
 - Always verify your work before declaring the phase complete.`;
   }
 }
@@ -221,25 +221,25 @@ export function getPhaseSpecificInstructions(
 4. Save review report to \`openspec/review/${changeName}-review.md\`
 5. Present findings for decision (decision point 3)`;
 
-    case 'phase-4-archive':
+    case 'phase-4-unit-tests':
       return `\
-## Specific Tasks for Phase 4 — Archive
-
-1. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-change-status.sh "${changeName}"\`
-2. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-resolve-verify.sh "${changeName}"\`
-3. Run verify as determined above
-4. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-archive.sh "${changeName}" -y\`
-5. Determine post-archive operation (decision point 4)`;
-
-    case 'phase-5-unit-tests':
-      return `\
-## Specific Tasks for Phase 5 — Unit Tests
+## Specific Tasks for Phase 4 — Unit Tests
 
 1. Identify the test command (from package.json or openspec/config.yaml)
 2. Present decision point: run tests or skip?
 3. If running: execute \`npm test --workspaces --if-present\`
 4. If tests fail, decide: fix or proceed with notes?
 5. Record test results`;
+
+    case 'phase-5-archive':
+      return `\
+## Specific Tasks for Phase 5 — Archive
+
+1. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-change-status.sh "${changeName}"\`
+2. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-resolve-verify.sh "${changeName}"\`
+3. Run verify as determined above
+4. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-archive.sh "${changeName}" -y\`
+5. Determine post-archive operation (decision point 5)`;
 
     case 'phase-6-merge-push':
       return `\

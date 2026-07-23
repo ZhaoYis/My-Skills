@@ -6,8 +6,8 @@ export type PhaseId =
   | 'phase-1-propose'
   | 'phase-2-apply'
   | 'phase-3-review'
-  | 'phase-4-archive'
-  | 'phase-5-unit-tests'
+  | 'phase-4-unit-tests'
+  | 'phase-5-archive'
   | 'phase-6-merge-push';
 
 /**
@@ -18,8 +18,8 @@ export const ALL_PHASES: PhaseId[] = [
   'phase-1-propose',
   'phase-2-apply',
   'phase-3-review',
-  'phase-4-archive',
-  'phase-5-unit-tests',
+  'phase-4-unit-tests',
+  'phase-5-archive',
   'phase-6-merge-push',
 ];
 
@@ -68,17 +68,17 @@ export const PHASE_META: Record<PhaseId, PhaseMeta> = {
     skillPath: 'opsx-dev-pipeline/SKILL.md',
     skillName: 'opsx-dev-pipeline',
   },
-  'phase-4-archive': {
-    id: 'phase-4-archive',
-    label: 'Phase 4 — Archive',
-    description: '验证 + 文档归档 + knowledge 沉淀',
+  'phase-4-unit-tests': {
+    id: 'phase-4-unit-tests',
+    label: 'Phase 4 — Unit Tests',
+    description: '单元测试门禁',
     skillPath: 'opsx-dev-pipeline/SKILL.md',
     skillName: 'opsx-dev-pipeline',
   },
-  'phase-5-unit-tests': {
-    id: 'phase-5-unit-tests',
-    label: 'Phase 5 — Unit Tests',
-    description: '单元测试',
+  'phase-5-archive': {
+    id: 'phase-5-archive',
+    label: 'Phase 5 — Archive',
+    description: '验证 + 提案归档 + knowledge 沉淀',
     skillPath: 'opsx-dev-pipeline/SKILL.md',
     skillName: 'opsx-dev-pipeline',
   },

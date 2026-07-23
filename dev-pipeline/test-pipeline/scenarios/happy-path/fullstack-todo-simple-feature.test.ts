@@ -181,8 +181,8 @@ describe('Simple Feature — Backend Only', () => {
     // Verify that all remaining phase validators are registered and callable
     const remainingPhases: PhaseId[] = [
       'phase-3-review',
-      'phase-5-unit-tests',
-      'phase-4-archive',
+      'phase-4-unit-tests',
+      'phase-5-archive',
       'phase-6-merge-push',
     ];
 

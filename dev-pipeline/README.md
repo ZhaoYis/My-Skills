@@ -7,6 +7,7 @@
 使用本工具前，请先安装 OpenSpec：
 
 - [OpenSpec](https://github.com/Fission-AI/OpenSpec)
+- **Python 3**（可选）：`dev-pipeline-instructions.sh` 在省略 artifact-id 时需要 python3 解析 JSON；若未安装，需显式传入 artifact-id
 
 推荐直接使用 npx 初始化：
 

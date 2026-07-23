@@ -2,7 +2,7 @@
 
 **`<SKILL_ROOT>`**：本技能安装根目录（内含 `scripts/`），命令在目标 git 仓库根目录执行。
 
-## 步骤 1：环境预检
+## Step1：环境预检
 
 ```bash
 bash <SKILL_ROOT>/scripts/dev-pipeline-preflight.sh
@@ -20,7 +20,7 @@ bash <SKILL_ROOT>/scripts/dev-pipeline-preflight.sh
 - `warnings` 字段非空 → 展示警告清单，确认后继续
 - `python3Available: false` → 提示用户在 Phase 1 必须显式传入 artifact-id
 
-## 步骤 2：判断入口类型
+## Step2：判断入口类型
 
 ### 2.a 用户提供了已有 change 名称
 
@@ -31,14 +31,17 @@ bash <SKILL_ROOT>/scripts/dev-pipeline-preflight.sh
    - 制品完成但任务未完成 → 推荐 Phase 2
    - 任务完成且无审查报告 → 推荐 Phase 3
    - 已有审查报告但未归档 → 推荐 Phase 4（完成后进入 Phase 5）
-   - 已归档且有未提交变更 → 推荐 Phase 6 步骤 20
-   - 已归档且有未推送提交 → 推荐 Phase 6 步骤 22
+   - 已归档且有未提交变更 → 推荐 Phase 6 Step20
+   - 已归档且有未推送提交 → 推荐 Phase 6 Step22
+   - **修复 change (fix-cr-*) 存在且未归档** → 推荐 Phase 3 Step12（审查修复子流程可能中断）
+   - **归档中断**（活跃目录已空但 archive 目录无对应 change）→ 列出状态，建议手动检查或重新归档
+   - **合并中断**（存在未解决的 merge 冲突）→ 提示用户手动解决冲突后继续 Phase 6 Step23
 3. 使用 **AskQuestion** 确认：`从 Phase X 继续` / `从头开始（新建 change）` / `终止流程`
 
 ### 2.b 用户提供了需求描述
 
 - 从描述推导 kebab-case 的 change 名称
-- 进入 **Phase 1 步骤 3（决策点 1a）**
+- 进入 **Phase 1 Step3（决策点 1a）**
 
 ### 2.c 用户未提供任何输入
 

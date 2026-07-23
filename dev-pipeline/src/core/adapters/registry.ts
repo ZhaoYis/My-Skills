@@ -3,6 +3,11 @@ import path from 'node:path';
 import { z } from 'zod';
 import type { FeatureId, ToolAdapter, ToolDefinition, ToolId } from './types.js';
 
+// Tool adapter schema. To add a new AI tool:
+// 1. Add its id to the id enum below
+// 2. Add its definition to config/tools.json (id, displayName, description, markers, destinations, supports)
+// 3. Create overlay templates under templates/tools/<tool-id>/overlay/
+// See config/tools.json for the current set of supported tools.
 const toolSchema = z.object({
   id: z.enum(['claude', 'cursor', 'codex']),
   displayName: z.string(),
