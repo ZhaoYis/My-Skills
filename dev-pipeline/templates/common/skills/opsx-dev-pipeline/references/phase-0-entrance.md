@@ -8,8 +8,17 @@
 bash <SKILL_ROOT>/scripts/dev-pipeline-preflight.sh
 ```
 
-- openspec CLI 不可用 → 提示安装并退出
-- 不在 git 仓库中 → 提示 `git init` 或进入正确仓库后退出
+解析返回 JSON，按 `status` 和 `reason` 处理：
+
+| 退出码 | reason | 处理 |
+|--------|--------|------|
+| 1 | `openspec-cli-not-found` / `openspec-version-failed` | 提示安装 `@fission-ai/openspec` 并退出 |
+| 2 | `not-a-git-repo` | 提示 `git init` 或进入正确仓库后退出 |
+| 3 | `openspec-not-initialized` | 提示执行 `openspec init` 后退出 |
+| 4 | `python3-missing` | 警告：`dev-pipeline-instructions.sh` 在省略 artifact-id 时需要 python3；建议安装 |
+
+- `warnings` 字段非空 → 展示警告清单，确认后继续
+- `python3Available: false` → 提示用户在 Phase 1 必须显式传入 artifact-id
 
 ## 步骤 2：判断入口类型
 

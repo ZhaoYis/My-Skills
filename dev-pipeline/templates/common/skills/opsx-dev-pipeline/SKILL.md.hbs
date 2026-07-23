@@ -35,8 +35,8 @@ metadata:
 | 2 | 提案应用 (Apply) | `references/phase-2-apply.md` | 决策点 2 |
 | 3 | 代码审查 (Review) | `references/phase-3-review.md` | 决策点 3 |
 | 4 | 单元测试门禁 | `references/phase-4-unit-tests.md` | 决策点 4 |
-| 5 | 提案归档 (Archive) | `references/phase-5-archive.md` | 决策点 5 |
-| 6 | 提交合并推送 | `references/phase-6-merge-push.md` | 决策点 6、决策点 7 |
+| 5 | 提案归档 (Archive) | `references/phase-5-archive.md` | 决策点 5（失败回路可到 Phase 1 或 Phase 2） |
+| 6 | 提交合并推送 | `references/phase-6-merge-push.md` | 决策点 6、决策点 7、标签创建（可选） |
 
 ## 流程概览
 
@@ -53,6 +53,7 @@ flowchart TD
   P2 --> DP2{"决策点 2"}
   DP2 -->|进入审查| P3["Phase 3 审查 Review"]
   DP2 -->|跳过审查| P4["Phase 4 单测门禁"]
+  DP2 -->|需求有误，回退| P1
 
   P3 --> DP3{"决策点 3"}
   DP3 -->|审查通过| P4
@@ -64,7 +65,8 @@ flowchart TD
   UT --> P5["Phase 5 归档 Archive"]
   DP4 -->|跳过单测| P5
 
-  P5 -->|验证未过| VFIX["失败回路 → Phase 2"]
+  P5 -->|验证未过| VFIX["失败回路 → Phase 1 或 Phase 2"]
+  VFIX --> P1
   VFIX --> P2
   P5 -->|归档完成| DP5{"决策点 5"}
   DP5 -->|仅推送| P6["Phase 6 提交 / 推送"]
@@ -82,14 +84,23 @@ flowchart TD
 | 场景 | 处理 |
 |------|------|
 | openspec CLI 不可用 / 非 git 仓库 | 提示安装/初始化并退出 |
+| openspec 未初始化（`openspec list` 失败） | 提示执行 `openspec init` 并退出 |
+| git user.name / user.email 未配置 | 警告，确认后继续（提交前必须配置） |
+| python3 不可用 | 警告，Phase 1 需显式传 artifact-id |
 | change 不存在 | 列出可用 change 让用户选择 |
 | apply 返回 `blocked` | 回到 Phase 1 补充制品 |
+| 实施中发现需求有误 | 回到 Phase 1 修改提案 |
 | 审查时无变更可审 | 提示后进入 Phase 4 |
 | 修复循环达 3 轮上限 | 强制暂停，提示人工介入 |
 | verify 无法解析 | 查候选命令，仍不确定则询问用户 |
+| verify 失败（可能是需求问题） | 修复后重试 / 回到 Phase 2 修复代码 / 回到 Phase 1 修改提案 |
 | 无法确定测试命令 | 列出候选请用户选择 |
-| 单元测试失败 | 修复后重试或终止 |
+| 单元测试失败 | 修复后重试 / 跳过并记录技术债务 / 终止 |
+| pre-commit hook 失败 | 查看 hook 输出，修复后重试或 `--no-verify`（需确认） |
 | 分支落后/分叉/rebase 冲突 | pull --rebase / 继续 / 终止 |
-| 推送失败 | pull --rebase 重试或终止 |
+| 推送失败（权限/网络） | pull --rebase 重试 / 终止 |
+| `git ls-remote` 不可达 | 检查网络/权限 / 仅本地提交 / 终止 |
 | 合并冲突 | 中止/theirs/ours/手动解决 |
+| 合并编辑器卡死（非交互环境） | 所有 merge 强制使用 `--no-edit` |
 | 敏感文件检测 | 警告并确认是否排除 |
+| 审查报告路径含特殊字符 | 分支名 `/` 替换为 `-` |

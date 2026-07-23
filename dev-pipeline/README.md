@@ -84,6 +84,7 @@ flowchart TD
   P2 --> DP2{"决策点 2"}
   DP2 -->|进入审查| P3["Phase 3 审查 Review"]
   DP2 -->|跳过审查| P4["Phase 4 单测门禁"]
+  DP2 -->|需求有误，回退| P1
 
   P3 --> DP3{"决策点 3"}
   DP3 -->|审查通过| P4
@@ -95,7 +96,8 @@ flowchart TD
   UT --> P5["Phase 5 归档 Archive"]
   DP4 -->|跳过单测| P5
 
-  P5 -->|验证未过| VFIX["失败回路 → Phase 2"]
+  P5 -->|验证未过| VFIX["失败回路 → Phase 1 或 Phase 2"]
+  VFIX --> P1
   VFIX --> P2
   P5 -->|归档完成| DP5{"决策点 5"}
   DP5 -->|仅推送| P6["Phase 6 提交 / 推送"]

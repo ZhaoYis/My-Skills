@@ -11,7 +11,7 @@ bash <SKILL_ROOT>/scripts/dev-pipeline-change-status.sh "<name>"
 ## 步骤 13：archive 前 verify 门禁
 
 - 若 `openspec/config.yaml` 或项目约定有 verify 命令，先执行并确保通过
-- verify 失败 → **AskQuestion**：`修复后重试 verify` / `回到 Phase 2 修复代码` / `暂停流水线` / `终止流程`
+- verify 失败 → **AskQuestion**：`修复后重试 verify` / `回到 Phase 2 修复代码` / `回到 Phase 1 修改提案（需求或设计有误）` / `暂停流水线` / `终止流程`
 - 无法确定 verify 命令 → 请求用户手动确认
 
 ## 步骤 14：Delta spec 同步检查

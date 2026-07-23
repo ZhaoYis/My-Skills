@@ -25,7 +25,7 @@ bash <SKILL_ROOT>/scripts/dev-pipeline-instructions-apply.sh "<name>"
 | 4 | 复用与去重 | 已执行写前复用门禁；无重复逻辑 |
 | 5 | 命名一致 | 与相邻代码、领域术语一致 |
 | 6 | 结构/分层一致 | 与项目既有分层、模块边界一致 |
-| 7 | 与项目基准一致 | 符合 `openspec/config.yaml` / `AGENTS.md` / `CLAUDE.md` |
+| 7 | 与项目基准一致 | 符合 `openspec/config.yaml` / `AGENTS.md` / `CLAUDE.md`；若三者均不存在，以仓库现有代码风格/模式为准 |
 | 8 | 资源与副作用 | 正确释放资源，无泄漏 |
 | 9 | 契约/接口一致 | 对外接口、字段、错误语义一致 |
 | 10 | 安全与敏感信息 | 无硬编码凭据/密钥 |
@@ -34,7 +34,7 @@ bash <SKILL_ROOT>/scripts/dev-pipeline-instructions-apply.sh "<name>"
 
 **有一条不满足 → 不允许标记完成**，先改到满足。
 
-遇到阻塞时 **AskQuestion**：`提供补充说明` / `跳过此任务`（标记 `[~]`） / `终止流程`
+遇到阻塞时 **AskQuestion**：`提供补充说明` / `回到 Phase 1 修改提案` / `跳过此任务`（标记 `[~]`） / `终止流程`
 
 ## 步骤 7：[决策点 2] 实施完成确认
 
