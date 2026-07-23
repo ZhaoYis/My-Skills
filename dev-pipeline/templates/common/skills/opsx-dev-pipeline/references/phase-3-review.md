@@ -1,16 +1,16 @@
 # Phase 3: 代码审查 (Review)
 
-## 步骤 8：加载项目规范
+## 步骤 9：加载项目规范
 
 按优先级加载：`openspec/config.yaml` → `AGENTS.md` → `CLAUDE.md`。三者均不存在时警告并回退为读取仓库现有代码做启发式判断。下文统称 **项目基准**。
 
-## 步骤 9：获取变更内容
+## 步骤 10：获取变更内容
 
 - 有未提交变更：`git diff HEAD` + `git diff --stat HEAD`
 - 无未提交变更：检查未推送提交 `git log origin/<branch>..HEAD --oneline`
 - 无任何变更：提示后进入 Phase 4
 
-## 步骤 10：执行代码审查
+## 步骤 11：执行代码审查
 
 **敏感信息扫描**：API key、password、token、私钥块等 → 发现记入「严重」。
 
@@ -19,13 +19,13 @@
 - 安全：注入、XSS、敏感数据明文、鉴权绕过
 - 性能：明显 N+1、无分页大批量
 - 可维护性：重复逻辑、过大函数、关键行为缺少说明
-- 规范对照：以步骤 8 项目基准逐条对照
+- 规范对照：以步骤 9 项目基准逐条对照
 
 **报告保存**到 `openspec/review/YYYY-MM-DD-HH-mm-<branch-safe>-pipeline-review.md`，多轮追加 `-round-N`。
 
 > **分支名安全处理**：将 `<branch>` 中的 `/` 替换为 `-`（如 `feature/my-fix` → `feature-my-fix`），避免路径遍历/目录创建失败。
 
-## 步骤 11：[决策点 3] 审查结果处理
+## 步骤 12：[决策点 3] 审查结果处理
 
 ### 有严重或重要问题 → AskQuestion：
 - `生成修复提案并应用` → 执行下方「修复子流程」后重新审查
@@ -50,8 +50,8 @@
 ## 修复子流程（「生成修复提案并应用」）
 
 1. 根据审查报告确定修复 scope，名称 `fix-cr-<type>`（如 `fix-cr-security`）
-2. 新建修复 change 并生成制品（同 Phase 1 步骤 3）
+2. 新建修复 change 并生成制品（同 Phase 1 步骤 4）
 3. **修复提案门禁**：严格按 Phase 1 决策点 1 使用 AskQuestion（三选项一致）
-4. 逐任务实施修复（同 Phase 2 步骤 5-6）
+4. 逐任务实施修复（同 Phase 2 步骤 6-7）
 5. 归档修复 change：`bash <SKILL_ROOT>/scripts/dev-pipeline-archive.sh "fix-cr-<type>" -y --skip-specs`
-6. 回到步骤 9 重新审查
+6. 回到步骤 10 重新审查
