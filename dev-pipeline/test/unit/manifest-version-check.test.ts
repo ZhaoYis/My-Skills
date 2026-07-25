@@ -18,7 +18,7 @@ describe('checkManifestVersion', () => {
   });
 
   it('warns when manifest version is newer than the CLI', () => {
-    const result = checkManifestVersion('0.2.0', '0.2.0');
+    const result = checkManifestVersion('0.3.0', '0.2.0');
 
     expect(result.status).toBe('ahead');
     expect(result.healthStatus).toBe('warn');

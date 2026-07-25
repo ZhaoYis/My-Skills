@@ -99,7 +99,7 @@ function runScript(
 ): Promise<ScriptResult> {
   return new Promise((resolve) => {
     execFile(
-      'bash',
+      process.execPath,
       [path.join(scriptsRoot, script), ...args],
       {
         cwd,
@@ -116,7 +116,7 @@ function runScript(
 describe('opsx-dev-pipeline script contracts', () => {
   it('returns a stable dependency error when OpenSpec is not installed', async () => {
     const { root, bin } = await createRepo(false);
-    const result = await runScript('dev-pipeline-preflight.sh', [], root, bin, {
+    const result = await runScript('preflight.mjs', [], root, bin, {
       PATH: '/usr/bin:/bin',
     });
 
@@ -131,7 +131,7 @@ describe('opsx-dev-pipeline script contracts', () => {
 
   it('rejects an implicit OpenSpec root as not initialized', async () => {
     const { root, bin } = await createRepo(false);
-    const result = await runScript('dev-pipeline-preflight.sh', [], root, bin, {
+    const result = await runScript('preflight.mjs', [], root, bin, {
       MOCK_LIST_JSON: JSON.stringify({ changes: [], root: { path: root, source: 'implicit' } }),
     });
 
@@ -145,7 +145,7 @@ describe('opsx-dev-pipeline script contracts', () => {
 
   it('accepts an initialized OpenSpec repository', async () => {
     const { root, bin } = await createRepo(true);
-    const result = await runScript('dev-pipeline-preflight.sh', [], root, bin);
+    const result = await runScript('preflight.mjs', [], root, bin);
     const payload = JSON.parse(result.stdout) as { status: string; rootSource: string };
 
     expect(result.code).toBe(0);
@@ -155,7 +155,7 @@ describe('opsx-dev-pipeline script contracts', () => {
 
   it('returns structured JSON when status output is invalid', async () => {
     const { root, bin } = await createRepo(true);
-    const result = await runScript('dev-pipeline-instructions.sh', ['demo-change'], root, bin, {
+    const result = await runScript('instructions.mjs', ['demo-change'], root, bin, {
       MOCK_STATUS_JSON: 'not-json',
     });
 
@@ -166,7 +166,7 @@ describe('opsx-dev-pipeline script contracts', () => {
 
   it('returns structured JSON when no artifact is ready', async () => {
     const { root, bin } = await createRepo(true);
-    const result = await runScript('dev-pipeline-instructions.sh', ['demo-change'], root, bin, {
+    const result = await runScript('instructions.mjs', ['demo-change'], root, bin, {
       MOCK_STATUS_JSON: JSON.stringify({ artifacts: [] }),
     });
 
@@ -174,9 +174,20 @@ describe('opsx-dev-pipeline script contracts', () => {
     expect(JSON.parse(result.stdout).reason).toBe('no-ready-artifact');
   });
 
+  it('returns structured JSON when the artifact list has an invalid shape', async () => {
+    const { root, bin } = await createRepo(true);
+    const result = await runScript('instructions.mjs', ['demo-change'], root, bin, {
+      MOCK_STATUS_JSON: JSON.stringify({ artifacts: {} }),
+    });
+
+    expect(result.code).toBe(4);
+    expect(JSON.parse(result.stdout).reason).toBe('no-ready-artifact');
+    expect(result.stderr).toBe('');
+  });
+
   it('rejects damaged archive JSON without losing the failure reason', async () => {
     const { root, bin } = await createRepo(true);
-    const result = await runScript('dev-pipeline-archive.sh', ['demo-change', '-y'], root, bin, {
+    const result = await runScript('archive.mjs', ['demo-change', '-y'], root, bin, {
       MOCK_ARCHIVE_JSON: 'archive complete but not json',
     });
 
@@ -187,7 +198,7 @@ describe('opsx-dev-pipeline script contracts', () => {
 
   it('preserves structured JSON when the wrapped archive command fails', async () => {
     const { root, bin } = await createRepo(true);
-    const result = await runScript('dev-pipeline-archive.sh', ['demo-change', '-y'], root, bin, {
+    const result = await runScript('archive.mjs', ['demo-change', '-y'], root, bin, {
       MOCK_ARCHIVE_EXIT: '9',
     });
 
@@ -202,7 +213,7 @@ describe('opsx-dev-pipeline script contracts', () => {
 
   it('returns structured JSON for a missing change argument', async () => {
     const { root, bin } = await createRepo(true);
-    const result = await runScript('dev-pipeline-change-status.sh', [], root, bin);
+    const result = await runScript('change-status.mjs', [], root, bin);
 
     expect(result.code).toBe(4);
     expect(JSON.parse(result.stdout).reason).toBe('missing-argument');
@@ -213,7 +224,7 @@ describe('opsx-dev-pipeline script contracts', () => {
     const subdir = path.join(root, 'packages/api');
     await fs.ensureDir(subdir);
     const result = await runScript(
-      'dev-pipeline-instructions.sh',
+      'instructions.mjs',
       ['demo-change', 'proposal'],
       subdir,
       bin,

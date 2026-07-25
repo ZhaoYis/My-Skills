@@ -99,8 +99,8 @@ describe('E2E recovery - Archive with pending tasks', () => {
 function runArchive(env: TestEnvironment, changeName: string): Promise<CommandResult> {
   return new Promise((resolve) => {
     execFile(
-      '/bin/bash',
-      [path.join(env.skillRoot, 'scripts/dev-pipeline-archive.sh'), changeName, '-y'],
+      process.execPath,
+      [path.join(env.skillRoot, 'scripts/archive.mjs'), changeName, '-y'],
       {
         cwd: env.rootDir,
         env: {

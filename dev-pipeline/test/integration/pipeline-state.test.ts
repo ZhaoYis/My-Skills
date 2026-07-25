@@ -46,7 +46,7 @@ describe('pipeline state machine', () => {
     expect((await state('transition', 'demo-change', '1', '3')).code).toBe(0);
 
     const noProposalApproval = await state('transition', 'demo-change', '2', '6');
-    expect(noProposalApproval.code).toBe(4);
+    expect(noProposalApproval.code).toBe(11);
     expect(noProposalApproval.payload.reason).toBe('proposal-approval-required');
 
     await state('decision', 'demo-change', 'proposalApproved', 'true');
@@ -95,7 +95,7 @@ describe('pipeline state machine', () => {
 
     const invalid = await state('transition', 'resume-change', '4', '13');
 
-    expect(invalid.code).toBe(4);
+    expect(invalid.code).toBe(11);
     expect(invalid.payload.reason).toBe('pipeline-transition-not-allowed');
 
     await state('pause', 'resume-change', 'waiting for user');
@@ -119,7 +119,7 @@ describe('pipeline state machine', () => {
       expect((await state('attempt', `${scope}-limit`, scope, status)).code).toBe(0);
       const third = await state('attempt', `${scope}-limit`, scope, status);
 
-      expect(third.code).toBe(4);
+      expect(third.code).toBe(11);
       expect(third.payload.reason).toBe(reason);
       const current = await state('get', `${scope}-limit`);
       const currentState = current.payload.state as {

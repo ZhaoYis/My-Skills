@@ -58,7 +58,7 @@ async function executePhase0(
   env: TestEnvironment,
   scenario: ScenarioConfig,
 ): Promise<Record<string, unknown>> {
-  const preflight = await runSkillScript(env, 'dev-pipeline-preflight.sh');
+  const preflight = await runSkillScript(env, 'preflight.mjs');
   await runState(env, 'init', scenario.changeName, env.sourceBranch);
   await runState(env, 'transition', scenario.changeName, '1', '3');
   return { preflight };
@@ -69,7 +69,7 @@ async function executePhase1(
   scenario: ScenarioConfig,
 ): Promise<Record<string, unknown>> {
   await runState(env, 'decision', scenario.changeName, 'requirementsConfirmed', 'true');
-  await runSkillScript(env, 'dev-pipeline-new-change.sh', scenario.changeName);
+  await runSkillScript(env, 'new-change.mjs', scenario.changeName);
   const changeDir = path.join(env.rootDir, 'openspec', 'changes', scenario.changeName);
   await fs.ensureDir(path.join(changeDir, 'specs'));
   await fs.writeFile(
@@ -90,7 +90,7 @@ async function executePhase1(
   );
   const validation = await runSkillScript(
     env,
-    'dev-pipeline-validate-change.sh',
+    'validate-change.mjs',
     scenario.changeName,
   );
   await runState(env, 'decision', scenario.changeName, 'proposalApproved', 'true');
@@ -104,7 +104,7 @@ async function executePhase2(
 ): Promise<Record<string, unknown>> {
   const instructions = await runSkillScript(
     env,
-    'dev-pipeline-instructions-apply.sh',
+    'instructions-apply.mjs',
     scenario.changeName,
   );
   await addDueDate(path.join(env.rootDir, 'backend/src/models/todo.ts'));
@@ -118,7 +118,7 @@ async function executePhase2(
   );
   const tasks = await fs.readFile(tasksPath, 'utf8');
   await fs.writeFile(tasksPath, tasks.replaceAll('- [ ]', '- [x]'));
-  await runSkillScript(env, 'dev-pipeline-validate-change.sh', scenario.changeName);
+  await runSkillScript(env, 'validate-change.mjs', scenario.changeName);
   await runState(env, 'decision', scenario.changeName, 'implementationConfirmed', 'true');
   await runState(env, 'decision', scenario.changeName, 'reviewDisposition', '"review"');
   await runState(env, 'transition', scenario.changeName, '3', '9');
@@ -158,10 +158,10 @@ async function executePhase5(
   const verify = await runNpm(env, 'run', 'verify');
   await runState(env, 'set', scenario.changeName, 'verify.command', '"npm run verify"');
   await runState(env, 'attempt', scenario.changeName, 'verify', 'passed');
-  await runSkillScript(env, 'dev-pipeline-change-status.sh', scenario.changeName);
+  await runSkillScript(env, 'change-status.mjs', scenario.changeName);
   const archive = await runSkillScript(
     env,
-    'dev-pipeline-archive.sh',
+    'archive.mjs',
     scenario.changeName,
     '-y',
   );
@@ -234,7 +234,7 @@ async function runSkillScript(
   ...args: string[]
 ): Promise<Record<string, unknown>> {
   const result = await execFileAsync(
-    'bash',
+    process.execPath,
     [path.join(env.skillRoot, 'scripts', script), ...args],
     { cwd: env.rootDir, env: commandEnv(env) },
   );

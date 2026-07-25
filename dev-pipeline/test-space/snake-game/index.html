@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐍 贪吃蛇</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --border: #334155;
+            --text: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --accent: #22d3ee;
+            --food: #f43f5e;
+            --snake-head: #10b981;
+            --snake-body-1: #34d399;
+            --snake-body-2: #6ee7b7;
+            --danger: #ef4444;
+            --overlay: rgba(15, 23, 42, 0.85);
+            /* ^^^ fallback values for initial paint; skin system injects them at runtime */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            /* ambient glow gradients are set dynamically by JS skin system */
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* ── Header ── */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .title {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, var(--snake-head), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .score-panel {
+            display: flex;
+            gap: 16px;
+        }
+
+        .score-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 18px;
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .score-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            margin-bottom: 2px;
+        }
+
+        .score-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .score-value.current {
+            color: var(--accent);
+        }
+
+        .score-value.best {
+            color: #fbbf24;
+        }
+
+        /* ── Game Canvas ── */
+        .canvas-wrapper {
+            position: relative;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow:
+                0 0 0 1px rgba(51, 65, 85, 0.5),
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                0 0 80px rgba(34, 211, 238, 0.05);
+        }
+
+        canvas {
+            display: block;
+        }
+
+        /* ── Overlay ── */
+        .overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--overlay);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            gap: 16px;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .overlay.active {
+            pointer-events: auto;
+            opacity: 1;
+        }
+
+        .overlay-title {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .overlay-title.game-over {
+            color: var(--danger);
+        }
+
+        .overlay-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        .overlay-subtitle .highlight {
+            color: #fbbf24;
+            font-weight: 700;
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            padding: 12px 32px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: 0.02em;
+            outline: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--snake-head), #059669);
+            color: white;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: #334155;
+        }
+
+        /* ── Controls Info ── */
+        .controls-info {
+            display: flex;
+            gap: 24px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .key-hint {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .key-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            padding: 3px 7px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            font-family: inherit;
+            color: var(--text);
+            min-width: 24px;
+        }
+
+        .key-group {
+            display: flex;
+            gap: 3px;
+        }
+
+        /* ── Mobile D-Pad ── */
+        .dpad {
+            display: none;
+            position: relative;
+            width: 160px;
+            height: 160px;
+        }
+
+        .dpad-btn {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            transition: all 0.1s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .dpad-btn:active {
+            background: #334155;
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: scale(0.92);
+        }
+
+        .dpad-up    { top: 0;   left: 55px; }
+        .dpad-down  { bottom: 0; left: 55px; }
+        .dpad-left  { top: 55px; left: 0;   }
+        .dpad-right { top: 55px; right: 0;  }
+
+        /* ── Skin Selector ── */
+        .skin-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .skin-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.05em;
+        }
+
+        .skin-swatch {
+            position: relative;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 0;
+            outline: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+        }
+
+        .skin-swatch::before {
+            content: '';
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--snake-head);
+        }
+
+        .skin-swatch:hover {
+            transform: scale(1.15);
+            border-color: var(--text-secondary);
+        }
+
+        .skin-swatch:active {
+            transform: scale(0.95);
+        }
+
+        .skin-swatch.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent);
+        }
+
+        /* swatch tooltip */
+        .skin-swatch::after {
+            content: attr(data-name);
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 6px;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.2s ease;
+        }
+
+        .skin-swatch:hover::after {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 600px) {
+            .title { font-size: 1.5rem; }
+            .score-card { min-width: 60px; padding: 8px 12px; }
+            .score-value { font-size: 1.1rem; }
+            .dpad { display: block; }
+            .controls-info { display: none; }
+            .canvas-wrapper { border-radius: 12px; }
+            .skin-swatch { width: 44px; height: 44px; }
+            .skin-swatch::before { width: 24px; height: 24px; }
+        }
+
+        @media (min-width: 601px) {
+            .dpad { display: none; }
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            .dpad { display: block; }
+            .controls-info { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1 class="title">🐍 贪吃蛇</h1>
+            <div class="score-panel">
+                <div class="score-card">
+                    <div class="score-label">得分</div>
+                    <div class="score-value current" id="currentScore">0</div>
+                </div>
+                <div class="score-card">
+                    <div class="score-label">最高分</div>
+                    <div class="score-value best" id="bestScore">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Canvas -->
+        <div class="canvas-wrapper" id="canvasWrapper">
+            <canvas id="gameCanvas"></canvas>
+
+            <!-- Start Overlay -->
+            <div class="overlay active" id="startOverlay">
+                <div class="overlay-title">🐍 贪吃蛇</div>
+                <div class="overlay-subtitle">按下 <span style="color:#22d3ee;font-weight:700;">空格</span> 或点击按钮开始</div>
+                <button class="btn btn-primary" id="startBtn">开始游戏</button>
+            </div>
+
+            <!-- Game Over Overlay -->
+            <div class="overlay" id="gameOverOverlay">
+                <div class="overlay-title game-over">游戏结束</div>
+                <div class="overlay-subtitle">得分: <span class="highlight" id="finalScore">0</span></div>
+                <button class="btn btn-primary" id="restartBtn">再来一局</button>
+            </div>
+        </div>
+
+        <!-- Skin Selector -->
+        <div class="skin-selector" id="skinSelector">
+            <span class="skin-label">皮肤</span>
+            <button class="skin-swatch active" data-skin="classic" data-name="经典" aria-label="经典皮肤"></button>
+            <button class="skin-swatch" data-skin="retro" data-name="复古" aria-label="复古皮肤"></button>
+            <button class="skin-swatch" data-skin="midnight" data-name="午夜" aria-label="午夜皮肤"></button>
+            <button class="skin-swatch" data-skin="sunset" data-name="暖橙" aria-label="暖橙皮肤"></button>
+        </div>
+
+        <!-- Desktop Controls -->
+        <div class="controls-info">
+            <span class="key-hint">
+                移动:
+                <span class="key-group">
+                    <span class="key-badge">↑</span>
+                    <span class="key-badge">↓</span>
+                    <span class="key-badge">←</span>
+                    <span class="key-badge">→</span>
+                </span>
+                或
+                <span class="key-group">
+                    <span class="key-badge">W</span>
+                    <span class="key-badge">A</span>
+                    <span class="key-badge">S</span>
+                    <span class="key-badge">D</span>
+                </span>
+            </span>
+            <span class="key-hint">
+                暂停: <span class="key-badge">空格</span>
+            </span>
+        </div>
+
+        <!-- Mobile D-Pad -->
+        <div class="dpad" id="dpad">
+            <button class="dpad-btn dpad-up"    data-dir="up">▲</button>
+            <button class="dpad-btn dpad-down"  data-dir="down">▼</button>
+            <button class="dpad-btn dpad-left"  data-dir="left">◀</button>
+            <button class="dpad-btn dpad-right" data-dir="right">▶</button>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        // ─── Constants ──────────────────────────────
+        const GRID_SIZE = 20;
+        const CELL_SIZE = 20;  // px per cell — scales with canvas
+        const COLS = 25;
+        const ROWS = 25;
+        const BASE_SPEED = 110;  // ms per tick (lower = faster)
+        const SKIN_KEYS = Object.freeze(['classic', 'retro', 'midnight', 'sunset']);
+
+        // ─── Skin Registry ─────────────────────────
+        const SKINS = Object.freeze({
+            classic: {
+                id: 'classic',
+                name: '经典',
+                emoji: '🐍',
+                css: {
+                    '--bg': '#0f172a',
+                    '--surface': '#1e293b',
+                    '--border': '#334155',
+                    '--text': '#f1f5f9',
+                    '--text-secondary': '#94a3b8',
+                    '--accent': '#22d3ee',
+                    '--food': '#f43f5e',
+                    '--snake-head': '#10b981',
+                    '--danger': '#ef4444',
+                },
+                canvas: {
+                    boardBg: '#1e293b',
+                    gridColor: 'rgba(51, 65, 85, 0.3)',
+                    snakeHead: '#10b981',
+                    snakeBodyStart: { r: 16,  g: 185, b: 129 },
+                    snakeBodyEnd:   { r: 46,  g: 125, b: 79 },
+                    foodGlow:     'rgba(244, 63, 94, 0.5)',
+                    foodGlowMid:  'rgba(244, 63, 94, 0.15)',
+                    foodGradHigh: '#fda4af',
+                    foodGradMid:  '#f43f5e',
+                    foodGradDark: '#be123c',
+                    foodHighlight:'rgba(255,255,255,0.35)',
+                    particleHue: 25,
+                    particleHueRange: 20,
+                    eyeWhite: '#ffffff',
+                    eyePupil: '#0f172a',
+                    pauseBg: 'rgba(15, 23, 42, 0.6)',
+                    pauseText: '#f1f5f9',
+                    pauseSubtext: '#94a3b8',
+                },
+                ambientGlow1: 'rgba(34, 211, 238, 0.08)',
+                ambientGlow2: 'rgba(16, 185, 129, 0.06)',
+            },
+            retro: {
+                id: 'retro',
+                name: '复古',
+                emoji: '🕹️',
+                css: {
+                    '--bg': '#000000',
+                    '--surface': '#111111',
+                    '--border': '#333333',
+                    '--text': '#e0e0e0',
+                    '--text-secondary': '#888888',
+                    '--accent': '#00ff00',
+                    '--food': '#ffb000',
+                    '--snake-head': '#00ff00',
+                    '--danger': '#ff4444',
+                },
+                canvas: {
+                    boardBg: '#0a0a0a',
+                    gridColor: 'rgba(50, 50, 50, 0.4)',
+                    snakeHead: '#00ff00',
+                    snakeBodyStart: { r: 0,   g: 255, b: 0 },
+                    snakeBodyEnd:   { r: 0,   g: 140, b: 0 },
+                    foodGlow:     'rgba(255, 176, 0, 0.6)',
+                    foodGlowMid:  'rgba(255, 176, 0, 0.2)',
+                    foodGradHigh: '#ffeaa7',
+                    foodGradMid:  '#ffb000',
+                    foodGradDark: '#cc8800',
+                    foodHighlight:'rgba(255,255,255,0.4)',
+                    particleHue: 40,
+                    particleHueRange: 15,
+                    eyeWhite: '#ffffff',
+                    eyePupil: '#000000',
+                    pauseBg: 'rgba(0, 0, 0, 0.7)',
+                    pauseText: '#e0e0e0',
+                    pauseSubtext: '#888888',
+                },
+                ambientGlow1: 'rgba(0, 255, 0, 0.05)',
+                ambientGlow2: 'rgba(255, 176, 0, 0.03)',
+            },
+            midnight: {
+                id: 'midnight',
+                name: '午夜',
+                emoji: '🌙',
+                css: {
+                    '--bg': '#0b0b2e',
+                    '--surface': '#1a1a3e',
+                    '--border': '#2d2d5e',
+                    '--text': '#e8e8f0',
+                    '--text-secondary': '#9ca3af',
+                    '--accent': '#a78bfa',
+                    '--food': '#fbbf24',
+                    '--snake-head': '#a78bfa',
+                    '--danger': '#f87171',
+                },
+                canvas: {
+                    boardBg: '#1a1a3e',
+                    gridColor: 'rgba(99, 102, 241, 0.2)',
+                    snakeHead: '#a78bfa',
+                    snakeBodyStart: { r: 167, g: 139, b: 250 },
+                    snakeBodyEnd:   { r: 109, g: 70,  b: 190 },
+                    foodGlow:     'rgba(251, 191, 36, 0.6)',
+                    foodGlowMid:  'rgba(251, 191, 36, 0.18)',
+                    foodGradHigh: '#fde68a',
+                    foodGradMid:  '#fbbf24',
+                    foodGradDark: '#b8860b',
+                    foodHighlight:'rgba(255,255,255,0.35)',
+                    particleHue: 45,
+                    particleHueRange: 20,
+                    eyeWhite: '#ffffff',
+                    eyePupil: '#0b0b2e',
+                    pauseBg: 'rgba(11, 11, 46, 0.7)',
+                    pauseText: '#e8e8f0',
+                    pauseSubtext: '#9ca3af',
+                },
+                ambientGlow1: 'rgba(167, 139, 250, 0.08)',
+                ambientGlow2: 'rgba(99, 102, 241, 0.05)',
+            },
+            sunset: {
+                id: 'sunset',
+                name: '暖橙',
+                emoji: '🍊',
+                css: {
+                    '--bg': '#1c120d',
+                    '--surface': '#2d1f1a',
+                    '--border': '#4a3628',
+                    '--text': '#fdf0e6',
+                    '--text-secondary': '#b8a090',
+                    '--accent': '#f59e0b',
+                    '--food': '#22d3ee',
+                    '--snake-head': '#fb923c',
+                    '--danger': '#ef4444',
+                },
+                canvas: {
+                    boardBg: '#2d1f1a',
+                    gridColor: 'rgba(120, 90, 60, 0.25)',
+                    snakeHead: '#fb923c',
+                    snakeBodyStart: { r: 251, g: 146, b: 60 },
+                    snakeBodyEnd:   { r: 210, g: 80,  b: 20 },
+                    foodGlow:     'rgba(34, 211, 238, 0.5)',
+                    foodGlowMid:  'rgba(34, 211, 238, 0.15)',
+                    foodGradHigh: '#a5f0fc',
+                    foodGradMid:  '#22d3ee',
+                    foodGradDark: '#0891b2',
+                    foodHighlight:'rgba(255,255,255,0.35)',
+                    particleHue: 190,
+                    particleHueRange: 20,
+                    eyeWhite: '#ffffff',
+                    eyePupil: '#1c120d',
+                    pauseBg: 'rgba(28, 18, 13, 0.7)',
+                    pauseText: '#fdf0e6',
+                    pauseSubtext: '#b8a090',
+                },
+                ambientGlow1: 'rgba(251, 146, 60, 0.08)',
+                ambientGlow2: 'rgba(245, 158, 11, 0.04)',
+            },
+        });
+        let currentSkin = null;
+
+        // ─── DOM Elements ──────────────────────────
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const canvasWrapper = document.getElementById('canvasWrapper');
+        const startOverlay = document.getElementById('startOverlay');
+        const gameOverOverlay = document.getElementById('gameOverOverlay');
+        const currentScoreEl = document.getElementById('currentScore');
+        const bestScoreEl = document.getElementById('bestScore');
+        const finalScoreEl = document.getElementById('finalScore');
+
+        // ─── State ──────────────────────────────────
+        let snake = [];
+        let food = null;
+        let direction = { x: 1, y: 0 };
+        let nextDirection = { x: 1, y: 0 };
+        let score = 0;
+        let bestScore = 0;
+        let gameLoop = null;
+        let isRunning = false;
+        let isPaused = false;
+        let speed = BASE_SPEED;
+        let particles = [];
+        let growAmount = 0;  // pending growth segments
+        let lastRenderTime = 0;
+
+        // ─── Canvas Setup ──────────────────────────
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const canvasWidth = COLS * CELL_SIZE;
+        const canvasHeight = ROWS * CELL_SIZE;
+
+        canvas.width = canvasWidth * dpr;
+        canvas.height = canvasHeight * dpr;
+        canvas.style.width = canvasWidth + 'px';
+        canvas.style.height = canvasHeight + 'px';
+        ctx.scale(dpr, dpr);
+
+        // ─── Load Best Score ───────────────────────
+        try {
+            const saved = localStorage.getItem('snake-best-score');
+            if (saved) bestScore = parseInt(saved, 10) || 0;
+        } catch (e) { /* localStorage not available */ }
+        bestScoreEl.textContent = bestScore;
+
+        // ─── Skin System ───────────────────────────
+        function applySkin(id) {
+            const skin = SKINS[id] || SKINS.classic;
+            currentSkin = skin;
+
+            // Apply CSS variables to :root
+            Object.entries(skin.css).forEach(([k, v]) => {
+                document.documentElement.style.setProperty(k, v);
+            });
+
+            // Apply ambient background glow
+            document.body.style.backgroundImage = `
+                radial-gradient(ellipse at 50% 0%, ${skin.ambientGlow1} 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 100%, ${skin.ambientGlow2} 0%, transparent 60%)
+            `;
+
+            // Update swatch active states
+            document.querySelectorAll('.skin-swatch').forEach(btn => {
+                const isActive = btn.dataset.skin === id;
+                btn.classList.toggle('active', isActive);
+            });
+
+            // Persist
+            try { localStorage.setItem('snake-skin', id); } catch (e) {}
+
+            // Re-render if game isn't running
+            if (!isRunning) draw();
+        }
+
+        function cycleSkin() {
+            const currentIdx = SKIN_KEYS.indexOf(currentSkin?.id);
+            const nextIdx = (currentIdx + 1) % SKIN_KEYS.length;
+            applySkin(SKIN_KEYS[nextIdx]);
+        }
+
+        // Load saved skin or default
+        let savedSkin = 'classic';
+        try {
+            const stored = localStorage.getItem('snake-skin');
+            if (stored && SKINS[stored]) savedSkin = stored;
+        } catch (e) {}
+        applySkin(savedSkin);
+
+        // ─── Helpers ───────────────────────────────
+        function randomCell() {
+            return {
+                x: Math.floor(Math.random() * COLS),
+                y: Math.floor(Math.random() * ROWS),
+            };
+        }
+
+        function cellEquals(a, b) {
+            return a.x === b.x && a.y === b.y;
+        }
+
+        function snakeOccupies(cell) {
+            return snake.some(s => cellEquals(s, cell));
+        }
+
+        function spawnFood() {
+            let pos;
+            // Try a limited number of times to find an empty cell
+            for (let i = 0; i < 1000; i++) {
+                pos = randomCell();
+                if (!snakeOccupies(pos)) return pos;
+            }
+            // If the board is nearly full, scan all cells
+            for (let x = 0; x < COLS; x++) {
+                for (let y = 0; y < ROWS; y++) {
+                    if (!snakeOccupies({ x, y })) return { x, y };
+                }
+            }
+            return null; // board full — you win!
+        }
+
+        function spawnParticles(cell) {
+            const cx = cell.x * CELL_SIZE + CELL_SIZE / 2;
+            const cy = cell.y * CELL_SIZE + CELL_SIZE / 2;
+            const cs = currentSkin.canvas;
+            for (let i = 0; i < 8; i++) {
+                const angle = (Math.PI * 2 * i) / 8 + Math.random() * 0.3;
+                const dist = 3 + Math.random() * 6;
+                particles.push({
+                    x: cx,
+                    y: cy,
+                    vx: Math.cos(angle) * dist,
+                    vy: Math.sin(angle) * dist,
+                    life: 1,
+                    decay: 0.03 + Math.random() * 0.04,
+                    size: 2 + Math.random() * 3,
+                    color: `hsl(${cs.particleHue + Math.random() * cs.particleHueRange}, 90%, ${55 + Math.random() * 25}%)`,
+                });
+            }
+        }
+
+        // ─── Game Logic ────────────────────────────
+        function initGame() {
+            // Snake starts in the middle, going right
+            const startX = Math.floor(COLS / 2);
+            const startY = Math.floor(ROWS / 2);
+            snake = [
+                { x: startX, y: startY },
+                { x: startX - 1, y: startY },
+                { x: startX - 2, y: startY },
+            ];
+            direction = { x: 1, y: 0 };
+            nextDirection = { x: 1, y: 0 };
+            score = 0;
+            speed = BASE_SPEED;
+            growAmount = 0;
+            particles = [];
+            food = spawnFood();
+            currentScoreEl.textContent = '0';
+        }
+
+        function update() {
+            // Apply the queued direction
+            direction = { ...nextDirection };
+
+            // Calculate new head
+            const head = snake[0];
+            const newHead = {
+                x: head.x + direction.x,
+                y: head.y + direction.y,
+            };
+
+            // Wall collision — wrap around
+            // (Classic mode: game over on wall hit. Uncomment alternative below.)
+            if (newHead.x < 0 || newHead.x >= COLS || newHead.y < 0 || newHead.y >= ROWS) {
+                return gameOver();
+            }
+
+            // Self collision (check against current body except the tail, which will move away)
+            // But if we're growing, the tail doesn't move, so check full body
+            const bodyToCheck = growAmount > 0 ? snake : snake.slice(0, -1);
+            if (bodyToCheck.some(s => cellEquals(s, newHead))) {
+                return gameOver();
+            }
+
+            // Add new head
+            snake.unshift(newHead);
+
+            // Check food collision
+            if (food && cellEquals(newHead, food)) {
+                score += 10;
+                growAmount += 1;
+                speed = Math.max(45, BASE_SPEED - Math.floor(score / 100) * 8);
+                spawnParticles(food);
+                currentScoreEl.textContent = score;
+                food = spawnFood();
+                if (!food) return gameOver(true); // win
+            }
+
+            // Remove tail segments (or keep them if growing)
+            if (growAmount > 0) {
+                growAmount--;
+            } else {
+                snake.pop();
+            }
+        }
+
+        function gameOver(won = false) {
+            stopGameLoop();
+            isRunning = false;
+
+            if (won) {
+                // You filled the board!
+                finalScoreEl.textContent = score;
+                document.querySelector('#gameOverOverlay .overlay-title').textContent = '🎉 恭喜通关!';
+                document.querySelector('#gameOverOverlay .overlay-title').classList.remove('game-over');
+                document.querySelector('#gameOverOverlay .overlay-title').style.color = '#22d3ee';
+            } else {
+                document.querySelector('#gameOverOverlay .overlay-title').textContent = '游戏结束';
+                document.querySelector('#gameOverOverlay .overlay-title').classList.add('game-over');
+                document.querySelector('#gameOverOverlay .overlay-title').style.color = '';
+                finalScoreEl.textContent = score;
+            }
+
+            // Update best score
+            if (score > bestScore) {
+                bestScore = score;
+                bestScoreEl.textContent = bestScore;
+                try { localStorage.setItem('snake-best-score', bestScore); } catch (e) {}
+            }
+
+            gameOverOverlay.classList.add('active');
+        }
+
+        function stopGameLoop() {
+            if (gameLoop) {
+                cancelAnimationFrame(gameLoop);
+                gameLoop = null;
+            }
+        }
+
+        function startGameLoop() {
+            stopGameLoop();
+            let accumulator = 0;
+            let lastTick = performance.now();
+
+            function tick(now) {
+                if (!isRunning) return;
+
+                gameLoop = requestAnimationFrame(tick);
+
+                if (isPaused) {
+                    lastTick = now;
+                    accumulator = 0;
+                    draw();
+                    return;
+                }
+
+                const dt = now - lastTick;
+                lastTick = now;
+                accumulator += dt;
+
+                let updated = false;
+                while (accumulator >= speed) {
+                    accumulator -= speed;
+                    update();
+                    updated = true;
+                    if (!isRunning) return; // game over during update
+                }
+
+                // Update particles
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vx *= 0.92;
+                    p.vy *= 0.92;
+                    p.life -= p.decay;
+                    if (p.life <= 0) particles.splice(i, 1);
+                }
+
+                draw();
+            }
+
+            gameLoop = requestAnimationFrame(tick);
+        }
+
+        // ─── Drawing ────────────────────────────────
+        function draw() {
+            const w = canvasWidth;
+            const h = canvasHeight;
+
+            const cs = currentSkin.canvas;
+
+            // Clear
+            ctx.fillStyle = cs.boardBg;
+            ctx.fillRect(0, 0, w, h);
+
+            // Grid lines (subtle)
+            ctx.strokeStyle = cs.gridColor;
+            ctx.lineWidth = 0.5;
+            for (let x = 0; x <= COLS; x++) {
+                ctx.beginPath();
+                ctx.moveTo(x * CELL_SIZE, 0);
+                ctx.lineTo(x * CELL_SIZE, h);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= ROWS; y++) {
+                ctx.beginPath();
+                ctx.moveTo(0, y * CELL_SIZE);
+                ctx.lineTo(w, y * CELL_SIZE);
+                ctx.stroke();
+            }
+
+            // Food — pulsating glow
+            if (food) {
+                const fx = food.x * CELL_SIZE + CELL_SIZE / 2;
+                const fy = food.y * CELL_SIZE + CELL_SIZE / 2;
+                const pulse = 1 + 0.2 * Math.sin(performance.now() / 200);
+                const r = (CELL_SIZE / 2 - 2) * pulse;
+
+                // Outer glow
+                const glow = ctx.createRadialGradient(fx, fy, r * 0.3, fx, fy, r * 1.8);
+                glow.addColorStop(0, cs.foodGlow);
+                glow.addColorStop(0.5, cs.foodGlowMid);
+                glow.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(fx, fy, r * 1.8, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Food body
+                const foodGrad = ctx.createRadialGradient(fx - 1, fy - 1, 0, fx, fy, r);
+                foodGrad.addColorStop(0, cs.foodGradHigh);
+                foodGrad.addColorStop(0.4, cs.foodGradMid);
+                foodGrad.addColorStop(1, cs.foodGradDark);
+                ctx.fillStyle = foodGrad;
+                ctx.beginPath();
+                ctx.arc(fx, fy, r, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Highlight
+                ctx.fillStyle = cs.foodHighlight;
+                ctx.beginPath();
+                ctx.arc(fx - r * 0.25, fy - r * 0.25, r * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Snake
+            const totalLen = snake.length;
+            for (let i = snake.length - 1; i >= 0; i--) {
+                const seg = snake[i];
+                const sx = seg.x * CELL_SIZE;
+                const sy = seg.y * CELL_SIZE;
+                const pad = 1.5;
+                const segSize = CELL_SIZE - pad * 2;
+
+                // Color gradient from head to tail
+                let color;
+                if (i === 0) {
+                    color = cs.snakeHead;
+                } else {
+                    const t = i / Math.max(totalLen - 1, 1);
+                    const r = Math.round(cs.snakeBodyStart.r + t * (cs.snakeBodyEnd.r - cs.snakeBodyStart.r));
+                    const g = Math.round(cs.snakeBodyStart.g + t * (cs.snakeBodyEnd.g - cs.snakeBodyStart.g));
+                    const b = Math.round(cs.snakeBodyStart.b + t * (cs.snakeBodyEnd.b - cs.snakeBodyStart.b));
+                    color = `rgb(${r}, ${g}, ${b})`;
+                }
+
+                const rx = sx + pad;
+                const ry = sy + pad;
+                const r = i === 0 ? 5 : 4;
+
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.roundRect(rx, ry, segSize, segSize, r);
+                ctx.fill();
+
+                // Highlight on top
+                ctx.fillStyle = 'rgba(255,255,255,0.12)';
+                ctx.beginPath();
+                ctx.roundRect(rx + 2, ry + 1, segSize - 4, segSize / 3, 2);
+                ctx.fill();
+
+                // Head eyes
+                if (i === 0) {
+                    const eyeR = 2.5;
+                    const cx = sx + CELL_SIZE / 2;
+                    const cy = sy + CELL_SIZE / 2;
+                    let eyeOffX = 0, eyeOffY = 0;
+                    if (direction.x === 1)  { eyeOffX = 2; eyeOffY = 0; }
+                    if (direction.x === -1) { eyeOffX = -2; eyeOffY = 0; }
+                    if (direction.y === 1)  { eyeOffX = 0; eyeOffY = 2; }
+                    if (direction.y === -1) { eyeOffX = 0; eyeOffY = -2; }
+
+                    const eye1X = cx + eyeOffX - 4 + (eyeOffY !== 0 ? 4 : 0);
+                    const eye1Y = cy + eyeOffY - 4 + (eyeOffX !== 0 ? 4 : 0);
+                    const eye2X = cx + eyeOffX + 4 + (eyeOffY !== 0 ? 4 : 0);
+                    const eye2Y = cy + eyeOffY + 4 + (eyeOffX !== 0 ? 4 : 0);
+
+                    [ [eye1X, eye1Y], [eye2X, eye2Y] ].forEach(([ex, ey]) => {
+                        ctx.fillStyle = cs.eyeWhite;
+                        ctx.beginPath();
+                        ctx.arc(ex, ey, eyeR, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = cs.eyePupil;
+                        ctx.beginPath();
+                        ctx.arc(ex + eyeOffX * 0.8, ey + eyeOffY * 0.8, 1.3, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                }
+            }
+
+            // Particles
+            for (const p of particles) {
+                ctx.fillStyle = p.color.replace(')', `, ${p.life})`).replace('hsl', 'hsla');
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Paused indicator
+            if (isPaused && isRunning) {
+                ctx.fillStyle = cs.pauseBg;
+                ctx.fillRect(0, 0, w, h);
+                ctx.fillStyle = cs.pauseText;
+                ctx.font = 'bold 24px "Segoe UI", system-ui, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('已暂停', w / 2, h / 2 - 6);
+                ctx.font = '14px "Segoe UI", system-ui, sans-serif';
+                ctx.fillStyle = cs.pauseSubtext;
+                ctx.fillText('按空格键继续', w / 2, h / 2 + 22);
+                ctx.textAlign = 'start';
+            }
+        }
+
+        // ─── Input Handling ─────────────────────────
+        function changeDirection(dx, dy) {
+            if (!isRunning || isPaused) return;
+            // Prevent reversing into yourself
+            if (dx === -direction.x && dy === -direction.y && snake.length > 1) return;
+            nextDirection = { x: dx, y: dy };
+        }
+
+        function togglePause() {
+            if (!isRunning) return;
+            isPaused = !isPaused;
+        }
+
+        function startGame() {
+            initGame();
+            isRunning = true;
+            isPaused = false;
+            startOverlay.classList.remove('active');
+            gameOverOverlay.classList.remove('active');
+            startGameLoop();
+        }
+
+        // Keyboard
+        document.addEventListener('keydown', (e) => {
+            // Prevent scrolling with arrow keys
+            const keyMap = {
+                ArrowUp:    () => changeDirection(0, -1),
+                ArrowDown:  () => changeDirection(0, 1),
+                ArrowLeft:  () => changeDirection(-1, 0),
+                ArrowRight: () => changeDirection(1, 0),
+                w: () => changeDirection(0, -1),
+                W: () => changeDirection(0, -1),
+                s: () => changeDirection(0, 1),
+                S: () => changeDirection(0, 1),
+                a: () => changeDirection(-1, 0),
+                A: () => changeDirection(-1, 0),
+                d: () => changeDirection(1, 0),
+                D: () => changeDirection(1, 0),
+                ' ': () => {
+                    e.preventDefault();
+                    if (!isRunning) { startGame(); return; }
+                    togglePause();
+                },
+                t: () => cycleSkin(),
+                T: () => cycleSkin(),
+            };
+
+            const action = keyMap[e.key];
+            if (action) {
+                e.preventDefault();
+                action();
+            }
+        });
+
+        // Buttons
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('restartBtn').addEventListener('click', startGame);
+
+        // Skin swatches
+        document.querySelectorAll('.skin-swatch').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const skinId = btn.dataset.skin;
+                if (skinId) applySkin(skinId);
+            });
+        });
+
+        // D-Pad for mobile
+        document.querySelectorAll('.dpad-btn').forEach(btn => {
+            btn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                const dir = btn.dataset.dir;
+                const dirMap = {
+                    up:    { x: 0, y: -1 },
+                    down:  { x: 0, y: 1 },
+                    left:  { x: -1, y: 0 },
+                    right: { x: 1, y: 0 },
+                };
+                const d = dirMap[dir];
+                if (d) changeDirection(d.x, d.y);
+            });
+        });
+
+        // Touch swipe on canvas
+        let touchStartX = 0, touchStartY = 0;
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }
+        }, { passive: true });
+
+        canvas.addEventListener('touchend', (e) => {
+            if (!isRunning || isPaused) return;
+            const dx = (e.changedTouches[0]?.clientX || 0) - touchStartX;
+            const dy = (e.changedTouches[0]?.clientY || 0) - touchStartY;
+            const absDx = Math.abs(dx);
+            const absDy = Math.abs(dy);
+            const threshold = 20;
+
+            if (Math.max(absDx, absDy) < threshold) return;
+
+            if (absDx > absDy) {
+                changeDirection(dx > 0 ? 1 : -1, 0);
+            } else {
+                changeDirection(0, dy > 0 ? 1 : -1);
+            }
+        });
+
+        // ─── Draw initial state ────────────────────
+        initGame();
+        draw();
+    })();
+    </script>
+</body>
+</html>

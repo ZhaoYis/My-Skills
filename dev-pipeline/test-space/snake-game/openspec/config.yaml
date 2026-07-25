@@ -1,0 +1,18 @@
+schema: frontend
+context: |
+  Project: snake-game
+  Project Type: Frontend Application
+  Tech Stack: React 18+, TypeScript, Vite
+  Testing: Vitest + React Testing Library + Playwright (E2E)
+  Conventions: Functional components, hooks-first, CSS Modules or Tailwind
+  Code Quality: Biome for linting/formatting
+
+rules:
+  proposal:
+    - "Must include UI/UX impact analysis"
+    - "Must specify browser/device compatibility requirements"
+  specs:
+    - "Use Given/When/Then format for user interaction scenarios"
+  design:
+    - "Must include component tree diagram or description"
+    - "Must specify route design and state management strategy"

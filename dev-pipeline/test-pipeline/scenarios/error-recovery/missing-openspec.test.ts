@@ -28,8 +28,8 @@ describe('E2E recovery - OpenSpec dependency missing', () => {
 
   it('returns the stable dependency error from the installed preflight script', async () => {
     const result = await runCommand(
-      '/bin/bash',
-      [path.join(env.skillRoot, 'scripts/dev-pipeline-preflight.sh')],
+      process.execPath,
+      [path.join(env.skillRoot, 'scripts/preflight.mjs')],
       env.rootDir,
       { ...process.env, PATH: '/usr/bin:/bin' },
     );

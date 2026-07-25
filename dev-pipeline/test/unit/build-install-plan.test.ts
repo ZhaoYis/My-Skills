@@ -122,7 +122,7 @@ describe('buildInstallPlan', () => {
             skillsDir,
             'opsx-dev-pipeline',
             'scripts',
-            'dev-pipeline-archive.sh',
+            'archive.mjs',
           ),
       ),
     ).toBe(true);
@@ -135,7 +135,7 @@ describe('buildInstallPlan', () => {
             skillsDir,
             'opsx-dev-pipeline',
             'scripts',
-            'dev-pipeline-preflight.sh',
+            'preflight.mjs',
           ),
       ),
     ).toBe(true);

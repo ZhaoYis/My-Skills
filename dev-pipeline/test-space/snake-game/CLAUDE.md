@@ -1,0 +1,23 @@
+# CLAUDE.md
+
+This repository was initialized for Claude Code via opsx-dev-pipeline.
+
+## Quick Start
+
+- Skills directory: `.claude/skills`
+- Commands directory: `.claude/commands`
+- Start a change: `/opsx-dev-pipeline` — drives the full OpenSpec + Git pipeline (Phase0–6)
+
+## Pipeline Overview
+
+| Phase| Description |
+|-------|-------------|
+| 0 | Entrance — preflight checks |
+| 1 | Propose — create change and generate artifacts |
+| 2 | Apply — implement tasks with self-review gate |
+| 3 | Review — multi-dimension code review |
+| 4 | Unit Tests — test identification and execution gate |
+| 5 | Archive — verify, delta spec sync, and archive |
+| 6 | Merge & Push — commit, push, optional merge and tag |
+
+Run `/opsx-dev-pipeline` with a requirement description or an existing change name to begin.

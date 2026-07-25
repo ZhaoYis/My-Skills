@@ -176,7 +176,7 @@ export function getPhaseSpecificInstructions(
       return `\
 ## Specific Tasks for Phase0 — Entrance
 
-1. Run: \`bash ${context.skillRoot}/scripts/dev-pipeline-preflight.sh\`
+1. Run: \`node ${context.skillRoot}/scripts/preflight.mjs\`
 2. Initialize persistent state with the current source branch
 3. Transition state to Phase1 Step3
 4. Verify every command returns valid JSON`;
@@ -185,24 +185,24 @@ export function getPhaseSpecificInstructions(
       return `\
 ## Specific Tasks for Phase1 — Propose
 
-1. Run: \`bash ${context.skillRoot}/scripts/dev-pipeline-new-change.sh "${changeName}"\`
-2. Run: \`bash ${context.skillRoot}/scripts/dev-pipeline-change-status.sh "${changeName}"\`
+1. Run: \`node ${context.skillRoot}/scripts/new-change.mjs "${changeName}"\`
+2. Run: \`node ${context.skillRoot}/scripts/change-status.mjs "${changeName}"\`
 3. Generate proposal.md in \`openspec/changes/${changeName}/\`
 4. Generate tasks.md with checkbox items
-5. Run: \`bash ${context.skillRoot}/scripts/dev-pipeline-validate-change.sh "${changeName}"\`
+5. Run: \`node ${context.skillRoot}/scripts/validate-change.mjs "${changeName}"\`
 6. Record requirementsConfirmed and proposalApproved before transitioning to Phase2`;
 
     case 'phase-2-apply':
       return `\
 ## Specific Tasks for Phase2 — Apply
 
-1. Run: \`bash ${context.skillRoot}/scripts/dev-pipeline-instructions-apply.sh "${changeName}"\`
+1. Run: \`node ${context.skillRoot}/scripts/instructions-apply.mjs "${changeName}"\`
 2. Read tasks.md and implement each task in order
 3. For each task: write code → self-review → mark [x]
 4. Feature "${featureDescription}" — implement the actual code changes to:
    - Backend: models, routes, tests
    - Frontend: components, API client, tests
-5. After all tasks, run: \`bash ${context.skillRoot}/scripts/dev-pipeline-validate-change.sh "${changeName}"\`
+5. After all tasks, run: \`node ${context.skillRoot}/scripts/validate-change.mjs "${changeName}"\`
 6. Record implementationConfirmed and reviewDisposition before transitioning`;
 
     case 'phase-3-review':
@@ -234,10 +234,10 @@ export function getPhaseSpecificInstructions(
       return `\
 ## Specific Tasks for Phase5 — Archive
 
-1. Run: \`bash ${context.skillRoot}/scripts/dev-pipeline-change-status.sh "${changeName}"\`
+1. Run: \`node ${context.skillRoot}/scripts/change-status.mjs "${changeName}"\`
 2. Resolve the verify command from \`openspec/config.yaml\` and project build files
 3. Run verify and require success
-4. Run: \`bash ${context.skillRoot}/scripts/dev-pipeline-archive.sh "${changeName}" -y\`
+4. Run: \`node ${context.skillRoot}/scripts/archive.mjs "${changeName}" -y\`
 5. Persist verify status, actual archive path, and postArchiveAction before Phase6`;
 
     case 'phase-6-merge-push':

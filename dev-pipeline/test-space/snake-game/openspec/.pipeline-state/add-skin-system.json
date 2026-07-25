@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "changeName": "add-skin-system",
+  "sourceBranch": "master",
+  "targetBranch": null,
+  "currentPhase": 6,
+  "currentStep": 20,
+  "status": "completed",
+  "decisions": {
+    "requirementsConfirmed": true,
+    "proposalApproved": true,
+    "implementationConfirmed": true,
+    "reviewDisposition": "review",
+    "postArchiveAction": "push-only",
+    "commitApproved": true
+  },
+  "review": {
+    "round": 1,
+    "reportPath": "openspec/review/2026-07-25-22-48-master-pipeline-review.md",
+    "status": "passed"
+  },
+  "tests": {
+    "command": null,
+    "attempts": 0,
+    "status": "skipped",
+    "detail": "skipped: no test framework in vanilla HTML/JS project; skin system verified via browser E2E (swatch click, T key, persistence, 0 JS errors)"
+  },
+  "verify": {
+    "command": null,
+    "attempts": 0,
+    "status": "skipped",
+    "detail": "manual: page loads without errors, skin switch verified via browser E2E"
+  },
+  "archivePath": "openspec/changes/archive/2026-07-25-add-skin-system",
+  "delivery": {
+    "commitSha": "3eafd2153b66ea1d032c3b9fc4c99eb36d44818b",
+    "mergeCommitSha": null,
+    "sourcePushed": false,
+    "targetPushed": false,
+    "tag": null
+  },
+  "createdAt": "2026-07-25T14:39:29.324Z",
+  "updatedAt": "2026-07-25T14:52:10.168Z"
+}

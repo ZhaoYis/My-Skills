@@ -1,13 +1,10 @@
-#!/usr/bin/env node
-
-import { execFileSync } from 'node:child_process';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { emitError, getRepoRoot, validateChangeName } from './pipeline-lib.mjs';
 
-const EXIT_NOT_GIT_REPO = 2;
-const EXIT_STATE_NOT_FOUND = 3;
-const EXIT_INVALID_TRANSITION = 4;
-const EXIT_STATE_IO = 5;
+const EXIT_STATE_NOT_FOUND = 10;
+const EXIT_INVALID_TRANSITION = 11;
+const EXIT_STATE_IO = 12;
 
 const mutablePaths = new Set([
   'sourceBranch',
@@ -33,40 +30,6 @@ function output(payload, exitCode = 0) {
   process.exitCode = exitCode;
 }
 
-function fail(reason, detail, nextAction, exitCode) {
-  output({ status: 'error', reason, detail, nextAction }, exitCode);
-}
-
-function validateChangeName(changeName) {
-  if (
-    typeof changeName !== 'string' ||
-    changeName.length === 0 ||
-    changeName.length > 64 ||
-    !/^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/.test(changeName)
-  ) {
-    fail(
-      'invalid-change-name',
-      'change 名称必须是 1-64 位 kebab-case',
-      'choose-valid-change-name',
-      EXIT_INVALID_TRANSITION,
-    );
-    return false;
-  }
-  return true;
-}
-
-function repoRoot() {
-  try {
-    return execFileSync('git', ['rev-parse', '--show-toplevel'], {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
-  } catch {
-    fail('not-a-git-repo', '当前目录不在 Git 仓库内', 'init-git-or-cd', EXIT_NOT_GIT_REPO);
-    return null;
-  }
-}
-
 function statePath(root, changeName) {
   return path.join(root, 'openspec', '.pipeline-state', `${changeName}.json`);
 }
@@ -77,14 +40,14 @@ async function loadState(root, changeName) {
     return JSON.parse(raw);
   } catch (error) {
     if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      fail(
+      emitError(
         'pipeline-state-not-found',
         `找不到 change ${changeName} 的流水线状态`,
         'initialize-or-reconstruct-state',
         EXIT_STATE_NOT_FOUND,
       );
     } else {
-      fail(
+      emitError(
         'pipeline-state-invalid',
         `无法读取流水线状态：${String(error)}`,
         'repair-state-file',
@@ -105,7 +68,7 @@ async function saveState(root, state) {
     await writeFile(temporary, `${JSON.stringify(state, null, 2)}\n`, { mode: 0o600 });
     await rename(temporary, target);
   } catch (error) {
-    fail(
+    emitError(
       'pipeline-state-write-failed',
       `无法写入流水线状态：${String(error)}`,
       'check-file-permissions',
@@ -182,17 +145,16 @@ const attemptRules = {
 };
 
 const [command, changeName, ...args] = process.argv.slice(2);
-if (!command || !validateChangeName(changeName)) {
-  if (!command) {
-    fail(
-      'missing-command',
-      '用法：dev-pipeline-state.mjs <init|get|decision|set|attempt|transition|pause|complete> <change>',
-      'provide-state-command',
-      EXIT_INVALID_TRANSITION,
-    );
-  }
+if (!command) {
+  emitError(
+    'missing-command',
+    '用法：dev-pipeline-state.mjs <init|get|decision|set|attempt|transition|pause|complete> <change>',
+    'provide-state-command',
+    EXIT_INVALID_TRANSITION,
+  );
 } else {
-  const root = repoRoot();
+  validateChangeName(changeName, EXIT_INVALID_TRANSITION);
+  const root = getRepoRoot();
   if (root) {
     if (command === 'init') {
       let existingState = null;
@@ -200,7 +162,7 @@ if (!command || !validateChangeName(changeName)) {
         existingState = JSON.parse(await readFile(statePath(root, changeName), 'utf8'));
       } catch (error) {
         if (!(error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT')) {
-          fail(
+          emitError(
             'pipeline-state-invalid',
             `已有状态无法解析：${String(error)}`,
             'repair-state-file',
@@ -246,7 +208,7 @@ if (!command || !validateChangeName(changeName)) {
         } else if (command === 'decision') {
           const [key, rawValue] = args;
           if (!key || rawValue === undefined || !/^[A-Za-z][A-Za-z0-9]*$/.test(key)) {
-            fail(
+            emitError(
               'invalid-decision',
               'decision 需要合法 key 和 JSON value',
               'provide-decision',
@@ -259,7 +221,7 @@ if (!command || !validateChangeName(changeName)) {
         } else if (command === 'set') {
           const [fieldPath, rawValue] = args;
           if (!mutablePaths.has(fieldPath) || rawValue === undefined) {
-            fail(
+            emitError(
               'invalid-state-field',
               `不允许修改状态字段：${fieldPath ?? ''}`,
               'choose-supported-state-field',
@@ -273,7 +235,7 @@ if (!command || !validateChangeName(changeName)) {
           const [scope, attemptStatus] = args;
           const rule = attemptRules[scope];
           if (!rule || !rule.statuses.includes(attemptStatus)) {
-            fail(
+            emitError(
               'invalid-attempt',
               'attempt 需要 scope=review|tests|verify 和对应的合法状态',
               'provide-valid-attempt',
@@ -308,15 +270,20 @@ if (!command || !validateChangeName(changeName)) {
         } else if (command === 'transition') {
           const toPhase = Number(args[0]);
           const toStep = Number(args[1]);
-          if (!Number.isInteger(toPhase) || toPhase < 0 || toPhase > 6 || !Number.isInteger(toStep)) {
-            fail(
+          if (
+            !Number.isInteger(toPhase) ||
+            toPhase < 0 ||
+            toPhase > 6 ||
+            !Number.isInteger(toStep)
+          ) {
+            emitError(
               'invalid-transition-target',
               '目标 Phase 必须为 0-6，Step 必须为整数',
               'choose-valid-transition',
               EXIT_INVALID_TRANSITION,
             );
           } else if (!allowedTransition(state.currentPhase, toPhase)) {
-            fail(
+            emitError(
               'pipeline-transition-not-allowed',
               `不允许从 Phase${state.currentPhase} 跳转到 Phase${toPhase}`,
               'follow-pipeline-transitions',
@@ -325,7 +292,12 @@ if (!command || !validateChangeName(changeName)) {
           } else {
             const gateError = validateGates(state, state.currentPhase, toPhase);
             if (gateError) {
-              fail(gateError[0], gateError[1], 'complete-required-gate', EXIT_INVALID_TRANSITION);
+              emitError(
+                gateError[0],
+                gateError[1],
+                'complete-required-gate',
+                EXIT_INVALID_TRANSITION,
+              );
             } else {
               state.currentPhase = toPhase;
               state.currentStep = toStep;
@@ -339,7 +311,7 @@ if (!command || !validateChangeName(changeName)) {
           if (await saveState(root, state)) output({ status: 'ok', state });
         } else if (command === 'complete') {
           if (state.currentPhase !== 6) {
-            fail(
+            emitError(
               'pipeline-not-delivered',
               '只有 Phase6 可以标记流水线完成',
               'finish-delivery-phase',
@@ -350,7 +322,7 @@ if (!command || !validateChangeName(changeName)) {
             if (await saveState(root, state)) output({ status: 'ok', state });
           }
         } else {
-          fail(
+          emitError(
             'unknown-state-command',
             `未知状态命令：${command}`,
             'choose-supported-state-command',

@@ -78,8 +78,8 @@ const toolExpectations = {
     { path: '.claude/skills/opsx-dev-pipeline/SKILL.md', present: true },
     { path: '.claude/skills/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
     { path: '.claude/skills/opsx-dev-pipeline/references/phase-6-merge-push.md', present: true },
-    { path: '.claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', present: true },
-    { path: '.claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-archive.sh', present: true },
+    { path: '.claude/skills/opsx-dev-pipeline/scripts/preflight.mjs', present: true },
+    { path: '.claude/skills/opsx-dev-pipeline/scripts/archive.mjs', present: true },
     { path: '.claude/skills/opsx-dev-pipeline/agents/openai.yaml', present: true },
     { path: '.claude/commands/opsx-dev-pipeline.md', present: true },
   ],
@@ -88,8 +88,8 @@ const toolExpectations = {
     { path: '.cursor/rules/opsx-dev-pipeline/SKILL.md', present: true },
     { path: '.cursor/rules/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
     { path: '.cursor/rules/opsx-dev-pipeline/references/phase-6-merge-push.md', present: true },
-    { path: '.cursor/rules/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', present: true },
-    { path: '.cursor/rules/opsx-dev-pipeline/scripts/dev-pipeline-archive.sh', present: true },
+    { path: '.cursor/rules/opsx-dev-pipeline/scripts/preflight.mjs', present: true },
+    { path: '.cursor/rules/opsx-dev-pipeline/scripts/archive.mjs', present: true },
     { path: '.cursor/rules/opsx-dev-pipeline/agents/openai.yaml', present: true },
     { path: '.cursor/commands/opsx-dev-pipeline.md', present: true },
     { path: '.cursor/commands/README.md', present: true },
@@ -99,8 +99,8 @@ const toolExpectations = {
     { path: '.codex/prompts/opsx-dev-pipeline/SKILL.md', present: true },
     { path: '.codex/prompts/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
     { path: '.codex/prompts/opsx-dev-pipeline/references/phase-6-merge-push.md', present: true },
-    { path: '.codex/prompts/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', present: true },
-    { path: '.codex/prompts/opsx-dev-pipeline/scripts/dev-pipeline-archive.sh', present: true },
+    { path: '.codex/prompts/opsx-dev-pipeline/scripts/preflight.mjs', present: true },
+    { path: '.codex/prompts/opsx-dev-pipeline/scripts/archive.mjs', present: true },
     { path: '.codex/prompts/opsx-dev-pipeline/agents/openai.yaml', present: true },
     { path: '.codex/commands/opsx-dev-pipeline.md', present: true },
     { path: '.codex/commands/README.md', present: true },
@@ -312,8 +312,8 @@ describe('tool matrix', () => {
 
     // Verify scripts directory exists with essential scripts
     const scriptsDir = path.join(skillRoot, 'scripts');
-    expect(await fs.pathExists(path.join(scriptsDir, 'dev-pipeline-preflight.sh'))).toBe(true);
-    expect(await fs.pathExists(path.join(scriptsDir, 'dev-pipeline-archive.sh'))).toBe(true);
+    expect(await fs.pathExists(path.join(scriptsDir, 'preflight.mjs'))).toBe(true);
+    expect(await fs.pathExists(path.join(scriptsDir, 'archive.mjs'))).toBe(true);
   });
 
   it('renders tool display name in retained skills without template variables', async () => {

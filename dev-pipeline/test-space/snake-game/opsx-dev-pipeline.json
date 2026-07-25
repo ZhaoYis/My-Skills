@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "projectName": "snake-game",
+  "tool": "claude",
+  "stack": "frontend",
+  "features": [
+    "base",
+    "skills",
+    "commands",
+    "docs",
+    "schema"
+  ],
+  "templateVersion": "0.2.0",
+  "packageName": "opsx-dev-pipeline",
+  "managedAssets": [
+    {
+      "id": "common-readme",
+      "destination": "README.md"
+    },
+    {
+      "id": "common-gitignore",
+      "destination": ".gitignore"
+    },
+    {
+      "id": "frontend-schema-bundle:schema.yaml.hbs",
+      "destination": "openspec/schemas/frontend/schema.yaml"
+    },
+    {
+      "id": "frontend-schema-bundle:templates/design.md.hbs",
+      "destination": "openspec/schemas/frontend/templates/design.md"
+    },
+    {
+      "id": "frontend-schema-bundle:templates/proposal.md.hbs",
+      "destination": "openspec/schemas/frontend/templates/proposal.md"
+    },
+    {
+      "id": "frontend-schema-bundle:templates/spec.md.hbs",
+      "destination": "openspec/schemas/frontend/templates/spec.md"
+    },
+    {
+      "id": "frontend-schema-bundle:templates/tasks.md.hbs",
+      "destination": "openspec/schemas/frontend/templates/tasks.md"
+    },
+    {
+      "id": "stack-config",
+      "destination": "openspec/config.yaml"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:SKILL.md.hbs",
+      "destination": ".claude/skills/opsx-dev-pipeline/SKILL.md"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:agents/openai.yaml",
+      "destination": ".claude/skills/opsx-dev-pipeline/agents/openai.yaml"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:references/phase-0-entrance.md",
+      "destination": ".claude/skills/opsx-dev-pipeline/references/phase-0-entrance.md"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:references/phase-1-propose.md",
+      "destination": ".claude/skills/opsx-dev-pipeline/references/phase-1-propose.md"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:references/phase-2-apply.md",
+      "destination": ".claude/skills/opsx-dev-pipeline/references/phase-2-apply.md"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:references/phase-3-review.md",
+      "destination": ".claude/skills/opsx-dev-pipeline/references/phase-3-review.md"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:references/phase-4-unit-tests.md",
+      "destination": ".claude/skills/opsx-dev-pipeline/references/phase-4-unit-tests.md"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:references/phase-5-archive.md",
+      "destination": ".claude/skills/opsx-dev-pipeline/references/phase-5-archive.md"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:references/phase-6-merge-push.md",
+      "destination": ".claude/skills/opsx-dev-pipeline/references/phase-6-merge-push.md"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-archive.sh",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-archive.sh"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-change-status.sh",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-change-status.sh"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-instructions-apply.sh",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-instructions-apply.sh"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-instructions.sh",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-instructions.sh"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-lib.sh",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-lib.sh"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-list-changes.sh",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-list-changes.sh"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-new-change.sh",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-new-change.sh"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-preflight.sh",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-state.mjs",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-validate-all.sh",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-validate-all.sh"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-validate-change.sh",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-validate-change.sh"
+    },
+    {
+      "id": "opsx-dev-pipeline-command",
+      "destination": ".claude/commands/opsx-dev-pipeline.md"
+    },
+    {
+      "id": "claude-docs",
+      "destination": "CLAUDE.md"
+    }
+  ]
+}
