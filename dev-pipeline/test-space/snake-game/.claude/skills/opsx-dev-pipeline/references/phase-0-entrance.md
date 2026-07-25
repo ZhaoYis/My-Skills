@@ -5,7 +5,7 @@
 ## Step1：环境预检
 
 ```bash
-bash <SKILL_ROOT>/scripts/dev-pipeline-preflight.sh
+node <SKILL_ROOT>/scripts/preflight.mjs
 ```
 
 解析返回 JSON，按 `status` 和 `reason` 处理：

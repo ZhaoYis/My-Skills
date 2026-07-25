@@ -132,6 +132,46 @@
     {
       "id": "claude-docs",
       "destination": "CLAUDE.md"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/archive.mjs",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/archive.mjs"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/change-status.mjs",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/change-status.mjs"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/instructions-apply.mjs",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/instructions-apply.mjs"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/instructions.mjs",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/instructions.mjs"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/list-changes.mjs",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/list-changes.mjs"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/new-change.mjs",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/new-change.mjs"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/pipeline-lib.mjs",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/pipeline-lib.mjs"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/preflight.mjs",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/preflight.mjs"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/validate-all.mjs",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/validate-all.mjs"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/validate-change.mjs",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/validate-change.mjs"
     }
   ]
 }

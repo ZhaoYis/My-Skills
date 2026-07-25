@@ -3,7 +3,7 @@
 ## Step6：获取实施指令
 
 ```bash
-bash <SKILL_ROOT>/scripts/dev-pipeline-instructions-apply.sh "<name>"
+node <SKILL_ROOT>/scripts/instructions-apply.mjs "<name>"
 ```
 
 返回状态处理：

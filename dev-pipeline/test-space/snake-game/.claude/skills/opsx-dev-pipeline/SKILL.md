@@ -27,7 +27,7 @@ description: 执行基于 OpenSpec 和 Git 的门禁式需求开发与交付流�
 - 对于 Cursor 安装：`<SKILL_ROOT>` = `.cursor/rules/opsx-dev-pipeline`
 - 对于 Codex 模板安装：`<SKILL_ROOT>` = `.codex/prompts/opsx-dev-pipeline`；通过 `.codex/prompts/opsx-dev-pipeline.md` 入口加载本文件。
 - 若宿主将 Skill 安装到其他位置，`<SKILL_ROOT>` = 当前 `SKILL.md` 所在目录；不要假设当前工作目录就是 Skill 根目录。
-- 脚本路径示例：`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh`
+- 脚本路径示例：`node .claude/skills/opsx-dev-pipeline/scripts/preflight.mjs`
 - 引用前先确认目录存在：`test -d "<SKILL_ROOT>/scripts" || echo "scripts not found"`
 - 状态命令示例：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<change>"`
 

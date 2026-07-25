@@ -3,7 +3,7 @@
 ## Step15：检查制品和任务完成状态
 
 ```bash
-bash <SKILL_ROOT>/scripts/dev-pipeline-change-status.sh "<name>"
+node <SKILL_ROOT>/scripts/change-status.mjs "<name>"
 ```
 
 若存在未完成任务，**AskQuestion**：`继续归档` / `回到 Phase2 继续实施` / `终止流程`
@@ -27,7 +27,7 @@ bash <SKILL_ROOT>/scripts/dev-pipeline-change-status.sh "<name>"
 ## Step18：执行归档
 
 ```bash
-bash <SKILL_ROOT>/scripts/dev-pipeline-archive.sh "<name>" -y [--skip-specs]
+node <SKILL_ROOT>/scripts/archive.mjs "<name>" -y [--skip-specs]
 ```
 
 归档成功后从命令 JSON 或文件系统取得实际归档路径，并记录：

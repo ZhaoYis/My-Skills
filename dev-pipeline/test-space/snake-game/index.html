@@ -349,6 +349,141 @@
             transform: translateX(-50%) translateY(0);
         }
 
+        /* ── Mode Selection Cards ── */
+        .mode-cards {
+            display: flex;
+            gap: 14px;
+            width: 100%;
+            max-width: 380px;
+        }
+
+        .mode-card {
+            flex: 1;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 16px 14px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.25s ease;
+            outline: none;
+            position: relative;
+        }
+
+        .mode-card:hover {
+            border-color: var(--text-secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .mode-card:active {
+            transform: translateY(0);
+        }
+
+        .mode-card.selected {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent),
+                        0 8px 24px rgba(0, 0, 0, 0.35);
+        }
+
+        .mode-card-icon {
+            font-size: 1.6rem;
+            margin-bottom: 4px;
+        }
+
+        .mode-card-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 2px;
+        }
+
+        .mode-card-desc {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .mode-card-best {
+            font-size: 0.7rem;
+            color: #fbbf24;
+            font-weight: 600;
+        }
+
+        .mode-card-best span {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .mode-card .check-mark {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            font-size: 0.85rem;
+            color: var(--accent);
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.25s ease;
+        }
+
+        .mode-card.selected .check-mark {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* ── Timer Card ── */
+        .score-value.timer {
+            color: var(--accent);
+            transition: color 0.4s ease;
+        }
+
+        .score-value.timer.warning {
+            color: #fbbf24;
+        }
+
+        .score-value.timer.danger {
+            color: var(--danger);
+            animation: timerPulse 0.6s ease-in-out infinite;
+        }
+
+        @keyframes timerPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.12); opacity: 0.7; }
+        }
+
+        .score-card.timer-hidden {
+            display: none;
+        }
+
+        /* ── Shield Indicator ── */
+        .shield-indicator {
+            display: none;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.85rem;
+            color: #c084fc;
+            font-weight: 600;
+            animation: shieldGlow 1.2s ease-in-out infinite;
+        }
+
+        .shield-indicator.active {
+            display: flex;
+        }
+
+        @keyframes shieldGlow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* ── Screen Flash ── */
+        .canvas-wrapper.flash {
+            animation: screenFlash 0.3s ease-out;
+        }
+
+        @keyframes screenFlash {
+            0% { box-shadow: 0 0 0 0 rgba(192, 132, 252, 0.6), 0 0 0 1px rgba(51, 65, 85, 0.5), 0 20px 60px rgba(0, 0, 0, 0.5); }
+            100% { box-shadow: 0 0 0 20px rgba(192, 132, 252, 0), 0 0 0 1px rgba(51, 65, 85, 0.5), 0 20px 60px rgba(0, 0, 0, 0.5); }
+        }
+
         /* ── Responsive ── */
         @media (max-width: 600px) {
             .title { font-size: 1.5rem; }
@@ -377,6 +512,10 @@
         <div class="header">
             <h1 class="title">🐍 贪吃蛇</h1>
             <div class="score-panel">
+                <div class="score-card timer-hidden" id="timerCard">
+                    <div class="score-label">剩余时间</div>
+                    <div class="score-value timer" id="timerValue">60s</div>
+                </div>
                 <div class="score-card">
                     <div class="score-label">得分</div>
                     <div class="score-value current" id="currentScore">0</div>
@@ -385,6 +524,7 @@
                     <div class="score-label">最高分</div>
                     <div class="score-value best" id="bestScore">0</div>
                 </div>
+                <div class="shield-indicator" id="shieldIndicator">🛡️ 护盾</div>
             </div>
         </div>
 
@@ -395,6 +535,22 @@
             <!-- Start Overlay -->
             <div class="overlay active" id="startOverlay">
                 <div class="overlay-title">🐍 贪吃蛇</div>
+                <div class="mode-cards" id="modeCards">
+                    <div class="mode-card selected" data-mode="classic" id="modeCardClassic" tabindex="0" role="radio" aria-checked="true">
+                        <span class="check-mark">✓</span>
+                        <div class="mode-card-icon">🐍</div>
+                        <div class="mode-card-name">经典模式</div>
+                        <div class="mode-card-desc">无限挑战</div>
+                        <div class="mode-card-best">最高分: <span id="classicBest">0</span></div>
+                    </div>
+                    <div class="mode-card" data-mode="timed" id="modeCardTimed" tabindex="0" role="radio" aria-checked="false">
+                        <span class="check-mark">✓</span>
+                        <div class="mode-card-icon">⏱</div>
+                        <div class="mode-card-name">计时模式</div>
+                        <div class="mode-card-desc">限时抢夺</div>
+                        <div class="mode-card-best">最高分: <span id="timedBest">0</span></div>
+                    </div>
+                </div>
                 <div class="overlay-subtitle">按下 <span style="color:#22d3ee;font-weight:700;">空格</span> 或点击按钮开始</div>
                 <button class="btn btn-primary" id="startBtn">开始游戏</button>
             </div>
@@ -457,6 +613,32 @@
         const ROWS = 25;
         const BASE_SPEED = 110;  // ms per tick (lower = faster)
         const SKIN_KEYS = Object.freeze(['classic', 'retro', 'midnight', 'sunset']);
+        const INITIAL_TIME = 60;        // seconds
+        const MAX_TIME = 90;            // seconds cap
+        const TIME_PER_FOOD = 5;        // seconds gained per food
+        const BOOST_DURATION = 3000;    // ms — lightning effect duration
+
+        // Item types for timed mode
+        const ITEM_TYPES = Object.freeze({
+            NORMAL:  'normal',
+            GOLDEN:  'golden',
+            LIGHTNING: 'lightning',
+            SHIELD:  'shield',
+        });
+
+        const ITEM_PROBABILITIES = Object.freeze([
+            { type: ITEM_TYPES.NORMAL,    prob: 0.80 },
+            { type: ITEM_TYPES.GOLDEN,    prob: 0.12 },
+            { type: ITEM_TYPES.LIGHTNING, prob: 0.05 },
+            { type: ITEM_TYPES.SHIELD,    prob: 0.03 },
+        ]);
+
+        const ITEM_EFFECTS = Object.freeze({
+            [ITEM_TYPES.NORMAL]:    { score: 10, time: 5,  label: '普通食物' },
+            [ITEM_TYPES.GOLDEN]:    { score: 20, time: 10, label: '金苹果' },
+            [ITEM_TYPES.LIGHTNING]: { score: 0,  time: 0,  label: '闪电' },
+            [ITEM_TYPES.SHIELD]:    { score: 0,  time: 0,  label: '护盾' },
+        });
 
         // ─── Skin Registry ─────────────────────────
         const SKINS = Object.freeze({
@@ -624,6 +806,13 @@
         const currentScoreEl = document.getElementById('currentScore');
         const bestScoreEl = document.getElementById('bestScore');
         const finalScoreEl = document.getElementById('finalScore');
+        const timerCard = document.getElementById('timerCard');
+        const timerValueEl = document.getElementById('timerValue');
+        const classicBestEl = document.getElementById('classicBest');
+        const timedBestEl = document.getElementById('timedBest');
+        const modeCardClassic = document.getElementById('modeCardClassic');
+        const modeCardTimed = document.getElementById('modeCardTimed');
+        const shieldIndicator = document.getElementById('shieldIndicator');
 
         // ─── State ──────────────────────────────────
         let snake = [];
@@ -640,6 +829,15 @@
         let growAmount = 0;  // pending growth segments
         let lastRenderTime = 0;
 
+        // ─── Timed Mode State ──────────────────────
+        let gameMode = 'classic';          // 'classic' | 'timed'
+        let timeRemaining = INITIAL_TIME;  // seconds
+        let timerAccumulator = 0;          // ms accumulator for 1s ticks
+        let foodItem = null;               // current food item type (from ITEM_TYPES)
+        let shieldActive = false;          // shield power-up
+        let boostActive = false;           // lightning speed boost
+        let boostEndTime = 0;              // performance.now() when boost expires
+
         // ─── Canvas Setup ──────────────────────────
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         const canvasWidth = COLS * CELL_SIZE;
@@ -651,12 +849,61 @@
         canvas.style.height = canvasHeight + 'px';
         ctx.scale(dpr, dpr);
 
-        // ─── Load Best Score ───────────────────────
+        // ─── Load Best Scores ───────────────────────
+        let bestScoreClassic = 0;
+        let bestScoreTimed = 0;
         try {
-            const saved = localStorage.getItem('snake-best-score');
-            if (saved) bestScore = parseInt(saved, 10) || 0;
+            // Migrate old key if present
+            const oldBest = localStorage.getItem('snake-best-score');
+            if (oldBest) {
+                bestScoreClassic = parseInt(oldBest, 10) || 0;
+                localStorage.removeItem('snake-best-score');
+                localStorage.setItem('snake-best-score-classic', bestScoreClassic);
+            } else {
+                const savedClassic = localStorage.getItem('snake-best-score-classic');
+                if (savedClassic) bestScoreClassic = parseInt(savedClassic, 10) || 0;
+            }
+            const savedTimed = localStorage.getItem('snake-best-score-timed');
+            if (savedTimed) bestScoreTimed = parseInt(savedTimed, 10) || 0;
         } catch (e) { /* localStorage not available */ }
-        bestScoreEl.textContent = bestScore;
+
+        function updateBestDisplay() {
+            bestScore = gameMode === 'classic' ? bestScoreClassic : bestScoreTimed;
+            bestScoreEl.textContent = bestScore;
+            classicBestEl.textContent = bestScoreClassic;
+            timedBestEl.textContent = bestScoreTimed;
+        }
+        updateBestDisplay();
+
+        // ─── Mode Selection ─────────────────────────
+        function selectMode(mode) {
+            if (isRunning) return; // only switch before game starts
+            gameMode = mode;
+            modeCardClassic.classList.toggle('selected', mode === 'classic');
+            modeCardTimed.classList.toggle('selected', mode === 'timed');
+            modeCardClassic.setAttribute('aria-checked', mode === 'classic');
+            modeCardTimed.setAttribute('aria-checked', mode === 'timed');
+
+            // Show/hide timer card
+            timerCard.classList.toggle('timer-hidden', mode !== 'timed');
+
+            // Update best score display for selected mode
+            updateBestDisplay();
+
+            // Persist mode preference
+            try { localStorage.setItem('snake-game-mode', mode); } catch (e) {}
+
+            // Redraw canvas if showing initial state
+            if (!isRunning) draw();
+        }
+
+        // Load saved mode or default
+        try {
+            const savedMode = localStorage.getItem('snake-game-mode');
+            if (savedMode === 'classic' || savedMode === 'timed') {
+                selectMode(savedMode);
+            }
+        } catch (e) {}
 
         // ─── Skin System ───────────────────────────
         function applySkin(id) {
@@ -717,22 +964,6 @@
             return snake.some(s => cellEquals(s, cell));
         }
 
-        function spawnFood() {
-            let pos;
-            // Try a limited number of times to find an empty cell
-            for (let i = 0; i < 1000; i++) {
-                pos = randomCell();
-                if (!snakeOccupies(pos)) return pos;
-            }
-            // If the board is nearly full, scan all cells
-            for (let x = 0; x < COLS; x++) {
-                for (let y = 0; y < ROWS; y++) {
-                    if (!snakeOccupies({ x, y })) return { x, y };
-                }
-            }
-            return null; // board full — you win!
-        }
-
         function spawnParticles(cell) {
             const cx = cell.x * CELL_SIZE + CELL_SIZE / 2;
             const cy = cell.y * CELL_SIZE + CELL_SIZE / 2;
@@ -754,6 +985,39 @@
         }
 
         // ─── Game Logic ────────────────────────────
+        function rollItemType() {
+            if (gameMode !== 'timed') return null; // classic mode — no special items
+            const roll = Math.random();
+            let cumulative = 0;
+            for (const entry of ITEM_PROBABILITIES) {
+                cumulative += entry.prob;
+                if (roll < cumulative) return entry.type;
+            }
+            return ITEM_TYPES.NORMAL;
+        }
+
+        function spawnFood() {
+            let pos;
+            // Try a limited number of times to find an empty cell
+            for (let i = 0; i < 1000; i++) {
+                pos = randomCell();
+                if (!snakeOccupies(pos)) {
+                    foodItem = rollItemType();
+                    return pos;
+                }
+            }
+            // If the board is nearly full, scan all cells
+            for (let x = 0; x < COLS; x++) {
+                for (let y = 0; y < ROWS; y++) {
+                    if (!snakeOccupies({ x, y })) {
+                        foodItem = rollItemType();
+                        return { x, y };
+                    }
+                }
+            }
+            return null; // board full — you win!
+        }
+
         function initGame() {
             // Snake starts in the middle, going right
             const startX = Math.floor(COLS / 2);
@@ -771,6 +1035,42 @@
             particles = [];
             food = spawnFood();
             currentScoreEl.textContent = '0';
+
+            // Timed mode init
+            if (gameMode === 'timed') {
+                timeRemaining = INITIAL_TIME;
+                timerAccumulator = 0;
+                shieldActive = false;
+                boostActive = false;
+                boostEndTime = 0;
+                timerValueEl.textContent = timeRemaining + 's';
+                timerValueEl.classList.remove('warning', 'danger');
+                timerValueEl.classList.add('timer');
+                timerCard.classList.remove('timer-hidden');
+                shieldIndicator.classList.remove('active');
+            } else {
+                timerCard.classList.add('timer-hidden');
+            }
+
+            updateBestDisplay();
+            foodItem = rollItemType();
+        }
+
+        function handleCollision() {
+            // Shield protection: reverse direction instead of dying
+            if (shieldActive) {
+                shieldActive = false;
+                shieldIndicator.classList.remove('active');
+                // Reverse direction
+                direction = { x: -direction.x, y: -direction.y };
+                nextDirection = { ...direction };
+                // Flash screen feedback
+                canvasWrapper.classList.remove('flash');
+                void canvasWrapper.offsetWidth; // reflow
+                canvasWrapper.classList.add('flash');
+                return false; // not dead
+            }
+            return true; // dead
         }
 
         function update() {
@@ -784,9 +1084,9 @@
                 y: head.y + direction.y,
             };
 
-            // Wall collision — wrap around
-            // (Classic mode: game over on wall hit. Uncomment alternative below.)
+            // Wall collision
             if (newHead.x < 0 || newHead.x >= COLS || newHead.y < 0 || newHead.y >= ROWS) {
+                if (!handleCollision()) return;
                 return gameOver();
             }
 
@@ -794,6 +1094,7 @@
             // But if we're growing, the tail doesn't move, so check full body
             const bodyToCheck = growAmount > 0 ? snake : snake.slice(0, -1);
             if (bodyToCheck.some(s => cellEquals(s, newHead))) {
+                if (!handleCollision()) return;
                 return gameOver();
             }
 
@@ -802,11 +1103,33 @@
 
             // Check food collision
             if (food && cellEquals(newHead, food)) {
-                score += 10;
+                const itemType = foodItem || ITEM_TYPES.NORMAL;
+                const effect = ITEM_EFFECTS[itemType];
+
+                score += effect.score;
                 growAmount += 1;
                 speed = Math.max(45, BASE_SPEED - Math.floor(score / 100) * 8);
                 spawnParticles(food);
                 currentScoreEl.textContent = score;
+
+                // Timed mode: add time
+                if (gameMode === 'timed') {
+                    timeRemaining = Math.min(MAX_TIME, timeRemaining + effect.time);
+                    timerValueEl.textContent = timeRemaining + 's';
+                }
+
+                // Lightning effect
+                if (itemType === ITEM_TYPES.LIGHTNING) {
+                    boostActive = true;
+                    boostEndTime = performance.now() + BOOST_DURATION;
+                }
+
+                // Shield effect
+                if (itemType === ITEM_TYPES.SHIELD) {
+                    shieldActive = true;
+                    shieldIndicator.classList.add('active');
+                }
+
                 food = spawnFood();
                 if (!food) return gameOver(true); // win
             }
@@ -819,29 +1142,43 @@
             }
         }
 
-        function gameOver(won = false) {
+        function gameOver(won = false, reason = 'collision') {
             stopGameLoop();
             isRunning = false;
+
+            const titleEl = document.querySelector('#gameOverOverlay .overlay-title');
 
             if (won) {
                 // You filled the board!
                 finalScoreEl.textContent = score;
-                document.querySelector('#gameOverOverlay .overlay-title').textContent = '🎉 恭喜通关!';
-                document.querySelector('#gameOverOverlay .overlay-title').classList.remove('game-over');
-                document.querySelector('#gameOverOverlay .overlay-title').style.color = '#22d3ee';
+                titleEl.textContent = '🎉 恭喜通关!';
+                titleEl.classList.remove('game-over');
+                titleEl.style.color = '#22d3ee';
+            } else if (reason === 'timeUp') {
+                titleEl.textContent = '⏰ 时间到!';
+                titleEl.classList.remove('game-over');
+                titleEl.style.color = '#fbbf24';
+                finalScoreEl.textContent = score;
             } else {
-                document.querySelector('#gameOverOverlay .overlay-title').textContent = '游戏结束';
-                document.querySelector('#gameOverOverlay .overlay-title').classList.add('game-over');
-                document.querySelector('#gameOverOverlay .overlay-title').style.color = '';
+                titleEl.textContent = '游戏结束';
+                titleEl.classList.add('game-over');
+                titleEl.style.color = '';
                 finalScoreEl.textContent = score;
             }
 
-            // Update best score
-            if (score > bestScore) {
-                bestScore = score;
-                bestScoreEl.textContent = bestScore;
-                try { localStorage.setItem('snake-best-score', bestScore); } catch (e) {}
+            // Update best score — separate storage per mode
+            if (gameMode === 'classic') {
+                if (score > bestScoreClassic) {
+                    bestScoreClassic = score;
+                    try { localStorage.setItem('snake-best-score-classic', bestScoreClassic); } catch (e) {}
+                }
+            } else {
+                if (score > bestScoreTimed) {
+                    bestScoreTimed = score;
+                    try { localStorage.setItem('snake-best-score-timed', bestScoreTimed); } catch (e) {}
+                }
             }
+            updateBestDisplay();
 
             gameOverOverlay.classList.add('active');
         }
@@ -866,6 +1203,7 @@
                 if (isPaused) {
                     lastTick = now;
                     accumulator = 0;
+                    timerAccumulator = 0;
                     draw();
                     return;
                 }
@@ -874,9 +1212,40 @@
                 lastTick = now;
                 accumulator += dt;
 
+                // ── Timed mode: second-based countdown ──
+                if (gameMode === 'timed') {
+                    timerAccumulator += dt;
+                    while (timerAccumulator >= 1000) {
+                        timerAccumulator -= 1000;
+                        timeRemaining--;
+                        timerValueEl.textContent = timeRemaining + 's';
+
+                        // Update timer color classes
+                        timerValueEl.classList.remove('warning', 'danger');
+                        if (timeRemaining <= 10) {
+                            timerValueEl.classList.add('danger');
+                        } else if (timeRemaining <= 30) {
+                            timerValueEl.classList.add('warning');
+                        }
+
+                        if (timeRemaining <= 0) {
+                            gameOver(false, 'timeUp');
+                            return;
+                        }
+                    }
+                }
+
+                // ── Lightning boost check ──
+                if (boostActive && now >= boostEndTime) {
+                    boostActive = false;
+                }
+
+                // ── Effective speed (with boost) ──
+                const effectiveSpeed = boostActive ? speed * 2 : speed;
+
                 let updated = false;
-                while (accumulator >= speed) {
-                    accumulator -= speed;
+                while (accumulator >= effectiveSpeed) {
+                    accumulator -= effectiveSpeed;
                     update();
                     updated = true;
                     if (!isRunning) return; // game over during update
@@ -926,38 +1295,179 @@
                 ctx.stroke();
             }
 
-            // Food — pulsating glow
+            // Food — pulsating glow (varies by item type)
             if (food) {
                 const fx = food.x * CELL_SIZE + CELL_SIZE / 2;
                 const fy = food.y * CELL_SIZE + CELL_SIZE / 2;
                 const pulse = 1 + 0.2 * Math.sin(performance.now() / 200);
                 const r = (CELL_SIZE / 2 - 2) * pulse;
 
-                // Outer glow
-                const glow = ctx.createRadialGradient(fx, fy, r * 0.3, fx, fy, r * 1.8);
-                glow.addColorStop(0, cs.foodGlow);
-                glow.addColorStop(0.5, cs.foodGlowMid);
-                glow.addColorStop(1, 'rgba(0,0,0,0)');
-                ctx.fillStyle = glow;
-                ctx.beginPath();
-                ctx.arc(fx, fy, r * 1.8, 0, Math.PI * 2);
-                ctx.fill();
+                const itemType = foodItem || ITEM_TYPES.NORMAL;
 
-                // Food body
-                const foodGrad = ctx.createRadialGradient(fx - 1, fy - 1, 0, fx, fy, r);
-                foodGrad.addColorStop(0, cs.foodGradHigh);
-                foodGrad.addColorStop(0.4, cs.foodGradMid);
-                foodGrad.addColorStop(1, cs.foodGradDark);
-                ctx.fillStyle = foodGrad;
-                ctx.beginPath();
-                ctx.arc(fx, fy, r, 0, Math.PI * 2);
-                ctx.fill();
+                if (itemType === ITEM_TYPES.GOLDEN) {
+                    // ── Golden Apple ──
+                    // Outer glow (golden)
+                    const glowG = ctx.createRadialGradient(fx, fy, r * 0.3, fx, fy, r * 2.2);
+                    glowG.addColorStop(0, 'rgba(251, 191, 36, 0.7)');
+                    glowG.addColorStop(0.4, 'rgba(251, 191, 36, 0.2)');
+                    glowG.addColorStop(1, 'rgba(0,0,0,0)');
+                    ctx.fillStyle = glowG;
+                    ctx.beginPath();
+                    ctx.arc(fx, fy, r * 2.2, 0, Math.PI * 2);
+                    ctx.fill();
 
-                // Highlight
-                ctx.fillStyle = cs.foodHighlight;
-                ctx.beginPath();
-                ctx.arc(fx - r * 0.25, fy - r * 0.25, r * 0.3, 0, Math.PI * 2);
-                ctx.fill();
+                    // Rotating sparkle particles
+                    const sparkCount = 6;
+                    const sparkAngle = performance.now() / 600;
+                    for (let s = 0; s < sparkCount; s++) {
+                        const sa = sparkAngle + (Math.PI * 2 * s) / sparkCount;
+                        const sx = fx + Math.cos(sa) * (r * 1.6);
+                        const sy = fy + Math.sin(sa) * (r * 1.6);
+                        ctx.fillStyle = 'rgba(255, 255, 200, 0.9)';
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    // Body — golden gradient
+                    const gGrad = ctx.createRadialGradient(fx - 1, fy - 1, 0, fx, fy, r);
+                    gGrad.addColorStop(0, '#fef3c7');
+                    gGrad.addColorStop(0.3, '#fbbf24');
+                    gGrad.addColorStop(1, '#b45309');
+                    ctx.fillStyle = gGrad;
+                    ctx.beginPath();
+                    ctx.arc(fx, fy, r, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Star shape on top
+                    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                    ctx.beginPath();
+                    ctx.arc(fx - r * 0.2, fy - r * 0.25, r * 0.3, 0, Math.PI * 2);
+                    ctx.fill();
+
+                } else if (itemType === ITEM_TYPES.LIGHTNING) {
+                    // ── Lightning ──
+                    // Electric glow
+                    const eGlow = ctx.createRadialGradient(fx, fy, r * 0.2, fx, fy, r * 2);
+                    eGlow.addColorStop(0, 'rgba(34, 211, 238, 0.8)');
+                    eGlow.addColorStop(0.3, 'rgba(34, 211, 238, 0.25)');
+                    eGlow.addColorStop(1, 'rgba(0,0,0,0)');
+                    ctx.fillStyle = eGlow;
+                    ctx.beginPath();
+                    ctx.arc(fx, fy, r * 2, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Electric arcs (flickering)
+                    const flicker = Math.random() > 0.4;
+                    if (flicker) {
+                        ctx.strokeStyle = 'rgba(167, 243, 255, 0.9)';
+                        ctx.lineWidth = 1.5;
+                        ctx.beginPath();
+                        for (let j = 0; j < 3; j++) {
+                            const arcAngle = (Math.PI * 2 * j) / 3 + performance.now() / 1500;
+                            const sx2 = fx + Math.cos(arcAngle) * r * 0.6;
+                            const sy2 = fy + Math.sin(arcAngle) * r * 0.6;
+                            const ex2 = fx + Math.cos(arcAngle) * r * 1.5;
+                            const ey2 = fy + Math.sin(arcAngle) * r * 1.5;
+                            const midX = (sx2 + ex2) / 2 + (Math.random() - 0.5) * 6;
+                            const midY = (sy2 + ey2) / 2 + (Math.random() - 0.5) * 6;
+                            ctx.moveTo(sx2, sy2);
+                            ctx.quadraticCurveTo(midX, midY, ex2, ey2);
+                        }
+                        ctx.stroke();
+                    }
+
+                    // Body — cyan electric
+                    const eGrad = ctx.createRadialGradient(fx, fy, 0, fx, fy, r);
+                    eGrad.addColorStop(0, '#e0f2fe');
+                    eGrad.addColorStop(0.3, '#22d3ee');
+                    eGrad.addColorStop(1, '#0e7490');
+                    ctx.fillStyle = eGrad;
+                    ctx.beginPath();
+                    ctx.arc(fx, fy, r * 0.85, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // ⚡ icon hint
+                    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                    ctx.font = '10px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('⚡', fx, fy);
+                    ctx.textAlign = 'start';
+
+                } else if (itemType === ITEM_TYPES.SHIELD) {
+                    // ── Shield Orb ──
+                    // Purple outer ring (pulsing)
+                    const ringPulse = 1 + 0.15 * Math.sin(performance.now() / 300);
+                    ctx.strokeStyle = `rgba(192, 132, 252, ${0.5 + 0.3 * Math.sin(performance.now() / 250)})`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(fx, fy, r * ringPulse * 1.5, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    // Ring 2
+                    ctx.strokeStyle = `rgba(192, 132, 252, ${0.3 + 0.2 * Math.sin(performance.now() / 350)})`;
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(fx, fy, r * ringPulse * 1.9, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    // Outer glow
+                    const pGlow = ctx.createRadialGradient(fx, fy, r * 0.3, fx, fy, r * 2);
+                    pGlow.addColorStop(0, 'rgba(192, 132, 252, 0.6)');
+                    pGlow.addColorStop(0.5, 'rgba(192, 132, 252, 0.15)');
+                    pGlow.addColorStop(1, 'rgba(0,0,0,0)');
+                    ctx.fillStyle = pGlow;
+                    ctx.beginPath();
+                    ctx.arc(fx, fy, r * 2, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Body — purple
+                    const pGrad = ctx.createRadialGradient(fx, fy, 0, fx, fy, r);
+                    pGrad.addColorStop(0, '#e9d5ff');
+                    pGrad.addColorStop(0.35, '#a855f7');
+                    pGrad.addColorStop(1, '#6b21a8');
+                    ctx.fillStyle = pGrad;
+                    ctx.beginPath();
+                    ctx.arc(fx, fy, r * 0.9, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 🛡️ icon hint
+                    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                    ctx.font = '10px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🛡️', fx, fy);
+                    ctx.textAlign = 'start';
+
+                } else {
+                    // ── Normal food (classic red apple) ──
+                    // Outer glow
+                    const glow = ctx.createRadialGradient(fx, fy, r * 0.3, fx, fy, r * 1.8);
+                    glow.addColorStop(0, cs.foodGlow);
+                    glow.addColorStop(0.5, cs.foodGlowMid);
+                    glow.addColorStop(1, 'rgba(0,0,0,0)');
+                    ctx.fillStyle = glow;
+                    ctx.beginPath();
+                    ctx.arc(fx, fy, r * 1.8, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Food body
+                    const foodGrad = ctx.createRadialGradient(fx - 1, fy - 1, 0, fx, fy, r);
+                    foodGrad.addColorStop(0, cs.foodGradHigh);
+                    foodGrad.addColorStop(0.4, cs.foodGradMid);
+                    foodGrad.addColorStop(1, cs.foodGradDark);
+                    ctx.fillStyle = foodGrad;
+                    ctx.beginPath();
+                    ctx.arc(fx, fy, r, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Highlight
+                    ctx.fillStyle = cs.foodHighlight;
+                    ctx.beginPath();
+                    ctx.arc(fx - r * 0.25, fy - r * 0.25, r * 0.3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
             }
 
             // Snake
@@ -996,21 +1506,43 @@
                 ctx.roundRect(rx + 2, ry + 1, segSize - 4, segSize / 3, 2);
                 ctx.fill();
 
-                // Head eyes
+                // Head effects (shield / boost)
                 if (i === 0) {
+                    const hx = sx + CELL_SIZE / 2;
+                    const hy = sy + CELL_SIZE / 2;
+
+                    // Shield glow on head
+                    if (shieldActive) {
+                        const shGlow = ctx.createRadialGradient(hx, hy, segSize * 0.5, hx, hy, segSize * 1.4);
+                        shGlow.addColorStop(0, 'rgba(192, 132, 252, 0.5)');
+                        shGlow.addColorStop(1, 'rgba(0,0,0,0)');
+                        ctx.fillStyle = shGlow;
+                        ctx.beginPath();
+                        ctx.arc(hx, hy, segSize * 1.4, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    // Boost outline (blue glow)
+                    if (boostActive) {
+                        ctx.strokeStyle = `rgba(34, 211, 238, ${0.4 + 0.3 * Math.sin(performance.now() / 100)})`;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.roundRect(rx - 1, ry - 1, segSize + 2, segSize + 2, 6);
+                        ctx.stroke();
+                    }
+
+                    // Head eyes
                     const eyeR = 2.5;
-                    const cx = sx + CELL_SIZE / 2;
-                    const cy = sy + CELL_SIZE / 2;
                     let eyeOffX = 0, eyeOffY = 0;
                     if (direction.x === 1)  { eyeOffX = 2; eyeOffY = 0; }
                     if (direction.x === -1) { eyeOffX = -2; eyeOffY = 0; }
                     if (direction.y === 1)  { eyeOffX = 0; eyeOffY = 2; }
                     if (direction.y === -1) { eyeOffX = 0; eyeOffY = -2; }
 
-                    const eye1X = cx + eyeOffX - 4 + (eyeOffY !== 0 ? 4 : 0);
-                    const eye1Y = cy + eyeOffY - 4 + (eyeOffX !== 0 ? 4 : 0);
-                    const eye2X = cx + eyeOffX + 4 + (eyeOffY !== 0 ? 4 : 0);
-                    const eye2Y = cy + eyeOffY + 4 + (eyeOffX !== 0 ? 4 : 0);
+                    const eye1X = hx + eyeOffX - 4 + (eyeOffY !== 0 ? 4 : 0);
+                    const eye1Y = hy + eyeOffY - 4 + (eyeOffX !== 0 ? 4 : 0);
+                    const eye2X = hx + eyeOffX + 4 + (eyeOffY !== 0 ? 4 : 0);
+                    const eye2Y = hy + eyeOffY + 4 + (eyeOffX !== 0 ? 4 : 0);
 
                     [ [eye1X, eye1Y], [eye2X, eye2Y] ].forEach(([ex, ey]) => {
                         ctx.fillStyle = cs.eyeWhite;
@@ -1070,8 +1602,28 @@
             startGameLoop();
         }
 
+        function showStartOverlay() {
+            // Show mode selection again (e.g., after game over)
+            stopGameLoop();
+            isRunning = false;
+            gameOverOverlay.classList.remove('active');
+            startOverlay.classList.add('active');
+            initGame();
+            draw();
+        }
+
         // Keyboard
         document.addEventListener('keydown', (e) => {
+            // Mode switching before game starts
+            if (!isRunning) {
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    const nextMode = gameMode === 'classic' ? 'timed' : 'classic';
+                    selectMode(nextMode);
+                    return;
+                }
+            }
+
             // Prevent scrolling with arrow keys
             const keyMap = {
                 ArrowUp:    () => changeDirection(0, -1),
@@ -1088,7 +1640,14 @@
                 D: () => changeDirection(1, 0),
                 ' ': () => {
                     e.preventDefault();
-                    if (!isRunning) { startGame(); return; }
+                    if (!isRunning) {
+                        if (gameOverOverlay.classList.contains('active')) {
+                            showStartOverlay();
+                        } else {
+                            startGame();
+                        }
+                        return;
+                    }
                     togglePause();
                 },
                 t: () => cycleSkin(),
@@ -1104,7 +1663,11 @@
 
         // Buttons
         document.getElementById('startBtn').addEventListener('click', startGame);
-        document.getElementById('restartBtn').addEventListener('click', startGame);
+        document.getElementById('restartBtn').addEventListener('click', showStartOverlay);
+
+        // Mode card clicks
+        modeCardClassic.addEventListener('click', () => selectMode('classic'));
+        modeCardTimed.addEventListener('click', () => selectMode('timed'));
 
         // Skin swatches
         document.querySelectorAll('.skin-swatch').forEach(btn => {

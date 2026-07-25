@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "changeName": "add-timed-mode",
+  "sourceBranch": "feature/lite",
+  "targetBranch": null,
+  "currentPhase": 5,
+  "currentStep": 15,
+  "status": "paused",
+  "decisions": {
+    "requirementsConfirmed": true,
+    "proposalApproved": true,
+    "implementationConfirmed": true,
+    "reviewDisposition": "review"
+  },
+  "review": {
+    "round": 1,
+    "reportPath": "openspec/review/2026-07-26-00-11-feature-lite-pipeline-review.md",
+    "status": "issues-found"
+  },
+  "tests": {
+    "command": "none",
+    "attempts": 0,
+    "status": "skipped",
+    "detail": "skipped: single HTML file, no test framework; verified via Playwright browser testing"
+  },
+  "verify": {
+    "command": null,
+    "attempts": 0,
+    "status": "skipped",
+    "detail": "no verify command configured; verified via Playwright browser testing"
+  },
+  "archivePath": "openspec/changes/archive/2026-07-25-add-timed-mode",
+  "delivery": {
+    "commitSha": null,
+    "mergeCommitSha": null,
+    "sourcePushed": false,
+    "targetPushed": false,
+    "tag": null
+  },
+  "createdAt": "2026-07-25T16:03:16.230Z",
+  "updatedAt": "2026-07-25T16:21:31.108Z",
+  "pauseReason": "user requested termination after archive"
+}

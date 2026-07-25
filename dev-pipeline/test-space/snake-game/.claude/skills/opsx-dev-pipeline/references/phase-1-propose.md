@@ -20,17 +20,17 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" requirementsC
 
 **新建 change**：
 ```bash
-bash <SKILL_ROOT>/scripts/dev-pipeline-new-change.sh "<name>"
+node <SKILL_ROOT>/scripts/new-change.mjs "<name>"
 ```
 若名称冲突，**AskQuestion**：`在已有 change 上继续` / `创建新名称`。
 
 对每个 `ready` 状态的制品：
 ```bash
-bash <SKILL_ROOT>/scripts/dev-pipeline-instructions.sh "<name>" <artifact-id>
+node <SKILL_ROOT>/scripts/instructions.mjs "<name>" <artifact-id>
 ```
 读取指令后创建文件。优先使用当前 Agent 的任务工具；不可用时在回复中维护编号进度，并以 `tasks.md` 为完成事实。
 
-（可选）在决策点 1 前运行 `bash <SKILL_ROOT>/scripts/dev-pipeline-validate-change.sh "<name>"` 做结构校验。
+（可选）在决策点 1 前运行 `node <SKILL_ROOT>/scripts/validate-change.mjs "<name>"` 做结构校验。
 
 ## Step5：[决策点 1] 确认提案（必过门禁）
 
