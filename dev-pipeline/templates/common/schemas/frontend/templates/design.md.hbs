@@ -2,19 +2,21 @@
 <!-- Background, current state, constraints, stakeholders -->
 
 ## Goals / Non-Goals
-- Goals: [...]
-- Non-Goals: [...]
+
+**Goals:**
+<!-- What this design aims to achieve -->
+
+**Non-Goals:**
+<!-- What is explicitly out of scope -->
 
 ## Decisions
-<!-- For each key technical choice: -->
-### Decision: <what and why>
-- Alternatives considered: <options with rationale>
+<!-- Key design decisions and rationale -->
 
 ## Risks / Trade-offs
-- [Risk] --> Mitigation
+<!-- Known risks and trade-offs -->
 
 ## Migration Plan
 <!-- Steps to deploy, rollback strategy (if applicable) -->
 
 ## Open Questions
-- [...]
+<!-- Outstanding decisions or unknowns to resolve -->
