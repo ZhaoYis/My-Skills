@@ -10,7 +10,7 @@
     "docs",
     "schema"
   ],
-  "templateVersion": "0.2.0",
+  "templateVersion": "0.2.1",
   "packageName": "opsx-dev-pipeline",
   "managedAssets": [
     {

@@ -87,7 +87,19 @@ Phase 6  交付：提交 → 推送 → 合并 → 打标签，敏感文件自�
 
 ---
 
-## 四、门户网站内容结构（重排序）
+## 四、技术选型与部署
+
+| 决策 | 结论 |
+|---|---|
+| **代码位置** | `dev-pipeline` 仓库内的 `website/` 目录 |
+| **框架** | Next.js (App Router) |
+| **部署** | Vercel 自动化部署（Git push → 自动构建发布） |
+| **内容更新** | 版本变更时手动调整，不依赖自动化同步 |
+| **域名** | 待定 |
+
+---
+
+## 五、门户网站内容结构（重排序）
 
 ```
 Section 1  Hero          — 5 秒讲清你是谁
@@ -99,12 +111,13 @@ Section 6  AI Tools      — 三工具统一适配
 Section 7  Safety        — 安全门禁防线
 Section 8  Quick Start   — 一条命令上手
 Section 9  Numbers       — 技术指标
-Section 10 CTA           — 立即开始
+Section 10 FAQ           — 常见问题
+Section 11 CTA           — 立即开始
 ```
 
 ---
 
-## 五、各板块文案
+## 六、各板块文案
 
 ### Section 2 — Problem（痛点）
 
@@ -305,7 +318,7 @@ npx opsx-dev-pipeline@latest init --tool claude --stack backend --yes
 
 ---
 
-### Section 10 — CTA（行动号召）
+### Section 11 — CTA（行动号召）
 
 **标题：让你的团队 AI 编码从"各凭本事"变成"统一标准"。**
 
@@ -314,7 +327,7 @@ npx opsx-dev-pipeline@latest init
 ```
 
 - 📖 [完整文档](https://github.com/ZhaoYis/My-Skills/tree/main/dev-pipeline)
-- 💬 [GitHub Issues](https://github.com/ZhaoYis/My-Skills/issues)
+- 🐛 [反馈 & 问题 → GitHub Issues](https://github.com/ZhaoYis/My-Skills/issues)
 - ⭐ 开源 & MIT 协议
 
 ---
@@ -520,7 +533,7 @@ MIT 协议。商业使用、私有部署、二次开发均无限制。
 
 ---
 
-## 六、内容设计原则总结
+## 七、内容设计原则总结
 
 | 原则 | 说明 |
 |---|---|
@@ -533,7 +546,7 @@ MIT 协议。商业使用、私有部署、二次开发均无限制。
 
 ---
 
-## 七、不建议在门户网站上展示的内容
+## 八、不建议在门户网站上展示的内容
 
 以下内容从 `feature-inventory.md` 中**移除**，适合放在 Developer Docs 而非门户：
 
@@ -550,7 +563,18 @@ MIT 协议。商业使用、私有部署、二次开发均无限制。
 
 ---
 
-## 八、门户页面建议结构
+## 九、流量策略与定位
+
+门户的定位是 **"体面的落地页"**，而非增长引擎。
+
+- **自然流量来源**：npm 搜索、GitHub README、技术博客、社区分享
+- **门户角色**：当有人通过以上渠道发现项目时，门户提供完整的产品介绍、信任建立和上手引导
+- **不依赖**：SEO、SEM、社交媒体病毒传播
+- **成功标准**：访问者看完门户后，知道这是什么、适不适合自己、如何开始
+
+---
+
+## 十、门户页面建议结构
 
 ```
 / (首页)

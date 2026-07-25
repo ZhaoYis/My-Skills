@@ -1,6 +1,6 @@
 {
   "name": "opsx-dev-pipeline",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "One-stop dev pipeline initializer with AI tool adapters for skills and commands templates.",
   "type": "module",
   "bin": {
@@ -73,7 +73,7 @@
       "commands",
       "docs"
     ],
-    "templateVersion": "0.2.0",
+    "templateVersion": "0.2.1",
     "packageName": "opsx-dev-pipeline",
     "managedAssets": [
       {

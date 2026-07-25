@@ -3,14 +3,14 @@ import { checkManifestVersion, mergeHealthStatus } from '../../src/core/manifest
 
 describe('checkManifestVersion', () => {
   it('reports current when versions match', () => {
-    const result = checkManifestVersion('0.2.0', '0.2.0');
+    const result = checkManifestVersion('0.2.1', '0.2.1');
 
     expect(result.status).toBe('current');
     expect(result.healthStatus).toBe('ok');
   });
 
   it('warns when manifest version is older than the CLI', () => {
-    const result = checkManifestVersion('0.1.0', '0.2.0');
+    const result = checkManifestVersion('0.1.0', '0.2.1');
 
     expect(result.status).toBe('outdated');
     expect(result.healthStatus).toBe('warn');
@@ -18,7 +18,7 @@ describe('checkManifestVersion', () => {
   });
 
   it('warns when manifest version is newer than the CLI', () => {
-    const result = checkManifestVersion('0.3.0', '0.2.0');
+    const result = checkManifestVersion('0.3.0', '0.2.1');
 
     expect(result.status).toBe('ahead');
     expect(result.healthStatus).toBe('warn');
@@ -26,7 +26,7 @@ describe('checkManifestVersion', () => {
   });
 
   it('warns when versions cannot be parsed', () => {
-    const result = checkManifestVersion('dev', '0.2.0');
+    const result = checkManifestVersion('dev', '0.2.1');
 
     expect(result.status).toBe('unknown');
     expect(result.healthStatus).toBe('warn');
