@@ -18,7 +18,7 @@ const toolSchema = z.object({
     skills: z.string(),
     commands: z.string(),
   }),
-  supports: z.array(z.enum(['base', 'skills', 'commands', 'docs'])),
+  supports: z.array(z.enum(['base', 'skills', 'commands', 'docs', 'schema'])),
   postInstallNotes: z.array(z.string()).optional(),
 });
 

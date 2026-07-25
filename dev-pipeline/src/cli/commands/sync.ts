@@ -21,6 +21,7 @@ export async function runSyncCommand(options: InitOptions): Promise<void> {
     targetDir,
     projectName: result.manifest.projectName,
     tool: result.manifest.tool,
+    stack: result.manifest.stack,
     features: result.manifest.features,
     dryRun: Boolean(options.dryRun),
     force: Boolean(options.force),

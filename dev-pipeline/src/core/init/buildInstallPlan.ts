@@ -1,7 +1,7 @@
 import fs from 'fs-extra';
 import path from 'node:path';
 import { getToolAdapter } from '../adapters/registry.js';
-import type { FeatureId, ToolId } from '../adapters/types.js';
+import type { FeatureId, StackId, ToolId } from '../adapters/types.js';
 import { assetManifest } from '../assets/manifest.js';
 import type { AssetDefinition, InstallFile } from '../assets/types.js';
 import { PACKAGE_NAME, TEMPLATE_VERSION } from '../runtime/meta.js';
@@ -15,6 +15,7 @@ export interface BuildInstallPlanInput {
   targetDir: string;
   projectName: string;
   tool: ToolId;
+  stack?: StackId;
   features: FeatureId[];
   dryRun: boolean;
   force: boolean;
@@ -127,11 +128,13 @@ async function expandBundle(
 }
 
 export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<InstallPlan> {
+  const stack = input.stack ?? 'backend';
   const adapter = getToolAdapter(input.registry, input.tool);
   const templateContext = {
     projectName: input.projectName,
     toolId: input.tool,
     toolName: adapter.definition.displayName,
+    stack,
     packageName: PACKAGE_NAME,
     skillsDir: adapter.getDestination('skills'),
     commandsDir: adapter.getDestination('commands'),
@@ -141,6 +144,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
 
   const selectedAssets = assetManifest
     .filter((asset) => input.features.includes(asset.feature))
+    .filter((asset) => !asset.stacks || asset.stacks.includes(stack))
     .filter((asset) => !asset.tools || asset.tools.includes(input.tool));
 
   const managed = indexManagedAssets(input.managedAssets);
@@ -162,7 +166,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
       return [
         {
           assetId: asset.id,
-          sourcePath: path.join(input.rootDir, asset.source),
+          sourcePath: path.join(input.rootDir, renderString(asset.source, templateContext)),
           destinationPath: path.join(
             input.targetDir,
             renderString(asset.destination, templateContext),
@@ -196,6 +200,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
   return {
     projectName: input.projectName,
     tool: input.tool,
+    stack,
     features: input.features,
     adapter,
     files,

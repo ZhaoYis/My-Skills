@@ -1,4 +1,4 @@
-import type { FeatureId, ToolId } from '../adapters/types.js';
+import type { FeatureId, StackId, ToolId } from '../adapters/types.js';
 
 export type AssetKind = 'template' | 'static' | 'bundle';
 export type AssetScope = 'common' | 'tool';
@@ -11,6 +11,7 @@ export interface AssetDefinition {
   source: string;
   destination: string;
   tools?: ToolId[];
+  stacks?: StackId[];
   includeExtensions?: string[];
   templateFiles?: string[];
   excludePatterns?: string[];

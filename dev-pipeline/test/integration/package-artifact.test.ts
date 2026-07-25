@@ -41,7 +41,6 @@ describe('packaged artifact', () => {
       'opsx-learn',
       'opsx-analysis',
       'opsx-design',
-      'opsx-verify',
       'opsx-clarify',
       'opsx-health',
       'opsx-pr',
@@ -80,10 +79,14 @@ describe('packaged artifact', () => {
     expect(createHelp.stdout).toContain('opsx-dev-pipeline');
 
     await execFileAsync('npm', ['init', '-y'], { cwd: targetDir });
-    await execFileAsync(binPath, ['init', '--tool', 'cursor', '--yes', '--dir', targetDir], {
-      cwd: installDir,
-      timeout: 30000,
-    });
+    await execFileAsync(
+      binPath,
+      ['init', '--tool', 'cursor', '--stack', 'backend', '--yes', '--dir', targetDir],
+      {
+        cwd: installDir,
+        timeout: 30000,
+      },
+    );
     expect(await fs.pathExists(path.join(targetDir, 'opsx-dev-pipeline.json'))).toBe(false);
 
     const pkg = await fs.readJson(path.join(targetDir, 'package.json'));
@@ -110,7 +113,6 @@ describe('packaged artifact', () => {
       'opsx-learn',
       'opsx-analysis',
       'opsx-design',
-      'opsx-verify',
       'opsx-clarify',
       'opsx-health',
       'opsx-pr',

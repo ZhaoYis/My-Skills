@@ -484,15 +484,15 @@ rules:
 
 | # | 步骤 | 涉及文件 | 风险 |
 |---|------|---------|------|
-| 1 | 类型层：新增 `StackId` + `'schema'` FeatureId，扩展所有相关接口 | `adapters/types.ts`, `prompts/types.ts`, `init/types.ts`, `manifest/types.ts`, `config/features.json` | 低 |
-| 2 | 创建 schema 模板文件（frontend + backend，全部 `.hbs` 后缀） | `templates/common/schemas/{frontend,backend}/*.hbs` | 低 |
-| 3 | 创建 config 模板文件 | `templates/common/config/config.{frontend,backend}.yaml.hbs` | 低 |
-| 4 | 在 asset manifest 中注册 schema + config assets | `src/core/assets/manifest.ts` | 低 |
-| 5 | CLI 层：`--stack` 选项 + 必填校验 | `src/cli/index.ts`, `src/cli/commands/init.ts` | 低 |
-| 6 | 交互收集：stack 选择 + `--yes` 校验 | `src/core/init/collectInputs.ts` | 低 |
-| 7 | Preflight + openspec init 调用 | `src/core/init/runInit.ts` | 中 |
-| 8 | 核心流程：stack 注入到 buildInstallPlan + executeInstallPlan | `src/core/init/runInit.ts`, `buildInstallPlan.ts`, `executeInstallPlan.ts` | 中 |
-| 9 | 编译验证 + 冒烟测试 + 集成测试 | `npm run build && npm run test` | 低 |
+| ✅ 1 | 类型层：新增 `StackId` + `'schema'` FeatureId，扩展所有相关接口 | `adapters/types.ts`, `prompts/types.ts`, `init/types.ts`, `manifest/types.ts`, `config/features.json` | 低 |
+| ✅ 2 | 创建 schema 模板文件（frontend + backend，全部 `.hbs` 后缀） | `templates/common/schemas/{frontend,backend}/*.hbs` | 低 |
+| ✅ 3 | 创建 config 模板文件 | `templates/common/config/config.{frontend,backend}.yaml.hbs` | 低 |
+| ✅ 4 | 在 asset manifest 中注册 schema + config assets | `src/core/assets/manifest.ts` | 低 |
+| ✅ 5 | CLI 层：`--stack` 选项 + 必填校验 | `src/cli/index.ts`, `src/cli/commands/init.ts` | 低 |
+| ✅ 6 | 交互收集：stack 选择 + `--yes` 校验 | `src/core/init/collectInputs.ts` | 低 |
+| ✅ 7 | Preflight + openspec init 调用 | `src/core/init/runInit.ts` | 中 |
+| ✅ 8 | 核心流程：stack 注入到 buildInstallPlan + executeInstallPlan | `src/core/init/runInit.ts`, `buildInstallPlan.ts`, `executeInstallPlan.ts` | 中 |
+| ✅ 9 | 编译验证 + 冒烟测试 + 集成测试 | `npm run build && npm run test` | 低 |
 
 ---
 

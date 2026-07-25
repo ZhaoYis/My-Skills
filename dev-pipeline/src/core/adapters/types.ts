@@ -1,12 +1,14 @@
-export type FeatureId = 'base' | 'skills' | 'commands' | 'docs';
+export type FeatureId = 'base' | 'skills' | 'commands' | 'docs' | 'schema';
 
 export const ALL_FEATURE_IDS = [
   'base',
   'skills',
   'commands',
   'docs',
+  'schema',
 ] as const satisfies readonly FeatureId[];
 export type ToolId = 'claude' | 'cursor' | 'codex';
+export type StackId = 'frontend' | 'backend';
 
 export interface ToolDestinations {
   root: string;

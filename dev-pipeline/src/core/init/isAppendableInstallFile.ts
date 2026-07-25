@@ -1,7 +1,7 @@
 import path from 'node:path';
 import type { InstallFile } from '../assets/types.js';
 
-const APPENDABLE_BASENAMES = new Set(['.gitignore', 'CLAUDE.md']);
+const APPENDABLE_BASENAMES = new Set(['.gitignore', 'CLAUDE.md', 'config.yaml']);
 const APPENDABLE_EXTENSIONS = new Set(['.md', '.mdc', '.txt']);
 
 export function isAppendableInstallFile(

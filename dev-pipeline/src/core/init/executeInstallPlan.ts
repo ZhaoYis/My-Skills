@@ -16,6 +16,37 @@ function appendContent(existingContent: string, nextContent: string): string {
   return `${existingContent}${separator}${nextContent}`;
 }
 
+function appendConfigContext(existingContent: string, nextContent: string): string {
+  const contextStart = nextContent.match(/^context:\s*\|\s*$/m)?.index;
+  if (contextStart === undefined) return existingContent;
+
+  const contextLines = nextContent.slice(contextStart).split('\n');
+  const body: string[] = [];
+  for (const line of contextLines.slice(1)) {
+    if (line.trim() !== '' && !line.startsWith('  ')) break;
+    if (line.startsWith('  ')) body.push(line);
+  }
+  if (body.length === 0) return existingContent;
+
+  const existingLines = existingContent.split('\n');
+  const existingContextIndex = existingLines.findIndex((line) => /^context:\s*\|\s*$/.test(line));
+  if (existingContextIndex >= 0) {
+    let insertAt = existingContextIndex + 1;
+    while (insertAt < existingLines.length) {
+      const line = existingLines[insertAt] ?? '';
+      if (line.trim() !== '' && !line.startsWith('  ')) break;
+      insertAt += 1;
+    }
+    existingLines.splice(insertAt, 0, ...body);
+    return existingLines.join('\n');
+  }
+
+  const rulesIndex = existingLines.findIndex((line) => /^rules:\s*$/.test(line));
+  const insertion = ['context: |', ...body, ''];
+  existingLines.splice(rulesIndex >= 0 ? rulesIndex : existingLines.length, 0, ...insertion);
+  return existingLines.join('\n');
+}
+
 function mergeManagedAssets(
   existingAssets: ManagedAssetRecord[],
   writtenAssets: ManagedAssetRecord[],
@@ -46,6 +77,7 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
     projectName: plan.projectName,
     toolId: plan.tool,
     toolName: plan.adapter.definition.displayName,
+    stack: plan.stack,
     packageName: PACKAGE_NAME,
     skillsDir: plan.adapter.getDestination('skills'),
     commandsDir: plan.adapter.getDestination('commands'),
@@ -82,7 +114,11 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
 
       if (file.resolution === 'append') {
         const existingContent = await fs.readFile(file.destinationPath, 'utf8');
-        await fs.outputFile(file.destinationPath, appendContent(existingContent, content));
+        const nextContent =
+          path.basename(file.destinationPath) === 'config.yaml'
+            ? appendConfigContext(existingContent, content)
+            : appendContent(existingContent, content);
+        await fs.outputFile(file.destinationPath, nextContent);
         managedFiles.push(file);
         continue;
       }
@@ -123,6 +159,7 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
     schemaVersion: 1,
     projectName: plan.projectName,
     tool: plan.tool,
+    stack: plan.stack,
     features: plan.features,
     templateVersion: TEMPLATE_VERSION,
     packageName: PACKAGE_NAME,

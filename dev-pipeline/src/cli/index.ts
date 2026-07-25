@@ -14,7 +14,11 @@ export async function runCli(argv: string[]): Promise<void> {
   cli
     .command('init', 'Initialize opsx-dev-pipeline templates in the current directory')
     .option('--tool <tool>', 'Target AI tool id')
-    .option('--yes', 'Auto-confirm all prompts (non-interactive mode); does NOT force-overwrite files')
+    .option('--stack <frontend|backend>', 'Target project stack')
+    .option(
+      '--yes',
+      'Auto-confirm all prompts (non-interactive mode); does NOT force-overwrite files',
+    )
     .option('--force', 'Overwrite existing managed files even if they would conflict')
     .option('--dry-run', 'Preview generated files without writing them')
     .option('--feature <feature>', 'Enable an optional feature (e.g. structural-analysis-hint)')
@@ -25,7 +29,10 @@ export async function runCli(argv: string[]): Promise<void> {
 
   cli
     .command('sync', 'Re-render managed files from opsx-dev-pipeline manifest')
-    .option('--yes', 'Auto-confirm all prompts (non-interactive mode); does NOT force-overwrite files')
+    .option(
+      '--yes',
+      'Auto-confirm all prompts (non-interactive mode); does NOT force-overwrite files',
+    )
     .option('--force', 'Overwrite existing managed files even if they would conflict')
     .option('--dry-run', 'Preview synchronized files without writing them')
     .option(...dirOption)
@@ -38,7 +45,10 @@ export async function runCli(argv: string[]): Promise<void> {
       'upgrade',
       'Upgrade managed files using the current opsx-dev-pipeline package templates',
     )
-    .option('--yes', 'Auto-confirm all prompts (non-interactive mode); does NOT force-overwrite files')
+    .option(
+      '--yes',
+      'Auto-confirm all prompts (non-interactive mode); does NOT force-overwrite files',
+    )
     .option('--force', 'Overwrite existing managed files even if they would conflict')
     .option('--dry-run', 'Preview upgraded files without writing them')
     .option(...dirOption)

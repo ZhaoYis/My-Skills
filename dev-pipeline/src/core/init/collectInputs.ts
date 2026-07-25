@@ -3,6 +3,7 @@ import prompts from 'prompts';
 import {
   ALL_FEATURE_IDS,
   type FeatureId,
+  type StackId,
   type ToolAdapter,
   type ToolId,
 } from '../adapters/types.js';
@@ -32,12 +33,27 @@ export async function collectInputs(
 ): Promise<InitAnswers> {
   const defaultProjectName = path.basename(targetDir);
   const defaultTool = options.tool ?? 'claude';
+  const requestedStack = options.stack;
+  if (
+    requestedStack !== undefined &&
+    requestedStack !== 'frontend' &&
+    requestedStack !== 'backend'
+  ) {
+    throw new Error(`Invalid stack: ${String(requestedStack)}. Valid stacks: frontend, backend.`);
+  }
   const features = resolveFeatures(options.feature);
 
   if (options.yes) {
+    if (!requestedStack) {
+      throw new Error(
+        'Missing required --stack in non-interactive mode. Use --stack frontend or --stack backend.',
+      );
+    }
+
     return {
       projectName: defaultProjectName,
       tool: defaultTool,
+      stack: requestedStack,
       features,
     };
   }
@@ -63,6 +79,16 @@ export async function collectInputs(
         choices: toolChoices,
         initial: toolChoices.findIndex((choice) => choice.value === defaultTool),
       },
+      {
+        type: 'select',
+        name: 'stack',
+        message: 'Select your project stack',
+        choices: [
+          { title: 'Frontend', value: 'frontend' satisfies StackId },
+          { title: 'Backend', value: 'backend' satisfies StackId },
+        ],
+        initial: requestedStack === 'frontend' ? 0 : 1,
+      },
     ],
     { onCancel: () => process.exit(1) },
   );
@@ -70,6 +96,7 @@ export async function collectInputs(
   return {
     projectName: response.projectName ?? defaultProjectName,
     tool: response.tool ?? defaultTool,
+    stack: (response.stack ?? requestedStack ?? 'backend') as StackId,
     features,
   };
 }

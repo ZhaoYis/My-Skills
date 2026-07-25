@@ -25,6 +25,12 @@
       "default": true
     },
     {
+      "id": "schema",
+      "displayName": "OpenSpec stack schema",
+      "description": "Stack-specific OpenSpec schema and project configuration.",
+      "default": true
+    },
+    {
       "id": "structural-analysis-hint",
       "displayName": "Structural analysis hint (optional)",
       "description": "Opt-in guidance to prefer structural search (code graph / LSP / index MCP) over plain text search when available. Default off; references stay no-op when disabled.",

@@ -11,7 +11,7 @@ vi.mock('prompts', () => ({
 import { runSyncCommand } from '../../src/cli/commands/sync.js';
 import { runUninstallCommand } from '../../src/cli/commands/uninstall.js';
 import { runUpgradeCommand } from '../../src/cli/commands/upgrade.js';
-import { runInit } from '../../src/core/init/runInit.js';
+import { runInit as runInitImpl } from '../../src/core/init/runInit.js';
 import {
   MANIFEST_FILE,
   MANIFEST_PACKAGE_JSON_KEY,
@@ -21,6 +21,10 @@ import { readManifest as readStoredManifest } from '../../src/core/manifest/io.j
 import type { PipelineManifest } from '../../src/core/manifest/types.js';
 
 const createdDirs: string[] = [];
+
+async function runInit(options: Parameters<typeof runInitImpl>[0]): Promise<void> {
+  await runInitImpl({ stack: 'backend', ...options });
+}
 
 afterEach(async () => {
   await Promise.all(createdDirs.splice(0).map((dir) => fs.remove(dir)));
@@ -57,7 +61,6 @@ const removed = [
   'opsx-learn',
   'opsx-analysis',
   'opsx-design',
-  'opsx-verify',
   'opsx-clarify',
   'opsx-health',
   'opsx-pr',
@@ -130,7 +133,16 @@ describe('tool matrix', () => {
     // Negative: no removed preset skills or commands in any adapter output
     const allFiles = await listAllFiles(dir);
     for (const name of removed) {
-      expect(allFiles.filter((f) => f.includes(name))).toEqual([]);
+      expect(
+        allFiles.filter((file) => {
+          const normalized = file.replaceAll('\\\\', '/');
+          return (
+            normalized.endsWith(`/${name}`) ||
+            normalized.endsWith(`/${name}.md`) ||
+            normalized.includes(`/${name}/`)
+          );
+        }),
+      ).toEqual([]);
     }
 
     expect(await fs.pathExists(path.join(dir, MANIFEST_FILE))).toBe(true);
@@ -166,7 +178,32 @@ describe('tool matrix', () => {
 
     await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
     const defaultManifest = await readManifest(dir);
-    expect(defaultManifest.features.sort()).toEqual(['base', 'commands', 'docs', 'skills']);
+    expect(defaultManifest.features.sort()).toEqual([
+      'base',
+      'commands',
+      'docs',
+      'schema',
+      'skills',
+    ]);
+  });
+
+  it.each([
+    'frontend',
+    'backend',
+  ] as const)('installs the %s OpenSpec schema only', async (stack) => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), `opsx-stack-${stack}-`));
+    createdDirs.push(dir);
+
+    await runInit({ dir, tool: 'claude', stack, yes: true, force: false, dryRun: false });
+
+    const selectedSchema = path.join(dir, 'openspec', 'schemas', stack, 'schema.yaml');
+    const otherStack = stack === 'frontend' ? 'backend' : 'frontend';
+    expect(await fs.pathExists(selectedSchema)).toBe(true);
+    expect(await fs.pathExists(path.join(dir, 'openspec', 'schemas', otherStack))).toBe(false);
+    expect(await fs.readFile(path.join(dir, 'openspec', 'config.yaml'), 'utf8')).toContain(
+      `schema: ${stack}`,
+    );
+    expect((await readManifest(dir)).stack).toBe(stack);
   });
 
   it('embeds manifest in package.json when package.json exists', async () => {
@@ -293,44 +330,42 @@ describe('tool matrix', () => {
     expect(skillContent).not.toContain('{{toolName}}');
   });
 
-  it.each(['claude', 'cursor', 'codex'] as const)(
-    'renders valid skill metadata and tool entry semantics for %s',
-    async (tool) => {
-      const dir = await fs.mkdtemp(path.join(os.tmpdir(), `opsx-metadata-${tool}-`));
-      createdDirs.push(dir);
+  it.each([
+    'claude',
+    'cursor',
+    'codex',
+  ] as const)('renders valid skill metadata and tool entry semantics for %s', async (tool) => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), `opsx-metadata-${tool}-`));
+    createdDirs.push(dir);
 
-      await runInit({ dir, tool, yes: true, force: false, dryRun: false });
-      const skillFile = toolExpectations[tool].find(({ path: file }) =>
-        file.endsWith('/SKILL.md'),
-      )?.path;
-      if (!skillFile) {
-        throw new Error(`SKILL.md expectation missing for ${tool}`);
-      }
-      const skillDir = path.dirname(path.join(dir, skillFile));
-      const skillContent = await fs.readFile(path.join(skillDir, 'SKILL.md'), 'utf8');
-      const frontmatter = skillContent.match(/^---\n([\s\S]*?)\n---/)?.[1] ?? '';
+    await runInit({ dir, tool, yes: true, force: false, dryRun: false });
+    const skillFile = toolExpectations[tool].find(({ path: file }) =>
+      file.endsWith('/SKILL.md'),
+    )?.path;
+    if (!skillFile) {
+      throw new Error(`SKILL.md expectation missing for ${tool}`);
+    }
+    const skillDir = path.dirname(path.join(dir, skillFile));
+    const skillContent = await fs.readFile(path.join(skillDir, 'SKILL.md'), 'utf8');
+    const frontmatter = skillContent.match(/^---\n([\s\S]*?)\n---/)?.[1] ?? '';
 
-      expect(frontmatter.match(/^name:/gm)).toHaveLength(1);
-      expect(frontmatter.match(/^description:/gm)).toHaveLength(1);
-      expect(frontmatter).not.toMatch(/^(license|compatibility|metadata):/m);
-      expect(skillContent).not.toMatch(/\{\{[^}]+\}\}/);
+    expect(frontmatter.match(/^name:/gm)).toHaveLength(1);
+    expect(frontmatter.match(/^description:/gm)).toHaveLength(1);
+    expect(frontmatter).not.toMatch(/^(license|compatibility|metadata):/m);
+    expect(skillContent).not.toMatch(/\{\{[^}]+\}\}/);
 
-      const openaiConfig = await fs.readFile(path.join(skillDir, 'agents/openai.yaml'), 'utf8');
-      expect(openaiConfig).toContain('display_name: "OpenSpec Dev Pipeline"');
-      expect(openaiConfig).toContain('Use $opsx-dev-pipeline');
-      expect(openaiConfig).not.toMatch(/\{\{[^}]+\}\}/);
-    },
-  );
+    const openaiConfig = await fs.readFile(path.join(skillDir, 'agents/openai.yaml'), 'utf8');
+    expect(openaiConfig).toContain('display_name: "OpenSpec Dev Pipeline"');
+    expect(openaiConfig).toContain('Use $opsx-dev-pipeline');
+    expect(openaiConfig).not.toMatch(/\{\{[^}]+\}\}/);
+  });
 
   it('keeps the Cursor rule opt-in', async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-cursor-opt-in-'));
     createdDirs.push(dir);
 
     await runInit({ dir, tool: 'cursor', yes: true, force: false, dryRun: false });
-    const rule = await fs.readFile(
-      path.join(dir, '.cursor/rules/opsx-dev-pipeline.mdc'),
-      'utf8',
-    );
+    const rule = await fs.readFile(path.join(dir, '.cursor/rules/opsx-dev-pipeline.mdc'), 'utf8');
     expect(rule).toContain('alwaysApply: false');
     expect(rule).not.toContain('alwaysApply: true');
   });

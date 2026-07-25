@@ -1,0 +1,19 @@
+schema: backend
+context: |
+  Project: {{projectName}}
+  Project Type: Backend Service
+  Tech Stack: Java 17+, Spring Boot 3.x, Maven/Gradle
+  ORM: MyBatis-Plus / JPA / JOOQ
+  Testing: JUnit 5 + Mockito + Spring Boot Test + Testcontainers
+  Conventions: Layered architecture (Controller -> Service -> Repository), DTO pattern
+  Code Quality: Checkstyle / SpotBugs
+
+rules:
+  proposal:
+    - "Must include API contract changes (endpoints, request/response DTOs)"
+    - "Must specify database migration strategy (Flyway/Liquibase)"
+  specs:
+    - "Use Given/When/Then format for API behavior scenarios"
+  design:
+    - "Must include ERD or data model changes"
+    - "Must specify middleware/interceptor chain changes"
