@@ -220,4 +220,54 @@ describe('pipeline-lib', () => {
     expect(result.code).toBe(0);
     expect(await fs.realpath(result.stdout)).toBe(await fs.realpath(repo));
   });
+
+  it('finds the nearest openspec project root and falls back to git root', async () => {
+    // Case 1: No openspec/ directory → fall back to git root
+    const noProject = await runModule(`
+      import { findOpenSpecRoot } from ${JSON.stringify(libUrl)};
+      process.stdout.write(findOpenSpecRoot());
+    `);
+    expect(noProject.code).toBe(0);
+    expect(await fs.realpath(noProject.stdout)).toBe(await fs.realpath(repo));
+
+    // Case 2: openspec/ with config.yaml exists in a subdirectory
+    const projectDir = path.join(repo, 'packages/my-app');
+    await fs.ensureDir(path.join(projectDir, 'openspec', 'changes'));
+    await fs.outputFile(path.join(projectDir, 'openspec', 'config.yaml'), 'schema: frontend\n');
+    const nested = path.join(projectDir, 'src', 'components');
+    await fs.ensureDir(nested);
+
+    const result = await runCommand(
+      process.execPath,
+      [
+        '--input-type=module',
+        '--eval',
+        `import { findOpenSpecRoot } from ${JSON.stringify(libUrl)}; process.stdout.write(findOpenSpecRoot());`,
+      ],
+      nested,
+      commandEnv(),
+    );
+
+    expect(result.code).toBe(0);
+    expect(await fs.realpath(result.stdout)).toBe(await fs.realpath(projectDir));
+
+    // Case 3: openspec/changes/ (without config.yaml) also counts as a valid project
+    const changelessDir = path.join(repo, 'packages/other-app');
+    await fs.ensureDir(path.join(changelessDir, 'openspec', 'changes'));
+    // No config.yaml — still valid because openspec/changes/ exists
+
+    const result2 = await runCommand(
+      process.execPath,
+      [
+        '--input-type=module',
+        '--eval',
+        `import { findOpenSpecRoot } from ${JSON.stringify(libUrl)}; process.stdout.write(findOpenSpecRoot());`,
+      ],
+      changelessDir,
+      commandEnv(),
+    );
+
+    expect(result2.code).toBe(0);
+    expect(await fs.realpath(result2.stdout)).toBe(await fs.realpath(changelessDir));
+  });
 });

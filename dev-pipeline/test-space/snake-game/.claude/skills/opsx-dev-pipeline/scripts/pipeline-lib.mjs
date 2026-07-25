@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { accessSync, constants, statSync } from 'node:fs';
+import { accessSync, constants, existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 const EXIT_DEPENDENCY_MISSING = 1;
@@ -83,6 +83,33 @@ export function getRepoRoot() {
   } catch {
     emitError('not-a-git-repo', '当前目录不在 Git 仓库内', 'init-git-or-cd', EXIT_NOT_GIT_REPO);
   }
+}
+
+export function findOpenSpecRoot() {
+  let current = process.cwd();
+  const gitRoot = getRepoRoot();
+
+  while (current.length >= gitRoot.length) {
+    const openspecDir = path.join(current, 'openspec');
+    try {
+      const dirStat = statSync(openspecDir);
+      if (
+        dirStat.isDirectory() &&
+        (existsSync(path.join(openspecDir, 'config.yaml')) ||
+          existsSync(path.join(openspecDir, 'changes')))
+      ) {
+        return current;
+      }
+    } catch {
+      // openspec/ doesn't exist at this level, walk up
+    }
+
+    const parent = path.dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+
+  return gitRoot;
 }
 
 export function validateChangeName(value, exitCode = EXIT_INVALID_INPUT) {

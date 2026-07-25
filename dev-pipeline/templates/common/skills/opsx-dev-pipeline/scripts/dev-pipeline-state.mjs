@@ -1,6 +1,6 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { emitError, getRepoRoot, validateChangeName } from './pipeline-lib.mjs';
+import { emitError, findOpenSpecRoot, validateChangeName } from './pipeline-lib.mjs';
 
 const EXIT_STATE_NOT_FOUND = 10;
 const EXIT_INVALID_TRANSITION = 11;
@@ -154,7 +154,7 @@ if (!command) {
   );
 } else {
   validateChangeName(changeName, EXIT_INVALID_TRANSITION);
-  const root = getRepoRoot();
+  const root = findOpenSpecRoot();
   if (root) {
     if (command === 'init') {
       let existingState = null;
