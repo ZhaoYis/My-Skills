@@ -17,8 +17,16 @@
 2. 编写或修改单元测试代码（风格与既有用例一致）
 3. 执行测试命令
 4. 失败 → **AskQuestion**：`修复代码或测试后重试` / `跳过并记录技术债务（需写明原因和跟进 issue）` / `终止流程`
-   - **修复循环最多 3 轮**，超过后强制进入子流程 B（跳过并记录技术债务）
+   - 每次执行后调用 `node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs attempt "<name>" tests passed` 或 `tests failed`
+   - **修复循环最多 3 轮**；第三次 `failed` 会强制暂停。只有用户随后明确确认技术债务，才能记录 `debt-recorded` 后继续
 5. 通过 → 进入 Phase5 Step15
+
+通过后记录测试命令和状态：
+```bash
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<name>" tests.command '"<test-command>"'
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs attempt "<name>" tests passed
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 5 15
+```
 
 ## 子流程 B（跳过并记录技术债务）
 
@@ -27,3 +35,5 @@
    - 跳过原因
    - 建议的跟进 issue / 负责人
 2. 使用 **AskQuestion** 确认记录内容后继续 → 进入 Phase5 Step15
+
+确认后记录 `tests.status=debt-recorded`。用户在决策点 4 直接跳过时记录 `tests.status=skipped` 和 `tests.detail`，再迁移到 Phase5；不得省略状态记录。

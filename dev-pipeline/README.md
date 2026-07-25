@@ -7,7 +7,7 @@
 使用本工具前，请先安装 OpenSpec：
 
 - [OpenSpec](https://github.com/Fission-AI/OpenSpec)
-- **Python 3**（可选）：`dev-pipeline-instructions.sh` 在省略 artifact-id 时需要 python3 解析 JSON；若未安装，需显式传入 artifact-id
+- **Node.js 20+**：用于 CLI、OpenSpec 和 Skill 脚本的结构化 JSON 校验
 
 推荐直接使用 npx 初始化：
 
@@ -37,9 +37,9 @@ npx opsx-dev-pipeline uninstall --yes
 
 | Tool ID  | 工具          | 生成目录 / 文件                                                    | 说明                                           |
 | -------- | ----------- | ------------------------------------------------------------ | ---------------------------------------------- |
-| `claude` | Claude Code | `CLAUDE.md`、`.claude/skills/`、`.claude/commands/`            | 默认推荐；skills 与 commands 分目录安装                 |
-| `cursor` | Cursor      | `.cursor/rules/`、`.cursor/commands/`、`opsx-dev-pipeline.mdc` | skills 安装为 `.cursor/rules/<skill>/SKILL.md` |
-| `codex`  | Codex       | `.codex/prompts/`、`.codex/commands/`                         | prompts 承载 skill 入口；commands 承载快捷命令          |
+| `claude` | Claude Code | `CLAUDE.md`、`.claude/skills/`、`.claude/commands/`            | `SKILL_ROOT=.claude/skills/opsx-dev-pipeline`            |
+| `cursor` | Cursor      | `.cursor/rules/`、`.cursor/commands/`、`opsx-dev-pipeline.mdc` | 按需加载；`SKILL_ROOT=.cursor/rules/opsx-dev-pipeline`    |
+| `codex`  | Codex       | `.codex/prompts/`、`.codex/commands/`                         | 入口 prompt 加载 `.codex/prompts/opsx-dev-pipeline/`     |
 
 查看当前内置适配器：
 
@@ -51,6 +51,8 @@ npx opsx-dev-pipeline list-tools --json
 ## Generated Skill & Command
 
 初始化后，模板会安装核心流水线入口：
+
+Skill bundle 同时包含 `agents/openai.yaml`，用于提供 OpenAI/Codex 界面显示名、简述和默认调用提示。
 
 | 入口                  | 类型    | 用途摘要                                         |
 | ------------------- | ----- | -------------------------------------------- |

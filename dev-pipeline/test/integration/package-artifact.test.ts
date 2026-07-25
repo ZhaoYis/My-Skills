@@ -32,6 +32,9 @@ describe('packaged artifact', () => {
 
     // Retained templates are present
     expect(stdout).toContain('package/templates/common/skills/opsx-dev-pipeline/');
+    expect(stdout).toContain(
+      'package/templates/common/skills/opsx-dev-pipeline/agents/openai.yaml',
+    );
 
     // Removed preset skills are absent from tarball
     const removed = [
@@ -92,6 +95,11 @@ describe('packaged artifact', () => {
     );
     expect(
       await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-dev-pipeline/SKILL.md')),
+    ).toBe(true);
+    expect(
+      await fs.pathExists(
+        path.join(targetDir, '.cursor/rules/opsx-dev-pipeline/agents/openai.yaml'),
+      ),
     ).toBe(true);
     expect(await fs.pathExists(path.join(targetDir, '.cursor/commands/opsx-dev-pipeline.md'))).toBe(
       true,

@@ -1,4 +1,4 @@
-import type { PhaseId, AgentPhaseResult, PhaseMeta, TestEnvironment } from './types.js';
+import type { PhaseId, AgentPhaseResult, TestEnvironment } from './types.js';
 import { PHASE_META, ALL_PHASES } from './types.js';
 import path from 'node:path';
 
@@ -41,7 +41,7 @@ export class AgentPhaseRunner {
   }
 
   /**
-   * Record a Phaseresult and store it for subsequent phases.
+   * Record a phase result and store it for subsequent phases.
    */
   recordResult(result: AgentPhaseResult): void {
     this.previousResults.set(result.phaseId, result);
@@ -55,13 +55,13 @@ export class AgentPhaseRunner {
   }
 
   /**
-   * Build a summary of previous Phaseoutputs for agent context.
+   * Build a summary of previous phase outputs for agent context.
    */
   private buildPreviousContext(currentPhase: PhaseId): string {
     const phases = this.getPrecedingPhases(currentPhase);
     if (phases.length === 0) return '';
 
-    const lines: string[] = ['## Previous PhaseOutputs'];
+    const lines: string[] = ['## Previous Phase Outputs'];
     for (const phaseId of phases) {
       const result = this.previousResults.get(phaseId);
       if (result) {
@@ -117,7 +117,7 @@ ${params.phaseDescription}
 
 ## Instructions
 
-1. **Read the skill definition**: The canonical instructions for this Phaseare at:
+1. **Read the skill definition**: The canonical instructions for this phase are at:
    \`${params.skillPath}\`
 
 2. **Read the phase-specific reference**: For pipeline phases, the detailed steps are under:
@@ -127,7 +127,7 @@ ${params.phaseDescription}
 
 4. **Report your results**: After completing the phase, provide a structured summary:
 
-### PhaseResult Format
+### Phase Result Format
 
 \`\`\`json
 {
@@ -149,11 +149,11 @@ ${params.previousContext}
 
 ## Key Rules
 
-- Follow the SKILL.md and its Phasereference exactly.
+- Follow the SKILL.md and its phase reference exactly.
 - Do not skip decision points — pause and ask when needed.
 - For Phase2 (Apply), write actual code changes to the filesystem.
 - For Phase4 (Unit Tests), actually run \`npm test\`.
-- Always verify your work before declaring the Phasecomplete.`;
+- Always verify your work before declaring the phase complete.`;
   }
 }
 
@@ -176,10 +176,9 @@ export function getPhaseSpecificInstructions(
 ## Specific Tasks for Phase0 — Entrance
 
 1. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh\`
-2. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-detect-schema.sh\`
-3. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-list-changes.sh\`
-4. Verify all scripts exit 0 and return valid JSON
-5. Determine the entry route: new change → Phase1`;
+2. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-list-changes.sh\`
+3. Verify all scripts exit 0 and return valid JSON
+4. Determine the entry route: new change → Phase1`;
 
     case 'phase-1-propose':
       return `\
@@ -190,8 +189,7 @@ export function getPhaseSpecificInstructions(
 3. Generate proposal.md in \`openspec/changes/${changeName}/\`
 4. Generate tasks.md with checkbox items
 5. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-validate-change.sh "${changeName}"\`
-6. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-ensure-change-meta.sh "${changeName}" backend,frontend\`
-7. Present proposal for approval (decision point 1)`;
+6. Present proposal for approval (decision point 1)`;
 
     case 'phase-2-apply':
       return `\
@@ -236,8 +234,8 @@ export function getPhaseSpecificInstructions(
 ## Specific Tasks for Phase5 — Archive
 
 1. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-change-status.sh "${changeName}"\`
-2. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-resolve-verify.sh "${changeName}"\`
-3. Run verify as determined above
+2. Resolve the verify command from \`openspec/config.yaml\` and project build files
+3. Run verify and require success
 4. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-archive.sh "${changeName}" -y\`
 5. Determine post-archive operation (decision point 5)`;
 
@@ -247,7 +245,7 @@ export function getPhaseSpecificInstructions(
 
 1. Pre-commit checks: \`git status\`, \`git fetch\`
 2. Scan for sensitive files
-3. Stage: \`git add -A\`
+3. Stage tracked files with \`git add -u\`, then review each untracked file explicitly
 4. Commit with conventional commit format: \`feat(${context.changeName}): <description>\`
 5. Push: \`git push origin <branch>\`
 6. Display final summary`;

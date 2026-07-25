@@ -1,7 +1,7 @@
 ---
 description: opsx-dev-pipeline 知识优先与流水线入口规则
 globs:
-alwaysApply: true
+alwaysApply: false
 ---
 
 # opsx-dev-pipeline / Cursor Rule
@@ -11,3 +11,4 @@ This project uses Cursor rules plus repository-local prompt assets.
 - Rules directory: `.cursor/rules`
 - Commands directory: `{{commandsDir}}`
 - Skills-style assets are stored in: `{{skillsDir}}`
+- Load `{{skillsDir}}/opsx-dev-pipeline/SKILL.md` only when the user requests an OpenSpec change or the gated delivery pipeline.

@@ -2,50 +2,70 @@
 # Phase1: 获取某制品模板 instructions；artifact 省略时用 status 中第一件 ready 制品（openspec CLI 常要求显式 artifact）。
 # Phase2: 对 apply 使用 dev-pipeline-instructions-apply.sh 更便捷。
 set -euo pipefail
-change="${1:?用法: $0 <change-name> [artifact-id]}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=dev-pipeline-lib.sh
+source "$SCRIPT_DIR/dev-pipeline-lib.sh"
+
+change="${1:-}"
 artifact="${2:-}"
+require_argument "change-name" "$change"
+validate_change_name "$change"
+prepare_openspec_repo
+
 if [[ -z "$artifact" ]]; then
-  if ! command -v python3 >/dev/null 2>&1; then
-    echo '{"status":"error","reason":"python3-missing","detail":"省略 artifact 时需要 python3 解析 openspec status；请安装 python3 或显式传入 artifact-id","nextAction":"install-python3-or-pass-artifact"}' >&2
-    exit 1
-  fi
-  # 带超时获取 status，python3 解析第一件 ready 制品
-  # 区分 3 种错误：openspec 命令失败、JSON 解析失败、无 ready 制品
+  require_command node "node-cli-not-found" "install-node-or-pass-artifact"
   set +e
-  status_json="$(openspec status --change "$change" --json 2>/dev/null)"
+  status_json="$(openspec status --change "$change" --json 2>&1)"
   openspec_exit=$?
   set -e
   if [[ $openspec_exit -ne 0 ]]; then
-    echo '{"status":"error","reason":"openspec-status-failed","detail":"openspec status --change '"$change"' --json 执行失败（exit '"$openspec_exit"'）","nextAction":"check-openspec-install-or-change-name"}' >&2
-    exit 2
+    emit_error \
+      "openspec-status-failed" \
+      "openspec status 执行失败（exit $openspec_exit）：$status_json" \
+      "check-change-name" \
+      "$EXIT_COMMAND_FAILED"
   fi
   if [[ -z "$status_json" ]]; then
-    echo '{"status":"error","reason":"openspec-status-empty","detail":"openspec status 返回空输出","nextAction":"check-change-exists"}' >&2
-    exit 2
+    emit_error \
+      "openspec-status-empty" \
+      "openspec status 返回空输出" \
+      "check-change-exists" \
+      "$EXIT_INVALID_OUTPUT"
   fi
-  artifact="$(echo "$status_json" | python3 -c '
-import sys, json
-try:
-    d = json.load(sys.stdin)
-except json.JSONDecodeError as e:
-    print("JSON_DECODE_ERROR", file=sys.stderr)
-    sys.exit(2)
-artifacts = d.get("artifacts") or []
-for a in artifacts:
-    if a.get("status") == "ready" and a.get("id"):
-        print(a["id"], end="")
-        sys.exit(0)
-# No ready artifact — print structured error and exit 3
-print("NO_READY_ARTIFACT", file=sys.stderr)
-sys.exit(3)
-' 2>&1)"
-  py_exit=$?
-  if [[ $py_exit -eq 2 ]]; then
-    echo '{"status":"error","reason":"openspec-status-json-parse-failed","detail":"无法解析 openspec status 输出的 JSON","nextAction":"check-openspec-output"}' >&2
-    exit 2
-  elif [[ $py_exit -eq 3 ]]; then
-    echo '{"status":"error","reason":"no-ready-artifact","detail":"没有 status 为 ready 的制品，请显式传入 artifact-id","nextAction":"pass-artifact-id"}' >&2
-    exit 1
+
+  set +e
+  artifact="$(printf '%s' "$status_json" | node -e '
+let input = "";
+process.stdin.on("data", chunk => input += chunk);
+process.stdin.on("end", () => {
+  try {
+    const payload = JSON.parse(input);
+    const ready = (payload.artifacts || []).find(item => item.status === "ready" && item.id);
+    if (!ready) process.exit(3);
+    process.stdout.write(ready.id);
+  } catch {
+    process.exit(2);
+  }
+});
+')"
+  parse_exit=$?
+  set -e
+  if [[ $parse_exit -eq 2 ]]; then
+    emit_error \
+      "openspec-status-json-parse-failed" \
+      "无法解析 openspec status 输出的 JSON" \
+      "check-openspec-output" \
+      "$EXIT_INVALID_OUTPUT"
+  elif [[ $parse_exit -eq 3 ]]; then
+    emit_error \
+      "no-ready-artifact" \
+      "没有 status 为 ready 的制品" \
+      "pass-artifact-id" \
+      "$EXIT_INVALID_INPUT"
   fi
 fi
-exec openspec instructions "$artifact" --change "$change" --json
+validate_identifier "artifact-id" "$artifact"
+run_json_command \
+  "openspec-instructions-failed" \
+  "check-artifact-id" \
+  openspec instructions "$artifact" --change "$change" --json

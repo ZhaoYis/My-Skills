@@ -67,8 +67,6 @@ describe('Simple Feature — Backend Only', () => {
     expect(env.openspecAvailable).toBe(true);
     expect(env.toolId).toBe('claude');
 
-    // Verify backend source files exist
-    const backendRoutes = path.join(env.rootDir, 'backend', 'src', 'routes', 'todos.ts');
     expect(env.rootDir).toContain('opsx-delivery');
   });
 
@@ -133,7 +131,7 @@ describe('Simple Feature — Backend Only', () => {
     const result: AgentPhaseResult = {
       phaseId,
       label: meta.label,
-      status: 'pass',
+      status: assertions.every((a) => a.passed) ? 'pass' : 'fail',
       startedAt: new Date().toISOString(),
       durationMs: 0,
       agentSummary:
@@ -158,7 +156,7 @@ describe('Simple Feature — Backend Only', () => {
     const result: AgentPhaseResult = {
       phaseId,
       label: meta.label,
-      status: 'pass',
+      status: assertions.every((a) => a.passed) ? 'pass' : 'fail',
       startedAt: new Date().toISOString(),
       durationMs: 0,
       agentSummary:
@@ -195,7 +193,7 @@ describe('Simple Feature — Backend Only', () => {
       const result: AgentPhaseResult = {
         phaseId,
         label: meta.label,
-        status: 'pass',
+        status: assertions.every((a) => a.passed) ? 'pass' : 'fail',
         startedAt: new Date().toISOString(),
         durationMs: 0,
         agentSummary: `Agent executes ${meta.label} — validator registered and callable`,
@@ -219,7 +217,12 @@ describe('Simple Feature — Backend Only', () => {
     expect(report.meta.scenarioName).toBe(SIMPLE_SCENARIO.name);
     expect(report.meta.changeName).toBe('add-get-todo-by-id');
     expect(report.phases).toHaveLength(ALL_PHASES.length);
-    expect(report.summary.passedPhases).toBe(ALL_PHASES.length);
+    expect(report.summary.passedPhases).toBe(
+      report.phases.filter((phase) => phase.status === 'pass').length,
+    );
+    expect(report.summary.failedPhases).toBe(
+      report.phases.filter((phase) => phase.status === 'fail').length,
+    );
     expect(report.summary.totalAssertions).toBeGreaterThan(0);
     // Score may vary based on pipeline init output
     expect(report.summary.overallScore).toBeGreaterThan(0);

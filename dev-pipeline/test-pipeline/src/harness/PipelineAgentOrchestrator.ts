@@ -10,9 +10,35 @@ import { AgentPhaseRunner, getPhaseSpecificInstructions } from './AgentPhaseRunn
 import { createTestEnvironment } from './EnvironmentFactory.js';
 import type { EnvironmentConfig } from './types.js';
 
+export interface AgentExecutionResult {
+  status: AgentPhaseResult['status'];
+  summary: string;
+  assertions?: AgentPhaseResult['assertions'];
+  artifacts?: AgentPhaseResult['artifacts'];
+  errors?: string[];
+  phaseData?: Record<string, unknown>;
+}
+
+export type AgentExecutor = (
+  phaseId: PhaseId,
+  prompt: string,
+) => Promise<AgentExecutionResult>;
+
+export function normalizePhaseResult(result: AgentPhaseResult): AgentPhaseResult {
+  if (result.status !== 'pass' || result.assertions.every((assertion) => assertion.passed)) {
+    return result;
+  }
+
+  return {
+    ...result,
+    status: 'fail',
+    errors: [...(result.errors ?? []), 'One or more required assertions failed.'],
+  };
+}
+
 /**
  * Orchestrates the full pipeline delivery flow test.
- * Creates the test environment, runs each Phasevia AI Agent,
+ * Creates the test environment, runs each phase via an injected Agent executor,
  * validates outputs, and generates a structured report.
  */
 export class PipelineAgentOrchestrator {
@@ -21,9 +47,11 @@ export class PipelineAgentOrchestrator {
   private runner!: AgentPhaseRunner;
   private results: Map<PhaseId, AgentPhaseResult> = new Map();
   private startTime: number = 0;
+  private agentExecutor?: AgentExecutor;
 
-  constructor(scenario: ScenarioConfig) {
+  constructor(scenario: ScenarioConfig, agentExecutor?: AgentExecutor) {
     this.scenario = scenario;
+    this.agentExecutor = agentExecutor;
   }
 
   /**
@@ -43,7 +71,7 @@ export class PipelineAgentOrchestrator {
 
     this.runner = new AgentPhaseRunner(this.env);
 
-    // 2. Run each Phasein order
+    // 2. Run each phase in order
     const phaseResults: AgentPhaseResult[] = [];
 
     for (const phaseId of this.scenario.phases) {
@@ -52,7 +80,7 @@ export class PipelineAgentOrchestrator {
       this.results.set(phaseId, result);
       this.runner.recordResult(result);
 
-      // If a Phasefails, decide whether to continue
+      // If a phase fails, stop and mark the remaining phases as skipped.
       if (result.status === 'fail' || result.status === 'error') {
         // Mark remaining phases as skipped
         const remainingPhases = this.scenario.phases.slice(
@@ -73,7 +101,7 @@ export class PipelineAgentOrchestrator {
   }
 
   /**
-   * Execute a single Phasevia AI Agent.
+   * Execute a single phase via the injected Agent executor.
    */
   private async executeAgentPhase(phaseId: PhaseId): Promise<AgentPhaseResult> {
     const meta = PHASE_META[phaseId];
@@ -101,7 +129,7 @@ export class PipelineAgentOrchestrator {
 
       const duration = Date.now() - startTime;
 
-      return {
+      return normalizePhaseResult({
         phaseId,
         label: meta.label,
         status: agentResult.status as AgentPhaseResult['status'],
@@ -112,7 +140,7 @@ export class PipelineAgentOrchestrator {
         artifacts: agentResult.artifacts || [],
         errors: agentResult.errors,
         phaseData: agentResult.phaseData,
-      };
+      });
     } catch (error) {
       const duration = Date.now() - startTime;
       return {
@@ -129,37 +157,16 @@ export class PipelineAgentOrchestrator {
     }
   }
 
-  /**
-   * Launch an AI agent to execute a pipeline phase.
-   * This is a placeholder — in actual use, the test harness
-   * calls the Claude Code Agent tool to spawn the agent.
-   */
-  private async launchAgent(
-    phaseId: PhaseId,
-    prompt: string,
-  ): Promise<{
-    status: string;
-    summary: string;
-    assertions?: Array<{ description: string; passed: boolean; detail?: string }>;
-    artifacts?: Array<{ path: string; type: 'file' | 'directory'; exists: boolean; size?: number }>;
-    errors?: string[];
-    phaseData?: Record<string, unknown>;
-  }> {
-    // NOTE: This function is designed to be called via the Claude Code Agent tool.
-    // In a vitest context, the test file calls Agent tool directly.
-    // This class provides the prompt construction and result parsing.
-    //
-    // The actual agent invocation happens in the test scenario file:
-    //   const result = await agent(prompt, { schema: PHASE_RESULT_SCHEMA });
+  private async launchAgent(phaseId: PhaseId, prompt: string): Promise<AgentExecutionResult> {
+    if (!this.agentExecutor) {
+      throw new Error('No Agent executor configured; refusing to report a synthetic pass.');
+    }
 
-    return {
-      status: 'pass',
-      summary: `Phase${phaseId} completed. Agent would execute the prompt above.`,
-    };
+    return this.agentExecutor(phaseId, prompt);
   }
 
   /**
-   * Get the full prompt for an agent Phase(exposed for test files).
+   * Get the full prompt for an agent phase (exposed for test files).
    */
   getAgentPrompt(phaseId: PhaseId): string {
     const basePrompt = this.runner.buildPhasePrompt(
@@ -191,24 +198,35 @@ export class PipelineAgentOrchestrator {
     return this.env;
   }
 
+  getEnvironment(): TestEnvironment {
+    if (!this.env) {
+      throw new Error('Test environment has not been initialized.');
+    }
+    return this.env;
+  }
+
   /**
-   * Record a Phaseresult (called by test after agent completes).
+   * Record a phase result (called by a test after execution completes).
    */
   recordPhaseResult(result: AgentPhaseResult): void {
-    this.results.set(result.phaseId, result);
-    this.runner.recordResult(result);
+    const normalized = normalizePhaseResult(result);
+    this.results.set(normalized.phaseId, normalized);
+    this.runner.recordResult(normalized);
   }
 
   /**
    * Build the final report from all collected results.
    */
   buildReport(phaseResults: AgentPhaseResult[], durationMs: number): PipelineReport {
-    const passed = phaseResults.filter((p) => p.status === 'pass').length;
-    const failed = phaseResults.filter((p) => p.status === 'fail' || p.status === 'error').length;
-    const skipped = phaseResults.filter((p) => p.status === 'skipped').length;
+    const normalizedResults = phaseResults.map(normalizePhaseResult);
+    const passed = normalizedResults.filter((p) => p.status === 'pass').length;
+    const failed = normalizedResults.filter(
+      (p) => p.status === 'fail' || p.status === 'error',
+    ).length;
+    const skipped = normalizedResults.filter((p) => p.status === 'skipped').length;
 
-    const totalAssertions = phaseResults.reduce((sum, p) => sum + p.assertions.length, 0);
-    const passedAssertions = phaseResults.reduce(
+    const totalAssertions = normalizedResults.reduce((sum, p) => sum + p.assertions.length, 0);
+    const passedAssertions = normalizedResults.reduce(
       (sum, p) => sum + p.assertions.filter((a) => a.passed).length,
       0,
     );
@@ -228,7 +246,7 @@ export class PipelineAgentOrchestrator {
     if (skipped > 0) {
       recommendations.push(`${skipped} phase(s) skipped — may indicate orchestration issues`);
     }
-    for (const r of phaseResults) {
+    for (const r of normalizedResults) {
       if (r.errors && r.errors.length > 0) {
         recommendations.push(`Phase"${r.label}" has ${r.errors.length} error(s)`);
       }
@@ -251,9 +269,9 @@ export class PipelineAgentOrchestrator {
         openspecVersion: this.env.openspecVersion,
         pipelineInitResult: this.env.pipelineInitResult,
       },
-      phases: phaseResults,
+      phases: normalizedResults,
       summary: {
-        totalPhases: phaseResults.length,
+        totalPhases: normalizedResults.length,
         passedPhases: passed,
         failedPhases: failed,
         skippedPhases: skipped,

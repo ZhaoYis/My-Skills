@@ -77,6 +77,7 @@ const toolExpectations = {
     { path: '.claude/skills/opsx-dev-pipeline/references/phase-6-merge-push.md', present: true },
     { path: '.claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', present: true },
     { path: '.claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-archive.sh', present: true },
+    { path: '.claude/skills/opsx-dev-pipeline/agents/openai.yaml', present: true },
     { path: '.claude/commands/opsx-dev-pipeline.md', present: true },
   ],
   cursor: [
@@ -86,6 +87,7 @@ const toolExpectations = {
     { path: '.cursor/rules/opsx-dev-pipeline/references/phase-6-merge-push.md', present: true },
     { path: '.cursor/rules/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', present: true },
     { path: '.cursor/rules/opsx-dev-pipeline/scripts/dev-pipeline-archive.sh', present: true },
+    { path: '.cursor/rules/opsx-dev-pipeline/agents/openai.yaml', present: true },
     { path: '.cursor/commands/opsx-dev-pipeline.md', present: true },
     { path: '.cursor/commands/README.md', present: true },
   ],
@@ -96,6 +98,7 @@ const toolExpectations = {
     { path: '.codex/prompts/opsx-dev-pipeline/references/phase-6-merge-push.md', present: true },
     { path: '.codex/prompts/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh', present: true },
     { path: '.codex/prompts/opsx-dev-pipeline/scripts/dev-pipeline-archive.sh', present: true },
+    { path: '.codex/prompts/opsx-dev-pipeline/agents/openai.yaml', present: true },
     { path: '.codex/commands/opsx-dev-pipeline.md', present: true },
     { path: '.codex/commands/README.md', present: true },
   ],
@@ -238,27 +241,27 @@ describe('tool matrix', () => {
     expect(skillContent).toContain('执行约束');
     expect(skillContent).toContain('错误处理速查');
 
-    // Verify all Phasereference files exist
-    for (const Phaseof [0, 1, 2, 3, 4, 5, 6]) {
+    // Verify all phase reference files exist
+    for (const phase of [0, 1, 2, 3, 4, 5, 6]) {
       expect(
         await fs.pathExists(path.join(skillRoot, `references/phase-${phase}-entrance.md`)),
-      ).toBe(Phase=== 0);
-      if (Phase!== 0) {
+      ).toBe(phase === 0);
+      if (phase !== 0) {
         const phaseName =
-          Phase=== 4
+          phase === 4
             ? 'unit-tests'
-            : Phase=== 5
+            : phase === 5
               ? 'archive'
-              : Phase=== 6
+              : phase === 6
                 ? 'merge-push'
-                : ['propose', 'apply', 'review'][Phase- 1];
+                : ['propose', 'apply', 'review'][phase - 1];
         expect(
           await fs.pathExists(path.join(skillRoot, `references/phase-${phase}-${phaseName}.md`)),
         ).toBe(true);
       }
     }
 
-    // Verify key content in Phasefiles
+    // Verify key content in phase files
     const apply = await fs.readFile(path.join(skillRoot, 'references/phase-2-apply.md'), 'utf8');
     expect(apply).toContain('写前复用门禁');
     expect(apply).toContain('准出自审查门禁');
@@ -288,6 +291,48 @@ describe('tool matrix', () => {
       'utf8',
     );
     expect(skillContent).not.toContain('{{toolName}}');
+  });
+
+  it.each(['claude', 'cursor', 'codex'] as const)(
+    'renders valid skill metadata and tool entry semantics for %s',
+    async (tool) => {
+      const dir = await fs.mkdtemp(path.join(os.tmpdir(), `opsx-metadata-${tool}-`));
+      createdDirs.push(dir);
+
+      await runInit({ dir, tool, yes: true, force: false, dryRun: false });
+      const skillFile = toolExpectations[tool].find(({ path: file }) =>
+        file.endsWith('/SKILL.md'),
+      )?.path;
+      if (!skillFile) {
+        throw new Error(`SKILL.md expectation missing for ${tool}`);
+      }
+      const skillDir = path.dirname(path.join(dir, skillFile));
+      const skillContent = await fs.readFile(path.join(skillDir, 'SKILL.md'), 'utf8');
+      const frontmatter = skillContent.match(/^---\n([\s\S]*?)\n---/)?.[1] ?? '';
+
+      expect(frontmatter.match(/^name:/gm)).toHaveLength(1);
+      expect(frontmatter.match(/^description:/gm)).toHaveLength(1);
+      expect(frontmatter).not.toMatch(/^(license|compatibility|metadata):/m);
+      expect(skillContent).not.toMatch(/\{\{[^}]+\}\}/);
+
+      const openaiConfig = await fs.readFile(path.join(skillDir, 'agents/openai.yaml'), 'utf8');
+      expect(openaiConfig).toContain('display_name: "OpenSpec Dev Pipeline"');
+      expect(openaiConfig).toContain('Use $opsx-dev-pipeline');
+      expect(openaiConfig).not.toMatch(/\{\{[^}]+\}\}/);
+    },
+  );
+
+  it('keeps the Cursor rule opt-in', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-cursor-opt-in-'));
+    createdDirs.push(dir);
+
+    await runInit({ dir, tool: 'cursor', yes: true, force: false, dryRun: false });
+    const rule = await fs.readFile(
+      path.join(dir, '.cursor/rules/opsx-dev-pipeline.mdc'),
+      'utf8',
+    );
+    expect(rule).toContain('alwaysApply: false');
+    expect(rule).not.toContain('alwaysApply: true');
   });
 
   it('writes a concise root README for new projects', async () => {

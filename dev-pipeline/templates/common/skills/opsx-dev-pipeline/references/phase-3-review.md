@@ -25,6 +25,12 @@
 
 > **分支名安全处理**：将 `<branch>` 中的 `/` 替换为 `-`（如 `feature/my-fix` → `feature-my-fix`），避免路径遍历/目录创建失败。
 
+报告写入后同步状态：
+```bash
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<name>" review.reportPath '"<report-path>"'
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs attempt "<name>" review passed # 或 issues-found
+```
+
 ## Step12：[决策点 3] 审查结果处理
 
 ### 有严重或重要问题 → AskQuestion：
@@ -43,15 +49,22 @@
 
 ### 审查无问题 → 直接进入 Phase4
 
-**修复循环最多 3 轮**（每轮 = 一次"生成修复提案并应用"或一次"直接修复" → 重新审查），超过强制暂停并提示人工介入。
+进入后续流程前记录 `reviewDisposition`，再执行：
+```bash
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 4 13
+```
+
+回到 Phase2 时执行 `transition "<name>" 2 6`；暂停时执行 `pause`。修复循环轮次以状态中的 `review.round` 为准。
+
+**审查/修复循环最多 3 轮**。`attempt` 在第三次 `issues-found` 时原子记录暂停状态并返回非零；此时必须提示人工介入，不得继续 Phase4。
 
 ---
 
 ## 修复子流程（「生成修复提案并应用」）
 
 1. 根据审查报告确定修复 scope，名称 `fix-cr-<type>`（如 `fix-cr-security`）
-2. 新建修复 change 并生成制品（同 Phase1 Step4）
+2. 新建修复 change、初始化独立状态并生成制品（同 Phase1 Step4）
 3. **修复提案门禁**：严格按 Phase1 决策点 1 使用 AskQuestion（三选项一致）
 4. 逐任务实施修复（同 Phase2 Step6-7）
-5. 归档修复 change：`bash <SKILL_ROOT>/scripts/dev-pipeline-archive.sh "fix-cr-<type>" -y --skip-specs`
+5. 修复 change 按 Phase4–5 完成测试与归档，并以 `postArchiveAction=local-only` 迁移到 Phase6 后标记完成；代码随主 change 统一交付
 6. 回到Step10 重新审查

@@ -4,9 +4,9 @@
  * This test validates the ENTIRE test harness framework:
  * - EnvironmentFactory creates correct environments
  * - Agent prompts are correctly generated for each phase
- * - Phasevalidators produce correct assertions
+ * - Phase validators produce correct assertions
  * - Report generator produces valid JSON + Markdown reports
- * - Phasesequencing and result recording works
+ * - Phase sequencing and result recording works
  *
  * When AI Agents are actually invoked via the Agent tool, each phase's
  * agent would read its SKILL.md, execute the phase, and the validators
@@ -114,7 +114,7 @@ describe('Pipeline Framework — Full Verification', () => {
     }
   });
 
-  // ─── Pipeline PhaseTests ─────────────────────────────────────
+  // ─── Pipeline Phase Tests ─────────────────────────────────────
 
   it('Phase0: Entrance — preflight + schema detection', async () => {
     const phaseId: PhaseId = 'phase-0-entrance';
@@ -305,8 +305,8 @@ describe('Pipeline Framework — Full Verification', () => {
     expect(report.summary.totalPhases).toBe(ALL_PHASES.length);
     expect(report.summary.totalAssertions).toBeGreaterThan(0);
 
-    // Verify each Phasehas required fields
-    for (const Phaseof report.phases) {
+    // Verify each phase has required fields
+    for (const phase of report.phases) {
       expect(phase.phaseId).toBeTruthy();
       expect(phase.label).toBeTruthy();
       expect(phase.status).toBeTruthy();

@@ -9,6 +9,11 @@
 - `补充/修改需求理解` → 文本对话澄清后回到本决策点
 - `终止流程` → 退出
 
+确认后记录：
+```bash
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" requirementsConfirmed true
+```
+
 ## Step4：创建 change 并生成制品
 
 **续接已有 change**：跳过创建，仅对未完成制品执行生成。
@@ -23,7 +28,7 @@ bash <SKILL_ROOT>/scripts/dev-pipeline-new-change.sh "<name>"
 ```bash
 bash <SKILL_ROOT>/scripts/dev-pipeline-instructions.sh "<name>" <artifact-id>
 ```
-读取指令后创建文件。使用 **TaskCreate / TaskUpdate** 跟踪进度。
+读取指令后创建文件。优先使用当前 Agent 的任务工具；不可用时在回复中维护编号进度，并以 `tasks.md` 为完成事实。
 
 （可选）在决策点 1 前运行 `bash <SKILL_ROOT>/scripts/dev-pipeline-validate-change.sh "<name>"` 做结构校验。
 
@@ -35,3 +40,11 @@ bash <SKILL_ROOT>/scripts/dev-pipeline-instructions.sh "<name>" <artifact-id>
 - `确认提案，开始实施` → 进入 Phase2
 - `提案不符合预期，我要补充/修改` → 文本对话收集反馈，改制品后回到本决策点
 - `终止流程` → 退出
+
+确认进入实施时，先记录门禁再迁移：
+```bash
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" proposalApproved true
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 2 6
+```
+
+用户要求修改时记录 `proposalApproved=false`；暂停或终止时执行状态 `pause` 并写明原因。

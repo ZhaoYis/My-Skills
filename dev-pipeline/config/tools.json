@@ -26,7 +26,7 @@
       "supports": ["base", "skills", "commands", "docs"],
       "postInstallNotes": [
         "Use Cursor commands under .cursor/commands/ (e.g. opsx-dev-pipeline).",
-        "The opsx-dev-pipeline rule is always applied."
+        "The opsx-dev-pipeline rule is loaded on demand for OpenSpec delivery work."
       ]
     },
     {
@@ -41,7 +41,7 @@
       },
       "supports": ["base", "skills", "commands", "docs"],
       "postInstallNotes": [
-        "Open .codex/prompts/opsx-dev-pipeline.md as the pipeline entry prompt.",
+        "Open .codex/prompts/opsx-dev-pipeline.md; it loads the bundled skill from .codex/prompts/opsx-dev-pipeline/.",
         "Commands live under .codex/commands/ for quick invocation."
       ]
     }

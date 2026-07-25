@@ -12,35 +12,36 @@ bash <SKILL_ROOT>/scripts/dev-pipeline-preflight.sh
 
 | 退出码 | reason | 处理 |
 |--------|--------|------|
-| 1 | `openspec-cli-not-found` / `openspec-version-failed` | 提示安装 `@fission-ai/openspec` 并退出 |
+| 1 | `openspec-cli-not-found` / `openspec-version-failed` / `node-cli-not-found` | 提示安装 Node.js 20+ 与 `@fission-ai/openspec` 并退出 |
 | 2 | `not-a-git-repo` | 提示 `git init` 或进入正确仓库后退出 |
 | 3 | `openspec-not-initialized` | 提示执行 `openspec init` 后退出 |
-| 4 | `python3-missing` | 警告：`dev-pipeline-instructions.sh` 在省略 artifact-id 时需要 python3；建议安装 |
+| 4 | `invalid-change-name` / `missing-argument` / `no-ready-artifact` | 修正输入后重试 |
+| 5 | `*-failed` | 展示命令失败详情，修复后重试 |
+| 6 | `*-json-invalid` / `command-output-empty` | 暂停并检查 OpenSpec 版本或输出 |
 
 - `warnings` 字段非空 → 展示警告清单，确认后继续
-- `python3Available: false` → 提示用户在 Phase1 必须显式传入 artifact-id
 
 ## Step2：判断入口类型
 
 ### 2.a 用户提供了已有 change 名称
 
-1. 运行 `bash <SKILL_ROOT>/scripts/dev-pipeline-change-status.sh "<name>"` 检查状态
-   - change 不存在 → 运行 `bash <SKILL_ROOT>/scripts/dev-pipeline-list-changes.sh` 展示可用 change
-2. 按优先级判断续接阶段（优先回到最早未完成阶段）：
-   - 制品未完成 → 推荐 Phase1
-   - 制品完成但任务未完成 → 推荐 Phase2
-   - 任务完成且无审查报告 → 推荐 Phase3
-   - 已有审查报告但未归档 → 推荐 Phase4（完成后进入 Phase5）
-   - 已归档且有未提交变更 → 推荐 Phase6 Step20
-   - 已归档且有未推送提交 → 推荐 Phase6 Step22
-   - **修复 change (fix-cr-*) 存在且未归档** → 推荐 Phase3 Step12（审查修复子流程可能中断）
-   - **归档中断**（活跃目录已空但 archive 目录无对应 change）→ 列出状态，建议手动检查或重新归档
-   - **合并中断**（存在未解决的 merge 冲突）→ 提示用户手动解决冲突后继续 Phase6 Step23
-3. 使用 **AskQuestion** 确认：`从 PhaseX 继续` / `从头开始（新建 change）` / `终止流程`
+1. 读取持久化状态：
+   ```bash
+   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<name>"
+   ```
+2. 并行核对事实：活跃/归档 change、任务勾选、状态中记录的审查报告、Git 分支和冲突状态。
+3. 状态不存在但 change 存在时，展示检测事实并询问：`按检测结果重建状态` / `选择其他 change` / `终止流程`。只有用户确认后才执行 `init` 和必要的 `set`/`transition`。
+4. 状态与事实不一致时，列出差异并执行 `pause`；禁止按文件是否存在自动跳阶段。
+5. 状态一致时使用 **AskQuestion** 确认：`从记录的 Phase/Step 继续` / `从头开始（新建 change）` / `终止流程`。
 
 ### 2.b 用户提供了需求描述
 
 - 从描述推导 kebab-case 的 change 名称
+- 获取当前分支并初始化状态，然后迁移到 Phase1：
+  ```bash
+  node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>"
+  node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 1 3
+  ```
 - 进入 **Phase1 Step3（决策点 1a）**
 
 ### 2.c 用户未提供任何输入

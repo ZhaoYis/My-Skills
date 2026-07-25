@@ -1,79 +1,96 @@
 #!/usr/bin/env bash
-# Phase0: openspec + git 仓库预检，含 git 配置与 openspec 初始化状态。
-# 成功输出 JSON 到 stdout；失败输出 JSON 到 stderr 并返回稳定退出码。
-#
-# JSON 错误输出约定（所有 dev-pipeline-*.sh 脚本共享）：
-#   reason: 英文 kebab-case 标识符（如 openspec-cli-not-found），供程序化解析
-#   detail: 人类可读描述（中英均可），供 AI Agent 向用户展示
-#   nextAction: 推荐的后续动作标识符
-# warnings 以换行符分隔，避免消息中的特殊字符冲突。
+# Phase0: OpenSpec + Git 仓库预检，成功和失败均在 stdout 输出单个 JSON。
 set -euo pipefail
 
-EXIT_OPENSPEC_MISSING=1
-EXIT_NOT_GIT_REPO=2
-EXIT_OPENSPEC_NOT_INIT=3
-EXIT_PYTHON3_MISSING=4
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=dev-pipeline-lib.sh
+source "$SCRIPT_DIR/dev-pipeline-lib.sh"
 
-# 带超时的命令执行（10 秒默认）
-run_with_timeout() {
-  local timeout_sec="${1:-10}"
-  shift
-  timeout "$timeout_sec" "$@" 2>/dev/null || return $?
-}
+require_command openspec "openspec-cli-not-found" "install-openspec"
+require_command node "node-cli-not-found" "install-node"
+cd_repo_root
 
-# --- openspec CLI ---
-if ! command -v openspec >/dev/null 2>&1; then
-  echo '{"status":"error","reason":"openspec-cli-not-found","detail":"请安装 @fission-ai/openspec 并确保 PATH 可用","nextAction":"install-openspec"}' >&2
-  exit $EXIT_OPENSPEC_MISSING
-fi
-if ! openspec --version >/dev/null 2>&1; then
-  echo '{"status":"error","reason":"openspec-version-failed","detail":"openspec --version 执行失败","nextAction":"check-openspec-install"}' >&2
-  exit $EXIT_OPENSPEC_MISSING
+set +e
+openspec_version="$(openspec --version 2>&1)"
+version_exit=$?
+set -e
+if [[ $version_exit -ne 0 ]]; then
+  emit_error \
+    "openspec-version-failed" \
+    "openspec --version 执行失败（exit $version_exit）：$openspec_version" \
+    "check-openspec-install" \
+    "$EXIT_DEPENDENCY_MISSING"
 fi
 
-# --- git 仓库 ---
-if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  echo '{"status":"error","reason":"not-a-git-repo","detail":"当前目录不在 git 仓库内（请先 cd 到项目根或执行 git init）","nextAction":"init-git-or-cd"}' >&2
-  exit $EXIT_NOT_GIT_REPO
+if [[ ! -f "openspec/config.yaml" ]]; then
+  emit_error \
+    "openspec-not-initialized" \
+    "仓库根目录缺少 openspec/config.yaml" \
+    "run-openspec-init" \
+    "$EXIT_OPENSPEC_NOT_INITIALIZED"
 fi
 
 # --- git 用户配置（提交时需要）---
-warnings=""
+warnings=()
 if ! git config user.name >/dev/null 2>&1; then
-  warnings="${warnings}git-config-user-name-missing\n"
+  warnings+=("git-config-user-name-missing")
 fi
 if ! git config user.email >/dev/null 2>&1; then
-  warnings="${warnings}git-config-user-email-missing\n"
+  warnings+=("git-config-user-email-missing")
 fi
 
-# --- openspec 初始化状态 ---
-openspec_init_ok=true
-if ! openspec list --json >/dev/null 2>&1; then
-  openspec_init_ok=false
+set +e
+list_json="$(openspec list --json 2>&1)"
+list_exit=$?
+set -e
+if [[ $list_exit -ne 0 ]]; then
+  emit_error \
+    "openspec-list-failed" \
+    "openspec list --json 执行失败（exit $list_exit）：$list_json" \
+    "check-openspec-config" \
+    "$EXIT_COMMAND_FAILED"
 fi
 
-if ! $openspec_init_ok; then
-  # 去除末尾换行符
-  warnings="${warnings%\\n}"
-  echo '{"status":"error","reason":"openspec-not-initialized","detail":"openspec 未初始化（请先执行 openspec init）","nextAction":"run-openspec-init","warnings":"'"$warnings"'"}' >&2
-  exit $EXIT_OPENSPEC_NOT_INIT
+set +e
+root_source="$(printf '%s' "$list_json" | node -e '
+let input = "";
+process.stdin.on("data", chunk => input += chunk);
+process.stdin.on("end", () => {
+  try {
+    const payload = JSON.parse(input);
+    if (!payload.root || typeof payload.root.source !== "string") process.exit(2);
+    process.stdout.write(payload.root.source);
+  } catch {
+    process.exit(2);
+  }
+});
+')"
+parse_exit=$?
+set -e
+if [[ $parse_exit -ne 0 ]]; then
+  emit_error \
+    "openspec-list-json-invalid" \
+    "无法解析 openspec list --json 的 root.source" \
+    "check-openspec-output" \
+    "$EXIT_INVALID_OUTPUT"
+fi
+if [[ "$root_source" == "implicit" ]]; then
+  emit_error \
+    "openspec-not-initialized" \
+    "OpenSpec 返回 implicit 根，请先在仓库中执行 openspec init" \
+    "run-openspec-init" \
+    "$EXIT_OPENSPEC_NOT_INITIALIZED"
 fi
 
-# --- python3（dev-pipeline-instructions.sh 依赖）---
-python3_available=true
-if ! command -v python3 >/dev/null 2>&1; then
-  python3_available=false
-  warnings="${warnings}python3-missing（dev-pipeline-instructions.sh 在省略 artifact-id 时需要 python3）\n"
-fi
-
-# --- 构建最终输出 ---
-# 移除末尾换行符
-warnings="${warnings%\\n}"
-if [[ -n "$warnings" ]]; then
-  printf '{"status":"ok","reason":"preflight-passed-with-warnings","nextAction":"continue-phase-0","warnings":"%s","python3Available":%s}\n' \
-    "$warnings" "$python3_available"
+if [[ ${#warnings[@]} -gt 0 ]]; then
+  warning_json=""
+  for warning in "${warnings[@]}"; do
+    [[ -n "$warning_json" ]] && warning_json+=","
+    warning_json+="\"$(json_escape "$warning")\""
+  done
+  printf '{"status":"ok","reason":"preflight-passed-with-warnings","nextAction":"continue-phase-0","warnings":[%s],"openspecVersion":"%s","rootSource":"%s"}\n' \
+    "$warning_json" "$(json_escape "$openspec_version")" "$(json_escape "$root_source")"
 else
-  printf '{"status":"ok","reason":"preflight-passed","nextAction":"continue-phase-0","python3Available":%s}\n' \
-    "$python3_available"
+  printf '{"status":"ok","reason":"preflight-passed","nextAction":"continue-phase-0","warnings":[],"openspecVersion":"%s","rootSource":"%s"}\n' \
+    "$(json_escape "$openspec_version")" "$(json_escape "$root_source")"
 fi
-exit 0

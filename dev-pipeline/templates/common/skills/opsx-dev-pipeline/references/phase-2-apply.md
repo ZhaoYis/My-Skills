@@ -8,7 +8,7 @@ bash <SKILL_ROOT>/scripts/dev-pipeline-instructions-apply.sh "<name>"
 
 返回状态处理：
 - `state: "blocked"` → **AskQuestion**：`回到 Phase1 补充制品` / `终止流程`
-- `state: "all_done"` → 跳到 Phase3
+- `state: "all_done"` → 不再实施任务，但仍进入 Step8 决策点 2
 - 其他 → 读取 `contextFiles` 继续实施
 
 ## Step7：逐任务实施
@@ -43,3 +43,18 @@ bash <SKILL_ROOT>/scripts/dev-pipeline-instructions-apply.sh "<name>"
 - `暂停流水线，手动调整后继续` → 展示恢复指引后退出
 - `跳过审查，继续后续流程` → Phase4（完成后进入 Phase5）
 - `终止流程` → 退出
+
+按选择先记录再迁移：
+```bash
+# 进入代码审查
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" implementationConfirmed true
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" reviewDisposition '"review"'
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 3 9
+
+# 显式跳过审查
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" implementationConfirmed true
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" reviewDisposition '"skip-review"'
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 4 13
+```
+
+回到提案时迁移到 Phase1 Step3；暂停时执行 `pause`。任何路径都不得绕过 `implementationConfirmed`。

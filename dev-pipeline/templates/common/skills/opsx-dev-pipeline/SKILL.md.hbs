@@ -1,11 +1,6 @@
 ---
 name: opsx-dev-pipeline
-description: OpenSpec + Git 需求开发全流程。
-license: MIT
-compatibility: 需安装 openspec 与 git CLI。
-metadata:
-  author: zhaoyi
-  version: "2.3"
+description: 执行基于 OpenSpec 和 Git 的门禁式需求开发与交付流程，覆盖预检、提案确认、实现、代码审查、测试、验证归档、提交、推送与合并，并支持中断恢复。用户要求实现或继续一个 OpenSpec change、按阶段推进完整开发流水线、审查并交付变更，或处理 opsx-dev-pipeline 时使用。
 ---
 
 # 需求开发全流程流水线
@@ -19,16 +14,31 @@ metadata:
 - 用户补充需求、提案修改或实施说明后，必须在同一回复中同步当前 **Phase/ change / 下一动作**，推进到下一步或决策点。
 - 除用户明确选择「终止流程」或「暂停流水线」外，不得单方结束全流程。
 - 高风险决策必须显式确认；推荐项不等于自动代选。
-- 决策点首选 **AskQuestion** tool；不可用时改用编号选项列表。
+- 决策点首选 **AskQuestion** tool；不可用时改用编号选项列表并等待用户回复，不得自动代选。
+- 任务跟踪首选宿主提供的任务工具；不可用时在回复中维护等价 Markdown 清单，并将阶段、决策和门禁结果写入流水线状态文件。
 - 未经决策点 1 用户明确选择「确认提案，开始实施」，禁止进入 Phase2。
 - 代码审查修复循环最多 3 轮，超过后强制暂停。
 - 暂停/终止时展示：change 名称、中断阶段、各 Phase完成状态、恢复指引（重新触发技能并传入 change 名称即可续跑）。
+- 进入 Phase 时先读取对应 reference；完成决策或门禁后先写入状态，再执行阶段迁移。
+- 以 `openspec/.pipeline-state/<change>.json` 为恢复权威，并用 OpenSpec/Git 事实校验；不一致时暂停，不得猜测。
 
 **`<SKILL_ROOT>`**：本技能安装根目录（内含 `scripts/`）。命令在目标 git 仓库根目录执行。
 - 对于 Claude Code 安装：`<SKILL_ROOT>` = `.claude/skills/opsx-dev-pipeline`
 - 对于 Cursor 安装：`<SKILL_ROOT>` = `.cursor/rules/opsx-dev-pipeline`
+- 对于 Codex 模板安装：`<SKILL_ROOT>` = `.codex/prompts/opsx-dev-pipeline`；通过 `.codex/prompts/opsx-dev-pipeline.md` 入口加载本文件。
+- 若宿主将 Skill 安装到其他位置，`<SKILL_ROOT>` = 当前 `SKILL.md` 所在目录；不要假设当前工作目录就是 Skill 根目录。
 - 脚本路径示例：`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh`
 - 引用前先确认目录存在：`test -d "<SKILL_ROOT>/scripts" || echo "scripts not found"`
+- 状态命令示例：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<change>"`
+
+## 状态协议
+
+- 新 change：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<change>" "<source-branch>"`
+- 记录决策：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<change>" <key> <json-value>`
+- 记录结果：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<change>" <field> <json-value>`
+- 阶段迁移：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<change>" <phase> <step>`
+- 暂停流程：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs pause "<change>" "<reason>"`
+- 完成交付：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs complete "<change>"`
 
 ## Phase引用表
 
@@ -90,7 +100,7 @@ flowchart TD
 | openspec CLI 不可用 / 非 git 仓库 | 提示安装/初始化并退出 |
 | openspec 未初始化（`openspec list` 失败） | 提示执行 `openspec init` 并退出 |
 | git user.name / user.email 未配置 | 警告，确认后继续（提交前必须配置） |
-| python3 不可用 | 警告，Phase1 需显式传 artifact-id |
+| node 不可用 | 提示安装 Node.js 20+ 并退出 |
 | change 不存在 | 列出可用 change 让用户选择 |
 | apply 返回 `blocked` | 回到 Phase1 补充制品 |
 | 实施中发现需求有误 | 回到 Phase1 修改提案 |
@@ -101,10 +111,10 @@ flowchart TD
 | 无法确定测试命令 | 列出候选请用户选择 |
 | 单元测试失败 | 修复后重试 / 跳过并记录技术债务 / 终止 |
 | pre-commit hook 失败 | 查看 hook 输出，修复后重试或 `--no-verify`（需确认） |
-| 分支落后/分叉/rebase 冲突 | pull --rebase / 继续 / 终止 |
-| 推送失败（权限/网络） | pull --rebase 重试 / 终止 |
+| 分支落后/分叉 | 先 fetch；仅允许 fast-forward，同步失败则暂停并让用户决定 |
+| 推送失败（权限/网络） | 保留本地状态，修复权限/网络后重试或终止 |
 | `git ls-remote` 不可达 | 检查网络/权限 / 仅本地提交 / 终止 |
-| 合并冲突 | 中止/theirs/ours/手动解决 |
+| 合并冲突 | 列出冲突文件；中止或逐文件手动解决，禁止全局 ours/theirs |
 | 合并编辑器卡死（非交互环境） | 所有 merge 强制使用 `--no-edit` |
 | 敏感文件检测 | 警告并确认是否排除 |
 | 审查报告路径含特殊字符 | 分支名 `/` 替换为 `-` |

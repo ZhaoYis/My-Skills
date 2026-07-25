@@ -24,7 +24,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'skills',
     source: 'templates/common/skills/opsx-dev-pipeline',
     destination: '{{skillsDir}}/opsx-dev-pipeline',
-    includeExtensions: ['.md', '.hbs', '.sh'],
+    includeExtensions: ['.md', '.hbs', '.sh', '.mjs', '.yaml'],
     templateFiles: ['SKILL.md.hbs'],
     excludePatterns: ['.gitkeep'],
   },
