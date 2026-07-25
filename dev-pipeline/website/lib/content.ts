@@ -28,7 +28,7 @@ export const problems = [
   { index: "03", title: "测试覆盖下降", cause: "没有强制门禁，测试对 AI 来说只是建议，不是必须。" },
   { index: "04", title: "决策快速失忆", cause: "设计文档从未更新，关键决定散落在一次性聊天里。" },
   { index: "05", title: "敏感文件入库", cause: "交付前没有自动扫描，.env 与密钥可能混进提交。" },
-  { index: "06", title: "口头约定失效", cause: "“下次注意”无法规模化，团队需要工程约束而非记忆。" },
+  { index: "06", title: "口头约定失效", cause: '“下次注意”无法规模化，团队需要工程约束而非记忆。' },
 ];
 
 export const phases = [
@@ -108,7 +108,7 @@ export const stateCapabilities = [
 
 export const specRows = [
   ["输入", "一段话", "proposal + spec + design + tasks"],
-  ["AI 理解", "“我觉得你想要……”", "“根据 spec 第 3 条……”"],
+  ["AI 理解", '“我觉得你想要……”', '“根据 spec 第 3 条……”'],
   ["验证", "肉眼对比", "openspec validate 自动校验"],
   ["追溯", "Prompt 淹没在聊天里", "完整制品链永久存档"],
   ["恢复", "重新描述一遍", "从 archived change 继续"],
