@@ -29,7 +29,7 @@ function createManifestResult(
       projectName: 'demo',
       tool: 'claude',
       features: ['base', 'skills', 'commands', 'docs'],
-      templateVersion: '0.1.6',
+      templateVersion: '0.2.0',
       packageName: 'opsx-dev-pipeline',
       managedAssets,
     },
