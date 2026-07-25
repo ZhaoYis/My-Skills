@@ -110,7 +110,7 @@ run_json_command() {
   if [[ $command_exit -ne 0 ]]; then
     emit_error \
       "$failure_reason" \
-      "命令执行失败（exit $command_exit）：$output" \
+      "命令执行失败（exit ${command_exit}）：$output" \
       "$next_action" \
       "$EXIT_COMMAND_FAILED"
   fi

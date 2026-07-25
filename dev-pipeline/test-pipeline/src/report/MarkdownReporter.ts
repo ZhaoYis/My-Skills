@@ -34,7 +34,8 @@ export class MarkdownReporter {
     lines.push(`**Scenario**: ${report.meta.scenarioName}`);
     lines.push(`**Sample Project**: ${report.meta.sampleProject}`);
     lines.push(`**Change**: \`${report.meta.changeName}\``);
-    lines.push(`**Schema**: ${report.meta.schema}`);
+    lines.push(`**Source Branch**: \`${report.meta.sourceBranch}\``);
+    lines.push(`**Target Branch**: \`${report.meta.targetBranch}\``);
     lines.push(`**Timestamp**: ${report.meta.timestamp}`);
     lines.push(`**Duration**: ${formatDuration(report.meta.durationMs)}`);
     lines.push(`**Overall Status**: ${statusBadge(report.meta.overallStatus)}`);
@@ -52,6 +53,7 @@ export class MarkdownReporter {
     if (report.environment.openspecVersion) {
       lines.push(`| OpenSpec Version | \`${report.environment.openspecVersion}\` |`);
     }
+    lines.push(`| OpenSpec Mode | ${report.environment.openspecMode} |`);
     lines.push('');
 
     // Summary
@@ -102,7 +104,7 @@ export class MarkdownReporter {
     lines.push(`- **Duration**: ${formatDuration(phase.durationMs)}`);
     lines.push(`- **Started**: ${phase.startedAt}`);
     lines.push('');
-    lines.push(`**Agent Summary**: ${phase.agentSummary}`);
+    lines.push(`**Execution Summary**: ${phase.agentSummary}`);
     lines.push('');
 
     // Errors

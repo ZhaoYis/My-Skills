@@ -15,7 +15,7 @@ export interface GitResult {
  * Sets local user.name and user.email for commit capability.
  */
 export async function gitInit(cwd: string): Promise<GitResult> {
-  await execFileAsync('git', ['init'], { cwd });
+  await execFileAsync('git', ['init', '-b', 'main'], { cwd });
   // Set local git config for test commits
   await execFileAsync('git', ['config', 'user.name', 'Pipeline Test Bot'], { cwd });
   await execFileAsync('git', ['config', 'user.email', 'test@opsx-pipeline.local'], { cwd });
@@ -23,14 +23,22 @@ export async function gitInit(cwd: string): Promise<GitResult> {
 }
 
 /**
- * Stage all changes and create a commit.
+ * Stage tracked files plus individually reviewed untracked files and create a commit.
  * Returns success=false when there is nothing to commit (no error thrown).
  */
 export async function gitCommit(
   cwd: string,
   message: string,
 ): Promise<GitResult & { success: boolean }> {
-  await execFileAsync('git', ['add', '-A'], { cwd });
+  await execFileAsync('git', ['add', '-u'], { cwd });
+  const untracked = await execFileAsync(
+    'git',
+    ['ls-files', '--others', '--exclude-standard', '-z'],
+    { cwd, encoding: 'buffer' },
+  );
+  for (const file of untracked.stdout.toString('utf8').split('\0').filter(Boolean)) {
+    await execFileAsync('git', ['add', '--', file], { cwd });
+  }
   try {
     const result = await execFileAsync('git', ['commit', '-m', message], { cwd });
     return {
@@ -39,11 +47,15 @@ export async function gitCommit(
       exitCode: 0,
       success: true,
     };
-  } catch (err: any) {
-    if (err.stderr?.includes('nothing to commit') || err.stdout?.includes('nothing to commit')) {
+  } catch (error) {
+    const commandError = error as { stdout?: string; stderr?: string };
+    if (
+      commandError.stderr?.includes('nothing to commit') ||
+      commandError.stdout?.includes('nothing to commit')
+    ) {
       return { stdout: '', stderr: 'nothing to commit', exitCode: 0, success: false };
     }
-    throw err;
+    throw error;
   }
 }
 

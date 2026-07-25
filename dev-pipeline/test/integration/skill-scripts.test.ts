@@ -57,7 +57,10 @@ case "\${1:-}" in
     printf '{"status":"ok","cwd":"%s"}\\n' "$PWD"
     ;;
   archive)
-    if [[ -n "\${MOCK_ARCHIVE_JSON:-}" ]]; then
+    if [[ -n "\${MOCK_ARCHIVE_EXIT:-}" ]]; then
+      printf '%s\\n' '{"status":"error","reason":"pending-tasks"}'
+      exit "$MOCK_ARCHIVE_EXIT"
+    elif [[ -n "\${MOCK_ARCHIVE_JSON:-}" ]]; then
       printf '%s\\n' "$MOCK_ARCHIVE_JSON"
     else
       printf '%s\\n' '{"status":"ok"}'
@@ -179,6 +182,21 @@ describe('opsx-dev-pipeline script contracts', () => {
 
     expect(result.code).toBe(6);
     expect(JSON.parse(result.stdout).reason).toBe('command-output-json-invalid');
+    expect(result.stderr).toBe('');
+  });
+
+  it('preserves structured JSON when the wrapped archive command fails', async () => {
+    const { root, bin } = await createRepo(true);
+    const result = await runScript('dev-pipeline-archive.sh', ['demo-change', '-y'], root, bin, {
+      MOCK_ARCHIVE_EXIT: '9',
+    });
+
+    expect(result.code).toBe(5);
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      status: 'error',
+      reason: 'openspec-archive-failed',
+      nextAction: 'fix-validation-or-pending-tasks',
+    });
     expect(result.stderr).toBe('');
   });
 

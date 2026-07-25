@@ -2,7 +2,7 @@
   "name": "opsx-dev-pipeline-delivery-tests",
   "private": true,
   "version": "1.0.0",
-  "description": "End-to-end delivery flow tests for opsx-dev-pipeline using AI agents",
+  "description": "Deterministic end-to-end delivery tests for the installed opsx-dev-pipeline skill",
   "type": "module",
   "engines": {
     "node": ">=20"

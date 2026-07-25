@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { fileExists, readFile, listFilesRecursive } from './tempDir.js';
+import { fileExists, readFile } from './tempDir.js';
 
 export interface FileAssertion {
   description: string;
@@ -23,7 +23,6 @@ export async function expectFileExists(filePath: string): Promise<FileAssertion>
  * Assert that a directory exists at the given path.
  */
 export async function expectDirExists(dirPath: string): Promise<FileAssertion> {
-  const exists = await fileExists(dirPath); // This checks isDirectory in tempDir
   try {
     const { stat } = await import('node:fs/promises');
     const s = await stat(dirPath);

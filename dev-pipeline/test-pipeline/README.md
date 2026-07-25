@@ -1,86 +1,53 @@
-# Pipeline Delivery Flow Tests
+# Pipeline E2E Tests
 
-使用 **AI Agent 真实执行**的方式，端到端测试 `opsx-dev-pipeline` 的完整交付流程。
+该项目在隔离临时仓库中验证当前 `opsx-dev-pipeline` Skill 的真实交付契约，不调用外部 AI Agent，也不依赖本机安装的 OpenSpec。
 
-## 架构
+## 执行模型
 
+```text
+EnvironmentFactory
+  -> 复制 fullstack-todo 样例
+  -> 直接调用当前 runInit 安装 Skill
+  -> 创建受控 OpenSpec CLI fixture
+  -> 创建 main、feature 分支和隔离 bare remote
+
+PipelineAgentOrchestrator
+  -> Phase0: 真实 preflight + 初始化持久状态
+  -> Phase1: 真实 new/validate 包装脚本 + 生成提案制品
+  -> Phase2: 真实 apply instructions + 修改样例代码
+  -> Phase3: 写入审查报告 + 记录 review attempt
+  -> Phase4: 实际运行 npm test + 记录测试门禁
+  -> Phase5: 实际运行 verify + 真实 archive 包装脚本
+  -> Phase6: commit + source push + no-ff merge + post-merge tests/verify + target push
+
+PhaseValidators
+  -> 同时核对状态文件、文件系统、Git 工作区和远端 refs
 ```
-Test Scenario (vitest)
-  → EnvironmentFactory: 创建临时全栈项目 (git init + openspec init + pipeline init)
-  → PipelineAgentOrchestrator: 按序启动 Agent 执行各阶段
-    ├─ Phase0 (Entrance) — 环境预检 + Schema 检测
-    ├─ Phase1 (Propose) — 创建 change + proposal/tasks/specs
-    ├─ Phase2 (Apply) — 逐任务实现 + self-review
-    ├─ Phase3 (Review) — 多维代码审查
-    ├─ Phase4 (Archive) — 验证 + 归档
-    ├─ Phase5 (Unit Tests) — 单元测试门禁
-    └─ Phase6 (Merge & Push) — commit + push + merge
-  → PhaseValidator: 验证每个阶段产物
-  → ReportGenerator: 生成 JSON + Markdown 报告
-```
 
-## 前置条件
+OpenSpec 使用受控 fixture 是为了让测试结果与机器环境无关；Skill 自带的 Shell 包装脚本、JSON 协议和状态脚本仍是实际安装后执行的文件。
 
-- **OpenSpec CLI** 必须安装：`which openspec && openspec --version`
-- **Node.js >= 20**
-- **Git** 已配置（`git config user.name` / `user.email`）
-
-## 运行测试
+## 运行
 
 ```bash
-# 运行所有场景
-cd test-pipeline && npm test
-
-# 运行特定场景
-npx vitest run scenarios/happy-path/fullstack-todo-full-flow
-
-# 监听模式
-npx vitest
+npm run test:pipeline
 ```
 
-## 测试报告
+或在本目录运行：
 
-每次运行生成时间戳报告：
-
-```
-test-pipeline/reports/
-├── YYYY-MM-DDTHH-mm-ss-<scenario>/
-│   ├── report.json    # 机器可读
-│   └── report.md      # 人类可读
-└── latest/            # 最新运行符号链接
+```bash
+npm test
+npm run test:report
 ```
 
-## 示例项目
+要求 Node.js 20+ 和 Git，不要求全局安装 OpenSpec，不访问真实远程仓库。
 
-`fullstack-todo` — Express + React 全栈 Todo 应用，含真实代码和测试。
+## 场景
 
-## 测试场景
+| 场景 | 验证内容 |
+|---|---|
+| `fullstack-todo-full-flow.test.ts` | Phase0-6 完整交付、报告与远端 refs |
+| `missing-openspec.test.ts` | preflight 缺依赖退出码与不创建状态 |
+| `archive-with-pending-tasks.test.ts` | 归档失败保持 Phase5，并可显式处理后恢复 |
+| `report-integrity.test.ts` | 失败断言归一化、无 executor 禁止伪通过 |
 
-| 分类 | 场景文件 | 描述 | 测试数 |
-|------|---------|------|--------|
-| happy-path | `fullstack-todo-full-flow.test.ts` | 完整交付流程框架验证 | 17 |
-| happy-path | `fullstack-todo-simple-feature.test.ts` | 简单后端特性 (只改 API) | 10 |
-| error-recovery | `missing-openspec.test.ts` | 缺失 OpenSpec 时的降级处理 | 3 |
-| error-recovery | `archive-with-pending-tasks.test.ts` | 未完成任务归档时的阻断与恢复 | 7 |
-| schema-variations | `custom-backend-schema.test.ts` | 自定义 backend-only schema | 4 |
-| schema-variations | `custom-fullstack-schema.test.ts` | 自定义 backend+frontend 多栈 schema | 8 |
-
-**总计: 6 个场景, 49 个测试** (运行 `npm test` 全部通过)
-
-## 报告示例
-
-```json
-{
-  "meta": {
-    "scenarioName": "fullstack-todo-framework-verification",
-    "sampleProject": "fullstack-todo",
-    "overallStatus": "pass",
-    "schema": "default"
-  },
-  "summary": {
-    "totalPhases": 12,
-    "passedPhases": 12,
-    "overallScore": 100
-  }
-}
-```
+报告仅在场景显式请求时写入 `reports/`；生成目录不作为测试输入。

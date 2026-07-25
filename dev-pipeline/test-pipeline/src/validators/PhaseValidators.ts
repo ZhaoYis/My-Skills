@@ -1,301 +1,291 @@
-import type { AssertionResult, ArtifactInfo } from '../harness/types.js';
-import {
-  expectFileExists,
-  expectFileContains,
-  expectDirExists,
-  expectFilesExist,
-  expectConventionalCommit,
-} from '../utils/fileAssertions.js';
-import { fileExists, listFilesRecursive } from '../utils/tempDir.js';
-import { gitStatus, gitLastCommitMessage } from '../utils/gitHelpers.js';
-import type { TestEnvironment } from '../harness/types.js';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import path from 'node:path';
-import fs from 'node:fs/promises';
+import fs from 'fs-extra';
+import type { AssertionResult, ArtifactInfo, TestEnvironment } from '../harness/types.js';
+import { expectConventionalCommit, expectFileContains } from '../utils/fileAssertions.js';
+import { fileExists, listFilesRecursive } from '../utils/tempDir.js';
+import { gitStatus } from '../utils/gitHelpers.js';
 
-/**
- * Validate Phase0 (Entrance) outputs.
- */
-export async function validatePhase0(env: TestEnvironment): Promise<{
-  assertions: AssertionResult[];
-  artifacts: ArtifactInfo[];
-}> {
-  const assertions: AssertionResult[] = [];
+const execFileAsync = promisify(execFile);
 
-  // Git work tree should be active
-  assertions.push({
-    description: 'Git work tree is active',
-    passed: env.isWorkTree,
-  });
-
-  // OpenSpec should be available
-  assertions.push({
-    description: 'OpenSpec CLI is available',
-    passed: env.openspecAvailable,
-    detail: env.openspecAvailable
-      ? `Version: ${env.openspecVersion}`
-      : 'OpenSpec CLI not found in PATH',
-  });
-
-  const artifacts: ArtifactInfo[] = [];
-  return { assertions, artifacts };
+interface PipelineState {
+  currentPhase: number;
+  currentStep: number;
+  status: string;
+  sourceBranch: string;
+  targetBranch: string | null;
+  archivePath: string | null;
+  review: { round: number; reportPath: string | null; status: string };
+  tests: { attempts: number; status: string; command: string | null };
+  verify: { attempts: number; status: string; command: string | null };
+  delivery: {
+    commitSha: string | null;
+    mergeCommitSha: string | null;
+    sourcePushed: boolean;
+    targetPushed: boolean;
+  };
 }
 
-/**
- * Validate Phase1 (Propose) outputs.
- */
+type ValidationResult = Promise<{ assertions: AssertionResult[]; artifacts: ArtifactInfo[] }>;
+
+export async function validatePhase0(
+  env: TestEnvironment,
+  changeName: string,
+): ValidationResult {
+  const state = await readState(env, changeName);
+  return {
+    assertions: [
+      { description: 'Git work tree is active', passed: env.isWorkTree },
+      {
+        description: 'Installed preflight uses the configured OpenSpec fixture',
+        passed: env.openspecAvailable && env.openspecMode === 'mock',
+        detail: env.openspecVersion,
+      },
+      stateAt(state, 1, 3),
+      {
+        description: 'Source branch is persisted before Phase1',
+        passed: state.sourceBranch === env.sourceBranch,
+        detail: state.sourceBranch,
+      },
+    ],
+    artifacts: [artifact(env, statePath(env, changeName))],
+  };
+}
+
 export async function validatePhase1(
   env: TestEnvironment,
   changeName: string,
-): Promise<{
-  assertions: AssertionResult[];
-  artifacts: ArtifactInfo[];
-}> {
-  const assertions: AssertionResult[] = [];
+): ValidationResult {
+  const state = await readState(env, changeName);
   const changeDir = path.join(env.rootDir, 'openspec', 'changes', changeName);
-
-  // Change directory exists
-  const changeDirExists = await expectDirExists(changeDir);
-  assertions.push(changeDirExists);
-
-  // Expected proposal artifacts
-  const expectedFiles = ['proposal.md', 'design.md', 'tasks.md', 'specs'];
-  const fileAssertions = await expectFilesExist(changeDir, expectedFiles);
-  assertions.push(...fileAssertions);
-
-  // tasks.md should have checkbox items
-  const tasksPath = path.join(changeDir, 'tasks.md');
-  if (await fileExists(tasksPath)) {
-    assertions.push(
-      await expectFileContains(tasksPath, /\[ \]|\[x\]/, 'tasks.md contains checkbox items'),
-    );
+  const expected = ['proposal.md', 'design.md', 'tasks.md', 'specs/todo.md'];
+  const assertions: AssertionResult[] = [stateAt(state, 2, 6)];
+  for (const relative of expected) {
+    assertions.push({
+      description: `${relative} exists`,
+      passed: await fileExists(path.join(changeDir, relative)),
+    });
   }
+  assertions.push(
+    await expectFileContains(
+      path.join(changeDir, 'tasks.md'),
+      /\[ \]/,
+      'Proposal contains pending implementation tasks',
+    ),
+  );
 
-  const artifacts: ArtifactInfo[] = [];
-  if (await fileExists(changeDir)) {
-    const files = await listFilesRecursive(changeDir);
-    for (const f of files) {
-      artifacts.push({ path: path.relative(env.rootDir, f), type: 'file', exists: true });
-    }
-  }
-
-  return { assertions, artifacts };
+  return {
+    assertions,
+    artifacts: (await listFilesRecursive(changeDir)).map((file) => artifact(env, file)),
+  };
 }
 
-/**
- * Validate Phase2 (Apply) outputs.
- */
 export async function validatePhase2(
   env: TestEnvironment,
   changeName: string,
-): Promise<{
-  assertions: AssertionResult[];
-  artifacts: ArtifactInfo[];
-}> {
-  const assertions: AssertionResult[] = [];
-
-  // There should be changed files
+): ValidationResult {
+  const state = await readState(env, changeName);
   const status = await gitStatus(env.rootDir);
-  assertions.push({
-    description: 'Git working tree has changes',
-    passed: !status.isClean,
-    detail: status.stdout || 'No changes detected',
-  });
-
-  // tasks.md should have completed items
-  const tasksPath = path.join(env.rootDir, 'openspec', 'changes', changeName, 'tasks.md');
-  if (await fileExists(tasksPath)) {
-    assertions.push(await expectFileContains(tasksPath, /\[x\]/, 'tasks.md has completed items'));
-  }
-
-  const artifacts: ArtifactInfo[] = [];
-  return { assertions, artifacts };
+  const tasks = path.join(env.rootDir, 'openspec', 'changes', changeName, 'tasks.md');
+  return {
+    assertions: [
+      stateAt(state, 3, 9),
+      {
+        description: 'Implementation produces a Git diff',
+        passed: !status.isClean,
+        detail: status.stdout,
+      },
+      await expectFileContains(tasks, /\[x\]/, 'Implementation tasks are completed'),
+      await expectFileContains(
+        path.join(env.rootDir, 'backend/src/models/todo.ts'),
+        'dueDate?: string',
+        'Backend contract includes dueDate',
+      ),
+      await expectFileContains(
+        path.join(env.rootDir, 'frontend/src/api/client.ts'),
+        'dueDate?: string',
+        'Frontend contract includes dueDate',
+      ),
+    ],
+    artifacts: [],
+  };
 }
 
-/**
- * Validate Phase3 (Review) outputs.
- */
 export async function validatePhase3(
   env: TestEnvironment,
   changeName: string,
-): Promise<{
-  assertions: AssertionResult[];
-  artifacts: ArtifactInfo[];
-}> {
-  const assertions: AssertionResult[] = [];
-
-  // Review report — supports both timestamp-based (SKILL.md convention) and
-  // change-name-based (legacy) naming patterns.
-  const reviewDir = path.join(env.rootDir, 'openspec', 'review');
-  let reviewPath: string | null = null;
-
-  try {
-    const entries = await fs.readdir(reviewDir);
-    // Prefer timestamp-based pattern: YYYY-MM-DD-HH-mm-<branch-safe>-pipeline-review.md
-    const timestamped = entries.find(
-      (f) => f.endsWith('-pipeline-review.md') || f.endsWith('-pipeline-review-round-1.md'),
-    );
-    // Fall back to change-name-based pattern
-    const byChange = entries.find(
-      (f) => f === `${changeName}-review.md`,
-    );
-    const matched = timestamped ?? byChange;
-    if (matched) {
-      reviewPath = path.join(reviewDir, matched);
-    }
-  } catch {
-    // Directory doesn't exist yet
-  }
-
-  const reviewExists: AssertionResult = reviewPath
-    ? { description: 'Review report exists', passed: true, detail: reviewPath }
-    : { description: 'Review report exists', passed: false, detail: 'No review report found' };
-  assertions.push(reviewExists);
-
-  if (reviewExists.passed && reviewPath) {
-    assertions.push(
-      await expectFileContains(reviewPath, /security|安全|secret/, 'Review covers security'),
-    );
-    assertions.push(
-      await expectFileContains(
-        reviewPath,
-        /convention|规范|convention/,
-        'Review covers conventions',
-      ),
-    );
-    assertions.push(
-      await expectFileContains(reviewPath, /correctness|正确性/, 'Review covers correctness'),
-    );
-  }
-
-  const artifacts: ArtifactInfo[] = [];
-  if (reviewPath && (await fileExists(reviewPath))) {
-    artifacts.push({ path: path.relative(env.rootDir, reviewPath), type: 'file', exists: true });
-  }
-
-  return { assertions, artifacts };
+): ValidationResult {
+  const state = await readState(env, changeName);
+  const reviewPath = state.review.reportPath
+    ? path.join(env.rootDir, state.review.reportPath)
+    : path.join(env.rootDir, '__missing-review__');
+  return {
+    assertions: [
+      stateAt(state, 4, 13),
+      {
+        description: 'Review attempt is recorded as passed',
+        passed: state.review.round === 1 && state.review.status === 'passed',
+      },
+      await expectFileContains(reviewPath, /security|secret/i, 'Review covers security'),
+      await expectFileContains(reviewPath, /correctness/i, 'Review covers correctness'),
+      await expectFileContains(reviewPath, /conventions/i, 'Review covers conventions'),
+    ],
+    artifacts: (await fileExists(reviewPath)) ? [artifact(env, reviewPath)] : [],
+  };
 }
 
-/**
- * Validate Phase5 (Archive) outputs.
- */
+export async function validateUnitTests(
+  env: TestEnvironment,
+  changeName: string,
+): ValidationResult {
+  const state = await readState(env, changeName);
+  return {
+    assertions: [
+      stateAt(state, 5, 15),
+      {
+        description: 'Actual test attempt is persisted',
+        passed:
+          state.tests.status === 'passed' &&
+          state.tests.attempts === 1 &&
+          state.tests.command === 'npm test',
+      },
+    ],
+    artifacts: [],
+  };
+}
+
 export async function validateArchive(
   env: TestEnvironment,
   changeName: string,
-): Promise<{
-  assertions: AssertionResult[];
-  artifacts: ArtifactInfo[];
-}> {
-  const assertions: AssertionResult[] = [];
-
-  // Pre-archive check: all tasks should be completed before archive
-  const tasksPath = path.join(env.rootDir, 'openspec', 'changes', changeName, 'tasks.md');
-  if (await fileExists(tasksPath)) {
-    const tasksContent = await fs.readFile(tasksPath, 'utf-8');
-    const hasPendingTasks = /\[ \]/.test(tasksContent);
-    assertions.push({
-      description: 'All tasks are completed before archive',
-      passed: !hasPendingTasks,
-      detail: hasPendingTasks
-        ? 'Archive blocked: there are incomplete tasks in tasks.md'
-        : 'All tasks completed, archive can proceed',
-    });
-  }
-
-  // Change should be in archive
-  const archiveDirs = await listFilesRecursive(
-    path.join(env.rootDir, 'openspec', 'changes', 'archive'),
-  );
-  const archivedChange = archiveDirs.find((d) => d.includes(changeName));
-
-  assertions.push({
-    description: 'Change is archived',
-    passed: !!archivedChange,
-    detail: archivedChange
-      ? `Archived to: ${path.relative(env.rootDir, archivedChange)}`
-      : 'Archive directory not found',
-  });
-
-  // Active change should no longer exist
-  const activeChangeDir = path.join(env.rootDir, 'openspec', 'changes', changeName);
-  assertions.push({
-    description: 'Active change directory is removed',
-    passed: !(await fileExists(activeChangeDir)),
-  });
-
-  const artifacts: ArtifactInfo[] = [];
-  if (archivedChange) {
-    const files = await listFilesRecursive(archivedChange);
-    for (const f of files) {
-      artifacts.push({ path: path.relative(env.rootDir, f), type: 'file', exists: true });
-    }
-  }
-
-  return { assertions, artifacts };
+): ValidationResult {
+  const state = await readState(env, changeName);
+  const archivedPath = state.archivePath ? path.join(env.rootDir, state.archivePath) : '';
+  const activePath = path.join(env.rootDir, 'openspec', 'changes', changeName);
+  return {
+    assertions: [
+      stateAt(state, 6, 20),
+      {
+        description: 'Verify attempt passed before archive',
+        passed:
+          state.verify.status === 'passed' &&
+          state.verify.attempts === 1 &&
+          state.verify.command === 'npm run verify',
+      },
+      {
+        description: 'Actual archive path is persisted and exists',
+        passed: Boolean(archivedPath) && (await directoryExists(archivedPath)),
+        detail: state.archivePath ?? undefined,
+      },
+      {
+        description: 'Active change is removed after archive',
+        passed: !(await directoryExists(activePath)),
+      },
+    ],
+    artifacts:
+      archivedPath && (await directoryExists(archivedPath))
+        ? (await listFilesRecursive(archivedPath)).map((file) => artifact(env, file))
+        : [],
+  };
 }
 
-/**
- * Validate Phase4 (Unit Tests) outputs.
- */
-export async function validateUnitTests(env: TestEnvironment): Promise<{
-  assertions: AssertionResult[];
-  artifacts: ArtifactInfo[];
-}> {
-  const assertions: AssertionResult[] = [];
-
-  // This Phaseis primarily verified by the agent returning the test execution results.
-  // We check that a test command can be identified.
-  const packageJsonPath = path.join(env.rootDir, 'package.json');
-  assertions.push(
-    await expectFileContains(packageJsonPath, '"test"', 'package.json has test script defined'),
-  );
-
-  const artifacts: ArtifactInfo[] = [];
-  return { assertions, artifacts };
-}
-
-/**
- * Validate Phase6 (Merge & Push) outputs.
- */
-export async function validatePhase6(env: TestEnvironment): Promise<{
-  assertions: AssertionResult[];
-  artifacts: ArtifactInfo[];
-}> {
-  const assertions: AssertionResult[] = [];
-
-  // Git status should be clean after commit
+export async function validatePhase6(
+  env: TestEnvironment,
+  changeName: string,
+): ValidationResult {
+  const state = await readState(env, changeName);
   const status = await gitStatus(env.rootDir);
-  assertions.push({
-    description: 'Git status is clean after commit',
-    passed: status.isClean,
-    detail: status.isClean ? undefined : `Uncommitted files: ${status.stdout}`,
-  });
+  const currentBranch = (await git(env, 'branch', '--show-current')).trim();
+  const remoteSource = await remoteRef(env, `refs/heads/${env.sourceBranch}`);
+  const remoteTarget = await remoteRef(env, `refs/heads/${env.targetBranch}`);
+  const commitMessage = state.delivery.commitSha
+    ? (await git(env, 'show', '-s', '--format=%s', state.delivery.commitSha)).trim()
+    : '';
 
-  // Commit message should follow conventional commit format
-  const commitMsg = await gitLastCommitMessage(env.rootDir);
-  assertions.push(await expectConventionalCommit(commitMsg));
-
-  const artifacts: ArtifactInfo[] = [];
-  return { assertions, artifacts };
+  return {
+    assertions: [
+      {
+        description: 'Pipeline state is completed in Phase6',
+        passed: state.currentPhase === 6 && state.status === 'completed',
+      },
+      {
+        description: 'Source and target pushes are persisted',
+        passed: state.delivery.sourcePushed && state.delivery.targetPushed,
+      },
+      {
+        description: 'Commit and merge SHAs are persisted',
+        passed: Boolean(state.delivery.commitSha && state.delivery.mergeCommitSha),
+      },
+      {
+        description: 'Delivery finishes on the target branch with a clean work tree',
+        passed: currentBranch === env.targetBranch && status.isClean,
+        detail: status.stdout,
+      },
+      {
+        description: 'Remote source and target refs exist',
+        passed: Boolean(remoteSource && remoteTarget),
+      },
+      {
+        ...(await expectConventionalCommit(commitMessage)),
+        description: 'Source commit message follows conventional commit format',
+      },
+    ],
+    artifacts: [artifact(env, statePath(env, changeName))],
+  };
 }
 
-/**
- * Validator registry — maps PhaseIDs to their validation functions.
- */
 export const PHASE_VALIDATORS: Record<
   string,
   (
     env: TestEnvironment,
     context: Record<string, string>,
-  ) => Promise<{
-    assertions: AssertionResult[];
-    artifacts: ArtifactInfo[];
-  }>
+  ) => Promise<{ assertions: AssertionResult[]; artifacts: ArtifactInfo[] }>
 > = {
-  'phase-0-entrance': (env) => validatePhase0(env),
+  'phase-0-entrance': (env, ctx) => validatePhase0(env, ctx.changeName),
   'phase-1-propose': (env, ctx) => validatePhase1(env, ctx.changeName),
   'phase-2-apply': (env, ctx) => validatePhase2(env, ctx.changeName),
   'phase-3-review': (env, ctx) => validatePhase3(env, ctx.changeName),
-  'phase-4-unit-tests': (env) => validateUnitTests(env),
+  'phase-4-unit-tests': (env, ctx) => validateUnitTests(env, ctx.changeName),
   'phase-5-archive': (env, ctx) => validateArchive(env, ctx.changeName),
-  'phase-6-merge-push': (env) => validatePhase6(env),
+  'phase-6-merge-push': (env, ctx) => validatePhase6(env, ctx.changeName),
 };
+
+async function readState(env: TestEnvironment, changeName: string): Promise<PipelineState> {
+  return fs.readJson(statePath(env, changeName)) as Promise<PipelineState>;
+}
+
+function statePath(env: TestEnvironment, changeName: string): string {
+  return path.join(env.rootDir, 'openspec', '.pipeline-state', `${changeName}.json`);
+}
+
+function stateAt(state: PipelineState, phase: number, step: number): AssertionResult {
+  return {
+    description: `State advanced to Phase${phase} Step${step}`,
+    passed: state.currentPhase === phase && state.currentStep === step && state.status === 'active',
+    detail: `Phase${state.currentPhase} Step${state.currentStep} (${state.status})`,
+  };
+}
+
+function artifact(env: TestEnvironment, file: string): ArtifactInfo {
+  return { path: path.relative(env.rootDir, file), type: 'file', exists: true };
+}
+
+async function directoryExists(directory: string): Promise<boolean> {
+  try {
+    return (await fs.stat(directory)).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+async function git(env: TestEnvironment, ...args: string[]): Promise<string> {
+  return (await execFileAsync('git', args, { cwd: env.rootDir })).stdout;
+}
+
+async function remoteRef(env: TestEnvironment, ref: string): Promise<string> {
+  try {
+    return (await execFileAsync('git', ['ls-remote', env.remotePath, ref])).stdout.trim();
+  } catch {
+    return '';
+  }
+}

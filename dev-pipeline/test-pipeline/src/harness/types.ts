@@ -1,6 +1,4 @@
-/**
- * Phaseidentifiers for the pipeline delivery flow.
- */
+/** Phase identifiers for the pipeline delivery flow. */
 export type PhaseId =
   | 'phase-0-entrance'
   | 'phase-1-propose'
@@ -23,16 +21,14 @@ export const ALL_PHASES: PhaseId[] = [
   'phase-6-merge-push',
 ];
 
-/**
- * Phasemetadata.
- */
+/** Phase metadata. */
 export interface PhaseMeta {
   id: PhaseId;
   label: string;
   description: string;
   /** Path to the skill SKILL.md relative to the skills directory */
   skillPath: string;
-  /** Readable name for the Phase*/
+  /** Readable name for the phase. */
   skillName: string;
 }
 
@@ -43,7 +39,7 @@ export const PHASE_META: Record<PhaseId, PhaseMeta> = {
   'phase-0-entrance': {
     id: 'phase-0-entrance',
     label: 'Phase0 — Entrance',
-    description: '环境预检 + Schema 检测 + 入口路由',
+    description: '环境预检 + 持久化状态初始化 + 入口路由',
     skillPath: 'opsx-dev-pipeline/SKILL.md',
     skillName: 'opsx-dev-pipeline',
   },
@@ -78,14 +74,14 @@ export const PHASE_META: Record<PhaseId, PhaseMeta> = {
   'phase-5-archive': {
     id: 'phase-5-archive',
     label: 'Phase5 — Archive',
-    description: '验证 + 提案归档 + knowledge 沉淀',
+    description: '测试结果门禁 + verify + 提案归档',
     skillPath: 'opsx-dev-pipeline/SKILL.md',
     skillName: 'opsx-dev-pipeline',
   },
   'phase-6-merge-push': {
     id: 'phase-6-merge-push',
     label: 'Phase6 — Merge & Push',
-    description: 'commit + push + merge',
+    description: 'commit + source push + merge + post-merge verify + target push',
     skillPath: 'opsx-dev-pipeline/SKILL.md',
     skillName: 'opsx-dev-pipeline',
   },
@@ -150,10 +146,8 @@ export interface ScenarioConfig {
   toolId: 'claude' | 'cursor' | 'codex';
   /** Feature flags */
   features?: string[];
-  /** Custom schema config key */
-  schemaConfig?: string;
-  /** Skip pipeline init (for error recovery tests) */
-  skipPipelineInit?: boolean;
+  /** OpenSpec implementation used inside the isolated environment. */
+  openspecMode?: 'mock' | 'missing';
   /** The feature/change being implemented */
   changeName: string;
   /** Description of the feature for agent context */
@@ -168,7 +162,13 @@ export interface TestEnvironment {
   toolId: string;
   sampleProject: string;
   skillsRoot: string;
+  skillRoot: string;
   commandsRoot: string;
+  mockBinDir?: string;
+  sourceBranch: string;
+  targetBranch: string;
+  remotePath: string;
+  openspecMode: 'mock' | 'missing';
   isWorkTree: boolean;
   openspecAvailable: boolean;
   openspecVersion?: string;
@@ -184,8 +184,8 @@ export interface EnvironmentConfig {
   sampleProject?: string;
   toolId?: 'claude' | 'cursor' | 'codex';
   features?: string[];
-  schemaConfig?: string;
-  skipPipelineInit?: boolean;
+  changeName?: string;
+  openspecMode?: 'mock' | 'missing';
 }
 
 /**
@@ -196,8 +196,9 @@ export interface PipelineReport {
     scenarioName: string;
     sampleProject: string;
     toolId: string;
-    schema: string;
     changeName: string;
+    sourceBranch: string;
+    targetBranch: string;
     timestamp: string;
     durationMs: number;
     overallStatus: 'pass' | 'fail' | 'partial';
@@ -206,6 +207,7 @@ export interface PipelineReport {
     nodeVersion: string;
     openspecAvailable: boolean;
     openspecVersion?: string;
+    openspecMode: 'mock' | 'missing';
     pipelineInitResult?: string;
   };
   phases: AgentPhaseResult[];

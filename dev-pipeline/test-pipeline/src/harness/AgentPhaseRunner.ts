@@ -166,58 +166,59 @@ export function getPhaseSpecificInstructions(
     changeName: string;
     featureDescription: string;
     projectRoot: string;
+    skillRoot: string;
   },
 ): string {
-  const { changeName, featureDescription, projectRoot } = context;
+  const { changeName, featureDescription } = context;
 
   switch (phaseId) {
     case 'phase-0-entrance':
       return `\
 ## Specific Tasks for Phase0 — Entrance
 
-1. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-preflight.sh\`
-2. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-list-changes.sh\`
-3. Verify all scripts exit 0 and return valid JSON
-4. Determine the entry route: new change → Phase1`;
+1. Run: \`bash ${context.skillRoot}/scripts/dev-pipeline-preflight.sh\`
+2. Initialize persistent state with the current source branch
+3. Transition state to Phase1 Step3
+4. Verify every command returns valid JSON`;
 
     case 'phase-1-propose':
       return `\
 ## Specific Tasks for Phase1 — Propose
 
-1. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-new-change.sh "${changeName}"\`
-2. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-change-status.sh "${changeName}"\`
+1. Run: \`bash ${context.skillRoot}/scripts/dev-pipeline-new-change.sh "${changeName}"\`
+2. Run: \`bash ${context.skillRoot}/scripts/dev-pipeline-change-status.sh "${changeName}"\`
 3. Generate proposal.md in \`openspec/changes/${changeName}/\`
 4. Generate tasks.md with checkbox items
-5. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-validate-change.sh "${changeName}"\`
-6. Present proposal for approval (decision point 1)`;
+5. Run: \`bash ${context.skillRoot}/scripts/dev-pipeline-validate-change.sh "${changeName}"\`
+6. Record requirementsConfirmed and proposalApproved before transitioning to Phase2`;
 
     case 'phase-2-apply':
       return `\
 ## Specific Tasks for Phase2 — Apply
 
-1. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-instructions-apply.sh "${changeName}"\`
+1. Run: \`bash ${context.skillRoot}/scripts/dev-pipeline-instructions-apply.sh "${changeName}"\`
 2. Read tasks.md and implement each task in order
 3. For each task: write code → self-review → mark [x]
 4. Feature "${featureDescription}" — implement the actual code changes to:
    - Backend: models, routes, tests
    - Frontend: components, API client, tests
-5. After all tasks, run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-validate-change.sh "${changeName}"\`
-6. Present for review decision (decision point 2)`;
+5. After all tasks, run: \`bash ${context.skillRoot}/scripts/dev-pipeline-validate-change.sh "${changeName}"\`
+6. Record implementationConfirmed and reviewDisposition before transitioning`;
 
     case 'phase-3-review':
       return `\
 ## Specific Tasks for Phase3 — Review
 
-1. Load project conventions from \`CLAUDE.md\`
-2. Get git diff: \`git diff HEAD~1 --stat\` and \`git diff HEAD~1\`
+1. Load project conventions from OpenSpec config and repository guidance
+2. Get the current feature diff
 3. Perform code review covering:
    - Secret scanning
    - Convention compliance
    - Correctness
    - Security
    - Performance
-4. Save review report to \`openspec/review/${changeName}-review.md\`
-5. Present findings for decision (decision point 3)`;
+4. Save the timestamped review report under \`openspec/review/\`
+5. Record the review attempt and transition to Phase4`;
 
     case 'phase-4-unit-tests':
       return `\
@@ -225,30 +226,30 @@ export function getPhaseSpecificInstructions(
 
 1. Identify the test command (from package.json or openspec/config.yaml)
 2. Present decision point: run tests or skip?
-3. If running: execute \`npm test --workspaces --if-present\`
-4. If tests fail, decide: fix or proceed with notes?
-5. Record test results`;
+3. Execute the selected test command
+4. Record each attempt through the state script
+5. Transition only after passed, skipped, or debt-recorded`;
 
     case 'phase-5-archive':
       return `\
 ## Specific Tasks for Phase5 — Archive
 
-1. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-change-status.sh "${changeName}"\`
+1. Run: \`bash ${context.skillRoot}/scripts/dev-pipeline-change-status.sh "${changeName}"\`
 2. Resolve the verify command from \`openspec/config.yaml\` and project build files
 3. Run verify and require success
-4. Run: \`bash .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-archive.sh "${changeName}" -y\`
-5. Determine post-archive operation (decision point 5)`;
+4. Run: \`bash ${context.skillRoot}/scripts/dev-pipeline-archive.sh "${changeName}" -y\`
+5. Persist verify status, actual archive path, and postArchiveAction before Phase6`;
 
     case 'phase-6-merge-push':
       return `\
 ## Specific Tasks for Phase6 — Merge & Push
 
-1. Pre-commit checks: \`git status\`, \`git fetch\`
-2. Scan for sensitive files
-3. Stage tracked files with \`git add -u\`, then review each untracked file explicitly
-4. Commit with conventional commit format: \`feat(${context.changeName}): <description>\`
-5. Push: \`git push origin <branch>\`
-6. Display final summary`;
+1. Confirm commit and source push independently
+2. Record target branch before checkout
+3. Merge using the selected strategy without force operations
+4. Re-run tests and verify after merge
+5. Confirm target push independently
+6. Record delivery SHAs and complete the state`;
 
     default:
       return '';

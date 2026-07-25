@@ -1,11 +1,12 @@
 import type { TestEnvironment, EnvironmentConfig } from './types.js';
-import { createTempDir, copyDir, cleanupAllTempDirs, fileExists } from '../utils/tempDir.js';
-import { gitInit, gitCommit, gitIsWorkTree, gitCurrentBranch } from '../utils/gitHelpers.js';
-import { isOpenspecAvailable, openspecInit } from '../utils/openspecHelpers.js';
+import { createTempDir, copyDir, cleanupAllTempDirs } from '../utils/tempDir.js';
+import { gitInit, gitCommit, gitIsWorkTree } from '../utils/gitHelpers.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import fs from 'fs-extra';
+import { runInit } from '../../../src/core/init/runInit.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -23,8 +24,8 @@ export async function createTestEnvironment(
     sampleProject = 'fullstack-todo',
     toolId = 'claude',
     features = [],
-    schemaConfig,
-    skipPipelineInit = false,
+    changeName = 'e2e-change',
+    openspecMode = 'mock',
   } = config;
 
   // 1. Create temp directory
@@ -34,106 +35,118 @@ export async function createTestEnvironment(
   const sampleDir = path.join(SAMPLES_ROOT, sampleProject);
   await copyDir(sampleDir, rootDir);
 
-  // 3. Initialize git repository
+  // 3. Initialize the repository and install the current templates directly.
   await gitInit(rootDir);
   const isWorkTree = await gitIsWorkTree(rootDir);
+  await runInit({
+    dir: rootDir,
+    tool: toolId,
+    yes: true,
+    force: true,
+    dryRun: false,
+    feature: features,
+  });
 
-  // 4. Create initial git commit
-  await gitCommit(rootDir, 'chore: initial project setup');
+  const toolPaths = {
+    claude: { skills: '.claude/skills', commands: '.claude/commands' },
+    cursor: { skills: '.cursor/rules', commands: '.cursor/commands' },
+    codex: { skills: '.codex/prompts', commands: '.codex/commands' },
+  } as const;
+  const skillsRoot = path.join(rootDir, toolPaths[toolId].skills);
+  const skillRoot = path.join(skillsRoot, 'opsx-dev-pipeline');
+  const commandsRoot = path.join(rootDir, toolPaths[toolId].commands);
 
-  // 5. Initialize OpenSpec
-  const openspecCheck = await isOpenspecAvailable();
-  let openspecInitResult: string | undefined;
-  if (openspecCheck.available) {
-    const result = await openspecInit(rootDir);
-    openspecInitResult = result.stdout;
-    // Re-commit after openspec init adds files
-    await gitCommit(rootDir, 'chore: openspec init');
+  let mockBinDir: string | undefined;
+  if (openspecMode === 'mock') {
+    mockBinDir = await createTempDir('opsx-openspec-bin-');
+    await installMockOpenspec(mockBinDir);
   }
 
-  // 6. Copy the sample's openspec config as default
-  const sampleOpenspecConfig = path.join(sampleDir, 'openspec', 'config.yaml');
-  if (await fileExists(sampleOpenspecConfig)) {
-    const fs = await import('fs-extra');
-    await fs.ensureDir(path.join(rootDir, 'openspec'));
-    await fs.copyFile(sampleOpenspecConfig, path.join(rootDir, 'openspec', 'config.yaml'));
-  }
-
-  // 7. Apply custom openspec config if provided (overrides sample default)
-  if (schemaConfig) {
-    const configPath =
-      schemaConfig === 'custom-backend'
-        ? path.join(SAMPLES_ROOT, 'schema-variants', 'custom-backend.yaml')
-        : schemaConfig === 'custom-frontend'
-          ? path.join(SAMPLES_ROOT, 'schema-variants', 'custom-frontend.yaml')
-          : schemaConfig;
-
-    const fs = await import('fs-extra');
-    await fs.ensureDir(path.join(rootDir, 'openspec'));
-    await fs.copyFile(configPath, path.join(rootDir, 'openspec', 'config.yaml'));
-  }
-
-  // 8. Run opsx-dev-pipeline init (unless skipped for error tests)
-  let pipelineInitResult: string | undefined;
-  if (!skipPipelineInit) {
-    try {
-      // Try local build first
-      const pipelineRoot = path.resolve(__dirname, '../../..');
-      const result = await execFileAsync(
-        'npx',
-        [
-          'tsx',
-          path.join(pipelineRoot, 'src/bin/opsx-dev-pipeline.ts'),
-          'init',
-          '--tool',
-          toolId,
-          '--yes',
-          ...features.flatMap((f) => ['--feature', f]),
-        ],
-        { cwd: rootDir },
-      );
-      pipelineInitResult = result.stdout;
-    } catch {
-      // Fallback: try installed CLI
-      try {
-        const result = await execFileAsync(
-          'npx',
-          [
-            'opsx-dev-pipeline',
-            'init',
-            '--tool',
-            toolId,
-            '--yes',
-            ...features.flatMap((f) => ['--feature', f]),
-          ],
-          { cwd: rootDir },
-        );
-        pipelineInitResult = result.stdout;
-      } catch (e) {
-        pipelineInitResult = `Pipeline init failed: ${String(e)}`;
-      }
-    }
-  }
-
-  // Determine paths
-  const skillsRoot = path.join(rootDir, '.claude', 'skills');
-  const commandsRoot = path.join(rootDir, '.claude', 'commands');
+  // Commit the fixture and publish target branch before feature work begins.
+  await gitCommit(rootDir, 'chore: initialize e2e fixture');
+  const targetBranch = 'main';
+  const sourceBranch = `feature/${changeName}`;
+  const remoteRoot = await createTempDir('opsx-delivery-remote-');
+  const remotePath = path.join(remoteRoot, 'origin.git');
+  await execFileAsync('git', ['init', '--bare', remotePath]);
+  await execFileAsync('git', ['remote', 'add', 'origin', remotePath], { cwd: rootDir });
+  await execFileAsync('git', ['push', '-u', 'origin', targetBranch], { cwd: rootDir });
+  await execFileAsync('git', ['checkout', '-b', sourceBranch], { cwd: rootDir });
 
   return {
     rootDir,
     toolId,
     sampleProject,
     skillsRoot,
+    skillRoot,
     commandsRoot,
+    mockBinDir,
+    sourceBranch,
+    targetBranch,
+    remotePath,
+    openspecMode,
     isWorkTree,
-    openspecAvailable: openspecCheck.available,
-    openspecVersion: openspecCheck.version,
-    pipelineInitResult,
-    openspecInitResult,
+    openspecAvailable: openspecMode === 'mock',
+    openspecVersion: openspecMode === 'mock' ? '1.6.0-e2e' : undefined,
+    pipelineInitResult: `initialized ${toolId}`,
     async cleanup() {
       await cleanupAllTempDirs();
     },
   };
+}
+
+async function installMockOpenspec(binDir: string): Promise<void> {
+  await fs.ensureDir(binDir);
+  const executable = path.join(binDir, 'openspec');
+  await fs.writeFile(
+    executable,
+    `#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "\${1:-}" == "--version" ]]; then
+  printf '%s\\n' '1.6.0-e2e'
+  exit 0
+fi
+
+case "\${1:-}" in
+  list)
+    printf '{"changes":[],"root":{"path":"%s","source":"config"}}\\n' "$PWD"
+    ;;
+  new)
+    name="\${3:-}"
+    mkdir -p "openspec/changes/$name"
+    printf '{"status":"ok","change":"%s"}\\n' "$name"
+    ;;
+  status)
+    printf '%s\\n' '{"artifacts":[{"id":"proposal","status":"ready"},{"id":"design","status":"ready"},{"id":"tasks","status":"ready"},{"id":"specs","status":"ready"}]}'
+    ;;
+  instructions)
+    printf '%s\\n' '{"state":"ready","contextFiles":[],"instruction":"e2e fixture instruction"}'
+    ;;
+  validate)
+    printf '%s\\n' '{"valid":true,"issues":[]}'
+    ;;
+  archive)
+    name="\${2:-}"
+    tasks="openspec/changes/$name/tasks.md"
+    if [[ -f "$tasks" ]] && grep -q '\\[ \\]' "$tasks"; then
+      printf '%s\\n' '{"status":"error","reason":"pending-tasks"}'
+      exit 9
+    fi
+    archive_path="openspec/changes/archive/2099-01-01-$name"
+    mkdir -p "$(dirname "$archive_path")"
+    mv "openspec/changes/$name" "$archive_path"
+    printf '{"status":"ok","archivePath":"%s"}\\n' "$archive_path"
+    ;;
+  *)
+    printf '%s\\n' '{"status":"error","reason":"unsupported-e2e-command"}'
+    exit 8
+    ;;
+esac
+`,
+    'utf8',
+  );
+  await fs.chmod(executable, 0o755);
 }
 
 export { SAMPLES_ROOT };

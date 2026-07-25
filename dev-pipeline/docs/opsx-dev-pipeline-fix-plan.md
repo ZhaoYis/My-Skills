@@ -89,8 +89,8 @@
 - `npm run typecheck`：通过。
 - `./node_modules/.bin/tsc --noEmit -p test-pipeline/tsconfig.json`：通过。
 - `npm run lint`：退出码 0；保留仓库既有的非阻断 warning/info。
-- `npm test`：19 个测试文件、96 个测试全部通过。
-- `npm run test:pipeline`：7 个场景文件、41 个测试全部通过。
+- `npm test`：19 个测试文件、97 个测试全部通过。
+- `npm run test:pipeline`：4 个场景文件、10 个测试全部通过。
 - `npm run build`：通过。
 - `npm_config_cache=/tmp/opsx-dev-pipeline-npm-cache npm run pack:check`：通过；使用隔离 cache 避免用户级 npm cache 的历史所有权问题。
 - 全部 Shell 脚本 `bash -n` 与状态脚本 `node --check`：通过。
@@ -100,6 +100,29 @@
 
 验收：全部自动化门禁通过，测试报告无假阳性，工作区只包含本方案范围内的变更。
 
+### 工作包 7：E2E 流水线现状对齐
+
+- [x] ✅ 删除依赖旧 stack schema 的场景、fixture 和辅助函数，移除 Phase 0/5 中过期的 Schema 检测与 knowledge 沉淀语义。
+- [x] ✅ 通过 `runInit` 将当前模板安装到隔离样例项目，不再依赖本机 OpenSpec 或 `npx` 下载行为。
+- [x] ✅ 新增确定性执行器，真实执行 Phase 0-6 状态迁移、OpenSpec 包装脚本、代码修改、测试、verify 和 archive。
+- [x] ✅ 使用隔离 bare remote 验证 source push、No-ff merge、合并后复测和 target push，并核对本地/远端提交事实。
+- [x] ✅ 重写阶段验证器，同时验证状态文件、制品、代码 diff、Git 工作区与远端 refs，禁止 `Agent would...` 式伪执行通过。
+- [x] ✅ 保留并更新 OpenSpec 缺失、待办任务阻止归档及恢复、报告完整性三类失败路径。
+- [x] ✅ 更新样例测试、报告 schema、README、Node 运行时选择和 Vitest 配置，使流水线在 Node.js 20+ 下可重复运行。
+- [x] ✅ 修复 E2E 暴露的 Bash locale 变量边界缺陷，并增加 archive 失败仍返回结构化 JSON 的回归测试。
+- [x] ✅ 将 `openspec/.pipeline-state/` 定义为本地恢复状态并加入生成项目的 `.gitignore`，避免交付完成后污染工作区。
+- [x] ✅ 运行更新后的 E2E、根级全量测试、typecheck、lint、build、pack 检查及静态残留扫描。
+
+本轮验证记录（2026-07-25）：
+
+- `npm run test:pipeline`：4 个场景文件、10 个测试全部通过。
+- `npm test`：19 个测试文件、97 个测试全部通过；根级集成测试上限调整为 15 秒，避免状态机 Shell 子进程在并行负载下被默认 5 秒误杀。
+- 根项目与 `test-pipeline` TypeScript 检查、`npm run build`、`npm run lint` 全部通过；lint 仅保留既有非阻断 warning/info。
+- `npm_config_cache=/tmp/opsx-dev-pipeline-npm-cache npm run pack:check` 通过，产物包含更新后的 `.gitignore`。
+- Shell/Node 脚本语法、`git diff --check` 通过；过期 schema 配置、伪执行文案和旧 Phase 术语扫描零命中。
+
+验收：E2E 必须真实覆盖当前 Phase 0-6 交付链，失败恢复路径不得推进错误阶段；所有自动化和静态门禁通过。
+
 ## 发布策略
 
-按工作包顺序提交。工作包 1 和 2 属于阻断级修复；工作包 3 和 4 完成前不得宣称流水线可安全恢复或自动合并；工作包 5 和 6 完成后才可发布新模板版本。
+按工作包顺序提交。工作包 1 和 2 属于阻断级修复；工作包 3 和 4 完成前不得宣称流水线可安全恢复或自动合并；工作包 5、6、7 完成后才可发布新模板版本。

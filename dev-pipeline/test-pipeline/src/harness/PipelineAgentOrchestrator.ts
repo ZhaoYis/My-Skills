@@ -5,10 +5,9 @@ import type {
   PhaseId,
   TestEnvironment,
 } from './types.js';
-import { ALL_PHASES, PHASE_META } from './types.js';
+import { PHASE_META } from './types.js';
 import { AgentPhaseRunner, getPhaseSpecificInstructions } from './AgentPhaseRunner.js';
 import { createTestEnvironment } from './EnvironmentFactory.js';
-import type { EnvironmentConfig } from './types.js';
 
 export interface AgentExecutionResult {
   status: AgentPhaseResult['status'];
@@ -22,6 +21,8 @@ export interface AgentExecutionResult {
 export type AgentExecutor = (
   phaseId: PhaseId,
   prompt: string,
+  env: TestEnvironment,
+  scenario: ScenarioConfig,
 ) => Promise<AgentExecutionResult>;
 
 export function normalizePhaseResult(result: AgentPhaseResult): AgentPhaseResult {
@@ -65,8 +66,8 @@ export class PipelineAgentOrchestrator {
       sampleProject: this.scenario.sampleProject,
       toolId: this.scenario.toolId,
       features: this.scenario.features,
-      schemaConfig: this.scenario.schemaConfig,
-      skipPipelineInit: this.scenario.skipPipelineInit,
+      changeName: this.scenario.changeName,
+      openspecMode: this.scenario.openspecMode,
     });
 
     this.runner = new AgentPhaseRunner(this.env);
@@ -118,6 +119,7 @@ export class PipelineAgentOrchestrator {
       changeName: this.scenario.changeName,
       featureDescription: this.scenario.featureDescription,
       projectRoot: this.env.rootDir,
+      skillRoot: this.env.skillRoot,
     });
 
     const fullPrompt = `${basePrompt}\n\n${specificInstructions}`;
@@ -162,7 +164,7 @@ export class PipelineAgentOrchestrator {
       throw new Error('No Agent executor configured; refusing to report a synthetic pass.');
     }
 
-    return this.agentExecutor(phaseId, prompt);
+    return this.agentExecutor(phaseId, prompt, this.env, this.scenario);
   }
 
   /**
@@ -178,6 +180,7 @@ export class PipelineAgentOrchestrator {
       changeName: this.scenario.changeName,
       featureDescription: this.scenario.featureDescription,
       projectRoot: this.env.rootDir,
+      skillRoot: this.env.skillRoot,
     });
     return `${basePrompt}\n\n${specificInstructions}`;
   }
@@ -190,8 +193,8 @@ export class PipelineAgentOrchestrator {
       sampleProject: this.scenario.sampleProject,
       toolId: this.scenario.toolId,
       features: this.scenario.features,
-      schemaConfig: this.scenario.schemaConfig,
-      skipPipelineInit: this.scenario.skipPipelineInit,
+      changeName: this.scenario.changeName,
+      openspecMode: this.scenario.openspecMode,
     });
     this.runner = new AgentPhaseRunner(this.env);
     this.startTime = Date.now();
@@ -257,8 +260,9 @@ export class PipelineAgentOrchestrator {
         scenarioName: this.scenario.name,
         sampleProject: this.scenario.sampleProject,
         toolId: this.scenario.toolId,
-        schema: this.scenario.schemaConfig || 'default',
         changeName: this.scenario.changeName,
+        sourceBranch: this.env.sourceBranch,
+        targetBranch: this.env.targetBranch,
         timestamp: new Date().toISOString(),
         durationMs,
         overallStatus: failed > 0 ? 'fail' : skipped > 0 ? 'partial' : 'pass',
@@ -267,6 +271,7 @@ export class PipelineAgentOrchestrator {
         nodeVersion: process.version,
         openspecAvailable: this.env.openspecAvailable,
         openspecVersion: this.env.openspecVersion,
+        openspecMode: this.env.openspecMode,
         pipelineInitResult: this.env.pipelineInitResult,
       },
       phases: normalizedResults,
