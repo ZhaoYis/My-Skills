@@ -1,12 +1,12 @@
 {
   "schemaVersion": 2,
-  "_version": 19,
+  "_version": 24,
   "changeName": "add-explosion-sound",
   "sourceBranch": "feature/lite",
   "targetBranch": null,
   "currentPhase": 6,
   "currentStep": 20,
-  "status": "active",
+  "status": "completed",
   "executionMode": "pipeline",
   "createdBy": "大師兄丶",
   "createdByEmail": "zhaoyi_dsx@163.com",
@@ -128,7 +128,9 @@
     "proposalApproved": true,
     "implementationConfirmed": true,
     "reviewDisposition": "review",
-    "postArchiveAction": "push-only"
+    "postArchiveAction": "push-only",
+    "commitApproved": true,
+    "sourcePushApproved": true
   },
   "review": {
     "round": 1,
@@ -149,12 +151,12 @@
   },
   "archivePath": "openspec/changes/archive/2026-07-26-add-explosion-sound",
   "delivery": {
-    "commitSha": null,
+    "commitSha": "d738b77",
     "mergeCommitSha": null,
-    "sourcePushed": false,
+    "sourcePushed": true,
     "targetPushed": false,
     "tag": null
   },
   "createdAt": "2026-07-26T06:32:15.267Z",
-  "updatedAt": "2026-07-26T06:44:51.286Z"
+  "updatedAt": "2026-07-26T06:45:46.338Z"
 }
