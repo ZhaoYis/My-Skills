@@ -1,7 +1,8 @@
 ---
 name: opsx-dev-pipeline
 description: 执行基于 OpenSpec 和 Git 的门禁式需求开发与交付流程，覆盖预检、提案确认、实现、代码审查、测试、验证归档、提交、推送与合并，并支持中断恢复。用户要求实现或继续一个 OpenSpec change、按阶段推进完整开发流水线、审查并交付变更，或处理 opsx-dev-pipeline 时使用。
-version: "0.2.2"
+allowed-tools: Bash(openspec:*), AskUserQuestion
+version: "0.2.3"
 license: "MIT"
 repository: "git+https://github.com/ZhaoYis/My-Skills.git"
 ---
@@ -18,7 +19,7 @@ repository: "git+https://github.com/ZhaoYis/My-Skills.git"
 - 用户补充需求、提案修改或实施说明后，必须在同一回复中同步当前 **Phase/ change / 下一动作**，推进到下一步或决策点。
 - 除用户明确选择「终止流程」或「暂停流水线」外，不得单方结束全流程。
 - 高风险决策必须显式确认；推荐项不等于自动代选。
-- 决策点首选 **AskQuestion** tool；不可用时改用编号选项列表并等待用户回复，不得自动代选。
+- 决策点首选 **AskUserQuestion** tool；不可用时改用编号选项列表并等待用户回复，不得自动代选。
 - 任务跟踪首选宿主提供的任务工具；不可用时在回复中维护等价 Markdown 清单，并将阶段、决策和门禁结果写入流水线状态文件。
 - 未经决策点 1 用户明确选择「确认提案，开始实施」，禁止进入 Phase2。
 - 代码审查修复循环最多 3 轮，超过后强制暂停。
@@ -35,7 +36,7 @@ repository: "git+https://github.com/ZhaoYis/My-Skills.git"
 
 ## 状态协议
 
-- 新 change：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<change>" "<source-branch>"`
+- 新 change：先按 Phase0 获取用户明确的需求关联决定，再运行 `init "<change>" "<source-branch>" --feature-id "<featureId>"`（有 URL 时追加 `--feature-url "<featureUrl>"`）或 `init "<change>" "<source-branch>" --skip-feature-association`
 - 读取状态：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<change>"`
 - 确认迁移 v1：先运行 `migrate-schema "<change>"` 获取确认提示，用户同意后运行 `migrate-schema "<change>" --confirm`
 - 阶段审计开始：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs record-phase "<change>" <phase> <step> <executed-by> --start`

@@ -1,7 +1,7 @@
 ---
 name: "OPSX: Archive"
 description: Archive an OpenSpec change with pipeline gate and delivery state tracking
-allowed-tools: Bash(openspec:*), Bash(node:*), Bash(git:*)
+allowed-tools: Bash(openspec:*), AskUserQuestion
 category: Workflow
 tags: [workflow, archive, experimental]
 ---
@@ -23,13 +23,18 @@ Archive a completed change and persist the final pipeline gates.
 
 1. Select an active change using the underlying Skill rules, then run `get "<name>"` with the pipeline state script.
 2. For Schema v1, run `migrate-schema "<name>"`; require explicit approval before adding `--confirm`.
-3. If state is missing, use AskUserQuestion to ask whether to associate an external requirement. Collect `featureId` and `featureUrl` when supplied, initialize the state, and set `executionMode` to `standalone`:
+3. If state is missing, **MUST call AskUserQuestion and wait for an explicit choice**: `Associate external requirement` / `Skip association`. Never infer a skip from context. If the user chooses association, collect `featureId` and optional `featureUrl`. Run exactly one `init` branch, then set `executionMode` to `standalone`:
    ```bash
    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+   # Associate external requirement without a URL
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>"
+   # Associate external requirement with a URL
    node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   # Explicitly skip association
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --skip-feature-association
    node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
    ```
-   If the user skips requirement association, omit both feature flags. Do not store placeholder values.
+   Run exactly one `init` command and never pass placeholder values.
 4. Compensate missing gates without guessing:
    - If `tests.status` is pending, ask `passed` / `failed` / `skipped` / `rerun tests`. Persist a confirmed result with `set tests.status`; stop on failed.
    - If `verify.status` is pending, ask `passed` / `failed` / `skipped` / `run /opsx:verify`. Persist `passed` or `failed` through `attempt verify`, and a confirmed skip through `set verify.status`; stop on failed.

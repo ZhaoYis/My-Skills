@@ -33,7 +33,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs attempt "<name>" review passed 
 
 ## Step12：[决策点 3] 审查结果处理
 
-### 有严重或重要问题 → AskQuestion：
+### 有严重或重要问题 → AskUserQuestion：
 - `生成修复提案并应用` → 执行下方「修复子流程」后重新审查
 - `直接修复并重新审查` → 直接改代码后重新审查
 - `回到 Phase2 重新实施` → 回到 Phase2
@@ -41,7 +41,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs attempt "<name>" review passed 
 - `继续后续流程` → Phase4（完成后进入 Phase5）
 - `终止流程` → 退出
 
-### 仅有一般问题或建议 → AskQuestion：
+### 仅有一般问题或建议 → AskUserQuestion：
 - `继续后续流程` → Phase4
 - `生成修复提案并应用` → 执行修复子流程
 - `暂停流水线，手动调整后继续` → 退出
@@ -64,7 +64,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 4 13
 
 1. 根据审查报告确定修复 scope，名称 `fix-cr-<type>`（如 `fix-cr-security`）
 2. 新建修复 change、初始化独立状态并生成制品（同 Phase1 Step4）
-3. **修复提案门禁**：严格按 Phase1 决策点 1 使用 AskQuestion（三选项一致）
+3. **修复提案门禁**：严格按 Phase1 决策点 1 使用 AskUserQuestion（三选项一致）
 4. 逐任务实施修复（同 Phase2 Step6-7）
 5. 修复 change 按 Phase4–5 完成测试与归档，并以 `postArchiveAction=local-only` 迁移到 Phase6 后标记完成；代码随主 change 统一交付
 6. 回到Step10 重新审查

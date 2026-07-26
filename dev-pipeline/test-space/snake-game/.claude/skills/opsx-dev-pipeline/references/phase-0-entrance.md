@@ -23,6 +23,24 @@ node <SKILL_ROOT>/scripts/preflight.mjs
 
 ## Step2：判断入口类型
 
+### 首次创建状态的统一规则
+
+当目标 change 的状态不存在且即将执行 `init` 时，必须先完成以下步骤：
+
+1. 必须使用 **AskUserQuestion** 询问用户是否关联外部需求（如 JIRA issue）：`关联外部需求` / `跳过`，并等待用户显式选择。即使需求描述完整、未提及 issue 或用户要求直接继续，也不得推断为跳过。
+2. 用户选择关联时，收集 `featureId` 和可选的 `featureUrl`，根据是否提供 URL 只执行下面一条命令：
+   ```bash
+   # 未提供 URL
+   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --feature-id "<featureId>"
+   # 提供了 URL
+   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   ```
+3. 用户明确选择跳过时执行：
+   ```bash
+   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --skip-feature-association
+   ```
+4. 上述 `init` 命令只能执行一个，不得传入 `<featureId>`、`<featureUrl>` 等占位值。后续每条状态命令都必须检查 exit code。
+
 ### 2.a 用户提供了已有 change 名称
 
 1. 读取持久化状态：
@@ -31,16 +49,15 @@ node <SKILL_ROOT>/scripts/preflight.mjs
    ```
 2. 若 `schemaVersion=1`，执行 `migrate-schema "<name>"` 展示迁移详情；只有用户明确确认后才执行 `migrate-schema "<name>" --confirm`。拒绝迁移时保持 v1 原文件不变并终止续接。
 3. 并行核对事实：活跃/归档 change、任务勾选、状态中记录的审查报告、Git 分支和冲突状态。
-4. 状态不存在但 change 存在时，展示检测事实并询问：`按检测结果重建状态` / `选择其他 change` / `终止流程`。只有用户确认后才执行 `init` 和必要的 `set`/`transition`。
+4. 状态不存在但 change 存在时，展示检测事实并询问：`按检测结果重建状态` / `选择其他 change` / `终止流程`。只有用户确认后才按“首次创建状态的统一规则”询问外部需求关联并执行 `init`，再执行必要的 `set`/`transition`。
 5. 状态与事实不一致时，列出差异并执行 `pause`；禁止按文件是否存在自动跳阶段。
-6. 状态一致且 `executionMode=pipeline` 时，使用 **AskQuestion** 确认：`从记录的 Phase/Step 继续` / `从头开始（新建 change）` / `终止流程`。
+6. 状态一致且 `executionMode=pipeline` 时，使用 **AskUserQuestion** 确认：`从记录的 Phase/Step 继续` / `从头开始（新建 change）` / `终止流程`。
 
 ### 2.b 用户提供了需求描述
 
 - 从描述推导 kebab-case 的 change 名称
-- 获取当前分支并初始化状态，然后迁移到 Phase1：
+- 获取当前分支，按“首次创建状态的统一规则”询问外部需求关联并初始化状态，然后迁移到 Phase1：
   ```bash
-  node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>"
   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 1 3
   ```
 - 进入 **Phase1 Step3（决策点 1a）**
@@ -59,12 +76,12 @@ node <SKILL_ROOT>/scripts/preflight.mjs
    ```
 2. 单独展示全局 `gatesBypassed`；为空时明确显示“无”。
 3. 先执行 gate 补偿，任何结果都必须写入状态后再继续：
-   - `tests.status=pending`：**AskQuestion**：`passed` / `failed` / `skipped` / `重新运行`。确认结果使用 `set tests.status`；选择重新运行则进入 Phase4，禁止预写通过。
-   - `verify.status=pending`：**AskQuestion**：`passed` / `failed` / `skipped` / `重新验证`。通过或失败使用 `attempt verify`，显式跳过使用 `set verify.status skipped`；选择重新验证则进入 Phase5 Step16。
-   - `decisions.postArchiveAction` 缺失且已经归档或即将进入 Phase6：**AskQuestion**：`merge` / `push-only` / `local-only`，使用 `decision` 持久化。此字段禁止从 Git 或文件事实推断。
-4. 使用 **AskQuestion** 确认续接方式：
+   - `tests.status=pending`：**AskUserQuestion**：`passed` / `failed` / `skipped` / `重新运行`。确认结果使用 `set tests.status`；选择重新运行则进入 Phase4，禁止预写通过。
+   - `verify.status=pending`：**AskUserQuestion**：`passed` / `failed` / `skipped` / `重新验证`。通过或失败使用 `attempt verify`，显式跳过使用 `set verify.status skipped`；选择重新验证则进入 Phase5 Step16。
+   - `decisions.postArchiveAction` 缺失且已经归档或即将进入 Phase6：**AskUserQuestion**：`merge` / `push-only` / `local-only`，使用 `decision` 持久化。此字段禁止从 Git 或文件事实推断。
+4. 使用 **AskUserQuestion** 确认续接方式：
    - `从当前 Phase/Step 继续（推荐）`：保留 `hybrid`/`standalone` 记录，进入状态中记录的步骤。
-   - `重新开始完整流水线`：要求新 change 名称，使用 `init` 创建新的 `executionMode=pipeline` 状态；保留原状态作为审计记录，不覆盖或删除。
+   - `重新开始完整流水线`：要求新 change 名称，按“首次创建状态的统一规则”询问外部需求关联并使用 `init` 创建新的 `executionMode=pipeline` 状态；保留原状态作为审计记录，不覆盖或删除。
    - `终止流程`：退出，不修改状态。
 5. 所有状态写入后执行 `get "<name>"` 自检；对比 Phase、gate 结果和 delivery 决策。不一致时警告并暂停。
 

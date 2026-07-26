@@ -102,6 +102,11 @@ function collectMachineInfo() {
   };
 }
 
+function formatLocalTime(date = new Date()) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
 function computeFingerprint(createdAt, createdBy, featureId, nonce) {
   const input = `${createdAt}|${createdBy}|${featureId || ''}|${nonce}`;
   return crypto.createHash('md5').update(input).digest('hex');
@@ -196,7 +201,7 @@ async function saveState(root, state) {
   }
 
   state._version = diskVersion(state) + 1;
-  state.updatedAt = new Date().toISOString();
+  state.updatedAt = formatLocalTime();
   try {
     await mkdir(directory, { recursive: true });
     await writeFile(temporary, `${JSON.stringify(state, null, 2)}\n`, { mode: 0o600 });
@@ -304,11 +309,14 @@ function parseInitArgs(args) {
   const sourceBranch = args[0] && !args[0].startsWith('--') ? args[0] : null;
   const namedArgs = {};
   const namedStart = sourceBranch ? 1 : 0;
+  const booleanArgs = new Set(['--skip-feature-association']);
 
   for (let index = namedStart; index < args.length; index += 1) {
     const key = args[index];
     const value = args[index + 1];
-    if (key.startsWith('--') && value && !value.startsWith('--')) {
+    if (booleanArgs.has(key)) {
+      namedArgs[key] = true;
+    } else if (key.startsWith('--') && value && !value.startsWith('--')) {
       namedArgs[key] = value;
       index += 1;
     }
@@ -409,53 +417,78 @@ if (!command) {
         const createdByEmail = resolveCreatedByEmail();
         const featureId = namedArgs['--feature-id'] || null;
         const featureUrl = namedArgs['--feature-url'] || null;
-        const now = new Date().toISOString();
-        const nonce = crypto.randomBytes(4).toString('hex');
-        const state = {
-          schemaVersion: SCHEMA_VERSION,
-          _version: 0,
-          changeName,
-          sourceBranch,
-          targetBranch: null,
-          currentPhase: 0,
-          currentStep: 1,
-          status: 'active',
-          executionMode: 'pipeline',
-          createdBy,
-          createdByEmail,
-          machineInfo: collectMachineInfo(),
-          featureInfo: featureId ? { featureId, featureUrl } : null,
-          fingerprintId: computeFingerprint(now, createdBy, featureId, nonce),
-          fingerprintNonce: nonce,
-          phaseHistory: [
-            {
-              phase: 0,
-              step: 1,
-              executedBy: 'pipeline',
-              status: 'in-progress',
-              startedAt: now,
-              completedAt: null,
-              decisions: {},
-              gatesBypassed: [],
+        const skipFeatureAssociation = namedArgs['--skip-feature-association'] === true;
+
+        if (featureUrl && !featureId) {
+          emitError(
+            'feature-id-required',
+            '提供 --feature-url 时必须同时提供 --feature-id',
+            'provide-feature-id',
+            EXIT_INVALID_TRANSITION,
+          );
+        } else if (skipFeatureAssociation && (featureId || featureUrl)) {
+          emitError(
+            'feature-association-options-conflict',
+            '--skip-feature-association 不能与需求关联参数同时使用',
+            'provide-feature-or-explicit-skip',
+            EXIT_INVALID_TRANSITION,
+          );
+        } else if (!featureId && !skipFeatureAssociation) {
+          emitError(
+            'feature-association-decision-required',
+            '首次创建状态前必须由用户明确选择关联外部需求或跳过关联',
+            'provide-feature-id-or-skip-feature-association',
+            EXIT_INVALID_TRANSITION,
+          );
+        } else {
+          const now = formatLocalTime();
+          const nonce = crypto.randomBytes(4).toString('hex');
+          const state = {
+            schemaVersion: SCHEMA_VERSION,
+            _version: 0,
+            changeName,
+            sourceBranch,
+            targetBranch: null,
+            currentPhase: 0,
+            currentStep: 1,
+            status: 'active',
+            executionMode: 'pipeline',
+            createdBy,
+            createdByEmail,
+            machineInfo: collectMachineInfo(),
+            featureInfo: featureId ? { featureId, featureUrl } : null,
+            fingerprintId: computeFingerprint(now, createdBy, featureId, nonce),
+            fingerprintNonce: nonce,
+            phaseHistory: [
+              {
+                phase: 0,
+                step: 1,
+                executedBy: 'pipeline',
+                status: 'in-progress',
+                startedAt: now,
+                completedAt: null,
+                decisions: {},
+                gatesBypassed: [],
+              },
+            ],
+            gatesBypassed: [],
+            decisions: {},
+            review: { round: 0, reportPath: null, status: 'pending' },
+            tests: { command: null, attempts: 0, status: 'pending', detail: null },
+            verify: { command: null, attempts: 0, status: 'pending', detail: null },
+            archivePath: null,
+            delivery: {
+              commitSha: null,
+              mergeCommitSha: null,
+              sourcePushed: false,
+              targetPushed: false,
+              tag: null,
             },
-          ],
-          gatesBypassed: [],
-          decisions: {},
-          review: { round: 0, reportPath: null, status: 'pending' },
-          tests: { command: null, attempts: 0, status: 'pending', detail: null },
-          verify: { command: null, attempts: 0, status: 'pending', detail: null },
-          archivePath: null,
-          delivery: {
-            commitSha: null,
-            mergeCommitSha: null,
-            sourcePushed: false,
-            targetPushed: false,
-            tag: null,
-          },
-          createdAt: now,
-          updatedAt: now,
-        };
-        if (await saveState(root, state)) output({ status: 'ok', state });
+            createdAt: now,
+            updatedAt: now,
+          };
+          if (await saveState(root, state)) output({ status: 'ok', state });
+        }
       }
     } else {
       const state = await loadState(root, changeName);
@@ -512,7 +545,7 @@ if (!command) {
                 EXIT_INVALID_TRANSITION,
               );
             } else {
-              const now = new Date().toISOString();
+              const now = formatLocalTime();
               let entry = !start
                 ? state.phaseHistory.find(
                     (candidate) =>
@@ -669,7 +702,7 @@ if (!command) {
                 fromStep,
                 toPhase,
                 toStep,
-                new Date().toISOString(),
+                formatLocalTime(),
               );
               if (await saveState(root, state)) output({ status: 'ok', state });
             }

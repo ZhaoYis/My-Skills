@@ -7,7 +7,7 @@ node <SKILL_ROOT>/scripts/instructions-apply.mjs "<name>"
 ```
 
 返回状态处理：
-- `state: "blocked"` → **AskQuestion**：`回到 Phase1 补充制品` / `终止流程`
+- `state: "blocked"` → **AskUserQuestion**：`回到 Phase1 补充制品` / `终止流程`
 - `state: "all_done"` → 不再实施任务，但仍进入 Step8 决策点 2
 - 其他 → 读取 `contextFiles` 继续实施
 
@@ -36,11 +36,11 @@ node <SKILL_ROOT>/scripts/instructions-apply.mjs "<name>"
 
 准出全部通过后，编辑 `tasks.md` 将该任务条目的 `- [ ]` 改为 `- [x]`，完成标记。
 
-遇到阻塞时 **AskQuestion**：`提供补充说明` / `回到 Phase1 修改提案` / `跳过此任务`（标记 `[~]`） / `终止流程`
+遇到阻塞时 **AskUserQuestion**：`提供补充说明` / `回到 Phase1 修改提案` / `跳过此任务`（标记 `[~]`） / `终止流程`
 
 ## Step8：[决策点 2] 实施完成确认
 
-展示实施摘要（完成任务数、跳过任务数、变更文件列表），**AskQuestion**：
+展示实施摘要（完成任务数、跳过任务数、变更文件列表），**AskUserQuestion**：
 - `进入代码审查` → Phase3
 - `暂停流水线，手动调整后继续` → 展示恢复指引后退出
 - `跳过审查，继续后续流程` → Phase4（完成后进入 Phase5）
