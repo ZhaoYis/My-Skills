@@ -112,8 +112,8 @@ Mark task complete in the tasks file: `- [ ]` → `- [x]`
 
 ## 验证
 
-1. 修改 `templates/common/skills/opsx-dev-pipeline/references/phase-2-apply.md`
-2. 同步修改 `test-space/snake-game/.claude/skills/opsx-dev-pipeline/references/phase-2-apply.md`
-3. 在 `test-space/snake-game` 中创建新 change 并执行 `/opsx-dev-pipeline`
-4. 进入 Phase 2 后，确认 AI 每完成一个任务就编辑 `tasks.md` 将 `- [ ]` 改为 `- [x]`
-5. Phase 2 结束后，检查 `tasks.md` 中所有已完成任务的复选框均为 `[x]`
+1. ✅ 修改 `templates/common/skills/opsx-dev-pipeline/references/phase-2-apply.md`
+2. ✅ 同步修改 `test-space/snake-game/.claude/skills/opsx-dev-pipeline/references/phase-2-apply.md`
+3. ✅ 在 `test-space/snake-game` 中创建新 change 并执行 `/opsx-dev-pipeline`
+4. ✅ 进入 Phase 2 后，确认 AI 每完成一个任务就编辑 `tasks.md` 将 `- [ ]` 改为 `- [x]`
+5. ✅ Phase 2 结束后，检查 `tasks.md` 中所有已完成任务的复选框均为 `[x]`

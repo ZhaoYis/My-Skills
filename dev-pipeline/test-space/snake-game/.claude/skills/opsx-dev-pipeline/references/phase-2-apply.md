@@ -34,6 +34,8 @@ node <SKILL_ROOT>/scripts/instructions-apply.mjs "<name>"
 
 **有一条不满足 → 不允许标记完成**，先改到满足。
 
+准出全部通过后，编辑 `tasks.md` 将该任务条目的 `- [ ]` 改为 `- [x]`，完成标记。
+
 遇到阻塞时 **AskQuestion**：`提供补充说明` / `回到 Phase1 修改提案` / `跳过此任务`（标记 `[~]`） / `终止流程`
 
 ## Step8：[决策点 2] 实施完成确认

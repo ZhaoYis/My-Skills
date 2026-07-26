@@ -316,6 +316,9 @@ describe('tool matrix', () => {
     const apply = await fs.readFile(path.join(skillRoot, 'references/phase-2-apply.md'), 'utf8');
     expect(apply).toContain('写前复用门禁');
     expect(apply).toContain('准出自审查门禁');
+    expect(apply).toContain(
+      '编辑 `tasks.md` 将该任务条目的 `- [ ]` 改为 `- [x]`，完成标记',
+    );
 
     const propose = await fs.readFile(
       path.join(skillRoot, 'references/phase-1-propose.md'),
