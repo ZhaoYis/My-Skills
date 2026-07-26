@@ -2,7 +2,7 @@
 name: opsx-dev-pipeline
 description: 执行基于 OpenSpec 和 Git 的门禁式需求开发与交付流程，覆盖预检、提案确认、实现、代码审查、测试、验证归档、提交、推送与合并，并支持中断恢复。用户要求实现或继续一个 OpenSpec change、按阶段推进完整开发流水线、审查并交付变更，或处理 opsx-dev-pipeline 时使用。
 allowed-tools: Bash(openspec:*), AskUserQuestion
-version: "0.2.3"
+version: "0.2.4"
 license: "MIT"
 repository: "git+https://github.com/ZhaoYis/My-Skills.git"
 ---
