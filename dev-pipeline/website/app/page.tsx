@@ -214,10 +214,9 @@ export default function Home() {
                 <p><span>03</span><code /></p>
                 <p><span>04</span><code><i># 初始化团队流水线</i></code></p>
                 <p><span>05</span><code>npx opsx-dev-pipeline@latest init </code></p>
-                <p><span>06</span><code>  --tool claude --stack backend --yes</code></p>
-                <p><span>07</span><code /></p>
-                <p><span>08</span><code><i># 启动第一个变更</i></code></p>
-                <p><span>09</span><code>/opsx-dev-pipeline &quot;给 Todo 添加 dueDate&quot;</code></p>
+                <p><span>06</span><code /></p>
+                <p><span>07</span><code><i># 启动第一个变更</i></code></p>
+                <p><span>08</span><code>/opsx-dev-pipeline &quot;给 Todo 添加 dueDate&quot;</code></p>
               </div>
               <div className="code-result"><Check aria-hidden="true" /><span>Pipeline initialized</span><b>READY</b></div>
             </div>
