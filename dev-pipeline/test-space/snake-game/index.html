@@ -511,6 +511,370 @@
             100% { box-shadow: 0 0 0 20px rgba(192, 132, 252, 0), 0 0 0 1px rgba(51, 65, 85, 0.5), 0 20px 60px rgba(0, 0, 0, 0.5); }
         }
 
+        /* ── Leaderboard Panel ── */
+        #leaderboardOverlay {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        #leaderboardOverlay.active {
+            /* overlay base handles opacity/pointer-events */
+        }
+
+        .overlay.lb-hidden {
+            display: none;
+        }
+
+        .lb-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 90vw;
+            max-width: 520px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        .lb-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .lb-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--text);
+            margin: 0;
+        }
+
+        .lb-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .lb-close:hover {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .lb-filters {
+            display: flex;
+            gap: 6px;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .lb-filter-btn {
+            padding: 6px 14px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+
+        .lb-filter-btn:hover {
+            border-color: var(--text-secondary);
+            color: var(--text);
+        }
+
+        .lb-filter-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--bg);
+        }
+
+        .lb-table-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 20px;
+            min-height: 120px;
+            max-height: 340px;
+        }
+
+        .lb-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+
+        .lb-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .lb-table th {
+            text-align: left;
+            padding: 8px 6px;
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            border-bottom: 2px solid var(--border);
+            background: var(--surface);
+        }
+
+        .lb-table td {
+            padding: 8px 6px;
+            border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .lb-col-rank { width: 32px; text-align: center; }
+        .lb-col-name {  }
+        .lb-col-score { text-align: right; font-weight: 700; color: var(--accent); }
+        .lb-col-date { text-align: center; color: var(--text-secondary); font-size: 0.75rem; }
+        .lb-col-mode { text-align: center; font-size: 1rem; }
+        .lb-col-result { text-align: center; font-size: 1rem; }
+
+        .lb-table tbody tr {
+            transition: background 0.2s ease;
+        }
+
+        .lb-table tbody tr:hover {
+            background: color-mix(in srgb, var(--accent) 8%, transparent);
+        }
+
+        .lb-table tbody tr.highlight {
+            background: color-mix(in srgb, var(--accent) 20%, transparent);
+            animation: lbHighlightFade 2s ease-out;
+        }
+
+        @keyframes lbHighlightFade {
+            0% { background: color-mix(in srgb, var(--accent) 40%, transparent); }
+            100% { background: color-mix(in srgb, var(--accent) 20%, transparent); }
+        }
+
+        .lb-rank-medal {
+            font-size: 1.1rem;
+        }
+
+        .lb-empty {
+            display: none;
+            text-align: center;
+            padding: 32px 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .lb-empty.visible {
+            display: block;
+        }
+
+        .lb-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px 16px;
+            border-top: 1px solid var(--border);
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .lb-name-edit {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .lb-name-label {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .lb-name-input {
+            width: 100px;
+            padding: 5px 8px;
+            font-size: 0.8rem;
+            font-family: inherit;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg);
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .lb-name-input:focus {
+            border-color: var(--accent);
+        }
+
+        .lb-name-save {
+            padding: 5px 12px;
+            font-size: 0.75rem;
+        }
+
+        .lb-clear-btn {
+            font-size: 0.75rem;
+            padding: 6px 14px;
+            color: var(--danger);
+            border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+        }
+
+        .lb-clear-btn:hover {
+            background: color-mix(in srgb, var(--danger) 15%, transparent);
+            border-color: var(--danger);
+        }
+
+        /* ── Leaderboard Summary (Start Overlay) ── */
+        .leaderboard-summary {
+            width: 100%;
+            max-width: 380px;
+            background: color-mix(in srgb, var(--surface) 70%, transparent);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 14px;
+        }
+
+        .lb-summary-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .lb-summary-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .lb-summary-link {
+            font-size: 0.72rem;
+            color: var(--accent);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            padding: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .lb-summary-link:hover {
+            opacity: 0.75;
+        }
+
+        .lb-summary-list {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .lb-summary-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            padding: 3px 4px;
+            border-radius: 4px;
+            color: var(--text);
+        }
+
+        .lb-summary-row:nth-child(odd) {
+            background: color-mix(in srgb, var(--border) 30%, transparent);
+        }
+
+        .lb-summary-rank {
+            width: 22px;
+            font-weight: 700;
+            text-align: center;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+
+        .lb-summary-name {
+            flex: 1;
+            margin: 0 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .lb-summary-score {
+            font-weight: 700;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+
+        .lb-summary-empty {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            padding: 4px 0;
+        }
+
+        /* ── Player Name Row (Start Overlay) ── */
+        .player-name-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .player-name-label {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .player-name-input {
+            width: 110px;
+            padding: 6px 10px;
+            font-size: 0.82rem;
+            font-family: inherit;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg);
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .player-name-input:focus {
+            border-color: var(--accent);
+        }
+
+        .player-name-save {
+            padding: 6px 14px;
+            font-size: 0.75rem;
+        }
+
+        /* ── Game Over Buttons ── */
+        .gameover-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
         /* ── Responsive ── */
         @media (max-width: 600px) {
             .title { font-size: 1.5rem; }
@@ -580,14 +944,70 @@
                     </div>
                 </div>
                 <div class="overlay-subtitle">按下 <span style="color:#22d3ee;font-weight:700;">空格</span> 或点击按钮开始</div>
+                <div class="leaderboard-summary" id="lbSummary">
+                    <div class="lb-summary-header">
+                        <span class="lb-summary-title">🏆 排行榜</span>
+                        <button class="lb-summary-link" id="lbSummaryLink">查看完整榜单 →</button>
+                    </div>
+                    <div class="lb-summary-list" id="lbSummaryList"></div>
+                </div>
+                <div class="player-name-row">
+                    <label class="player-name-label">昵称:</label>
+                    <input type="text" class="player-name-input" id="playerNameInput" maxlength="12" placeholder="玩家">
+                    <button class="btn btn-secondary player-name-save" id="playerNameSave">修改</button>
+                </div>
                 <button class="btn btn-primary" id="startBtn">开始游戏</button>
+            </div>
+
+            <!-- Leaderboard Overlay -->
+            <div class="overlay" id="leaderboardOverlay">
+                <div class="lb-panel">
+                    <div class="lb-header">
+                        <h2 class="lb-title">🏆 排行榜</h2>
+                        <button class="lb-close" id="lbCloseBtn" aria-label="关闭排行榜">✕</button>
+                    </div>
+                    <div class="lb-filters" id="lbFilters">
+                        <button class="lb-filter-btn active" data-filter="all">全部</button>
+                        <button class="lb-filter-btn" data-filter="classic">🐍 经典模式</button>
+                        <button class="lb-filter-btn" data-filter="timed">⏱ 计时模式</button>
+                    </div>
+                    <div class="lb-table-wrapper">
+                        <table class="lb-table" id="lbTable">
+                            <thead>
+                                <tr>
+                                    <th class="lb-col-rank">#</th>
+                                    <th class="lb-col-name">玩家</th>
+                                    <th class="lb-col-score">分数</th>
+                                    <th class="lb-col-date">日期</th>
+                                    <th class="lb-col-mode">模式</th>
+                                    <th class="lb-col-result">结果</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lbTbody">
+                            </tbody>
+                        </table>
+                        <div class="lb-empty" id="lbEmpty">暂无记录</div>
+                    </div>
+                    <div class="lb-footer">
+                        <div class="lb-name-edit">
+                            <label class="lb-name-label">昵称:</label>
+                            <input type="text" class="lb-name-input" id="lbNameInput" maxlength="12" placeholder="输入昵称">
+                            <button class="btn btn-secondary lb-name-save" id="lbNameSave">修改</button>
+                        </div>
+                        <button class="btn btn-secondary lb-clear-btn" id="lbClearBtn">清空排行榜</button>
+                    </div>
+                </div>
             </div>
 
             <!-- Game Over Overlay -->
             <div class="overlay" id="gameOverOverlay">
                 <div class="overlay-title game-over">游戏结束</div>
                 <div class="overlay-subtitle">得分: <span class="highlight" id="finalScore">0</span></div>
-                <button class="btn btn-primary" id="restartBtn">再来一局</button>
+                <div class="overlay-subtitle" id="rankInfo" style="display:none;">排行榜第 <span class="highlight" id="rankPosition">-</span> 名!</div>
+                <div class="gameover-buttons">
+                    <button class="btn btn-primary" id="restartBtn">再来一局</button>
+                    <button class="btn btn-secondary" id="viewLeaderboardBtn">查看排行榜</button>
+                </div>
             </div>
         </div>
 
@@ -794,6 +1214,179 @@
             explosionDuration: 400,   // ms
             chainBaseScore: 5,        // points per severed segment
         };
+
+        // ─── Leaderboard Store ───────────────────
+        function getPlayerName() {
+            try {
+                var n = localStorage.getItem('snake-player-name');
+                return (n && n.trim()) ? n.trim() : '玩家';
+            } catch (e) { return '玩家'; }
+        }
+
+        function setPlayerName(newName) {
+            var trimmed = (newName || '').trim();
+            if (!trimmed) return false;
+            try { localStorage.setItem('snake-player-name', trimmed); } catch (e) { return false; }
+            return true;
+        }
+
+        const LeaderboardStore = (function () {
+            const STORAGE_KEY = 'snake-leaderboard';
+            const MAX_ENTRIES = 20;
+
+            function _safeRead() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (!raw) return [];
+                    const data = JSON.parse(raw);
+                    if (!Array.isArray(data)) return [];
+                    return data;
+                } catch (e) { return []; }
+            }
+
+            function _safeWrite(entries) {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+                } catch (e) { /* 静默降级 */ }
+            }
+
+            /** 按分数降序、同分按日期降序排序 */
+            function _sort(entries) {
+                return entries.sort(function (a, b) {
+                    if (b.score !== a.score) return b.score - a.score;
+                    return (b.date || '').localeCompare(a.date || '');
+                });
+            }
+
+            /** 插入新记录，返回排名（1-based），不入榜返回 -1 */
+            function addEntry(entry) {
+                if (!entry || !entry.score || entry.score <= 0) return -1;
+                var entries = _safeRead();
+                var record = {
+                    id: Date.now(),
+                    score: entry.score,
+                    date: new Date().toISOString(),
+                    mode: entry.mode || 'classic',
+                    playerName: getPlayerName(),
+                    snakeLength: entry.snakeLength || 0,
+                    result: entry.result || 'death',
+                    skin: entry.skin || 'classic',
+                };
+                entries.push(record);
+                entries = _sort(entries);
+                // 找排名
+                var rank = -1;
+                for (var i = 0; i < entries.length; i++) {
+                    if (entries[i].id === record.id) { rank = i + 1; break; }
+                }
+                // 淘汰超出部分
+                if (entries.length > MAX_ENTRIES) {
+                    entries = entries.slice(0, MAX_ENTRIES);
+                    // 如果新记录被淘汰了
+                    if (rank > MAX_ENTRIES) rank = -1;
+                }
+                _safeWrite(entries);
+                return rank;
+            }
+
+            function getAll() {
+                return _safeRead();
+            }
+
+            function getTop(n) {
+                return _safeRead().slice(0, n);
+            }
+
+            function getByMode(mode) {
+                if (mode === 'all') return getAll();
+                return _safeRead().filter(function (e) { return e.mode === mode; });
+            }
+
+            function clearAll() {
+                try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+            }
+
+            function updateAllNames(newName) {
+                var entries = _safeRead();
+                for (var i = 0; i < entries.length; i++) {
+                    entries[i].playerName = newName;
+                }
+                _safeWrite(entries);
+            }
+
+            /** 迁移旧版最高分数据 */
+            function migrateOldScores() {
+                var entries = _safeRead();
+                if (entries.length > 0) return; // 已有数据，跳过
+                var migrated = false;
+                try {
+                    var classic = localStorage.getItem('snake-best-score-classic');
+                    if (classic) {
+                        var cScore = parseInt(classic, 10) || 0;
+                        if (cScore > 0) {
+                            entries.push({
+                                id: Date.now() - 1,
+                                score: cScore,
+                                date: new Date().toISOString(),
+                                mode: 'classic',
+                                playerName: getPlayerName(),
+                                snakeLength: 0,
+                                result: 'death',
+                                skin: 'classic',
+                            });
+                            migrated = true;
+                        }
+                        localStorage.removeItem('snake-best-score-classic');
+                    }
+                    var timed = localStorage.getItem('snake-best-score-timed');
+                    if (timed) {
+                        var tScore = parseInt(timed, 10) || 0;
+                        if (tScore > 0) {
+                            entries.push({
+                                id: Date.now(),
+                                score: tScore,
+                                date: new Date().toISOString(),
+                                mode: 'timed',
+                                playerName: getPlayerName(),
+                                snakeLength: 0,
+                                result: 'timeUp',
+                                skin: 'classic',
+                            });
+                            migrated = true;
+                        }
+                        localStorage.removeItem('snake-best-score-timed');
+                    }
+                    if (migrated) {
+                        entries = _sort(entries);
+                        _safeWrite(entries);
+                    }
+                } catch (e) { /* 静默降级 */ }
+            }
+
+            return {
+                addEntry: addEntry,
+                getAll: getAll,
+                getTop: getTop,
+                getByMode: getByMode,
+                clearAll: clearAll,
+                updateAllNames: updateAllNames,
+                migrateOldScores: migrateOldScores,
+            };
+        })();
+
+        // ─── Player Name Manager ─────────────────
+        var playerName = (function () {
+            function get() { return getPlayerName(); }
+            function set(newName) {
+                if (!setPlayerName(newName)) return false;
+                LeaderboardStore.updateAllNames(getPlayerName());
+                return true;
+            }
+            return { get: get, set: set };
+        })();
+
+        // 页面加载时执行数据迁移
+        LeaderboardStore.migrateOldScores();
 
         // ─── Skin Registry ─────────────────────────
         const SKINS = Object.freeze({
@@ -1024,6 +1617,17 @@
         const modeCardClassic = document.getElementById('modeCardClassic');
         const modeCardTimed = document.getElementById('modeCardTimed');
         const shieldIndicator = document.getElementById('shieldIndicator');
+        const leaderboardOverlay = document.getElementById('leaderboardOverlay');
+        const lbTbody = document.getElementById('lbTbody');
+        const lbEmpty = document.getElementById('lbEmpty');
+        const lbFilters = document.getElementById('lbFilters');
+        const lbSummaryList = document.getElementById('lbSummaryList');
+        const lbSummaryLink = document.getElementById('lbSummaryLink');
+        const lbNameInput = document.getElementById('lbNameInput');
+        const playerNameInput = document.getElementById('playerNameInput');
+        const rankInfo = document.getElementById('rankInfo');
+        const rankPosition = document.getElementById('rankPosition');
+        const viewLeaderboardBtn = document.getElementById('viewLeaderboardBtn');
 
         // ─── State ──────────────────────────────────
         let snake = [];
@@ -1570,7 +2174,44 @@
             }
             updateBestDisplay();
 
+            // 保存到排行榜
+            var rank = -1;
+            var entryId = null;
+            if (score > 0) {
+                rank = LeaderboardStore.addEntry({
+                    score: score,
+                    mode: gameMode,
+                    snakeLength: snake.length,
+                    result: won ? 'win' : reason,
+                    skin: currentSkin ? currentSkin.id : 'classic',
+                });
+                if (rank > 0) {
+                    // 找到刚插入的记录 ID（排行榜中分数+日期匹配的第一条）
+                    var all = LeaderboardStore.getAll();
+                    for (var i = 0; i < all.length; i++) {
+                        if (all[i].score === score && all[i].mode === gameMode) {
+                            entryId = all[i].id;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // 显示排名信息
+            if (rank > 0) {
+                rankPosition.textContent = rank;
+                rankInfo.style.display = '';
+            } else {
+                rankInfo.style.display = 'none';
+            }
+
+            // 存储刚插入记录的 ID 供排行榜高亮使用
+            window._lastGameEntryId = entryId;
+
             gameOverOverlay.classList.add('active');
+
+            // 刷新开始界面摘要
+            renderLeaderboardSummary();
         }
 
         function stopGameLoop() {
@@ -2160,6 +2801,120 @@
             }
         }
 
+        // ─── Leaderboard UI ────────────────────────
+        let currentLeaderboardFilter = 'all';
+        let lastGameEntryId = null; // 追踪刚保存的记录，用于高亮
+
+        function _formatDate(isoStr) {
+            try {
+                var d = new Date(isoStr);
+                var mm = String(d.getMonth() + 1).padStart(2, '0');
+                var dd = String(d.getDate()).padStart(2, '0');
+                return mm + '-' + dd;
+            } catch (e) { return '--'; }
+        }
+
+        function _modeIcon(mode) {
+            return mode === 'timed' ? '⏱' : '🐍';
+        }
+
+        function _resultIcon(result) {
+            switch (result) {
+                case 'win': return '🎉';
+                case 'timeUp': return '⏰';
+                case 'bomb': return '💥';
+                default: return '💀';
+            }
+        }
+
+        function _rankDisplay(rank) {
+            if (rank === 1) return '🥇';
+            if (rank === 2) return '🥈';
+            if (rank === 3) return '🥉';
+            return rank;
+        }
+
+        function renderLeaderboardTable(filter) {
+            filter = filter || currentLeaderboardFilter;
+            currentLeaderboardFilter = filter;
+            var entries = LeaderboardStore.getByMode(filter);
+            var hasEntries = entries.length > 0;
+
+            lbTbody.innerHTML = '';
+            lbEmpty.classList.toggle('visible', !hasEntries);
+            document.querySelector('.lb-table').style.display = hasEntries ? '' : 'none';
+
+            for (var i = 0; i < entries.length; i++) {
+                var e = entries[i];
+                var tr = document.createElement('tr');
+                if (e.id === lastGameEntryId) {
+                    tr.classList.add('highlight');
+                }
+                tr.innerHTML =
+                    '<td class="lb-col-rank">' + _rankDisplay(i + 1) + '</td>' +
+                    '<td class="lb-col-name">' + _escapeHtml(e.playerName || '玩家') + '</td>' +
+                    '<td class="lb-col-score">' + e.score + '</td>' +
+                    '<td class="lb-col-date">' + _formatDate(e.date) + '</td>' +
+                    '<td class="lb-col-mode">' + _modeIcon(e.mode) + '</td>' +
+                    '<td class="lb-col-result">' + _resultIcon(e.result) + '</td>';
+                lbTbody.appendChild(tr);
+            }
+        }
+
+        function _escapeHtml(str) {
+            var div = document.createElement('div');
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
+        }
+
+        function renderLeaderboardSummary() {
+            var top5 = LeaderboardStore.getTop(5);
+            if (top5.length === 0) {
+                lbSummaryList.innerHTML = '<div class="lb-summary-empty">暂无记录</div>';
+                return;
+            }
+            var html = '';
+            for (var i = 0; i < top5.length; i++) {
+                var e = top5[i];
+                html += '<div class="lb-summary-row">' +
+                    '<span class="lb-summary-rank">' + _rankDisplay(i + 1) + '</span>' +
+                    '<span class="lb-summary-name">' + _escapeHtml(e.playerName || '玩家') + '</span>' +
+                    '<span class="lb-summary-score">' + e.score + ' 分</span>' +
+                    '</div>';
+            }
+            lbSummaryList.innerHTML = html;
+        }
+
+        function openLeaderboard(highlightEntryId) {
+            lastGameEntryId = highlightEntryId || null;
+            // 重置筛选为全部
+            currentLeaderboardFilter = 'all';
+            var filterBtns = lbFilters.querySelectorAll('.lb-filter-btn');
+            for (var i = 0; i < filterBtns.length; i++) {
+                filterBtns[i].classList.toggle('active', filterBtns[i].dataset.filter === 'all');
+            }
+            renderLeaderboardTable('all');
+            lbNameInput.value = playerName.get();
+            // 暂时隐藏游戏结束覆盖层（如果可见），避免 z-order 冲突
+            if (gameOverOverlay.classList.contains('active')) {
+                gameOverOverlay.classList.add('lb-hidden');
+            }
+            leaderboardOverlay.classList.add('active');
+        }
+
+        function closeLeaderboard() {
+            leaderboardOverlay.classList.remove('active');
+            lastGameEntryId = null;
+            // 恢复游戏结束覆盖层显示
+            gameOverOverlay.classList.remove('lb-hidden');
+        }
+
+        function refreshPlayerNameUI() {
+            var name = playerName.get();
+            if (lbNameInput) lbNameInput.value = name;
+            if (playerNameInput) playerNameInput.value = name;
+        }
+
         // ─── Input Handling ─────────────────────────
         function changeDirection(dx, dy) {
             if (!isRunning || isPaused) return;
@@ -2309,8 +3064,80 @@
             }
         });
 
+        // ─── Leaderboard Event Handlers ─────────────
+        // 查看排行榜按钮（游戏结束覆盖层）
+        viewLeaderboardBtn.addEventListener('click', function () {
+            openLeaderboard(window._lastGameEntryId || null);
+        });
+
+        // 排行榜摘要链接（开始界面）
+        lbSummaryLink.addEventListener('click', function (e) {
+            e.stopPropagation();
+            openLeaderboard(null);
+        });
+
+        // 关闭排行榜
+        document.getElementById('lbCloseBtn').addEventListener('click', closeLeaderboard);
+
+        // 点击覆盖层背景关闭
+        leaderboardOverlay.addEventListener('click', function (e) {
+            if (e.target === leaderboardOverlay) closeLeaderboard();
+        });
+
+        // 筛选按钮
+        lbFilters.addEventListener('click', function (e) {
+            var btn = e.target.closest('.lb-filter-btn');
+            if (!btn) return;
+            var filter = btn.dataset.filter;
+            var allBtns = lbFilters.querySelectorAll('.lb-filter-btn');
+            for (var i = 0; i < allBtns.length; i++) {
+                allBtns[i].classList.toggle('active', allBtns[i].dataset.filter === filter);
+            }
+            renderLeaderboardTable(filter);
+        });
+
+        // 排行榜面板中的昵称修改
+        document.getElementById('lbNameSave').addEventListener('click', function () {
+            var newName = lbNameInput.value;
+            if (playerName.set(newName)) {
+                refreshPlayerNameUI();
+                renderLeaderboardTable();
+                renderLeaderboardSummary();
+            }
+        });
+
+        // 清空排行榜
+        document.getElementById('lbClearBtn').addEventListener('click', function () {
+            if (confirm('确定要清空所有排行榜记录吗？此操作不可恢复。')) {
+                LeaderboardStore.clearAll();
+                renderLeaderboardTable();
+                renderLeaderboardSummary();
+            }
+        });
+
+        // 开始界面的昵称修改
+        document.getElementById('playerNameSave').addEventListener('click', function () {
+            var newName = playerNameInput.value;
+            if (playerName.set(newName)) {
+                refreshPlayerNameUI();
+                renderLeaderboardTable();
+                renderLeaderboardSummary();
+            }
+        });
+
+        // 键盘快捷键: Escape 关闭排行榜
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && leaderboardOverlay.classList.contains('active')) {
+                e.preventDefault();
+                closeLeaderboard();
+            }
+        });
+
         // ─── Draw initial state ────────────────────
         initGame();
+        // 初始化排行榜 UI
+        refreshPlayerNameUI();
+        renderLeaderboardSummary();
         draw();
     })();
     </script>
