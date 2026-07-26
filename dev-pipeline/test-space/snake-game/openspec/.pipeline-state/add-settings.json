@@ -1,0 +1,201 @@
+{
+  "schemaVersion": 2,
+  "_version": 26,
+  "changeName": "add-settings",
+  "sourceBranch": "feature/lite",
+  "targetBranch": null,
+  "currentPhase": 6,
+  "currentStep": 20,
+  "status": "active",
+  "executionMode": "standalone",
+  "createdBy": "大師兄丶",
+  "createdByEmail": "zhaoyi_dsx@163.com",
+  "machineInfo": {
+    "platform": "darwin",
+    "hostname": "JerryDiff-2.local",
+    "osRelease": "25.5.0",
+    "nodeVersion": "v24.11.1",
+    "arch": "arm64"
+  },
+  "featureInfo": {
+    "featureId": "303104",
+    "featureUrl": "https://ones.yzw.cn/project/#/team/2zTcrcUN/task/fec458bfc542cc7e"
+  },
+  "fingerprintId": "eec104dbe53bc074a1b547c4c306055e",
+  "fingerprintNonce": "89b6cf48",
+  "phaseHistory": [
+    {
+      "phase": 0,
+      "step": 1,
+      "executedBy": "pipeline",
+      "status": "completed",
+      "startedAt": "2026-07-26 23:37:07",
+      "completedAt": "2026-07-26 23:37:11",
+      "decisions": {},
+      "gatesBypassed": []
+    },
+    {
+      "phase": 1,
+      "step": 3,
+      "executedBy": "pipeline",
+      "status": "completed",
+      "startedAt": "2026-07-26 23:37:11",
+      "completedAt": "2026-07-26 23:40:01",
+      "decisions": {
+        "requirementsConfirmed": true,
+        "proposalApproved": true
+      },
+      "gatesBypassed": []
+    },
+    {
+      "phase": 1,
+      "step": 5,
+      "executedBy": "openspec-propose",
+      "status": "completed",
+      "startedAt": "2026-07-26 23:37:16",
+      "completedAt": "2026-07-26 23:39:55",
+      "decisions": {},
+      "gatesBypassed": []
+    },
+    {
+      "phase": 2,
+      "step": 6,
+      "executedBy": "pipeline",
+      "status": "completed",
+      "startedAt": "2026-07-26 23:40:01",
+      "completedAt": "2026-07-26 23:46:16",
+      "decisions": {
+        "requirementsConfirmed": true,
+        "proposalApproved": true,
+        "implementationConfirmed": true,
+        "reviewDisposition": "review"
+      },
+      "gatesBypassed": []
+    },
+    {
+      "phase": 2,
+      "step": 7,
+      "executedBy": "opsx-dev-pipeline",
+      "status": "in-progress",
+      "startedAt": "2026-07-26 23:40:45",
+      "completedAt": null,
+      "decisions": {
+        "requirementsConfirmed": true,
+        "proposalApproved": true
+      },
+      "gatesBypassed": []
+    },
+    {
+      "phase": 3,
+      "step": 9,
+      "executedBy": "pipeline",
+      "status": "completed",
+      "startedAt": "2026-07-26 23:46:16",
+      "completedAt": "2026-07-26 23:48:27",
+      "decisions": {
+        "requirementsConfirmed": true,
+        "proposalApproved": true,
+        "implementationConfirmed": true,
+        "reviewDisposition": "review"
+      },
+      "gatesBypassed": []
+    },
+    {
+      "phase": 3,
+      "step": 10,
+      "executedBy": "opsx-dev-pipeline",
+      "status": "in-progress",
+      "startedAt": "2026-07-26 23:46:25",
+      "completedAt": null,
+      "decisions": {
+        "requirementsConfirmed": true,
+        "proposalApproved": true,
+        "implementationConfirmed": true,
+        "reviewDisposition": "review"
+      },
+      "gatesBypassed": []
+    },
+    {
+      "phase": 4,
+      "step": 14,
+      "executedBy": "pipeline",
+      "status": "completed",
+      "startedAt": "2026-07-26 23:48:27",
+      "completedAt": "2026-07-26 23:49:20",
+      "decisions": {
+        "requirementsConfirmed": true,
+        "proposalApproved": true,
+        "implementationConfirmed": true,
+        "reviewDisposition": "review"
+      },
+      "gatesBypassed": []
+    },
+    {
+      "phase": 5,
+      "step": 15,
+      "executedBy": "pipeline",
+      "status": "completed",
+      "startedAt": "2026-07-26 23:49:20",
+      "completedAt": "2026-07-26 23:52:32",
+      "decisions": {
+        "requirementsConfirmed": true,
+        "proposalApproved": true,
+        "implementationConfirmed": true,
+        "reviewDisposition": "review",
+        "postArchiveAction": "push-only"
+      },
+      "gatesBypassed": []
+    },
+    {
+      "phase": 6,
+      "step": 20,
+      "executedBy": "pipeline",
+      "status": "in-progress",
+      "startedAt": "2026-07-26 23:52:32",
+      "completedAt": null,
+      "decisions": {
+        "requirementsConfirmed": true,
+        "proposalApproved": true,
+        "implementationConfirmed": true,
+        "reviewDisposition": "review",
+        "postArchiveAction": "push-only"
+      },
+      "gatesBypassed": []
+    }
+  ],
+  "gatesBypassed": [],
+  "decisions": {
+    "requirementsConfirmed": true,
+    "proposalApproved": true,
+    "implementationConfirmed": true,
+    "reviewDisposition": "review",
+    "postArchiveAction": "push-only"
+  },
+  "review": {
+    "round": 2,
+    "reportPath": "openspec/review/2026-07-26-23-46-feature-lite-pipeline-review.md",
+    "status": "passed"
+  },
+  "tests": {
+    "command": "skipped-no-test-framework",
+    "attempts": 0,
+    "status": "skipped",
+    "detail": "单文件 HTML 项目，无测试框架。变更已通过 Playwright E2E 验证覆盖 7 项测试。"
+  },
+  "verify": {
+    "command": null,
+    "attempts": 0,
+    "status": "skipped",
+    "detail": "Phase 2 Playwright E2E 验证已覆盖 7 项测试。"
+  },
+  "archivePath": "openspec/changes/archive/2026-07-26-add-settings",
+  "delivery": {
+    "commitSha": null,
+    "mergeCommitSha": null,
+    "sourcePushed": false,
+    "targetPushed": false,
+    "tag": null
+  },
+  "createdAt": "2026-07-26 23:37:07",
+  "updatedAt": "2026-07-26 23:52:32"
+}

@@ -5,16 +5,23 @@ TBD - created by archiving change add-bomb-system. Update Purpose after archive.
 ## Requirements
 ### Requirement: Bomb Spawning
 
-系统 MUST 以随机间隔在棋盘空单元格上生成炸弹，两种模式通用。
+系统 MUST 以随机间隔在棋盘空单元格上生成炸弹，两种模式通用。**炸弹生成行为与难度预设联动——简单模式下完全禁用炸弹。**
 
 #### Scenario: 定时随机生成炸弹
-- **GIVEN** 游戏正在运行中（经典或计时模式）
-- **WHEN** 距离上次炸弹生成过去 4-6 秒（随机）
+- **GIVEN** 游戏正在运行中（经典或计时模式），当前难度为普通或困难
+- **WHEN** 距离上次炸弹生成过去指定间隔（普通：4-6 秒，困难：2.5-4 秒）
 - **THEN** 系统在随机空单元格（不被蛇身和其他炸弹占据）生成一颗炸弹
-- **AND** 70% 概率生成休眠炸弹，30% 概率生成不稳定炸弹
+- **AND** 普通难度：70% 概率生成休眠炸弹，30% 概率生成不稳定炸弹
+- **AND** 困难难度：55% 概率生成休眠炸弹，45% 概率生成不稳定炸弹
+
+#### Scenario: 简单模式不生成炸弹
+- **GIVEN** 游戏正在运行中，当前难度为简单
+- **WHEN** 游戏循环的炸弹生成逻辑执行
+- **THEN** 不生成任何炸弹
+- **AND** 炸弹生成计时器不累积
 
 #### Scenario: 炸弹生成上限
-- **GIVEN** 棋盘上已有 6 颗炸弹
+- **GIVEN** 棋盘上已有上限数量的炸弹（普通：6 颗，困难：9 颗）
 - **WHEN** 生成间隔到达
 - **THEN** 暂不生成新炸弹，等待已有炸弹被移除
 
@@ -27,6 +34,12 @@ TBD - created by archiving change add-bomb-system. Update Purpose after archive.
 - **GIVEN** 游戏处于暂停状态
 - **WHEN** 暂停期间
 - **THEN** 炸弹生成计时器不累积
+
+#### Scenario: 切换为简单模式时移除炸弹
+- **GIVEN** 游戏正在运行，当前难度为普通或困难，棋盘上存在炸弹
+- **WHEN** 用户切换难度为简单
+- **THEN** 所有现有炸弹立即从棋盘移除
+- **AND** 炸弹生成计时器重置且停止累积
 
 ---
 
@@ -55,7 +68,7 @@ TBD - created by archiving change add-bomb-system. Update Purpose after archive.
 
 ### Requirement: Unstable Bomb
 
-不稳定炸弹 MUST 在触碰时立即引爆，并设有随机自爆引信。
+不稳定炸弹 MUST 在触碰时立即引爆，并设有随机自爆引信。**引信时间范围由难度决定。**
 
 #### Scenario: 触碰不稳定炸弹立即引爆
 - **GIVEN** 棋盘中存在不稳定炸弹，蛇正在移动
@@ -64,8 +77,8 @@ TBD - created by archiving change add-bomb-system. Update Purpose after archive.
 - **AND** 蛇头在爆炸中心，游戏结束
 
 #### Scenario: 不稳定炸弹随机自爆
-- **GIVEN** 棋盘中存在不稳定炸弹，已过去 3-8 秒（随机预设值）
-- **WHEN** 引信时间到达
+- **GIVEN** 棋盘中存在不稳定炸弹
+- **WHEN** 引信时间到达（普通：3-8 秒，困难：2-5 秒）
 - **THEN** 该炸弹自行爆炸（触发 3×3 范围爆炸）
 - **AND** 炸弹从棋盘移除
 
@@ -80,8 +93,6 @@ TBD - created by archiving change add-bomb-system. Update Purpose after archive.
 - **GIVEN** 棋盘上同时存在休眠和不稳定炸弹
 - **WHEN** 玩家观察棋盘
 - **THEN** 休眠和不稳定炸弹在外观上有明显区别（颜色、脉动节奏、是否有火花粒子）
-
----
 
 ### Requirement: Explosion
 

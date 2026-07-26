@@ -1387,6 +1387,243 @@
                 font-size: 1.1rem;
             }
         }
+
+        /* ═══════════════════════════════════════════
+           Settings Panel
+           ═══════════════════════════════════════════ */
+
+        .settings-panel {
+            max-width: 460px;
+        }
+
+        .settings-body {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .settings-section {
+            margin-bottom: 8px;
+        }
+
+        .settings-section h3 {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+
+        .settings-row {
+            margin-bottom: 10px;
+        }
+
+        .settings-row:last-child {
+            margin-bottom: 0;
+        }
+
+        /* ── Difficulty Buttons ── */
+        .settings-difficulty {
+            display: flex;
+            gap: 8px;
+        }
+
+        .diff-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            padding: 10px 4px;
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            color: var(--text);
+            outline: none;
+        }
+
+        .diff-btn:hover {
+            border-color: var(--text-secondary);
+        }
+
+        .diff-btn.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+            background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+        }
+
+        .diff-emoji {
+            font-size: 1.3rem;
+        }
+
+        .diff-label {
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        .diff-desc {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+        }
+
+        /* ── Toggle Switch ── */
+        .settings-toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0;
+        }
+
+        .settings-toggle-label {
+            font-size: 0.82rem;
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+            border-radius: 13px;
+            border: 2px solid var(--border);
+            background: var(--bg);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 0;
+            outline: none;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch.active {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .toggle-knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--text);
+            transition: transform 0.2s ease;
+        }
+
+        .toggle-switch.active .toggle-knob {
+            transform: translateX(22px);
+            background: var(--bg);
+        }
+
+        .toggle-switch:hover {
+            border-color: var(--text-secondary);
+        }
+
+        .toggle-switch.active:hover {
+            border-color: var(--accent);
+            opacity: 0.85;
+        }
+
+        /* ── Skin Selector in Settings ── */
+        .settings-skins {
+            display: flex;
+            gap: 8px;
+        }
+
+        .skin-option-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            padding: 8px 4px;
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            color: var(--text);
+            outline: none;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        .skin-option-btn:hover {
+            border-color: var(--text-secondary);
+        }
+
+        .skin-option-btn.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+            background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+        }
+
+        .skin-option-emoji {
+            font-size: 1.3rem;
+        }
+
+        /* ── Name Row ── */
+        .settings-name-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .settings-name-input {
+            flex: 1;
+        }
+
+        /* ── Footer ── */
+        .settings-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .settings-footer .btn {
+            font-size: 0.78rem;
+        }
+
+        /* ── Mobile ── */
+        @media (max-width: 600px) {
+            .settings-panel {
+                width: 96vw;
+                max-height: 85vh;
+                border-radius: 12px;
+            }
+            .diff-btn {
+                padding: 12px 2px;
+            }
+            .diff-emoji {
+                font-size: 1.1rem;
+            }
+            .diff-label {
+                font-size: 0.72rem;
+            }
+            .diff-desc {
+                font-size: 0.6rem;
+            }
+            .skin-option-btn {
+                padding: 10px 2px;
+                font-size: 0.65rem;
+                min-height: 44px;
+            }
+            .toggle-switch {
+                width: 52px;
+                height: 30px;
+                border-radius: 15px;
+            }
+            .toggle-knob {
+                width: 22px;
+                height: 22px;
+            }
+            .toggle-switch.active .toggle-knob {
+                transform: translateX(22px);
+            }
+        }
     </style>
 </head>
 <body>
@@ -1443,6 +1680,77 @@
             </div>
             <div class="help-modal-footer">
                 <button class="btn btn-primary" id="helpModalGotIt">知道了</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════ Settings Modal ════════ -->
+    <div class="help-modal" id="settingsModal">
+        <div class="help-modal-backdrop"></div>
+        <div class="help-modal-panel settings-panel">
+            <div class="help-modal-header">
+                <h2 class="help-modal-title">⚙️ 设置</h2>
+                <button class="help-modal-close" id="settingsModalClose">✕</button>
+            </div>
+            <div class="help-modal-body settings-body">
+                <!-- 🎮 Game Section -->
+                <section class="help-section settings-section">
+                    <h3>🎮 游戏</h3>
+                    <div class="settings-row settings-difficulty" id="settingsDifficulty">
+                        <button class="diff-btn" data-diff="easy">
+                            <span class="diff-emoji">🟢</span>
+                            <span class="diff-label">简单</span>
+                            <span class="diff-desc">纯经典·无炸弹</span>
+                        </button>
+                        <button class="diff-btn active" data-diff="normal">
+                            <span class="diff-emoji">🟡</span>
+                            <span class="diff-label">普通</span>
+                            <span class="diff-desc">标准挑战</span>
+                        </button>
+                        <button class="diff-btn" data-diff="hard">
+                            <span class="diff-emoji">🔴</span>
+                            <span class="diff-label">困难</span>
+                            <span class="diff-desc">高压挑战</span>
+                        </button>
+                    </div>
+                    <div class="settings-row settings-toggle-row">
+                        <span class="settings-toggle-label">网格线</span>
+                        <button class="toggle-switch active" id="toggleGridLines" role="switch" aria-checked="true">
+                            <span class="toggle-knob"></span>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 🎨 Appearance Section -->
+                <section class="help-section settings-section">
+                    <h3>🎨 外观</h3>
+                    <div class="settings-row settings-skins" id="settingsSkins">
+                    </div>
+                </section>
+
+                <!-- 🔊 Sound Section -->
+                <section class="help-section settings-section">
+                    <h3>🔊 音效</h3>
+                    <div class="settings-row settings-toggle-row">
+                        <span class="settings-toggle-label">游戏音效</span>
+                        <button class="toggle-switch active" id="toggleSound" role="switch" aria-checked="true">
+                            <span class="toggle-knob"></span>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 👤 Player Section -->
+                <section class="help-section settings-section">
+                    <h3>👤 玩家</h3>
+                    <div class="settings-row settings-name-row">
+                        <input type="text" class="lb-name-input settings-name-input" id="settingsNameInput" maxlength="12" placeholder="玩家">
+                        <button class="btn btn-secondary lb-name-save" id="settingsNameSave">修改</button>
+                    </div>
+                </section>
+            </div>
+            <div class="help-modal-footer settings-footer">
+                <button class="btn btn-secondary lb-clear-btn" id="resetSettingsBtn">🗑 重置设置</button>
+                <button class="btn btn-secondary" id="exportDataBtn">📊 导出数据</button>
             </div>
         </div>
     </div>
@@ -1563,16 +1871,11 @@
             </div>
         </div>
 
-        <!-- Skin Selector -->
-        <div class="skin-selector" id="skinSelector">
-            <span class="skin-label">皮肤</span>
-            <button class="skin-swatch active" data-skin="classic" data-name="经典" aria-label="经典皮肤"></button>
-            <button class="skin-swatch" data-skin="retro" data-name="复古" aria-label="复古皮肤"></button>
-            <button class="skin-swatch" data-skin="midnight" data-name="午夜" aria-label="午夜皮肤"></button>
-            <button class="skin-swatch" data-skin="sunset" data-name="暖橙" aria-label="暖橙皮肤"></button>
-            <span style="width:1px;background:var(--border);margin:0 4px;align-self:stretch;"></span>
+        <!-- Bottom Toolbar -->
+        <div class="skin-selector" id="bottomToolbar">
             <button class="help-btn-global" id="helpBtnGlobal" aria-label="玩法说明" title="玩法说明">?</button>
             <button class="btn-icon" id="muteBtn" aria-label="切换静音" title="切换静音">🔊</button>
+            <button class="btn-icon" id="settingsBtn" aria-label="设置" title="设置">⚙️</button>
         </div>
 
         <!-- Desktop Controls -->
@@ -2357,18 +2660,176 @@
             chainBaseScore: 5,        // points per severed segment
         };
 
+        // ─── Settings Store ──────────────────────
+        const DEFAULT_SETTINGS = Object.freeze({
+            difficulty: 'normal',       // 'easy' | 'normal' | 'hard'
+            skin: 'classic',
+            soundEnabled: true,
+            playerName: '玩家',
+            showGridLines: true,
+        });
+
+        const DIFFICULTY_PRESETS = Object.freeze({
+            easy: {
+                label: '简单',
+                emoji: '🟢',
+                desc: '纯经典·无炸弹',
+                baseSpeed: 140,
+                speedDecrement: 5,       // ms per 100 points
+                minSpeed: 60,
+                bombsEnabled: false,
+                bombSpawnMin: 6000,      // not used when disabled
+                bombSpawnMax: 8000,
+                maxBombs: 0,
+                dormantProb: 0.85,
+                fuseMin: 5000,
+                fuseMax: 10000,
+            },
+            normal: {
+                label: '普通',
+                emoji: '🟡',
+                desc: '标准挑战',
+                baseSpeed: 110,
+                speedDecrement: 8,
+                minSpeed: 45,
+                bombsEnabled: true,
+                bombSpawnMin: 4000,
+                bombSpawnMax: 6000,
+                maxBombs: 6,
+                dormantProb: 0.70,
+                fuseMin: 3000,
+                fuseMax: 8000,
+            },
+            hard: {
+                label: '困难',
+                emoji: '🔴',
+                desc: '高压挑战',
+                baseSpeed: 85,
+                speedDecrement: 10,
+                minSpeed: 30,
+                bombsEnabled: true,
+                bombSpawnMin: 2500,
+                bombSpawnMax: 4000,
+                maxBombs: 9,
+                dormantProb: 0.55,
+                fuseMin: 2000,
+                fuseMax: 5000,
+            },
+        });
+
+        const SettingsStore = (function () {
+            const STORAGE_KEY = 'snake-settings';
+
+            // ── Migration from old keys ──
+            // NOTE: _migrate may reference SKINS which is defined later.
+            // The SKINS reference is guard-wrapped to avoid TDZ errors.
+            function _migrate() {
+                if (localStorage.getItem(STORAGE_KEY)) return; // already migrated
+
+                var merged = {};
+                try {
+                    var oldSkin = localStorage.getItem('snake-skin');
+                    // Guard: SKINS may be in TDZ if SettingsStore loads before its definition
+                    try {
+                        if (oldSkin && typeof SKINS !== 'undefined' && SKINS[oldSkin]) merged.skin = oldSkin;
+                    } catch (e) { /* SKINS not yet available, skin default will be used */ }
+
+                    var oldName = localStorage.getItem('snake-player-name');
+                    if (oldName && oldName.trim()) merged.playerName = oldName.trim();
+
+                    // sound: default true unless old mute state was stored
+                    // (no old key for sound, so keep default)
+                } catch (e) { /* silent */ }
+
+                var settings = Object.assign({}, DEFAULT_SETTINGS, merged);
+                _save(settings);
+
+                // Clean up old keys
+                try {
+                    localStorage.removeItem('snake-skin');
+                    localStorage.removeItem('snake-game-mode');
+                    // Keep snake-player-name for backward compat with LeaderboardStore
+                    // (LeaderboardStore reads it independently)
+                } catch (e) { /* silent */ }
+            }
+
+            function _save(settings) {
+                try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch (e) {}
+            }
+
+            function load() {
+                try {
+                    var raw = localStorage.getItem(STORAGE_KEY);
+                    if (raw) {
+                        var parsed = JSON.parse(raw);
+                        // Merge with defaults to fill any missing keys (forward compat)
+                        return Object.assign({}, DEFAULT_SETTINGS, parsed);
+                    }
+                } catch (e) { /* fall through to defaults */ }
+                return Object.assign({}, DEFAULT_SETTINGS);
+            }
+
+            function save(settings) {
+                _save(settings);
+            }
+
+            function reset() {
+                var defaults = Object.assign({}, DEFAULT_SETTINGS);
+                _save(defaults);
+                return defaults;
+            }
+
+            // Run migration on load
+            _migrate();
+
+            return {
+                load: load,
+                save: save,
+                reset: reset,
+                STORAGE_KEY: STORAGE_KEY,
+            };
+        })();
+
+        function exportGameData() {
+            var data = {
+                exportedAt: new Date().toISOString(),
+                settings: SettingsStore.load(),
+                leaderboard: LeaderboardStore.getAll(),
+            };
+            var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            var now = new Date();
+            var dateStr = now.getFullYear() + '-'
+                + String(now.getMonth() + 1).padStart(2, '0') + '-'
+                + String(now.getDate()).padStart(2, '0');
+            a.href = url;
+            a.download = 'snake-data-' + dateStr + '.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
         // ─── Leaderboard Store ───────────────────
         function getPlayerName() {
             try {
-                var n = localStorage.getItem('snake-player-name');
-                return (n && n.trim()) ? n.trim() : '玩家';
+                // Read from SettingsStore for unified source of truth
+                var s = SettingsStore.load();
+                return (s.playerName && s.playerName.trim()) ? s.playerName.trim() : '玩家';
             } catch (e) { return '玩家'; }
         }
 
         function setPlayerName(newName) {
             var trimmed = (newName || '').trim();
             if (!trimmed) return false;
-            try { localStorage.setItem('snake-player-name', trimmed); } catch (e) { return false; }
+            try {
+                var s = SettingsStore.load();
+                s.playerName = trimmed;
+                SettingsStore.save(s);
+                // Also update legacy key for migration compatibility
+                localStorage.setItem('snake-player-name', trimmed);
+            } catch (e) { return false; }
             return true;
         }
 
@@ -2795,12 +3256,41 @@
         let boostActive = false;           // lightning speed boost
         let boostEndTime = 0;              // performance.now() when boost expires
 
+        // ─── Settings Runtime State ──────────────────
+        let currentSettings = SettingsStore.load();
+        let currentDifficulty = DIFFICULTY_PRESETS[currentSettings.difficulty] || DIFFICULTY_PRESETS.normal;
+
+        function getDifficultyConfig() {
+            return currentDifficulty;
+        }
+
+        function applySettingsToGame() {
+            currentDifficulty = DIFFICULTY_PRESETS[currentSettings.difficulty] || DIFFICULTY_PRESETS.normal;
+
+            // Update bomb system based on difficulty
+            if (!currentDifficulty.bombsEnabled) {
+                // Clear all existing bombs
+                bombs = [];
+                bombSpawnAccumulator = 0;
+                nextBombSpawnDelay = currentDifficulty.bombSpawnMin
+                    + Math.random() * (currentDifficulty.bombSpawnMax - currentDifficulty.bombSpawnMin);
+            } else if (currentSettings.difficulty !== 'easy') {
+                // Update bomb spawn delay for new difficulty
+                nextBombSpawnDelay = currentDifficulty.bombSpawnMin
+                    + Math.random() * (currentDifficulty.bombSpawnMax - currentDifficulty.bombSpawnMin);
+                // Cap existing bombs to new max
+                while (bombs.length > currentDifficulty.maxBombs) {
+                    bombs.pop();
+                }
+            }
+        }
+
         // ─── Bomb State ──────────────────────────────
         let bombs = [];              // { x, y, type, spawnTime, fuseDuration }
         let explosions = [];         // { x, y, startTime, chainLevel }
         let bombSpawnAccumulator = 0;
-        let nextBombSpawnDelay = BOMB_CONFIG.spawnIntervalMin
-            + Math.random() * (BOMB_CONFIG.spawnIntervalMax - BOMB_CONFIG.spawnIntervalMin);
+        let nextBombSpawnDelay = currentDifficulty.bombSpawnMin
+            + Math.random() * (currentDifficulty.bombSpawnMax - currentDifficulty.bombSpawnMin);
 
         // ─── Canvas Setup ──────────────────────────
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -2891,8 +3381,11 @@
                 btn.classList.toggle('active', isActive);
             });
 
-            // Persist
-            try { localStorage.setItem('snake-skin', id); } catch (e) {}
+            // Persist to SettingsStore
+            currentSettings.skin = id;
+            SettingsStore.save(currentSettings);
+            // Update settings panel skin options if panel is open
+            if (window._settingsPanel) window._settingsPanel.refresh();
 
             // Re-render if game isn't running
             if (!isRunning) draw();
@@ -2904,12 +3397,9 @@
             applySkin(SKIN_KEYS[nextIdx]);
         }
 
-        // Load saved skin or default
-        let savedSkin = 'classic';
-        try {
-            const stored = localStorage.getItem('snake-skin');
-            if (stored && SKINS[stored]) savedSkin = stored;
-        } catch (e) {}
+        // Load saved skin from SettingsStore or default
+        let savedSkin = currentSettings.skin || 'classic';
+        if (!SKINS[savedSkin]) savedSkin = 'classic';
         applySkin(savedSkin);
 
         // ─── Helpers ───────────────────────────────
@@ -2972,7 +3462,9 @@
         }
 
         function spawnBomb() {
-            if (bombs.length >= BOMB_CONFIG.maxBombs) return;
+            // Check if bombs are disabled by difficulty
+            if (!currentDifficulty.bombsEnabled) return;
+            if (bombs.length >= currentDifficulty.maxBombs) return;
 
             // Find a random empty cell (not snake, not food, not bomb)
             let pos = null;
@@ -2987,7 +3479,7 @@
             }
             if (!pos) return; // no room
 
-            const type = Math.random() < BOMB_CONFIG.dormantProb
+            const type = Math.random() < currentDifficulty.dormantProb
                 ? BOMB_TYPES.DORMANT
                 : BOMB_TYPES.UNSTABLE;
 
@@ -2997,8 +3489,8 @@
                 type: type,
                 spawnTime: performance.now(),
                 fuseDuration: type === BOMB_TYPES.UNSTABLE
-                    ? BOMB_CONFIG.unstableFuseMin
-                        + Math.random() * (BOMB_CONFIG.unstableFuseMax - BOMB_CONFIG.unstableFuseMin)
+                    ? currentDifficulty.fuseMin
+                        + Math.random() * (currentDifficulty.fuseMax - currentDifficulty.fuseMin)
                     : Infinity,
             };
             bombs.push(bomb);
@@ -3132,7 +3624,7 @@
             direction = { x: 1, y: 0 };
             nextDirection = { x: 1, y: 0 };
             score = 0;
-            speed = BASE_SPEED;
+            speed = currentDifficulty.baseSpeed;
             growAmount = 0;
             particles = [];
             food = spawnFood();
@@ -3159,12 +3651,12 @@
                 shieldIndicator.classList.remove('active');
             }
 
-            // Reset bomb state for both modes
+            // Reset bomb state using difficulty config
             bombs = [];
             explosions = [];
             bombSpawnAccumulator = 0;
-            nextBombSpawnDelay = BOMB_CONFIG.spawnIntervalMin
-                + Math.random() * (BOMB_CONFIG.spawnIntervalMax - BOMB_CONFIG.spawnIntervalMin);
+            nextBombSpawnDelay = currentDifficulty.bombSpawnMin
+                + Math.random() * (currentDifficulty.bombSpawnMax - currentDifficulty.bombSpawnMin);
 
             updateBestDisplay();
             foodItem = rollItemType();
@@ -3242,7 +3734,8 @@
 
                 score += effect.score;
                 growAmount += 1;
-                speed = Math.max(45, BASE_SPEED - Math.floor(score / 100) * 8);
+                speed = Math.max(currentDifficulty.minSpeed,
+                    currentDifficulty.baseSpeed - Math.floor(score / 100) * currentDifficulty.speedDecrement);
                 spawnParticles(food);
                 currentScoreEl.textContent = score;
 
@@ -3419,12 +3912,14 @@
                 }
 
                 // ── Bomb spawn timer ──
-                bombSpawnAccumulator += dt;
-                while (bombSpawnAccumulator >= nextBombSpawnDelay) {
-                    bombSpawnAccumulator -= nextBombSpawnDelay;
-                    spawnBomb();
-                    nextBombSpawnDelay = BOMB_CONFIG.spawnIntervalMin
-                        + Math.random() * (BOMB_CONFIG.spawnIntervalMax - BOMB_CONFIG.spawnIntervalMin);
+                if (currentDifficulty.bombsEnabled) {
+                    bombSpawnAccumulator += dt;
+                    while (bombSpawnAccumulator >= nextBombSpawnDelay) {
+                        bombSpawnAccumulator -= nextBombSpawnDelay;
+                        spawnBomb();
+                        nextBombSpawnDelay = currentDifficulty.bombSpawnMin
+                            + Math.random() * (currentDifficulty.bombSpawnMax - currentDifficulty.bombSpawnMin);
+                    }
                 }
 
                 // ── Unstable bomb fuse check ──
@@ -3646,20 +4141,22 @@
             ctx.fillStyle = cs.boardBg;
             ctx.fillRect(0, 0, w, h);
 
-            // Grid lines (subtle)
-            ctx.strokeStyle = cs.gridColor;
-            ctx.lineWidth = 0.5;
-            for (let x = 0; x <= COLS; x++) {
-                ctx.beginPath();
-                ctx.moveTo(x * CELL_SIZE, 0);
-                ctx.lineTo(x * CELL_SIZE, h);
-                ctx.stroke();
-            }
-            for (let y = 0; y <= ROWS; y++) {
-                ctx.beginPath();
-                ctx.moveTo(0, y * CELL_SIZE);
-                ctx.lineTo(w, y * CELL_SIZE);
-                ctx.stroke();
+            // Grid lines (subtle) — controlled by settings
+            if (currentSettings.showGridLines) {
+                ctx.strokeStyle = cs.gridColor;
+                ctx.lineWidth = 0.5;
+                for (let x = 0; x <= COLS; x++) {
+                    ctx.beginPath();
+                    ctx.moveTo(x * CELL_SIZE, 0);
+                    ctx.lineTo(x * CELL_SIZE, h);
+                    ctx.stroke();
+                }
+                for (let y = 0; y <= ROWS; y++) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y * CELL_SIZE);
+                    ctx.lineTo(w, y * CELL_SIZE);
+                    ctx.stroke();
+                }
             }
 
             // Food — pulsating glow (varies by item type)
@@ -4168,21 +4665,21 @@
         modeCardClassic.addEventListener('click', () => selectMode('classic'));
         modeCardTimed.addEventListener('click', () => selectMode('timed'));
 
-        // Mute button
-        const muteBtn = document.getElementById('muteBtn');
-        if (muteBtn) {
-            muteBtn.addEventListener('click', () => {
+        // Mute button — sync with SettingsStore
+        const muteBtn2 = document.getElementById('muteBtn');
+        if (muteBtn2) {
+            muteBtn2.addEventListener('click', () => {
                 AudioManager.toggleMute();
+                // Sync with settings
+                currentSettings.soundEnabled = !AudioManager.muted;
+                SettingsStore.save(currentSettings);
+                // Update settings panel toggle if panel is open
+                if (window._settingsPanel) window._settingsPanel.refresh();
             });
         }
 
-        // Skin swatches
-        document.querySelectorAll('.skin-swatch').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const skinId = btn.dataset.skin;
-                if (skinId) applySkin(skinId);
-            });
-        });
+        // Skin swatches (removed from DOM — skin selection now in settings panel)
+        // T keyboard shortcut still works for cycling skins
 
         // D-Pad for mobile
         document.querySelectorAll('.dpad-btn').forEach(btn => {
@@ -4294,6 +4791,250 @@
                 closeLeaderboard();
             }
         });
+
+        // ─── Settings Panel Logic ──────────────────
+        (function () {
+            var settingsModal = document.getElementById('settingsModal');
+            var settingsBtn = document.getElementById('settingsBtn');
+            var settingsCloseBtn = document.getElementById('settingsModalClose');
+            var toggleGrid = document.getElementById('toggleGridLines');
+            var toggleSound = document.getElementById('toggleSound');
+            var difficultyBtns = document.querySelectorAll('#settingsDifficulty .diff-btn');
+            var settingsNameInput = document.getElementById('settingsNameInput');
+            var settingsNameSave = document.getElementById('settingsNameSave');
+            var resetSettingsBtn = document.getElementById('resetSettingsBtn');
+            var exportDataBtn = document.getElementById('exportDataBtn');
+            var skinsContainer = document.getElementById('settingsSkins');
+
+            // ── Build skin options dynamically ──
+            function buildSkinOptions() {
+                if (!skinsContainer) return;
+                skinsContainer.innerHTML = '';
+                SKIN_KEYS.forEach(function (skinId) {
+                    var skin = SKINS[skinId];
+                    var btn = document.createElement('button');
+                    btn.className = 'skin-option-btn';
+                    btn.dataset.skin = skinId;
+                    btn.innerHTML = '<span class="skin-option-emoji">' + skin.emoji + '</span>' + skin.name;
+                    btn.addEventListener('click', function () {
+                        applySkin(skinId);
+                        currentSettings.skin = skinId;
+                        SettingsStore.save(currentSettings);
+                        refreshSkinOptionsUI();
+                    });
+                    skinsContainer.appendChild(btn);
+                });
+            }
+
+            function refreshSkinOptionsUI() {
+                var btns = skinsContainer.querySelectorAll('.skin-option-btn');
+                btns.forEach(function (btn) {
+                    var isActive = btn.dataset.skin === currentSettings.skin;
+                    btn.classList.toggle('active', isActive);
+                    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+                });
+            }
+
+            // ── Toggle switch helpers ──
+            function setToggle(el, on) {
+                if (on) {
+                    el.classList.add('active');
+                    el.setAttribute('aria-checked', 'true');
+                } else {
+                    el.classList.remove('active');
+                    el.setAttribute('aria-checked', 'false');
+                }
+            }
+
+            function toggleSwitch(el) {
+                var isActive = el.classList.contains('active');
+                setToggle(el, !isActive);
+                return !isActive;
+            }
+
+            // Keyboard support for toggle switches
+            function addToggleKeyboard(el, onClick) {
+                el.addEventListener('keydown', function (e) {
+                    if (e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        onClick();
+                    }
+                });
+            }
+
+            // ── Open / Close ──
+            function openSettings() {
+                if (!settingsModal) return;
+                // Refresh UI from current settings
+                refreshPanelUI();
+                settingsModal.classList.add('active');
+            }
+
+            function closeSettings() {
+                if (!settingsModal) return;
+                settingsModal.classList.remove('active');
+            }
+
+            // ── Refresh entire panel from currentSettings ──
+            function refreshPanelUI() {
+                // Difficulty buttons
+                difficultyBtns.forEach(function (btn) {
+                    btn.classList.toggle('active', btn.dataset.diff === currentSettings.difficulty);
+                });
+
+                // Grid toggle
+                setToggle(toggleGrid, currentSettings.showGridLines);
+
+                // Sound toggle
+                setToggle(toggleSound, currentSettings.soundEnabled);
+
+                // Skin options
+                refreshSkinOptionsUI();
+
+                // Name
+                if (settingsNameInput) {
+                    settingsNameInput.value = currentSettings.playerName;
+                }
+            }
+
+            // ── Event: Open ──
+            if (settingsBtn) {
+                settingsBtn.addEventListener('click', openSettings);
+            }
+
+            // ── Event: Close ──
+            if (settingsCloseBtn) {
+                settingsCloseBtn.addEventListener('click', closeSettings);
+            }
+            if (settingsModal) {
+                settingsModal.addEventListener('click', function (e) {
+                    if (e.target === settingsModal || e.target.classList.contains('help-modal-backdrop')) {
+                        closeSettings();
+                    }
+                });
+            }
+
+            // ── Event: Escape close ──
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && settingsModal && settingsModal.classList.contains('active')) {
+                    // Leaderboard takes priority if also open
+                    if (leaderboardOverlay.classList.contains('active')) return;
+                    e.preventDefault();
+                    closeSettings();
+                }
+            });
+
+            // ── Event: Difficulty ──
+            difficultyBtns.forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var diff = btn.dataset.diff;
+                    if (!DIFFICULTY_PRESETS[diff]) return;
+                    currentSettings.difficulty = diff;
+                    SettingsStore.save(currentSettings);
+                    applySettingsToGame();
+                    refreshPanelUI();
+                    // Redraw to reflect grid/bomb changes
+                    if (!isRunning) draw();
+                });
+            });
+
+            // ── Event: Grid Lines Toggle ──
+            if (toggleGrid) {
+                var onGridToggle = function () {
+                    currentSettings.showGridLines = !currentSettings.showGridLines;
+                    SettingsStore.save(currentSettings);
+                    setToggle(toggleGrid, currentSettings.showGridLines);
+                    if (!isRunning) draw();
+                };
+                toggleGrid.addEventListener('click', onGridToggle);
+                addToggleKeyboard(toggleGrid, onGridToggle);
+            }
+
+            // ── Event: Sound Toggle ──
+            if (toggleSound) {
+                var onSoundToggle = function () {
+                    currentSettings.soundEnabled = !currentSettings.soundEnabled;
+                    SettingsStore.save(currentSettings);
+                    setToggle(toggleSound, currentSettings.soundEnabled);
+                    // Sync with AudioManager — only toggle if state disagrees
+                    if (AudioManager.muted === currentSettings.soundEnabled) {
+                        AudioManager.toggleMute();
+                    }
+                    // Update mute button icon
+                    var mb = document.getElementById('muteBtn');
+                    if (mb) {
+                        mb.textContent = currentSettings.soundEnabled ? '🔊' : '🔇';
+                    }
+                };
+                toggleSound.addEventListener('click', onSoundToggle);
+                addToggleKeyboard(toggleSound, onSoundToggle);
+            }
+
+            // ── Event: Name Change ──
+            if (settingsNameSave) {
+                settingsNameSave.addEventListener('click', function () {
+                    var newName = (settingsNameInput.value || '').trim();
+                    if (!newName) return;
+                    currentSettings.playerName = newName;
+                    SettingsStore.save(currentSettings);
+                    // Sync with existing player name system
+                    playerName.set(newName);
+                    refreshPlayerNameUI();
+                    renderLeaderboardTable();
+                    renderLeaderboardSummary();
+                });
+            }
+
+            // ── Event: Reset ──
+            if (resetSettingsBtn) {
+                resetSettingsBtn.addEventListener('click', function () {
+                    if (!confirm('确定要重置所有设置吗？排行榜数据不会受影响。')) return;
+                    currentSettings = SettingsStore.reset();
+                    applySettingsToGame();
+                    refreshPanelUI();
+                    // Sync related systems
+                    applySkin(currentSettings.skin);
+                    // Sync sound
+                    if (AudioManager.muted === currentSettings.soundEnabled) {
+                        AudioManager.toggleMute();
+                    }
+                    var mb = document.getElementById('muteBtn');
+                    if (mb) {
+                        mb.textContent = currentSettings.soundEnabled ? '🔊' : '🔇';
+                    }
+                    playerName.set(currentSettings.playerName);
+                    refreshPlayerNameUI();
+                    if (!isRunning) draw();
+                });
+            }
+
+            // ── Event: Export ──
+            if (exportDataBtn) {
+                exportDataBtn.addEventListener('click', function () {
+                    exportGameData();
+                });
+            }
+
+            // ── Initial build ──
+            buildSkinOptions();
+
+            // Sync mute button with saved sound setting on page load
+            var savedSound = currentSettings.soundEnabled;
+            if (AudioManager.muted === savedSound) {
+                AudioManager.toggleMute();
+            }
+            var muteBtnEl = document.getElementById('muteBtn');
+            if (muteBtnEl) {
+                muteBtnEl.textContent = savedSound ? '🔊' : '🔇';
+            }
+
+            // Expose for external sync
+            window._settingsPanel = {
+                open: openSettings,
+                close: closeSettings,
+                refresh: refreshPanelUI,
+            };
+        })();
 
         // ─── Page Initialization ────────────────────
         initGame();

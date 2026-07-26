@@ -1,5 +1,4 @@
 node_modules
 dist
 *.log
-openspec/.pipeline-state/
 .playwright-mcp/
