@@ -1,0 +1,238 @@
+{
+  "schemaVersion": 2,
+  "_version": 32,
+  "changeName": "add-pixel-welcome-screen",
+  "sourceBranch": "feature/lite",
+  "targetBranch": null,
+  "currentPhase": 6,
+  "currentStep": 20,
+  "status": "active",
+  "executionMode": "hybrid",
+  "createdBy": "大師兄丶",
+  "createdByEmail": "zhaoyi_dsx@163.com",
+  "machineInfo": {
+    "platform": "darwin",
+    "hostname": "JerryDiff-2.local",
+    "osRelease": "25.5.0",
+    "nodeVersion": "v24.11.1",
+    "arch": "arm64"
+  },
+  "featureInfo": {
+    "featureId": "WELCOME-2026-01",
+    "featureUrl": null
+  },
+  "fingerprintId": "e8b2eceb0cdfb5b7c95160c8ea98580b",
+  "fingerprintNonce": "df105029",
+  "phaseHistory": [
+    {
+      "phase": 0,
+      "step": 1,
+      "executedBy": "pipeline",
+      "status": "completed",
+      "startedAt": "2026-07-26 20:53:27",
+      "completedAt": "2026-07-26 20:53:32",
+      "decisions": {},
+      "gatesBypassed": []
+    },
+    {
+      "phase": 1,
+      "step": 3,
+      "executedBy": "pipeline",
+      "status": "completed",
+      "startedAt": "2026-07-26 20:53:32",
+      "completedAt": "2026-07-26 20:56:10",
+      "decisions": {
+        "requirementsConfirmed": true,
+        "proposalApproved": true
+      },
+      "gatesBypassed": []
+    },
+    {
+      "phase": 1,
+      "step": 5,
+      "executedBy": "openspec-propose",
+      "status": "completed",
+      "startedAt": "2026-07-26 20:53:35",
+      "completedAt": "2026-07-26 20:56:04",
+      "decisions": {},
+      "gatesBypassed": []
+    },
+    {
+      "phase": 2,
+      "step": 8,
+      "executedBy": "pipeline",
+      "status": "completed",
+      "startedAt": "2026-07-26 20:56:10",
+      "completedAt": "2026-07-26 21:08:45",
+      "decisions": {
+        "requirementsConfirmed": true,
+        "proposalApproved": true
+      },
+      "gatesBypassed": []
+    },
+    {
+      "phase": 2,
+      "step": 6,
+      "executedBy": "pipeline",
+      "status": "completed",
+      "startedAt": "2026-07-26 21:00:02",
+      "completedAt": "2026-07-26 21:08:45",
+      "decisions": {
+        "requirementsConfirmed": true,
+        "proposalApproved": true,
+        "implementationConfirmed": true,
+        "reviewDisposition": "review"
+      },
+      "gatesBypassed": []
+    },
+    {
+      "phase": 3,
+      "step": 12,
+      "executedBy": "pipeline",
+      "status": "completed",
+      "startedAt": "2026-07-26 21:08:45",
+      "completedAt": "2026-07-26 21:09:59",
+      "decisions": {
+        "requirementsConfirmed": true,
+        "proposalApproved": true,
+        "implementationConfirmed": true,
+        "reviewDisposition": "review"
+      },
+      "gatesBypassed": []
+    },
+    {
+      "phase": 3,
+      "step": 9,
+      "executedBy": "pipeline",
+      "status": "completed",
+      "startedAt": "2026-07-26 21:08:50",
+      "completedAt": "2026-07-26 21:10:00",
+      "decisions": {
+        "requirementsConfirmed": true,
+        "proposalApproved": true,
+        "implementationConfirmed": true,
+        "reviewDisposition": "review",
+        "reviewResult": "passed"
+      },
+      "gatesBypassed": []
+    },
+    {
+      "phase": 4,
+      "step": 14,
+      "executedBy": "pipeline",
+      "status": "completed",
+      "startedAt": "2026-07-26 21:10:00",
+      "completedAt": "2026-07-26 21:10:34",
+      "decisions": {
+        "requirementsConfirmed": true,
+        "proposalApproved": true,
+        "implementationConfirmed": true,
+        "reviewDisposition": "review",
+        "reviewResult": "passed"
+      },
+      "gatesBypassed": []
+    },
+    {
+      "phase": 4,
+      "step": 13,
+      "executedBy": "pipeline",
+      "status": "completed",
+      "startedAt": "2026-07-26 21:10:05",
+      "completedAt": "2026-07-26 21:10:35",
+      "decisions": {
+        "requirementsConfirmed": true,
+        "proposalApproved": true,
+        "implementationConfirmed": true,
+        "reviewDisposition": "review",
+        "reviewResult": "passed"
+      },
+      "gatesBypassed": []
+    },
+    {
+      "phase": 5,
+      "step": 18,
+      "executedBy": "pipeline",
+      "status": "completed",
+      "startedAt": "2026-07-26 21:10:35",
+      "completedAt": "2026-07-26 21:24:20",
+      "decisions": {
+        "requirementsConfirmed": true,
+        "proposalApproved": true,
+        "implementationConfirmed": true,
+        "reviewDisposition": "review",
+        "reviewResult": "passed"
+      },
+      "gatesBypassed": []
+    },
+    {
+      "phase": 5,
+      "step": 15,
+      "executedBy": "pipeline",
+      "status": "completed",
+      "startedAt": "2026-07-26 21:10:40",
+      "completedAt": "2026-07-26 21:27:34",
+      "decisions": {
+        "requirementsConfirmed": true,
+        "proposalApproved": true,
+        "implementationConfirmed": true,
+        "reviewDisposition": "review",
+        "reviewResult": "passed",
+        "postArchiveAction": "push-only"
+      },
+      "gatesBypassed": []
+    },
+    {
+      "phase": 6,
+      "step": 20,
+      "executedBy": "pipeline",
+      "status": "in-progress",
+      "startedAt": "2026-07-26 21:27:34",
+      "completedAt": null,
+      "decisions": {
+        "requirementsConfirmed": true,
+        "proposalApproved": true,
+        "implementationConfirmed": true,
+        "reviewDisposition": "review",
+        "reviewResult": "passed",
+        "postArchiveAction": "push-only"
+      },
+      "gatesBypassed": []
+    }
+  ],
+  "gatesBypassed": [],
+  "decisions": {
+    "requirementsConfirmed": true,
+    "proposalApproved": true,
+    "implementationConfirmed": true,
+    "reviewDisposition": "review",
+    "reviewResult": "passed",
+    "postArchiveAction": "push-only"
+  },
+  "review": {
+    "round": 1,
+    "reportPath": "openspec/review/2026-07-26-21-09-feature-lite-pipeline-review.md",
+    "status": "passed"
+  },
+  "tests": {
+    "command": null,
+    "attempts": 0,
+    "status": "skipped",
+    "detail": "单文件 HTML 游戏项目，无测试基础设施，E2E smoke test 已通过 Playwright 手动验证"
+  },
+  "verify": {
+    "command": null,
+    "attempts": 0,
+    "status": "skipped",
+    "detail": "E2E smoke test 已通过 Playwright 手动验证: Welcome → CRT transition → Start Overlay → Game → Game Over → Restart"
+  },
+  "archivePath": "openspec/changes/archive/2026-07-26-add-pixel-welcome-screen",
+  "delivery": {
+    "commitSha": null,
+    "mergeCommitSha": null,
+    "sourcePushed": false,
+    "targetPushed": false,
+    "tag": null
+  },
+  "createdAt": "2026-07-26 20:53:27",
+  "updatedAt": "2026-07-26 21:27:34"
+}

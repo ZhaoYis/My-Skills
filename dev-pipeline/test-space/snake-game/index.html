@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🐍 贪吃蛇</title>
+    <!-- 像素风欢迎界面字体 -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" as="style">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
     <style>
         :root {
             --bg: #0f172a;
@@ -896,9 +899,254 @@
             .dpad { display: block; }
             .controls-info { display: none; }
         }
+
+        /* ═══════════════════════════════════════════
+           Pixel Welcome Screen — Game Boy Green CRT
+           ═══════════════════════════════════════════ */
+
+        :root {
+            --gb-darkest:  #0f380f;
+            --gb-dark:     #306230;
+            --gb-light:    #8bac0f;
+            --gb-lightest: #9bbc0f;
+        }
+
+        /* ── Full-screen overlay ── */
+        .welcome-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: var(--gb-darkest);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            overflow: hidden;
+            transition: opacity 0.15s ease;
+        }
+
+        .welcome-screen.exit-transition {
+            animation: crtPowerOff 0.45s ease-in forwards;
+        }
+
+        /* ── CRT Bezel (outer frame) ── */
+        .crt-bezel {
+            width: 92vw;
+            max-width: 560px;
+            aspect-ratio: 4 / 3;
+            background: #0a0a0a;
+            border-radius: 18px;
+            padding: clamp(12px, 3vw, 24px);
+            box-shadow:
+                inset 0 0 0 3px #1a1a1a,
+                0 0 0 2px #050505,
+                0 0 40px rgba(0, 0, 0, 0.8),
+                0 8px 32px rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ── CRT Screen ── */
+        .crt-screen {
+            width: 100%;
+            height: 100%;
+            background: var(--gb-darkest);
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+            /* Vignette: 边缘暗角 */
+            box-shadow:
+                inset 0 0 80px 20px rgba(0, 0, 0, 0.7),
+                inset 0 0 30px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        /* ── Scanlines overlay ── */
+        .crt-scanlines {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            pointer-events: none;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15) 0px,
+                rgba(0, 0, 0, 0.15) 2px,
+                transparent 2px,
+                transparent 4px
+            );
+        }
+
+        /* ── Content layer ── */
+        .crt-content {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(12px, 3vh, 24px);
+            padding: 16px;
+        }
+
+        /* ── Pixel Title "SNAKE" ── */
+        .pixel-title {
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            font-size: clamp(1.4rem, 5vw, 2.6rem);
+            color: var(--gb-lightest);
+            text-align: center;
+            letter-spacing: 0.15em;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: unset;
+            text-shadow:
+                0 0 10px rgba(155, 188, 15, 0.5),
+                0 0 30px rgba(139, 172, 15, 0.3),
+                2px 2px 0 var(--gb-dark),
+                4px 4px 0 var(--gb-darkest);
+            animation: titleFlicker 4s ease-in-out infinite;
+        }
+
+        @keyframes titleFlicker {
+            0%, 100% { opacity: 1; }
+            94% { opacity: 1; }
+            95% { opacity: 0.85; }
+            96% { opacity: 1; }
+            98% { opacity: 0.9; }
+        }
+
+        /* ── Mini Canvas wrapper ── */
+        .mini-canvas-wrapper {
+            border: 3px solid var(--gb-dark);
+            border-radius: 2px;
+            overflow: hidden;
+            box-shadow:
+                0 0 16px rgba(139, 172, 15, 0.15),
+                inset 0 0 8px rgba(0, 0, 0, 0.5);
+            line-height: 0;
+            background: var(--gb-darkest);
+        }
+
+        .mini-canvas-wrapper canvas {
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            width: min(260px, 60vw);
+            height: auto;
+        }
+
+        /* ── Prompt hint ── */
+        .prompt-hint {
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            font-size: clamp(0.55rem, 1.8vw, 0.75rem);
+            color: var(--gb-light);
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: unset;
+            text-align: center;
+            animation: promptBlink 1.2s ease-in-out infinite;
+        }
+
+        @keyframes promptBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.15; }
+        }
+
+        /* ── Hidden state ── */
+        .welcome-screen.hidden {
+            display: none;
+        }
+
+        /* ── CRT Power-Off Transition ── */
+        @keyframes crtPowerOff {
+            0% {
+                clip-path: inset(0 0 0 0);
+                opacity: 1;
+            }
+            25% {
+                clip-path: inset(38% 0 38% 0);
+                opacity: 1;
+            }
+            60% {
+                clip-path: inset(49% 0 49% 0);
+                opacity: 1;
+            }
+            70% {
+                clip-path: inset(49.5% 0 49.5% 0);
+                opacity: 0.9;
+            }
+            100% {
+                clip-path: inset(50% 0 50% 0);
+                opacity: 0;
+            }
+        }
+
+        /* CRT 关机时中央亮线 */
+        .welcome-screen.exit-transition::after {
+            content: '';
+            position: fixed;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 4px;
+            background: var(--gb-lightest);
+            box-shadow: 0 0 20px rgba(155, 188, 15, 0.9),
+                        0 0 60px rgba(155, 188, 15, 0.5);
+            z-index: 10001;
+            transform: translateY(-50%);
+            animation: crtLineFade 0.45s ease-in forwards;
+        }
+
+        @keyframes crtLineFade {
+            0%, 55% { opacity: 0; }
+            60% { opacity: 1; }
+            80% { opacity: 0.8; }
+            100% { opacity: 0; }
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 500px) {
+            .crt-bezel {
+                width: 96vw;
+                padding: 8px;
+                border-radius: 10px;
+            }
+            .pixel-title {
+                font-size: clamp(1rem, 6vw, 1.6rem);
+            }
+            .mini-canvas-wrapper canvas {
+                width: min(200px, 55vw);
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .crt-bezel {
+                max-width: 640px;
+            }
+            .pixel-title {
+                font-size: 3rem;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- ═══════════════════════════════════════════
+         Pixel Welcome Screen
+         ═══════════════════════════════════════════ -->
+    <div class="welcome-screen" id="welcomeScreen">
+        <div class="crt-bezel">
+            <div class="crt-screen">
+                <div class="crt-scanlines"></div>
+                <div class="crt-content">
+                    <h1 class="pixel-title">SNAKE</h1>
+                    <div class="mini-canvas-wrapper">
+                        <canvas id="miniCanvas"></canvas>
+                    </div>
+                    <p class="prompt-hint">▶ PRESS ENTER</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <!-- Header -->
         <div class="header">
@@ -925,7 +1173,7 @@
             <canvas id="gameCanvas"></canvas>
 
             <!-- Start Overlay -->
-            <div class="overlay active" id="startOverlay">
+            <div class="overlay" id="startOverlay">
                 <div class="overlay-title">🐍 贪吃蛇</div>
                 <div class="mode-cards" id="modeCards">
                     <div class="mode-card selected" data-mode="classic" id="modeCardClassic" tabindex="0" role="radio" aria-checked="true">
@@ -1056,6 +1304,394 @@
 
     <script>
     (function () {
+        // ═══════════════════════════════════════════════════
+        //  Pixel Welcome Screen Module
+        // ═══════════════════════════════════════════════════
+        (function () {
+            const welcomeScreen = document.getElementById('welcomeScreen');
+            const miniCanvas = document.getElementById('miniCanvas');
+            const miniCtx = miniCanvas.getContext('2d');
+
+            // ─── Mini Canvas Setup ────────────────────
+            const MINI_GRID = 16;
+            const MINI_CELL = 10;           // 逻辑像素 (internal)
+            const MINI_SCALE = 1;           // 1:1 internal, CSS scales up
+            const MINI_SIZE = MINI_GRID * MINI_CELL;   // 160px internal
+            const MINI_TICK = 180;          // ms per tick — 比主游戏慢一点
+
+            miniCanvas.width = MINI_SIZE;
+            miniCanvas.height = MINI_SIZE;
+
+            // ─── AI Snake State ──────────────────────
+            let miniSnake = [];
+            let miniDir = { x: 1, y: 0 };
+            let miniFood = null;
+            let miniRunning = false;
+            let miniAnimId = null;
+            let miniAccumulator = 0;
+            let miniLastTick = 0;
+            let miniGrowth = 0;
+            const MINI_START_LEN = 3;
+
+            function miniRandomCell() {
+                return {
+                    x: Math.floor(Math.random() * MINI_GRID),
+                    y: Math.floor(Math.random() * MINI_GRID),
+                };
+            }
+
+            function miniCellEquals(a, b) {
+                return a && b && a.x === b.x && a.y === b.y;
+            }
+
+            function miniSnakeOccupies(cell) {
+                return miniSnake.some(function (s) { return miniCellEquals(s, cell); });
+            }
+
+            function miniSpawnFood() {
+                var cell;
+                for (var a = 0; a < 500; a++) {
+                    cell = miniRandomCell();
+                    if (!miniSnakeOccupies(cell)) return cell;
+                }
+                // fallback scan
+                for (var x = 0; x < MINI_GRID; x++) {
+                    for (var y = 0; y < MINI_GRID; y++) {
+                        if (!miniSnakeOccupies({ x: x, y: y })) return { x: x, y: y };
+                    }
+                }
+                return null;
+            }
+
+            // ─── AI Wander Algorithm ─────────────────
+            function miniGetAIDirection() {
+                var head = miniSnake[0];
+                var dx = miniDir.x, dy = miniDir.y;
+
+                // 贴近墙壁 (< 2 格) 时远离墙壁
+                var wallAhead =
+                    (dx === 1  && head.x >= MINI_GRID - 2) ||
+                    (dx === -1 && head.x <= 1) ||
+                    (dy === 1  && head.y >= MINI_GRID - 2) ||
+                    (dy === -1 && head.y <= 1);
+
+                if (wallAhead || Math.random() < 0.2) {
+                    // 尝试新方向
+                    var candidates = [];
+                    var dirs = [
+                        { x: 0, y: -1 }, { x: 0, y: 1 },
+                        { x: -1, y: 0 }, { x: 1, y: 0 }
+                    ];
+                    for (var i = 0; i < dirs.length; i++) {
+                        var d = dirs[i];
+                        // 不允许 180 度反转
+                        if (d.x === -dx && d.y === -dy && miniSnake.length > 1) continue;
+                        var nx = head.x + d.x;
+                        var ny = head.y + d.y;
+                        if (nx >= 0 && nx < MINI_GRID && ny >= 0 && ny < MINI_GRID) {
+                            // 偏好朝向食物的方向
+                            var score = 1;
+                            if (miniFood) {
+                                var toFood = Math.abs(nx - miniFood.x) + Math.abs(ny - miniFood.y);
+                                var curToFood = Math.abs(head.x - miniFood.x) + Math.abs(head.y - miniFood.y);
+                                if (toFood < curToFood) score += 3;
+                            }
+                            // 远离墙壁加分
+                            if (nx > 1 && nx < MINI_GRID - 2 && ny > 1 && ny < MINI_GRID - 2) score += 2;
+                            candidates.push({ d: d, score: score });
+                        }
+                    }
+                    if (candidates.length > 0) {
+                        // 按分数加权随机选择
+                        var totalScore = 0;
+                        for (var j = 0; j < candidates.length; j++) totalScore += candidates[j].score;
+                        var roll = Math.random() * totalScore;
+                        var acc = 0;
+                        for (var k = 0; k < candidates.length; k++) {
+                            acc += candidates[k].score;
+                            if (roll <= acc) { return candidates[k].d; }
+                        }
+                        return candidates[candidates.length - 1].d;
+                    }
+                }
+                // 80% 概率保持直行
+                return { x: dx, y: dy };
+            }
+
+            function miniInitGame() {
+                var sx = Math.floor(MINI_GRID / 2);
+                var sy = Math.floor(MINI_GRID / 2);
+                miniSnake = [
+                    { x: sx, y: sy },
+                    { x: sx - 1, y: sy },
+                    { x: sx - 2, y: sy },
+                ];
+                miniDir = { x: 1, y: 0 };
+                miniGrowth = 0;
+                miniFood = miniSpawnFood();
+                miniAccumulator = 0;
+                miniLastTick = performance.now();
+            }
+
+            function miniUpdate() {
+                var newDir = miniGetAIDirection();
+                miniDir = newDir;
+
+                var head = miniSnake[0];
+                var newHead = { x: head.x + miniDir.x, y: head.y + miniDir.y };
+
+                // 边界碰撞 → 重置
+                if (newHead.x < 0 || newHead.x >= MINI_GRID || newHead.y < 0 || newHead.y >= MINI_GRID) {
+                    miniInitGame();
+                    return;
+                }
+
+                // 自身碰撞 → 重置
+                var checkBody = miniGrowth > 0 ? miniSnake : miniSnake.slice(0, -1);
+                if (checkBody.some(function (s) { return miniCellEquals(s, newHead); })) {
+                    miniInitGame();
+                    return;
+                }
+
+                miniSnake.unshift(newHead);
+
+                // 食物碰撞
+                if (miniFood && miniCellEquals(newHead, miniFood)) {
+                    miniGrowth += 1;
+                    miniFood = miniSpawnFood();
+                    if (!miniFood) { miniInitGame(); return; }
+                }
+
+                if (miniGrowth > 0) {
+                    miniGrowth--;
+                } else {
+                    miniSnake.pop();
+                }
+
+                // 长度限制：最长 8 段后重置到 3 段
+                if (miniSnake.length > 8) {
+                    miniSnake = miniSnake.slice(0, MINI_START_LEN);
+                }
+            }
+
+            // ─── Mini Canvas Render ──────────────────
+            function miniDraw() {
+                var w = MINI_SIZE;
+                var h = MINI_SIZE;
+
+                // 背景 — Game Boy 最深绿
+                miniCtx.fillStyle = '#0f380f';
+                miniCtx.fillRect(0, 0, w, h);
+
+                // 网格线 (微弱)
+                miniCtx.strokeStyle = 'rgba(48, 98, 48, 0.3)';
+                miniCtx.lineWidth = 0.5;
+                for (var x = 0; x <= MINI_GRID; x++) {
+                    var px = x * MINI_CELL;
+                    miniCtx.beginPath();
+                    miniCtx.moveTo(px, 0);
+                    miniCtx.lineTo(px, h);
+                    miniCtx.stroke();
+                }
+                for (var y = 0; y <= MINI_GRID; y++) {
+                    var py = y * MINI_CELL;
+                    miniCtx.beginPath();
+                    miniCtx.moveTo(0, py);
+                    miniCtx.lineTo(w, py);
+                    miniCtx.stroke();
+                }
+
+                // 食物 — 亮绿像素方块
+                if (miniFood) {
+                    var fx = miniFood.x * MINI_CELL + 1;
+                    var fy = miniFood.y * MINI_CELL + 1;
+                    var fs = MINI_CELL - 2;
+                    miniCtx.fillStyle = '#9bbc0f';
+                    miniCtx.fillRect(fx, fy, fs, fs);
+                    // 微光晕
+                    miniCtx.fillStyle = 'rgba(155, 188, 15, 0.3)';
+                    miniCtx.fillRect(fx - 1, fy - 1, fs + 2, fs + 2);
+                }
+
+                // 蛇身
+                for (var i = miniSnake.length - 1; i >= 0; i--) {
+                    var seg = miniSnake[i];
+                    var sx = seg.x * MINI_CELL + 1;
+                    var sy = seg.y * MINI_CELL + 1;
+                    var ss = MINI_CELL - 2;
+                    if (i === 0) {
+                        miniCtx.fillStyle = '#9bbc0f';  // 头部最亮
+                    } else {
+                        // 渐变从亮绿到暗绿
+                        var t = i / Math.max(miniSnake.length - 1, 1);
+                        var gb = Math.floor(48 + t * (139 - 48));
+                        miniCtx.fillStyle = 'rgb(48, ' + gb + ', 15)';
+                    }
+                    miniCtx.fillRect(sx, sy, ss, ss);
+                }
+            }
+
+            function miniLoop(now) {
+                if (!miniRunning) return;
+                miniAnimId = requestAnimationFrame(miniLoop);
+
+                var dt = now - miniLastTick;
+                miniLastTick = now;
+                miniAccumulator += dt;
+
+                while (miniAccumulator >= MINI_TICK) {
+                    miniAccumulator -= MINI_TICK;
+                    miniUpdate();
+                }
+
+                miniDraw();
+            }
+
+            function miniStart() {
+                if (miniRunning) return;
+                miniInitGame();
+                miniRunning = true;
+                miniLastTick = performance.now();
+                miniAccumulator = 0;
+                miniAnimId = requestAnimationFrame(miniLoop);
+            }
+
+            function miniStop() {
+                miniRunning = false;
+                if (miniAnimId) {
+                    cancelAnimationFrame(miniAnimId);
+                    miniAnimId = null;
+                }
+            }
+
+            // ─── Boot Sound ──────────────────────────
+            var bootSoundPlayed = false;
+
+            function playBootSound() {
+                if (bootSoundPlayed) return;
+
+                // 检查静音状态 — 读取现有 AudioManager 的 muted 属性
+                if (typeof AudioManager !== 'undefined' && AudioManager.muted) return;
+
+                var AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtxClass) return; // 不支持 Web Audio API
+
+                try {
+                    var ctx = new AudioCtxClass();
+                    // 如果 ctx 是 suspended 状态, 尝试 resume
+                    if (ctx.state === 'suspended') {
+                        ctx.resume().catch(function () { /* 静默降级 */ });
+                    }
+
+                    var now = ctx.currentTime;
+
+                    // 第一个音: 440Hz (A4), 150ms
+                    var osc1 = ctx.createOscillator();
+                    var gain1 = ctx.createGain();
+                    osc1.type = 'square'; // 方波接近 Game Boy 音色
+                    osc1.frequency.setValueAtTime(440, now);
+                    gain1.gain.setValueAtTime(0, now);
+                    gain1.gain.linearRampToValueAtTime(0.15, now + 0.02);   // attack
+                    gain1.gain.setValueAtTime(0.15, now + 0.08);
+                    gain1.gain.linearRampToValueAtTime(0, now + 0.15);     // release
+                    osc1.connect(gain1);
+                    gain1.connect(ctx.destination);
+                    osc1.start(now);
+                    osc1.stop(now + 0.15);
+
+                    // 第二个音: 880Hz (A5), 从 150ms 开始
+                    var osc2 = ctx.createOscillator();
+                    var gain2 = ctx.createGain();
+                    osc2.type = 'square';
+                    osc2.frequency.setValueAtTime(880, now + 0.15);
+                    gain2.gain.setValueAtTime(0, now + 0.15);
+                    gain2.gain.linearRampToValueAtTime(0.15, now + 0.17);  // attack
+                    gain2.gain.setValueAtTime(0.15, now + 0.25);
+                    gain2.gain.linearRampToValueAtTime(0, now + 0.35);     // release
+                    osc2.connect(gain2);
+                    gain2.connect(ctx.destination);
+                    osc2.start(now + 0.15);
+                    osc2.stop(now + 0.35);
+
+                    bootSoundPlayed = true;
+
+                    // 清理 AudioContext 在声音结束后
+                    setTimeout(function () {
+                        try { ctx.close(); } catch (e) { /* 静默降级 */ }
+                    }, 500);
+
+                } catch (e) {
+                    // Web Audio API 不可用，静默降级
+                }
+            }
+
+            // ─── Exit Transition ─────────────────────
+            var exiting = false;
+
+            function exitWelcomeScreen() {
+                if (exiting) return;
+                exiting = true;
+
+                // 播放开机音效（此时已有用户手势，AudioContext 可以 resume）
+                playBootSound();
+
+                // 停止迷你蛇动画
+                miniStop();
+
+                // 触发 CRT 关机动画
+                welcomeScreen.classList.add('exit-transition');
+
+                // 动画结束后切换到 Start Overlay
+                setTimeout(function () {
+                    welcomeScreen.classList.add('hidden');
+                    // Start Overlay 应该在页面初始化时已经就位
+                    exiting = false;
+                }, 450);
+            }
+
+            // ─── Event Listeners ─────────────────────
+            function handleWelcomeKey(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    exitWelcomeScreen();
+                }
+            }
+
+            function handleWelcomeClick(e) {
+                // 不拦截按钮/链接的默认行为（目前欢迎界面没有按钮）
+                exitWelcomeScreen();
+            }
+
+            welcomeScreen.addEventListener('click', handleWelcomeClick);
+            document.addEventListener('keydown', function welcomeKeyHandler(e) {
+                // 只在欢迎界面可见时响应
+                if (welcomeScreen.classList.contains('hidden')) return;
+                handleWelcomeKey(e);
+            });
+
+            // ─── Initialization ──────────────────────
+            function initWelcomeScreen() {
+                miniStart();
+                // 尝试播放开机音效 — 如果浏览器阻止（需要用户手势），
+                // 则在 exitWelcomeScreen 中由用户手势触发再播放
+                if (typeof AudioManager !== 'undefined') {
+                    // AudioManager 在下面定义，但可能还没初始化
+                }
+                // 用一个小延迟尝试播放（可能被浏览器阻止，
+                // 实际播放会在 exit 时有用户手势完成）
+                try { playBootSound(); } catch (e) { /* 浏览器自动播放策略 */ }
+            }
+
+            // 暴露给外部
+            window._welcomeScreen = {
+                init: initWelcomeScreen,
+                exit: exitWelcomeScreen,
+            };
+        })();
+
+        // ═══════════════════════════════════════════════════
+        //  Existing Game Code (unchanged)
+        // ═══════════════════════════════════════════════════
         // ─── Audio Manager ──────────────────────────
         const AudioManager = (function () {
             let audioCtx = null;
@@ -3133,12 +3769,40 @@
             }
         });
 
-        // ─── Draw initial state ────────────────────
+        // ─── Page Initialization ────────────────────
         initGame();
-        // 初始化排行榜 UI
         refreshPlayerNameUI();
         renderLeaderboardSummary();
         draw();
+
+        // 页面加载时显示欢迎界面（不显示开始覆盖层）
+        startOverlay.classList.remove('active');
+
+        // 启动像素欢迎界面
+        if (window._welcomeScreen) {
+            window._welcomeScreen.init();
+        }
+
+        // 监听欢迎界面退出 → 显示开始覆盖层
+        var welcomeObserver = new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    var ws = document.getElementById('welcomeScreen');
+                    if (ws && ws.classList.contains('hidden') && !startOverlay.classList.contains('active')) {
+                        startOverlay.classList.add('active');
+                        // 重新初始化游戏状态（确保棋盘正确）
+                        initGame();
+                        draw();
+                        // 断开观察器（不再需要监控）
+                        welcomeObserver.disconnect();
+                    }
+                }
+            });
+        });
+        var wsEl = document.getElementById('welcomeScreen');
+        if (wsEl) {
+            welcomeObserver.observe(wsEl, { attributes: true, attributeFilter: ['class'] });
+        }
     })();
     </script>
 </body>
