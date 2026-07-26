@@ -8,6 +8,7 @@ import type {
 import { PHASE_META } from './types.js';
 import { AgentPhaseRunner, getPhaseSpecificInstructions } from './AgentPhaseRunner.js';
 import { createTestEnvironment } from './EnvironmentFactory.js';
+import { formatLocalTime } from '../utils/date-time.js';
 
 export interface AgentExecutionResult {
   status: AgentPhaseResult['status'];
@@ -135,7 +136,7 @@ export class PipelineAgentOrchestrator {
         phaseId,
         label: meta.label,
         status: agentResult.status as AgentPhaseResult['status'],
-        startedAt: new Date(startTime).toISOString(),
+        startedAt: formatLocalTime(new Date(startTime)),
         durationMs: duration,
         agentSummary: agentResult.summary || 'Agent completed the phase',
         assertions: agentResult.assertions || [],
@@ -149,7 +150,7 @@ export class PipelineAgentOrchestrator {
         phaseId,
         label: meta.label,
         status: 'error',
-        startedAt: new Date(startTime).toISOString(),
+        startedAt: formatLocalTime(new Date(startTime)),
         durationMs: duration,
         agentSummary: `Agent execution failed: ${String(error)}`,
         assertions: [],
@@ -263,7 +264,7 @@ export class PipelineAgentOrchestrator {
         changeName: this.scenario.changeName,
         sourceBranch: this.env.sourceBranch,
         targetBranch: this.env.targetBranch,
-        timestamp: new Date().toISOString(),
+        timestamp: formatLocalTime(),
         durationMs,
         overallStatus: failed > 0 ? 'fail' : skipped > 0 ? 'partial' : 'pass',
       },
@@ -295,7 +296,7 @@ export class PipelineAgentOrchestrator {
       phaseId,
       label: meta.label,
       status: 'skipped',
-      startedAt: new Date().toISOString(),
+      startedAt: formatLocalTime(),
       durationMs: 0,
       agentSummary: `Skipped: ${reason}`,
       assertions: [],

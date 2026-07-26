@@ -5,13 +5,18 @@ import todoRoutes from './routes/todos.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+function formatLocalTime(date: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 
 // Routes
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', timestamp: formatLocalTime() });
 });
 
 app.use('/api/todos', todoRoutes);

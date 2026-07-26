@@ -102,6 +102,11 @@ function collectMachineInfo() {
   };
 }
 
+function formatLocalTime(date = new Date()) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
 function computeFingerprint(createdAt, createdBy, featureId, nonce) {
   const input = `${createdAt}|${createdBy}|${featureId || ''}|${nonce}`;
   return crypto.createHash('md5').update(input).digest('hex');
@@ -196,7 +201,7 @@ async function saveState(root, state) {
   }
 
   state._version = diskVersion(state) + 1;
-  state.updatedAt = new Date().toISOString();
+  state.updatedAt = formatLocalTime();
   try {
     await mkdir(directory, { recursive: true });
     await writeFile(temporary, `${JSON.stringify(state, null, 2)}\n`, { mode: 0o600 });
@@ -436,7 +441,7 @@ if (!command) {
             EXIT_INVALID_TRANSITION,
           );
         } else {
-          const now = new Date().toISOString();
+          const now = formatLocalTime();
           const nonce = crypto.randomBytes(4).toString('hex');
           const state = {
             schemaVersion: SCHEMA_VERSION,
@@ -540,7 +545,7 @@ if (!command) {
                 EXIT_INVALID_TRANSITION,
               );
             } else {
-              const now = new Date().toISOString();
+              const now = formatLocalTime();
               let entry = !start
                 ? state.phaseHistory.find(
                     (candidate) =>
@@ -697,7 +702,7 @@ if (!command) {
                 fromStep,
                 toPhase,
                 toStep,
-                new Date().toISOString(),
+                formatLocalTime(),
               );
               if (await saveState(root, state)) output({ status: 'ok', state });
             }
