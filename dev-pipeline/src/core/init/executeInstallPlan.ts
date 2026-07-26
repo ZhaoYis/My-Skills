@@ -4,6 +4,7 @@ import pc from 'picocolors';
 import { readManifest, writeManifest } from '../manifest/io.js';
 import type { ManagedAssetRecord } from '../manifest/types.js';
 import { PACKAGE_NAME, TEMPLATE_VERSION } from '../runtime/meta.js';
+import { buildTemplateContext } from './buildInstallPlan.js';
 import { renderTemplate } from './renderTemplates.js';
 import type { InstallPlan } from './types.js';
 
@@ -139,16 +140,17 @@ function successMessage(mode: InstallPlan['mode'], displayName: string): string 
 export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
   const managedFiles = [] as typeof plan.files;
   const context = {
-    projectName: plan.projectName,
-    toolId: plan.tool,
-    toolName: plan.adapter.definition.displayName,
-    stack: plan.stack,
-    language: plan.language,
-    packageName: PACKAGE_NAME,
-    skillsDir: plan.adapter.getDestination('skills'),
-    commandsDir: plan.adapter.getDestination('commands'),
-    features: plan.features,
-    templateVersion: TEMPLATE_VERSION,
+    ...buildTemplateContext({
+      projectName: plan.projectName,
+      toolId: plan.tool,
+      toolName: plan.adapter.definition.displayName,
+      stack: plan.stack ?? 'backend',
+      language: plan.language,
+      skillsDir: plan.adapter.getDestination('skills'),
+      commandsDir: plan.adapter.getDestination('commands'),
+      features: plan.features,
+      skillRootNote: plan.adapter.getSkillRootNote(),
+    }),
     managedAssets: [] as Array<{ id: string; destination: string }>,
   };
 

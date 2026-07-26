@@ -1,6 +1,9 @@
 ---
 name: opsx-dev-pipeline
 description: 执行基于 OpenSpec 和 Git 的门禁式需求开发与交付流程，覆盖预检、提案确认、实现、代码审查、测试、验证归档、提交、推送与合并，并支持中断恢复。用户要求实现或继续一个 OpenSpec change、按阶段推进完整开发流水线、审查并交付变更，或处理 opsx-dev-pipeline 时使用。
+version: "{{~packageVersion~}}"
+license: "{{~packageLicense~}}"
+repository: "{{~packageRepoUrl~}}"
 ---
 
 # 需求开发全流程流水线
@@ -24,11 +27,13 @@ description: 执行基于 OpenSpec 和 Git 的门禁式需求开发与交付流�
 - 以 `openspec/.pipeline-state/<change>.json` 为恢复权威，并用 OpenSpec/Git 事实校验；不一致时暂停，不得猜测。
 
 **`<SKILL_ROOT>`**：本技能安装根目录（内含 `scripts/`）。命令在目标 git 仓库根目录执行。
-- 对于 Claude Code 安装：`<SKILL_ROOT>` = `.claude/skills/opsx-dev-pipeline`
-- 对于 Cursor 安装：`<SKILL_ROOT>` = `.cursor/rules/opsx-dev-pipeline`
-- 对于 Codex 模板安装：`<SKILL_ROOT>` = `.codex/prompts/opsx-dev-pipeline`；通过 `.codex/prompts/opsx-dev-pipeline.md` 入口加载本文件。
+{{#if skillRootNote~}}
+{{{skillRootNote}}}
+{{else~}}
+- 对于 {{toolName}} 安装：`<SKILL_ROOT>` = `{{skillsDir}}/opsx-dev-pipeline`
+{{/if~}}
 - 若宿主将 Skill 安装到其他位置，`<SKILL_ROOT>` = 当前 `SKILL.md` 所在目录；不要假设当前工作目录就是 Skill 根目录。
-- 脚本路径示例：`node .claude/skills/opsx-dev-pipeline/scripts/preflight.mjs`
+- 脚本路径示例：`node {{skillsDir}}/opsx-dev-pipeline/scripts/preflight.mjs`
 - 引用前先确认目录存在：`test -d "<SKILL_ROOT>/scripts" || echo "scripts not found"`
 - 状态命令示例：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<change>"`
 

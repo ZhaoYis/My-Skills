@@ -3,9 +3,15 @@ import path from 'node:path';
 import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ALL_FEATURE_IDS, type ToolAdapter, type ToolId } from '../../src/core/adapters/types.js';
-import { buildInstallPlan } from '../../src/core/init/buildInstallPlan.js';
+import { buildInstallPlan, buildTemplateContext } from '../../src/core/init/buildInstallPlan.js';
 import { renderTemplate } from '../../src/core/init/renderTemplates.js';
 import type { ManagedAssetRecord } from '../../src/core/manifest/types.js';
+import {
+  PACKAGE_LICENSE,
+  PACKAGE_NAME,
+  PACKAGE_REPO_URL,
+  PACKAGE_VERSION,
+} from '../../src/core/runtime/meta.js';
 import { PACKAGE_ROOT } from '../helpers/package-root.js';
 
 const createdDirs: string[] = [];
@@ -44,6 +50,7 @@ function createAdapter(
     supports: () => true,
     getDestination: (feature) => (feature === 'skills' ? skills : commands),
     getRoot: () => '.',
+    getSkillRootNote: () => undefined,
     getPostInstallNotes: () => ['note'],
   };
 }
@@ -67,6 +74,35 @@ function createPlanInput(managedAssets?: ManagedAssetRecord[]) {
 }
 
 describe('buildInstallPlan', () => {
+  it('builds shared package metadata and expands a custom skill root note', async () => {
+    const context = buildTemplateContext({
+      projectName: 'demo',
+      toolId: 'claude',
+      toolName: 'Claude Code',
+      stack: 'backend',
+      language: 'zh',
+      features: ['skills'],
+      skillsDir: '.custom/skills',
+      commandsDir: '.custom/commands',
+      skillRootNote: '- Custom root: `{skillsDir}/opsx-dev-pipeline`',
+    });
+
+    expect(context).toMatchObject({
+      packageName: PACKAGE_NAME,
+      packageVersion: PACKAGE_VERSION,
+      packageLicense: PACKAGE_LICENSE,
+      packageRepoUrl: PACKAGE_REPO_URL,
+      skillRootNote: '- Custom root: `.custom/skills/opsx-dev-pipeline`',
+    });
+
+    const rendered = await renderTemplate(
+      path.join(PACKAGE_ROOT, 'templates/common/skills/opsx-dev-pipeline/SKILL.md.hbs'),
+      context,
+    );
+    expect(rendered).toContain('- Custom root: `.custom/skills/opsx-dev-pipeline`');
+    expect(rendered).not.toContain('- 对于 Claude Code 安装：');
+  });
+
   it.each([
     ['zh', 'README.md.zh.hbs', 'CLAUDE.md.zh.hbs'],
     ['en', 'README.md.en.hbs', 'CLAUDE.md.en.hbs'],

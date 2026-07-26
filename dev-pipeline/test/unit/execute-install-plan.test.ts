@@ -30,6 +30,7 @@ function createAdapter(): ToolAdapter {
     getDestination: (feature: 'skills' | 'commands') =>
       feature === 'skills' ? '.claude/skills' : '.claude/commands',
     getRoot: () => '.',
+    getSkillRootNote: () => undefined,
     getPostInstallNotes: () => ['note-a', 'note-b'],
   };
 }

@@ -5,7 +5,13 @@ import type { DocLanguage, FeatureId, StackId, ToolId } from '../adapters/types.
 import { assetManifest } from '../assets/manifest.js';
 import type { AssetDefinition, InstallFile } from '../assets/types.js';
 import type { ManagedAssetRecord } from '../manifest/types.js';
-import { PACKAGE_NAME, TEMPLATE_VERSION } from '../runtime/meta.js';
+import {
+  PACKAGE_LICENSE,
+  PACKAGE_NAME,
+  PACKAGE_REPO_URL,
+  PACKAGE_VERSION,
+  TEMPLATE_VERSION,
+} from '../runtime/meta.js';
 import { isAppendableInstallFile } from './isAppendableInstallFile.js';
 import { renderString } from './renderTemplates.js';
 import type { InstallPlan } from './types.js';
@@ -35,6 +41,35 @@ interface ManagedAssetIndex {
 interface BundleEntry {
   entry: string;
   relativeDestination: string;
+}
+
+export function buildTemplateContext(params: {
+  projectName: string;
+  toolId: ToolId;
+  toolName: string;
+  stack: StackId;
+  language: DocLanguage;
+  features: FeatureId[];
+  skillsDir: string;
+  commandsDir: string;
+  skillRootNote?: string;
+}): Record<string, unknown> {
+  return {
+    projectName: params.projectName,
+    toolId: params.toolId,
+    toolName: params.toolName,
+    stack: params.stack,
+    language: params.language,
+    packageName: PACKAGE_NAME,
+    skillsDir: params.skillsDir,
+    commandsDir: params.commandsDir,
+    features: params.features,
+    templateVersion: TEMPLATE_VERSION,
+    packageVersion: PACKAGE_VERSION,
+    packageLicense: PACKAGE_LICENSE,
+    packageRepoUrl: PACKAGE_REPO_URL,
+    skillRootNote: params.skillRootNote?.replaceAll('{skillsDir}', params.skillsDir),
+  };
 }
 
 function localizedTemplatePath(sourcePath: string, language: DocLanguage): string {
@@ -189,18 +224,17 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
   const stack = input.stack ?? 'backend';
   const language = input.language ?? 'zh';
   const adapter = getToolAdapter(input.registry, input.tool);
-  const templateContext = {
+  const templateContext = buildTemplateContext({
     projectName: input.projectName,
     toolId: input.tool,
     toolName: adapter.definition.displayName,
     stack,
     language,
-    packageName: PACKAGE_NAME,
     skillsDir: adapter.getDestination('skills'),
     commandsDir: adapter.getDestination('commands'),
     features: input.features,
-    templateVersion: TEMPLATE_VERSION,
-  };
+    skillRootNote: adapter.getSkillRootNote(),
+  });
 
   const selectedAssets = assetManifest
     .filter(

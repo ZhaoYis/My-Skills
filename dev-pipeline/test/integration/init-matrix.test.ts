@@ -18,7 +18,10 @@ import type { PipelineManifest } from '../../src/core/manifest/types.js';
 import {
   MANIFEST_FILE,
   MANIFEST_PACKAGE_JSON_KEY,
+  PACKAGE_LICENSE,
   PACKAGE_JSON_FILE,
+  PACKAGE_REPO_URL,
+  PACKAGE_VERSION,
 } from '../../src/core/runtime/meta.js';
 
 const createdDirs: string[] = [];
@@ -316,9 +319,7 @@ describe('tool matrix', () => {
     const apply = await fs.readFile(path.join(skillRoot, 'references/phase-2-apply.md'), 'utf8');
     expect(apply).toContain('写前复用门禁');
     expect(apply).toContain('准出自审查门禁');
-    expect(apply).toContain(
-      '编辑 `tasks.md` 将该任务条目的 `- [ ]` 改为 `- [x]`，完成标记',
-    );
+    expect(apply).toContain('编辑 `tasks.md` 将该任务条目的 `- [ ]` 改为 `- [x]`，完成标记');
 
     const propose = await fs.readFile(
       path.join(skillRoot, 'references/phase-1-propose.md'),
@@ -384,8 +385,20 @@ describe('tool matrix', () => {
 
     expect(frontmatter.match(/^name:/gm)).toHaveLength(1);
     expect(frontmatter.match(/^description:/gm)).toHaveLength(1);
-    expect(frontmatter).not.toMatch(/^(license|compatibility|metadata):/m);
+    expect(frontmatter).toContain(`version: "${PACKAGE_VERSION}"`);
+    expect(frontmatter).toContain(`license: "${PACKAGE_LICENSE}"`);
+    expect(frontmatter).toContain(`repository: "${PACKAGE_REPO_URL}"`);
     expect(skillContent).not.toMatch(/\{\{[^}]+\}\}/);
+
+    const expectedSkillRoot = {
+      claude: '- 对于 Claude Code 安装：`<SKILL_ROOT>` = `.claude/skills/opsx-dev-pipeline`',
+      cursor: '- 对于 Cursor 安装：`<SKILL_ROOT>` = `.cursor/rules/opsx-dev-pipeline`',
+      codex: '- 对于 Codex 安装：`<SKILL_ROOT>` = `.codex/prompts/opsx-dev-pipeline`',
+    }[tool];
+    expect(skillContent.match(/^- 对于 .*安装：.*$/gm)).toEqual([expectedSkillRoot]);
+    expect(skillContent).toContain(
+      '- 若宿主将 Skill 安装到其他位置，`<SKILL_ROOT>` = 当前 `SKILL.md` 所在目录',
+    );
 
     const openaiConfig = await fs.readFile(path.join(skillDir, 'agents/openai.yaml'), 'utf8');
     expect(openaiConfig).toContain('display_name: "OpenSpec Dev Pipeline"');

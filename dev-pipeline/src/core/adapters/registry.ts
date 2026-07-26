@@ -19,6 +19,7 @@ const toolSchema = z.object({
     commands: z.string(),
   }),
   supports: z.array(z.enum(['base', 'skills', 'commands', 'docs', 'schema'])),
+  skillRootNote: z.string().optional(),
   postInstallNotes: z.array(z.string()).optional(),
 });
 
@@ -43,6 +44,10 @@ class StaticToolAdapter implements ToolAdapter {
 
   getRoot(): string {
     return this.definition.destinations.root;
+  }
+
+  getSkillRootNote(): string | undefined {
+    return this.definition.skillRootNote;
   }
 
   getPostInstallNotes(): string[] {
