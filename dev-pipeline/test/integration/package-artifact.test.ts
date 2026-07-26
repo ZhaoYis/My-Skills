@@ -81,7 +81,18 @@ describe('packaged artifact', () => {
     await execFileAsync('npm', ['init', '-y'], { cwd: targetDir });
     await execFileAsync(
       binPath,
-      ['init', '--tool', 'cursor', '--stack', 'backend', '--yes', '--dir', targetDir],
+      [
+        'init',
+        '--tool',
+        'cursor',
+        '--stack',
+        'backend',
+        '--lang',
+        'en',
+        '--yes',
+        '--dir',
+        targetDir,
+      ],
       {
         cwd: installDir,
         timeout: 30000,
@@ -91,6 +102,10 @@ describe('packaged artifact', () => {
 
     const pkg = await fs.readJson(path.join(targetDir, 'package.json'));
     expect(pkg.opsxDevPipeline.tool).toBe('cursor');
+    expect(pkg.opsxDevPipeline.language).toBe('en');
+    expect(await fs.readFile(path.join(targetDir, 'README.md'), 'utf8')).toContain(
+      '## Quick start',
+    );
 
     // Retained assets exist
     expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-dev-pipeline.mdc'))).toBe(

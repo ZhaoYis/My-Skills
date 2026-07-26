@@ -11,6 +11,7 @@ description: 执行基于 OpenSpec 和 Git 的门禁式需求开发与交付流�
 
 ## 执行约束
 
+- 开始执行前读取 `openspec/config.yaml` 的 `language` 与 `rules.language`。所有 AI 产出物必须遵循该语言约束，包括 OpenSpec 提案、设计、规格、任务、审查报告、README、CLAUDE.md、代码注释、commit message、PR 描述和审查评论。
 - 用户补充需求、提案修改或实施说明后，必须在同一回复中同步当前 **Phase/ change / 下一动作**，推进到下一步或决策点。
 - 除用户明确选择「终止流程」或「暂停流水线」外，不得单方结束全流程。
 - 高风险决策必须显式确认；推荐项不等于自动代选。

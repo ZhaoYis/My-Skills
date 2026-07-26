@@ -408,8 +408,65 @@ describe('tool matrix', () => {
 
     const readmeContent = await fs.readFile(path.join(dir, 'README.md'), 'utf8');
     expect(readmeContent).toContain(`# ${path.basename(dir)}`);
-    expect(readmeContent).toContain('## Quick start');
+    expect(readmeContent).toContain('## 快速开始');
     expect(readmeContent).not.toContain('## Enabled features');
+  });
+
+  it.each([
+    ['zh', '## 快速开始', '所有文档、规格、提案、设计和任务必须使用简体中文编写'],
+    [
+      'en',
+      '## Quick start',
+      'All documents, specs, proposals, designs, and tasks MUST be written in English',
+    ],
+  ] as const)('persists %s and renders localized user-facing templates', async (language, readmeHeading, languageRule) => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), `opsx-language-${language}-`));
+    createdDirs.push(dir);
+
+    await runInit({
+      dir,
+      tool: 'claude',
+      language,
+      yes: true,
+      force: false,
+      dryRun: false,
+    });
+
+    expect((await readManifest(dir)).language).toBe(language);
+    expect(await fs.readFile(path.join(dir, 'README.md'), 'utf8')).toContain(readmeHeading);
+    expect(await fs.readFile(path.join(dir, 'CLAUDE.md'), 'utf8')).toContain(readmeHeading);
+    const config = await fs.readFile(path.join(dir, 'openspec/config.yaml'), 'utf8');
+    expect(config).toContain(`language: ${language}`);
+    expect(config).toContain(languageRule);
+  });
+
+  it('backfills language during sync for a legacy manifest without the schema feature', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-language-backfill-'));
+    createdDirs.push(dir);
+    await fs.writeJson(path.join(dir, MANIFEST_FILE), {
+      schemaVersion: 1,
+      projectName: 'legacy-demo',
+      tool: 'claude',
+      stack: 'frontend',
+      features: [],
+      templateVersion: '0.2.1',
+      packageName: 'opsx-dev-pipeline',
+      managedAssets: [],
+    });
+    await fs.outputFile(
+      path.join(dir, 'openspec/config.yaml'),
+      'schema: frontend\ncontext: |\n  Legacy context\nrules:\n  proposal:\n    - "Legacy rule"\n',
+    );
+
+    await runSyncCommand({ dir, language: 'en', force: false, dryRun: false });
+
+    const config = await fs.readFile(path.join(dir, 'openspec/config.yaml'), 'utf8');
+    expect(config).toContain('language: en');
+    expect(config).toContain(
+      'All documents, specs, proposals, designs, and tasks MUST be written in English',
+    );
+    expect(config).toContain('Legacy rule');
+    expect((await readManifest(dir)).language).toBe('en');
   });
 
   it('preserves an existing root README during init without force', async () => {

@@ -2,6 +2,7 @@ import path from 'node:path';
 import prompts from 'prompts';
 import {
   ALL_FEATURE_IDS,
+  type DocLanguage,
   type FeatureId,
   type StackId,
   type ToolAdapter,
@@ -26,6 +27,18 @@ function resolveFeatures(option: InitOptions['feature']): FeatureId[] {
   return [...ALL_FEATURE_IDS];
 }
 
+export function resolveDocLanguage(value: unknown): DocLanguage | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value !== 'en' && value !== 'zh') {
+    throw new Error(`Invalid language: ${String(value)}. Valid languages: en, zh.`);
+  }
+
+  return value;
+}
+
 export async function collectInputs(
   targetDir: string,
   options: InitOptions,
@@ -34,6 +47,8 @@ export async function collectInputs(
   const defaultProjectName = path.basename(targetDir);
   const defaultTool = options.tool ?? 'claude';
   const requestedStack = options.stack;
+  const requestedLanguage = resolveDocLanguage(options.language);
+  const defaultLanguage = requestedLanguage ?? 'zh';
   if (
     requestedStack !== undefined &&
     requestedStack !== 'frontend' &&
@@ -54,6 +69,7 @@ export async function collectInputs(
       projectName: defaultProjectName,
       tool: defaultTool,
       stack: requestedStack,
+      language: defaultLanguage,
       features,
     };
   }
@@ -89,6 +105,16 @@ export async function collectInputs(
         ],
         initial: requestedStack === 'frontend' ? 0 : 1,
       },
+      {
+        type: 'select',
+        name: 'language',
+        message: 'Select document language / 选择文档语言',
+        choices: [
+          { title: '中文 (Chinese)', value: 'zh' satisfies DocLanguage },
+          { title: 'English', value: 'en' satisfies DocLanguage },
+        ],
+        initial: defaultLanguage === 'zh' ? 0 : 1,
+      },
     ],
     { onCancel: () => process.exit(1) },
   );
@@ -97,6 +123,7 @@ export async function collectInputs(
     projectName: response.projectName ?? defaultProjectName,
     tool: response.tool ?? defaultTool,
     stack: (response.stack ?? requestedStack ?? 'backend') as StackId,
+    language: (response.language ?? defaultLanguage) as DocLanguage,
     features,
   };
 }

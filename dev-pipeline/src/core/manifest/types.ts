@@ -1,4 +1,4 @@
-import type { FeatureId, StackId, ToolId } from '../adapters/types.js';
+import type { DocLanguage, FeatureId, StackId, ToolId } from '../adapters/types.js';
 
 export interface ManagedAssetRecord {
   id: string;
@@ -10,6 +10,7 @@ export interface PipelineManifest {
   projectName: string;
   tool: ToolId;
   stack?: StackId;
+  language?: DocLanguage;
   features: FeatureId[];
   templateVersion: string;
   packageName: string;

@@ -38,6 +38,7 @@ function createPlan(overrides: Partial<InstallPlan> = {}): InstallPlan {
   return {
     projectName: 'demo',
     tool: 'claude',
+    language: 'zh',
     features: ['base', 'skills', 'commands', 'docs'],
     adapter: createAdapter(),
     files: [],
@@ -137,5 +138,48 @@ describe('executeInstallPlan', () => {
     expect(manifest?.manifest.managedAssets).toEqual([
       { id: 'common-readme', destination: 'README.md' },
     ]);
+  });
+
+  it('merges language settings into an existing OpenSpec config', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-exec-config-language-'));
+    createdDirs.push(dir);
+    const configPath = path.join(dir, 'openspec/config.yaml');
+    const sourcePath = path.join(dir, 'config.template.yaml');
+
+    await fs.outputFile(
+      configPath,
+      'schema: frontend\ncontext: |\n  Existing context\n  Generated context\nrules:\n  proposal:\n    - "Keep this rule"\n',
+    );
+    await fs.writeFile(
+      sourcePath,
+      'language: en\nschema: frontend\ncontext: |\n  Generated context\nrules:\n  language:\n    - "All documents MUST be written in English"\n  proposal:\n    - "Generated rule"\n',
+    );
+
+    await executeInstallPlan(
+      createPlan({
+        targetDir: dir,
+        language: 'en',
+        mode: 'sync',
+        files: [
+          {
+            assetId: 'stack-config',
+            sourcePath,
+            destinationPath: configPath,
+            kind: 'template',
+            exists: true,
+            appendable: true,
+            resolution: 'append',
+          },
+        ],
+      }),
+    );
+
+    const content = await fs.readFile(configPath, 'utf8');
+    expect(content).toContain('language: en');
+    expect(content).toContain('All documents MUST be written in English');
+    expect(content).toContain('Keep this rule');
+    expect(content).not.toContain('Generated rule');
+    expect(content.match(/Generated context/g)).toHaveLength(1);
+    expect((await readManifest(dir))?.manifest.language).toBe('en');
   });
 });

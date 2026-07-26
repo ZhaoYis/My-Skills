@@ -1,7 +1,7 @@
 import path from 'node:path';
 import fs from 'fs-extra';
 import { getToolAdapter } from '../adapters/registry.js';
-import type { FeatureId, StackId, ToolId } from '../adapters/types.js';
+import type { DocLanguage, FeatureId, StackId, ToolId } from '../adapters/types.js';
 import { assetManifest } from '../assets/manifest.js';
 import type { AssetDefinition, InstallFile } from '../assets/types.js';
 import type { ManagedAssetRecord } from '../manifest/types.js';
@@ -16,10 +16,12 @@ export interface BuildInstallPlanInput {
   projectName: string;
   tool: ToolId;
   stack?: StackId;
+  language?: DocLanguage;
   features: FeatureId[];
   dryRun: boolean;
   force: boolean;
   mode: 'init' | 'sync' | 'upgrade';
+  languageConfigUpdate?: boolean;
   managedAssets?: ManagedAssetRecord[];
   registry: Parameters<typeof getToolAdapter>[0];
 }
@@ -28,6 +30,61 @@ interface ManagedAssetIndex {
   assetIds: Set<string>;
   topLevelIds: Set<string>;
   bundleIds: Set<string>;
+}
+
+interface BundleEntry {
+  entry: string;
+  relativeDestination: string;
+}
+
+function localizedTemplatePath(sourcePath: string, language: DocLanguage): string {
+  return sourcePath.endsWith('.hbs') ? `${sourcePath.slice(0, -4)}.${language}.hbs` : sourcePath;
+}
+
+async function resolveTemplateSource(sourcePath: string, language: DocLanguage): Promise<string> {
+  if (!sourcePath.endsWith('.hbs')) {
+    return sourcePath;
+  }
+
+  const localizedPath = localizedTemplatePath(sourcePath, language);
+  return (await fs.pathExists(localizedPath)) ? localizedPath : sourcePath;
+}
+
+function selectBundleEntries(entries: string[], language: DocLanguage): BundleEntry[] {
+  const localizedPattern = /^(.*)\.(en|zh)\.hbs$/;
+  const localizedEntries = new Map<string, Map<string, string>>();
+
+  for (const entry of entries) {
+    const match = entry.match(localizedPattern);
+    if (!match?.[1] || !match[2]) continue;
+
+    const fallbackEntry = `${match[1]}.hbs`;
+    const variants = localizedEntries.get(fallbackEntry) ?? new Map<string, string>();
+    variants.set(match[2], entry);
+    localizedEntries.set(fallbackEntry, variants);
+  }
+
+  const selected: BundleEntry[] = [];
+  for (const entry of entries) {
+    const localizedMatch = entry.match(localizedPattern);
+    if (localizedMatch?.[1] && localizedMatch[2]) {
+      if (localizedMatch[2] === language) {
+        selected.push({ entry, relativeDestination: localizedMatch[1] });
+      }
+      continue;
+    }
+
+    if (localizedEntries.get(entry)?.has(language)) {
+      continue;
+    }
+
+    selected.push({
+      entry,
+      relativeDestination: entry.endsWith('.hbs') ? entry.slice(0, -4) : entry,
+    });
+  }
+
+  return selected;
 }
 
 function indexManagedAssets(managedAssets: ManagedAssetRecord[] | undefined): ManagedAssetIndex {
@@ -97,6 +154,7 @@ async function expandBundle(
   targetDir: string,
   templateContext: Record<string, unknown>,
   features: FeatureId[],
+  language: DocLanguage,
 ): Promise<InstallFile[]> {
   const sourceRoot = path.join(rootDir, asset.source);
   const bundleDestinationRoot = path.join(
@@ -105,36 +163,38 @@ async function expandBundle(
   );
   const files = await fs.readdir(sourceRoot, { recursive: true });
 
-  return files
+  const eligibleEntries = files
     .filter((entry): entry is string => typeof entry === 'string')
     .filter((entry) => !asset.excludePatterns?.some((pattern) => entry.endsWith(pattern)))
     .filter((entry) => !isBundleFileGated(asset, entry, features))
-    .filter((entry) => asset.includeExtensions?.includes(path.extname(entry)) ?? true)
-    .map((entry) => {
-      const sourcePath = path.join(sourceRoot, entry);
-      const fileName = path.basename(entry);
-      const relativeDestination = entry.endsWith('.hbs') ? entry.slice(0, -4) : entry;
-      return {
-        assetId: `${asset.id}:${entry}`,
-        sourcePath,
-        destinationPath: path.join(bundleDestinationRoot, relativeDestination),
-        kind:
-          asset.templateFiles?.includes(fileName) || entry.endsWith('.hbs') ? 'template' : 'static',
-        exists: false,
-        appendable: false,
-        resolution: 'none',
-      } satisfies InstallFile;
-    });
+    .filter((entry) => asset.includeExtensions?.includes(path.extname(entry)) ?? true);
+
+  return selectBundleEntries(eligibleEntries, language).map(({ entry, relativeDestination }) => {
+    const sourcePath = path.join(sourceRoot, entry);
+    const fileName = path.basename(entry);
+    return {
+      assetId: `${asset.id}:${entry}`,
+      sourcePath,
+      destinationPath: path.join(bundleDestinationRoot, relativeDestination),
+      kind:
+        asset.templateFiles?.includes(fileName) || entry.endsWith('.hbs') ? 'template' : 'static',
+      exists: false,
+      appendable: false,
+      resolution: 'none',
+    } satisfies InstallFile;
+  });
 }
 
 export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<InstallPlan> {
   const stack = input.stack ?? 'backend';
+  const language = input.language ?? 'zh';
   const adapter = getToolAdapter(input.registry, input.tool);
   const templateContext = {
     projectName: input.projectName,
     toolId: input.tool,
     toolName: adapter.definition.displayName,
     stack,
+    language,
     packageName: PACKAGE_NAME,
     skillsDir: adapter.getDestination('skills'),
     commandsDir: adapter.getDestination('commands'),
@@ -143,7 +203,11 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
   };
 
   const selectedAssets = assetManifest
-    .filter((asset) => input.features.includes(asset.feature))
+    .filter(
+      (asset) =>
+        input.features.includes(asset.feature) ||
+        (input.languageConfigUpdate && asset.id === 'stack-config'),
+    )
     .filter((asset) => !asset.stacks || asset.stacks.includes(stack))
     .filter((asset) => !asset.tools || asset.tools.includes(input.tool));
   const replaceOnInitIds = new Set(
@@ -163,13 +227,25 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
   const expandedFiles = await Promise.all(
     selectedAssets.map(async (asset) => {
       if (asset.kind === 'bundle') {
-        return expandBundle(asset, input.rootDir, input.targetDir, templateContext, input.features);
+        return expandBundle(
+          asset,
+          input.rootDir,
+          input.targetDir,
+          templateContext,
+          input.features,
+          language,
+        );
       }
+
+      const renderedSource = path.join(input.rootDir, renderString(asset.source, templateContext));
 
       return [
         {
           assetId: asset.id,
-          sourcePath: path.join(input.rootDir, renderString(asset.source, templateContext)),
+          sourcePath:
+            asset.kind === 'template'
+              ? await resolveTemplateSource(renderedSource, language)
+              : renderedSource,
           destinationPath: path.join(
             input.targetDir,
             renderString(asset.destination, templateContext),
@@ -208,6 +284,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
     projectName: input.projectName,
     tool: input.tool,
     stack,
+    language,
     features: input.features,
     adapter,
     files,

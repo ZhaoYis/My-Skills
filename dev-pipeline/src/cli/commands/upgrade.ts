@@ -6,6 +6,7 @@ import { resolvePackageRoot } from '../../core/runtime/resolvePackageRoot.js';
 import { buildInstallPlan } from '../../core/init/buildInstallPlan.js';
 import { executeInstallPlan } from '../../core/init/executeInstallPlan.js';
 import { resolveInstallConflicts } from '../../core/init/resolveInstallConflicts.js';
+import { collectExistingLanguage } from '../../core/init/resolveExistingLanguage.js';
 import type { InitOptions } from '../../core/prompts/types.js';
 import { ensureUpgradeVersionCheck } from '../../core/upgrade/versionPrompt.js';
 
@@ -15,6 +16,7 @@ export async function runUpgradeCommand(options: InitOptions): Promise<void> {
   if (!result) {
     throw new Error('No manifest found for upgrade. Run init first.');
   }
+  const languageSelection = await collectExistingLanguage(targetDir, options, result.manifest);
 
   const versionCheck = checkManifestVersion(result.manifest.templateVersion);
   await ensureUpgradeVersionCheck(versionCheck, {
@@ -30,13 +32,21 @@ export async function runUpgradeCommand(options: InitOptions): Promise<void> {
     projectName: result.manifest.projectName,
     tool: result.manifest.tool,
     stack: result.manifest.stack,
+    language: languageSelection.language,
     features: result.manifest.features,
     dryRun: Boolean(options.dryRun),
     force: Boolean(options.force),
     mode: 'upgrade',
+    languageConfigUpdate: languageSelection.configNeedsUpdate,
     managedAssets: result.manifest.managedAssets,
     registry,
   });
+  if (languageSelection.configNeedsUpdate) {
+    const configFile = plan.files.find((file) => file.assetId === 'stack-config');
+    if (configFile?.exists) {
+      configFile.resolution = 'append';
+    }
+  }
   const resolvedPlan = await resolveInstallConflicts(plan, {
     yes: Boolean(options.yes),
     force: Boolean(options.force),

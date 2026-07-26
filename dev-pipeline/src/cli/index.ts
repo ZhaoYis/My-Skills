@@ -15,6 +15,7 @@ export async function runCli(argv: string[]): Promise<void> {
     .command('init', 'Initialize opsx-dev-pipeline templates in the current directory')
     .option('--tool <tool>', 'Target AI tool id')
     .option('--stack <frontend|backend>', 'Target project stack')
+    .option('--lang <en|zh>', 'Document language for AI-generated artifacts (default: zh)')
     .option(
       '--yes',
       'Auto-confirm all prompts (non-interactive mode); does NOT force-overwrite files',
@@ -24,7 +25,7 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--feature <feature>', 'Enable an optional feature (e.g. structural-analysis-hint)')
     .option(...dirOption)
     .action(async (options) => {
-      await runInitCommand(options);
+      await runInitCommand({ ...options, language: options.lang });
     });
 
   cli
@@ -35,9 +36,10 @@ export async function runCli(argv: string[]): Promise<void> {
     )
     .option('--force', 'Overwrite existing managed files even if they would conflict')
     .option('--dry-run', 'Preview synchronized files without writing them')
+    .option('--lang <en|zh>', 'Document language for AI-generated artifacts')
     .option(...dirOption)
     .action(async (options) => {
-      await runSyncCommand(options);
+      await runSyncCommand({ ...options, language: options.lang });
     });
 
   cli
@@ -51,9 +53,10 @@ export async function runCli(argv: string[]): Promise<void> {
     )
     .option('--force', 'Overwrite existing managed files even if they would conflict')
     .option('--dry-run', 'Preview upgraded files without writing them')
+    .option('--lang <en|zh>', 'Document language for AI-generated artifacts')
     .option(...dirOption)
     .action(async (options) => {
-      await runUpgradeCommand(options);
+      await runUpgradeCommand({ ...options, language: options.lang });
     });
 
   cli

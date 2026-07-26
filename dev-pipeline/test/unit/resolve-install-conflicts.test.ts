@@ -11,6 +11,7 @@ function createPlan(files?: Partial<InstallPlan['files'][number]>[]): InstallPla
   return {
     projectName: 'demo',
     tool: 'claude',
+    language: 'zh',
     features: ['base', 'skills', 'commands', 'docs'],
     adapter: {
       definition: {

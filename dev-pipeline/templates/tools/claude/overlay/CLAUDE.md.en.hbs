@@ -1,0 +1,23 @@
+# CLAUDE.md
+
+This repository was initialized for {{toolName}} via {{packageName}}.
+
+## Quick start
+
+- Skills directory: `{{skillsDir}}`
+- Commands directory: `{{commandsDir}}`
+- Start a change: `/opsx-dev-pipeline` drives the full OpenSpec + Git pipeline (Phase 0-6)
+
+## Pipeline Overview
+
+| Phase | Description |
+|-------|-------------|
+| 0 | Entrance and preflight checks |
+| 1 | Propose: create a change and generate artifacts |
+| 2 | Apply: implement tasks with a self-review gate |
+| 3 | Review: perform a multi-dimension code review |
+| 4 | Unit Tests: identify and execute the test gate |
+| 5 | Archive: verify, sync delta specs, and archive |
+| 6 | Merge and Push: commit, push, and optionally merge and tag |
+
+Run `/opsx-dev-pipeline` with a requirement description or an existing change name to begin.

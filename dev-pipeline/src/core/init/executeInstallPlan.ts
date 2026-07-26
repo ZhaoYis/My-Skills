@@ -37,7 +37,9 @@ function appendConfigContext(existingContent: string, nextContent: string): stri
       if (line.trim() !== '' && !line.startsWith('  ')) break;
       insertAt += 1;
     }
-    existingLines.splice(insertAt, 0, ...body);
+    const existingBody = existingLines.slice(existingContextIndex + 1, insertAt);
+    const missingBody = body.filter((line) => !existingBody.includes(line));
+    existingLines.splice(insertAt, 0, ...missingBody);
     return existingLines.join('\n');
   }
 
@@ -45,6 +47,69 @@ function appendConfigContext(existingContent: string, nextContent: string): stri
   const insertion = ['context: |', ...body, ''];
   existingLines.splice(rulesIndex >= 0 ? rulesIndex : existingLines.length, 0, ...insertion);
   return existingLines.join('\n');
+}
+
+function extractLanguageRules(content: string): string[] {
+  const lines = content.split('\n');
+  const rulesIndex = lines.findIndex((line) => /^rules:\s*$/.test(line));
+  if (rulesIndex < 0) return [];
+
+  const languageIndex = lines.findIndex(
+    (line, index) => index > rulesIndex && /^ {2}language:\s*$/.test(line),
+  );
+  if (languageIndex < 0) return [];
+
+  let end = languageIndex + 1;
+  while (end < lines.length) {
+    const line = lines[end] ?? '';
+    if (line.trim() !== '' && !line.startsWith('    ')) break;
+    end += 1;
+  }
+
+  return lines.slice(languageIndex, end);
+}
+
+function mergeConfigLanguage(existingContent: string, nextContent: string): string {
+  const languageLine = nextContent.match(/^language:\s*(?:en|zh)\s*$/m)?.[0];
+  const languageRules = extractLanguageRules(nextContent);
+  if (!languageLine || languageRules.length === 0) return existingContent;
+
+  const lines = existingContent.split('\n');
+  const existingLanguageIndex = lines.findIndex((line) => /^language:\s*/.test(line));
+  if (existingLanguageIndex >= 0) {
+    lines[existingLanguageIndex] = languageLine;
+  } else {
+    const schemaIndex = lines.findIndex((line) => /^schema:\s*/.test(line));
+    lines.splice(schemaIndex >= 0 ? schemaIndex : 0, 0, languageLine);
+  }
+
+  const rulesIndex = lines.findIndex((line) => /^rules:\s*$/.test(line));
+  if (rulesIndex < 0) {
+    if (lines.at(-1)?.trim() !== '') lines.push('');
+    lines.push('rules:', ...languageRules);
+    return lines.join('\n');
+  }
+
+  const existingRuleIndex = lines.findIndex(
+    (line, index) => index > rulesIndex && /^ {2}language:\s*$/.test(line),
+  );
+  if (existingRuleIndex < 0) {
+    lines.splice(rulesIndex + 1, 0, ...languageRules);
+    return lines.join('\n');
+  }
+
+  let ruleEnd = existingRuleIndex + 1;
+  while (ruleEnd < lines.length) {
+    const line = lines[ruleEnd] ?? '';
+    if (line.trim() !== '' && !line.startsWith('    ')) break;
+    ruleEnd += 1;
+  }
+  lines.splice(existingRuleIndex, ruleEnd - existingRuleIndex, ...languageRules);
+  return lines.join('\n');
+}
+
+function mergeConfigContent(existingContent: string, nextContent: string): string {
+  return appendConfigContext(mergeConfigLanguage(existingContent, nextContent), nextContent);
 }
 
 function mergeManagedAssets(
@@ -78,6 +143,7 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
     toolId: plan.tool,
     toolName: plan.adapter.definition.displayName,
     stack: plan.stack,
+    language: plan.language,
     packageName: PACKAGE_NAME,
     skillsDir: plan.adapter.getDestination('skills'),
     commandsDir: plan.adapter.getDestination('commands'),
@@ -116,7 +182,7 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
         const existingContent = await fs.readFile(file.destinationPath, 'utf8');
         const nextContent =
           path.basename(file.destinationPath) === 'config.yaml'
-            ? appendConfigContext(existingContent, content)
+            ? mergeConfigContent(existingContent, content)
             : appendContent(existingContent, content);
         await fs.outputFile(file.destinationPath, nextContent);
         managedFiles.push(file);
@@ -160,6 +226,7 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
     projectName: plan.projectName,
     tool: plan.tool,
     stack: plan.stack,
+    language: plan.language,
     features: plan.features,
     templateVersion: TEMPLATE_VERSION,
     packageName: PACKAGE_NAME,

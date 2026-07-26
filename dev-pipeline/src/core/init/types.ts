@@ -1,4 +1,4 @@
-import type { FeatureId, StackId, ToolAdapter, ToolId } from '../adapters/types.js';
+import type { DocLanguage, FeatureId, StackId, ToolAdapter, ToolId } from '../adapters/types.js';
 import type { InstallConflictResolution, InstallFile } from '../assets/types.js';
 
 export type InstallMode = 'init' | 'sync' | 'upgrade';
@@ -7,6 +7,7 @@ export interface InstallPlan {
   projectName: string;
   tool: ToolId;
   stack?: StackId;
+  language: DocLanguage;
   features: FeatureId[];
   adapter: ToolAdapter;
   files: InstallFile[];

@@ -1,6 +1,6 @@
 import fs from 'fs-extra';
 import Handlebars from 'handlebars';
-import type { FeatureId } from '../adapters/types.js';
+import type { DocLanguage, FeatureId } from '../adapters/types.js';
 
 let helpersRegistered = false;
 
@@ -13,6 +13,13 @@ function ensureHandlebarsHelpers(): void {
     'hasFeature',
     function hasFeature(this: { features?: FeatureId[] }, feature: FeatureId) {
       return this.features?.includes(feature) ?? false;
+    },
+  );
+
+  Handlebars.registerHelper(
+    'isLanguage',
+    function isLanguage(this: { language?: DocLanguage }, language: DocLanguage) {
+      return this.language === language;
     },
   );
 

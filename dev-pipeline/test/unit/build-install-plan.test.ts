@@ -68,6 +68,51 @@ function createPlanInput(managedAssets?: ManagedAssetRecord[]) {
 
 describe('buildInstallPlan', () => {
   it.each([
+    ['zh', 'README.md.zh.hbs', 'CLAUDE.md.zh.hbs'],
+    ['en', 'README.md.en.hbs', 'CLAUDE.md.en.hbs'],
+  ] as const)('selects %s templates and falls back to unlocalized templates', async (language, readme, claude) => {
+    const plan = await buildInstallPlan({ ...createPlanInput(), language });
+
+    expect(plan.language).toBe(language);
+    expect(
+      plan.files.find((file) => file.assetId === 'common-readme')?.sourcePath.endsWith(readme),
+    ).toBe(true);
+    expect(
+      plan.files.find((file) => file.assetId === 'claude-docs')?.sourcePath.endsWith(claude),
+    ).toBe(true);
+    expect(
+      plan.files
+        .find((file) => file.assetId === 'stack-config')
+        ?.sourcePath.endsWith('config.backend.yaml.hbs'),
+    ).toBe(true);
+  });
+
+  it('selects one localized bundle template and removes its language suffix', async () => {
+    const rootDir = await createTempTargetDir();
+    const sourceRoot = path.join(rootDir, 'templates/common/skills/opsx-dev-pipeline');
+    await fs.ensureDir(sourceRoot);
+    await fs.writeFile(path.join(sourceRoot, 'guide.en.hbs'), '# English\n');
+    await fs.writeFile(path.join(sourceRoot, 'guide.zh.hbs'), '# 中文\n');
+    await fs.writeFile(path.join(sourceRoot, 'fallback.md.hbs'), '# fallback\n');
+
+    const plan = await buildInstallPlan({
+      ...createPlanInput(),
+      rootDir,
+      features: ['skills'],
+      language: 'en',
+    });
+
+    expect(plan.files.map((file) => path.basename(file.sourcePath)).sort()).toEqual([
+      'fallback.md.hbs',
+      'guide.en.hbs',
+    ]);
+    expect(plan.files.map((file) => path.basename(file.destinationPath)).sort()).toEqual([
+      'fallback.md',
+      'guide',
+    ]);
+  });
+
+  it.each([
     ['claude', '.claude/skills', '.claude/commands', 'CLAUDE.md'],
     ['cursor', '.cursor/rules', '.cursor/commands', '.cursor/rules/opsx-dev-pipeline.mdc'],
     ['codex', '.codex/prompts', '.codex/commands', '.codex/prompts/opsx-dev-pipeline.md'],
