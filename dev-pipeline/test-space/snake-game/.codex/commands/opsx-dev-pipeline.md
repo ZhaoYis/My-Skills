@@ -1,0 +1,13 @@
+# opsx-dev-pipeline
+
+Use this command as the entrypoint for the bundled `opsx-dev-pipeline` skill.
+
+## Intent
+
+Drive the full OpenSpec + Git development pipeline through the installed skill at:
+
+- `.codex/prompts/opsx-dev-pipeline/SKILL.md`
+
+## Flow
+
+Load and follow the `opsx-dev-pipeline` skill. It covers Phase0–6: preflight → propose → apply → review → unit tests → archive → merge & push.
