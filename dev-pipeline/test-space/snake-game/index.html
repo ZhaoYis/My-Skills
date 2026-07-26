@@ -324,6 +324,33 @@
             box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent);
         }
 
+        /* ── Mute Button ── */
+        .btn-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 0;
+            outline: none;
+            background: transparent;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text);
+        }
+
+        .btn-icon:hover {
+            transform: scale(1.15);
+            border-color: var(--text-secondary);
+        }
+
+        .btn-icon:active {
+            transform: scale(0.95);
+        }
+
         /* swatch tooltip */
         .skin-swatch::after {
             content: attr(data-name);
@@ -494,6 +521,7 @@
             .canvas-wrapper { border-radius: 12px; }
             .skin-swatch { width: 44px; height: 44px; }
             .skin-swatch::before { width: 24px; height: 24px; }
+            .btn-icon { width: 44px; height: 44px; font-size: 1.3rem; }
         }
 
         @media (min-width: 601px) {
@@ -570,6 +598,8 @@
             <button class="skin-swatch" data-skin="retro" data-name="复古" aria-label="复古皮肤"></button>
             <button class="skin-swatch" data-skin="midnight" data-name="午夜" aria-label="午夜皮肤"></button>
             <button class="skin-swatch" data-skin="sunset" data-name="暖橙" aria-label="暖橙皮肤"></button>
+            <span style="width:1px;background:var(--border);margin:0 4px;align-self:stretch;"></span>
+            <button class="btn-icon" id="muteBtn" aria-label="切换静音" title="切换静音">🔊</button>
         </div>
 
         <!-- Desktop Controls -->
@@ -606,6 +636,110 @@
 
     <script>
     (function () {
+        // ─── Audio Manager ──────────────────────────
+        const AudioManager = (function () {
+            let audioCtx = null;
+            let _muted = false;
+
+            // 检测 Web Audio API 可用性
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) {
+                // 浏览器不支持 Web Audio API，所有方法静默降级为 no-op
+                return {
+                    ensureContext: function () {},
+                    playExplosion: function () {},
+                    toggleMute: function () {},
+                    get muted() { return true; },
+                };
+            }
+
+            function ensureContext() {
+                if (!audioCtx) {
+                    try {
+                        audioCtx = new AudioContextClass();
+                    } catch (e) {
+                        // AudioContext 创建失败，静默降级
+                        return;
+                    }
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume().catch(function () {
+                        // resume 失败不影响游戏运行
+                    });
+                }
+            }
+
+            /**
+             * 合成并播放爆炸音效
+             * @param {number} chainLevel - 连锁引爆级别（1 = 单颗爆炸）
+             */
+            function playExplosion(chainLevel) {
+                if (_muted || !audioCtx || audioCtx.state !== 'running') return;
+
+                const now = audioCtx.currentTime;
+                const cl = Math.min(chainLevel || 1, 6); // 限制上限避免破音
+
+                // ── 噪声通道：提供"碎裂/嘶嘶"质感 ──
+                const bufferSize = Math.floor(audioCtx.sampleRate * 0.5);
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+
+                const noiseFilter = audioCtx.createBiquadFilter();
+                noiseFilter.type = 'bandpass';
+                noiseFilter.frequency.value = Math.min(200 + cl * 80, 800);
+                noiseFilter.Q.value = 0.5;
+
+                const noiseGain = audioCtx.createGain();
+                const noiseVol = Math.min(0.8 + cl * 0.05, 1.0);
+                noiseGain.gain.setValueAtTime(noiseVol, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5 + cl * 0.1);
+
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(audioCtx.destination);
+                noise.start(now);
+                noise.stop(now + 0.6 + cl * 0.1);
+
+                // ── 低频振荡器通道：提供"轰"的重低音 ──
+                const osc = audioCtx.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(30, now + 0.4);
+
+                const oscGain = audioCtx.createGain();
+                const oscVol = Math.min(0.6 + cl * 0.05, 0.8);
+                oscGain.gain.setValueAtTime(oscVol, now);
+                oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+                osc.connect(oscGain);
+                oscGain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            }
+
+            function toggleMute() {
+                _muted = !_muted;
+                // 更新 DOM 按钮图标
+                const btn = document.getElementById('muteBtn');
+                if (btn) {
+                    btn.textContent = _muted ? '🔇' : '🔊';
+                }
+            }
+
+            return {
+                ensureContext: ensureContext,
+                playExplosion: playExplosion,
+                toggleMute: toggleMute,
+                get muted() { return _muted; },
+            };
+        })();
+
         // ─── Constants ──────────────────────────────
         const GRID_SIZE = 20;
         const CELL_SIZE = 20;  // px per cell — scales with canvas
@@ -1187,6 +1321,9 @@
                 if (!bombs.includes(other)) continue;
                 triggerExplosion(other, chainLevel + 1);
             }
+
+            // 播放爆炸音效
+            AudioManager.playExplosion(chainLevel);
 
             // Record explosion animation
             explosions.push({
@@ -2037,6 +2174,8 @@
         }
 
         function startGame() {
+            // 利用用户手势初始化 AudioContext（符合浏览器自动播放策略）
+            AudioManager.ensureContext();
             initGame();
             isRunning = true;
             isPaused = false;
@@ -2111,6 +2250,14 @@
         // Mode card clicks
         modeCardClassic.addEventListener('click', () => selectMode('classic'));
         modeCardTimed.addEventListener('click', () => selectMode('timed'));
+
+        // Mute button
+        const muteBtn = document.getElementById('muteBtn');
+        if (muteBtn) {
+            muteBtn.addEventListener('click', () => {
+                AudioManager.toggleMute();
+            });
+        }
 
         // Skin swatches
         document.querySelectorAll('.skin-swatch').forEach(btn => {
