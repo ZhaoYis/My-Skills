@@ -1,0 +1,10 @@
+{
+  "name": "backend-only",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "echo 'build ok'",
+    "test": "node --test tests/*.test.mjs",
+    "verify": "npm test"
+  }
+}

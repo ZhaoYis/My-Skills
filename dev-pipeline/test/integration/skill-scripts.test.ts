@@ -234,3 +234,122 @@ describe('opsx-dev-pipeline script contracts', () => {
     expect(await fs.realpath(JSON.parse(result.stdout).cwd)).toBe(await fs.realpath(root));
   });
 });
+
+// --- Script wrapper success-path and edge-case tests ---
+
+describe('new-change.mjs', () => {
+  it('creates a change successfully', async () => {
+    const { root, bin } = await createRepo(true);
+    const result = await runScript('new-change.mjs', ['demo-change'], root, bin);
+
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({ status: 'ok' });
+  });
+
+  it('returns structured error for missing argument', async () => {
+    const { root, bin } = await createRepo(true);
+    const result = await runScript('new-change.mjs', [], root, bin);
+
+    expect(result.code).toBe(4);
+    expect(JSON.parse(result.stdout)).toMatchObject({ reason: 'missing-argument' });
+  });
+
+  it('returns structured error for invalid change name', async () => {
+    const { root, bin } = await createRepo(true);
+    const result = await runScript('new-change.mjs', ['invalid name with spaces'], root, bin);
+
+    expect(result.code).toBe(4);
+    expect(JSON.parse(result.stdout)).toMatchObject({ reason: 'invalid-change-name' });
+  });
+});
+
+describe('instructions-apply.mjs', () => {
+  it('gets apply instructions successfully', async () => {
+    const { root, bin } = await createRepo(true);
+    const result = await runScript('instructions-apply.mjs', ['demo-change'], root, bin);
+
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({ status: 'ok' });
+  });
+
+  it('returns structured error for missing argument', async () => {
+    const { root, bin } = await createRepo(true);
+    const result = await runScript('instructions-apply.mjs', [], root, bin);
+
+    expect(result.code).toBe(4);
+    expect(JSON.parse(result.stdout)).toMatchObject({ reason: 'missing-argument' });
+  });
+});
+
+describe('validate-change.mjs', () => {
+  it('validates a change successfully', async () => {
+    const { root, bin } = await createRepo(true);
+    const result = await runScript('validate-change.mjs', ['demo-change'], root, bin);
+
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({ status: 'ok' });
+  });
+
+  it('returns structured error for missing argument', async () => {
+    const { root, bin } = await createRepo(true);
+    const result = await runScript('validate-change.mjs', [], root, bin);
+
+    expect(result.code).toBe(4);
+    expect(JSON.parse(result.stdout)).toMatchObject({ reason: 'missing-argument' });
+  });
+});
+
+describe('validate-all.mjs', () => {
+  it('validates all changes successfully', async () => {
+    const { root, bin } = await createRepo(true);
+    const result = await runScript('validate-all.mjs', [], root, bin);
+
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({ status: 'ok' });
+  });
+});
+
+describe('list-changes.mjs', () => {
+  it('lists changes successfully', async () => {
+    const { root, bin } = await createRepo(true);
+    const result = await runScript('list-changes.mjs', [], root, bin);
+
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout)).toHaveProperty('changes');
+  });
+});
+
+describe('instructions.mjs success path', () => {
+  it('returns instructions for a specific artifact', async () => {
+    const { root, bin } = await createRepo(true);
+    const result = await runScript(
+      'instructions.mjs',
+      ['demo-change', 'proposal'],
+      root,
+      bin,
+    );
+
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({ status: 'ok' });
+  });
+});
+
+describe('change-status.mjs success path', () => {
+  it('returns status for a change', async () => {
+    const { root, bin } = await createRepo(true);
+    const result = await runScript('change-status.mjs', ['demo-change'], root, bin);
+
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout)).toHaveProperty('artifacts');
+  });
+});
+
+describe('archive.mjs success path', () => {
+  it('archives a change successfully', async () => {
+    const { root, bin } = await createRepo(true);
+    const result = await runScript('archive.mjs', ['demo-change', '-y'], root, bin);
+
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({ status: 'ok' });
+  });
+});

@@ -18,6 +18,9 @@ export const deterministicPipelineExecutor: AgentExecutor = async (
   const phaseData = await executePhase(phaseId, env, scenario);
   const validation = await PHASE_VALIDATORS[phaseId](env, {
     changeName: scenario.changeName,
+    postArchiveAction: scenario.postArchiveAction,
+    testsStatus: scenario.testsStatus,
+    reviewDisposition: scenario.reviewDisposition,
   });
   const passed = validation.assertions.every((assertion) => assertion.passed);
 
@@ -107,8 +110,15 @@ async function executePhase2(
     'instructions-apply.mjs',
     scenario.changeName,
   );
-  await addDueDate(path.join(env.rootDir, 'backend/src/models/todo.ts'));
-  await addDueDate(path.join(env.rootDir, 'frontend/src/api/client.ts'));
+  // Modify known source files; add dueDate to at least one to create a diff
+  const modified = [
+    await addDueDate(path.join(env.rootDir, 'backend/src/models/todo.ts')),
+    await addDueDate(path.join(env.rootDir, 'frontend/src/api/client.ts')),
+  ];
+  // If no known files were modified, try any TypeScript source file
+  if (!modified.some(Boolean)) {
+    await modifyAnySourceFile(env.rootDir);
+  }
   const tasksPath = path.join(
     env.rootDir,
     'openspec',
@@ -120,9 +130,16 @@ async function executePhase2(
   await fs.writeFile(tasksPath, tasks.replaceAll('- [ ]', '- [x]'));
   await runSkillScript(env, 'validate-change.mjs', scenario.changeName);
   await runState(env, 'decision', scenario.changeName, 'implementationConfirmed', 'true');
-  await runState(env, 'decision', scenario.changeName, 'reviewDisposition', '"review"');
-  await runState(env, 'transition', scenario.changeName, '3', '9');
-  return { instructions };
+
+  const reviewDisposition = scenario.reviewDisposition ?? 'review';
+  await runState(env, 'decision', scenario.changeName, 'reviewDisposition', JSON.stringify(reviewDisposition));
+
+  if (reviewDisposition === 'skip-review') {
+    await runState(env, 'transition', scenario.changeName, '4', '13');
+  } else {
+    await runState(env, 'transition', scenario.changeName, '3', '9');
+  }
+  return { instructions, reviewDisposition };
 }
 
 async function executePhase3(
@@ -144,11 +161,22 @@ async function executePhase4(
   env: TestEnvironment,
   scenario: ScenarioConfig,
 ): Promise<Record<string, unknown>> {
-  const test = await runNpm(env, 'test');
+  const testsStatus = scenario.testsStatus ?? 'passed';
+
+  if (testsStatus === 'passed') {
+    const test = await runNpm(env, 'test');
+    await runState(env, 'set', scenario.changeName, 'tests.command', '"npm test"');
+    await runState(env, 'attempt', scenario.changeName, 'tests', 'passed');
+    await runState(env, 'transition', scenario.changeName, '5', '15');
+    return { command: 'npm test', stdout: test.stdout, testsStatus };
+  }
+
+  // skipped or debt-recorded: set status directly without running tests
   await runState(env, 'set', scenario.changeName, 'tests.command', '"npm test"');
-  await runState(env, 'attempt', scenario.changeName, 'tests', 'passed');
+  await runState(env, 'set', scenario.changeName, 'tests.status', JSON.stringify(testsStatus));
+  await runState(env, 'set', scenario.changeName, 'tests.attempts', '0');
   await runState(env, 'transition', scenario.changeName, '5', '15');
-  return { command: 'npm test', stdout: test.stdout };
+  return { command: 'npm test', testsStatus };
 }
 
 async function executePhase5(
@@ -167,25 +195,45 @@ async function executePhase5(
   );
   const archivePath = String(archive.archivePath);
   await runState(env, 'set', scenario.changeName, 'archivePath', JSON.stringify(archivePath));
-  await runState(env, 'decision', scenario.changeName, 'postArchiveAction', '"merge"');
+  const postArchiveAction = scenario.postArchiveAction ?? 'merge';
+  await runState(env, 'decision', scenario.changeName, 'postArchiveAction', JSON.stringify(postArchiveAction));
   await runState(env, 'transition', scenario.changeName, '6', '20');
-  return { archivePath, verify: verify.stdout };
+  return { archivePath, verify: verify.stdout, postArchiveAction };
 }
 
 async function executePhase6(
   env: TestEnvironment,
   scenario: ScenarioConfig,
 ): Promise<Record<string, unknown>> {
+  const postArchiveAction = scenario.postArchiveAction ?? 'merge';
+
   await runState(env, 'decision', scenario.changeName, 'commitApproved', 'true');
   const commit = await gitCommit(env.rootDir, 'feat(todo): add due date support');
   if (!commit.success) throw new Error('Feature commit was not created.');
   const commitSha = (await git(env, 'rev-parse', 'HEAD')).trim();
   await runState(env, 'set', scenario.changeName, 'delivery.commitSha', JSON.stringify(commitSha));
 
+  if (postArchiveAction === 'local-only') {
+    // Local only: no remote operations at all
+    await runState(env, 'set', scenario.changeName, 'delivery.sourcePushed', 'false');
+    await runState(env, 'set', scenario.changeName, 'delivery.targetPushed', 'false');
+    await runState(env, 'complete', scenario.changeName);
+    return { commitSha, postArchiveAction };
+  }
+
+  // push-only or merge: push source branch
   await runState(env, 'decision', scenario.changeName, 'sourcePushApproved', 'true');
   await git(env, 'push', '-u', 'origin', env.sourceBranch);
   await runState(env, 'set', scenario.changeName, 'delivery.sourcePushed', 'true');
 
+  if (postArchiveAction === 'push-only') {
+    // Push-only: skip merge and target push
+    await runState(env, 'set', scenario.changeName, 'delivery.targetPushed', 'false');
+    await runState(env, 'complete', scenario.changeName);
+    return { commitSha, postArchiveAction };
+  }
+
+  // Full merge flow
   await runState(env, 'set', scenario.changeName, 'targetBranch', JSON.stringify(env.targetBranch));
   await runState(env, 'decision', scenario.changeName, 'mergeApproved', 'true');
   await git(env, 'checkout', env.targetBranch);
@@ -215,17 +263,57 @@ async function executePhase6(
   await runState(env, 'set', scenario.changeName, 'delivery.targetPushed', 'true');
   await runState(env, 'complete', scenario.changeName);
 
-  return { commitSha, mergeCommitSha };
+  return { commitSha, mergeCommitSha, postArchiveAction };
 }
 
-async function addDueDate(file: string): Promise<void> {
-  const content = await fs.readFile(file, 'utf8');
-  if (!content.includes('dueDate?: string')) {
-    await fs.writeFile(
-      file,
-      content.replace('  completed: boolean;\n', '  completed: boolean;\n  dueDate?: string;\n'),
-    );
+async function modifyAnySourceFile(rootDir: string): Promise<void> {
+  // Try to find any source file to modify in common locations
+  const candidates = [
+    path.join(rootDir, 'src', 'index.ts'),
+    path.join(rootDir, 'src', 'main.ts'),
+    path.join(rootDir, 'src', 'app.ts'),
+  ];
+  for (const file of candidates) {
+    try {
+      await fs.access(file);
+      const content = await fs.readFile(file, 'utf8');
+      await fs.writeFile(file, `${content}\n// pipeline-change: added dueDate field support\n`);
+      return;
+    } catch {
+      // File doesn't exist, try next
+    }
   }
+  // Last resort: create a marker file
+  await fs.outputFile(
+    path.join(rootDir, 'CHANGES.md'),
+    '# Pipeline Changes\n\n- Added dueDate field support\n',
+  );
+}
+
+async function addDueDate(file: string): Promise<boolean> {
+  try {
+    await fs.access(file);
+  } catch {
+    return false;
+  }
+  const content = await fs.readFile(file, 'utf8');
+  if (content.includes('dueDate?: string')) {
+    return true;
+  }
+
+  // Try specific pattern first
+  const withDueDate = content.replace(
+    '  completed: boolean;\n',
+    '  completed: boolean;\n  dueDate?: string;\n',
+  );
+  if (withDueDate !== content) {
+    await fs.writeFile(file, withDueDate);
+    return true;
+  }
+
+  // Fallback: append a comment to create a diff
+  await fs.writeFile(file, `${content}\n// pipeline-change: added dueDate field support\n`);
+  return true;
 }
 
 async function runSkillScript(

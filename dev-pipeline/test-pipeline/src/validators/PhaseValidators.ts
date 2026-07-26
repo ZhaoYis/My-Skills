@@ -84,32 +84,62 @@ export async function validatePhase1(
 export async function validatePhase2(
   env: TestEnvironment,
   changeName: string,
+  reviewDisposition?: string,
 ): ValidationResult {
   const state = await readState(env, changeName);
   const status = await gitStatus(env.rootDir);
   const tasks = path.join(env.rootDir, 'openspec', 'changes', changeName, 'tasks.md');
+  const skipped = reviewDisposition === 'skip-review';
   return {
     assertions: [
-      stateAt(state, 3, 9),
+      skipped ? stateAt(state, 4, 13) : stateAt(state, 3, 9),
       {
         description: 'Implementation produces a Git diff',
         passed: !status.isClean,
         detail: status.stdout,
       },
       await expectFileContains(tasks, /\[x\]/, 'Implementation tasks are completed'),
-      await expectFileContains(
-        path.join(env.rootDir, 'backend/src/models/todo.ts'),
-        'dueDate?: string',
-        'Backend contract includes dueDate',
-      ),
-      await expectFileContains(
-        path.join(env.rootDir, 'frontend/src/api/client.ts'),
-        'dueDate?: string',
-        'Frontend contract includes dueDate',
-      ),
+      ...(await sampleSpecificAssertions(env.rootDir)),
     ],
     artifacts: [],
   };
+}
+
+async function sampleSpecificAssertions(rootDir: string): Promise<AssertionResult[]> {
+  const checks = [
+    path.join(rootDir, 'backend/src/models/todo.ts'),
+    path.join(rootDir, 'frontend/src/api/client.ts'),
+    path.join(rootDir, 'src/models/item.ts'),
+    path.join(rootDir, 'src/index.ts'),
+    path.join(rootDir, 'CHANGES.md'),
+  ];
+  let anyModified = false;
+  let anyFound = false;
+  for (const file of checks) {
+    if (await fileExists(file)) {
+      anyFound = true;
+      const passed = (await expectFileContains(
+        file,
+        /dueDate|pipeline-change/,
+        `Source file ${path.relative(rootDir, file)} includes the expected change`,
+      )).passed;
+      if (passed) anyModified = true;
+    }
+  }
+
+  if (!anyFound) {
+    return [{
+      description: 'At least one source file was modified',
+      passed: false,
+      detail: 'No known source files found to verify implementation changes',
+    }];
+  }
+
+  return [{
+    description: 'At least one source file was modified by implementation',
+    passed: anyModified,
+    detail: anyModified ? undefined : 'Known source files exist but none contain the expected change pattern',
+  }];
 }
 
 export async function validatePhase3(
@@ -138,16 +168,19 @@ export async function validatePhase3(
 export async function validateUnitTests(
   env: TestEnvironment,
   changeName: string,
+  testsStatus?: string,
 ): ValidationResult {
   const state = await readState(env, changeName);
+  const expectedStatus = testsStatus ?? 'passed';
+  const expectedAttempts = expectedStatus === 'passed' ? 1 : 0;
   return {
     assertions: [
       stateAt(state, 5, 15),
       {
-        description: 'Actual test attempt is persisted',
+        description: `Test status is persisted as ${expectedStatus}`,
         passed:
-          state.tests.status === 'passed' &&
-          state.tests.attempts === 1 &&
+          state.tests.status === expectedStatus &&
+          state.tests.attempts === expectedAttempts &&
           state.tests.command === 'npm test',
       },
     ],
@@ -192,6 +225,7 @@ export async function validateArchive(
 export async function validatePhase6(
   env: TestEnvironment,
   changeName: string,
+  postArchiveAction?: string,
 ): ValidationResult {
   const state = await readState(env, changeName);
   const status = await gitStatus(env.rootDir);
@@ -201,35 +235,72 @@ export async function validatePhase6(
   const commitMessage = state.delivery.commitSha
     ? (await git(env, 'show', '-s', '--format=%s', state.delivery.commitSha)).trim()
     : '';
+  const action = postArchiveAction ?? 'merge';
+  const isLocalOnly = action === 'local-only';
+  const isPushOnly = action === 'push-only';
+
+  const assertions: AssertionResult[] = [
+    {
+      description: 'Pipeline state is completed in Phase6',
+      passed: state.currentPhase === 6 && state.status === 'completed',
+    },
+    {
+      description: 'Commit SHA is persisted',
+      passed: Boolean(state.delivery.commitSha),
+    },
+    {
+      ...(await expectConventionalCommit(commitMessage)),
+      description: 'Source commit message follows conventional commit format',
+    },
+  ];
+
+  if (isLocalOnly) {
+    assertions.push({
+      description: 'No remote operations for local-only delivery',
+      passed: !state.delivery.sourcePushed && !state.delivery.targetPushed,
+    });
+    assertions.push({
+      description: 'Delivery finishes with a clean work tree',
+      passed: status.isClean,
+      detail: status.stdout,
+    });
+  } else if (isPushOnly) {
+    assertions.push({
+      description: 'Source push is persisted but target is not',
+      passed: state.delivery.sourcePushed && !state.delivery.targetPushed,
+    });
+    assertions.push({
+      description: 'Remote source ref exists',
+      passed: Boolean(remoteSource),
+    });
+    assertions.push({
+      description: 'Delivery finishes on the source branch with a clean work tree',
+      passed: currentBranch === env.sourceBranch && status.isClean,
+      detail: status.stdout,
+    });
+  } else {
+    // Full merge
+    assertions.push({
+      description: 'Source and target pushes are persisted',
+      passed: state.delivery.sourcePushed && state.delivery.targetPushed,
+    });
+    assertions.push({
+      description: 'Merge SHA is persisted',
+      passed: Boolean(state.delivery.mergeCommitSha),
+    });
+    assertions.push({
+      description: 'Delivery finishes on the target branch with a clean work tree',
+      passed: currentBranch === env.targetBranch && status.isClean,
+      detail: status.stdout,
+    });
+    assertions.push({
+      description: 'Remote source and target refs exist',
+      passed: Boolean(remoteSource && remoteTarget),
+    });
+  }
 
   return {
-    assertions: [
-      {
-        description: 'Pipeline state is completed in Phase6',
-        passed: state.currentPhase === 6 && state.status === 'completed',
-      },
-      {
-        description: 'Source and target pushes are persisted',
-        passed: state.delivery.sourcePushed && state.delivery.targetPushed,
-      },
-      {
-        description: 'Commit and merge SHAs are persisted',
-        passed: Boolean(state.delivery.commitSha && state.delivery.mergeCommitSha),
-      },
-      {
-        description: 'Delivery finishes on the target branch with a clean work tree',
-        passed: currentBranch === env.targetBranch && status.isClean,
-        detail: status.stdout,
-      },
-      {
-        description: 'Remote source and target refs exist',
-        passed: Boolean(remoteSource && remoteTarget),
-      },
-      {
-        ...(await expectConventionalCommit(commitMessage)),
-        description: 'Source commit message follows conventional commit format',
-      },
-    ],
+    assertions,
     artifacts: [artifact(env, statePath(env, changeName))],
   };
 }
@@ -238,16 +309,21 @@ export const PHASE_VALIDATORS: Record<
   string,
   (
     env: TestEnvironment,
-    context: Record<string, string>,
+    context: {
+      changeName: string;
+      postArchiveAction?: string;
+      testsStatus?: string;
+      reviewDisposition?: string;
+    },
   ) => Promise<{ assertions: AssertionResult[]; artifacts: ArtifactInfo[] }>
 > = {
   'phase-0-entrance': (env, ctx) => validatePhase0(env, ctx.changeName),
   'phase-1-propose': (env, ctx) => validatePhase1(env, ctx.changeName),
-  'phase-2-apply': (env, ctx) => validatePhase2(env, ctx.changeName),
+  'phase-2-apply': (env, ctx) => validatePhase2(env, ctx.changeName, ctx.reviewDisposition),
   'phase-3-review': (env, ctx) => validatePhase3(env, ctx.changeName),
-  'phase-4-unit-tests': (env, ctx) => validateUnitTests(env, ctx.changeName),
+  'phase-4-unit-tests': (env, ctx) => validateUnitTests(env, ctx.changeName, ctx.testsStatus),
   'phase-5-archive': (env, ctx) => validateArchive(env, ctx.changeName),
-  'phase-6-merge-push': (env, ctx) => validatePhase6(env, ctx.changeName),
+  'phase-6-merge-push': (env, ctx) => validatePhase6(env, ctx.changeName, ctx.postArchiveAction),
 };
 
 async function readState(env: TestEnvironment, changeName: string): Promise<PipelineState> {

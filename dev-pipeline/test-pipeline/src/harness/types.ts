@@ -152,6 +152,26 @@ export interface ScenarioConfig {
   changeName: string;
   /** Description of the feature for agent context */
   featureDescription: string;
+  /**
+   * Override review disposition after Phase 2.
+   * - `'review'` (default): proceed to Phase 3 code review
+   * - `'skip-review'`: skip Phase 3 entirely and go straight to Phase 4
+   */
+  reviewDisposition?: 'review' | 'skip-review';
+  /**
+   * Override post-archive delivery action.
+   * - `'merge'` (default): full Phase 6 with merge + target push
+   * - `'push-only'`: push source branch only, skip merge
+   * - `'local-only'`: no remote operations
+   */
+  postArchiveAction?: 'merge' | 'push-only' | 'local-only';
+  /**
+   * Override tests outcome in Phase 4.
+   * - `'passed'` (default): run npm test and record passed
+   * - `'skipped'`: record tests as skipped
+   * - `'debt-recorded'`: record as technical debt
+   */
+  testsStatus?: 'passed' | 'skipped' | 'debt-recorded';
 }
 
 /**
