@@ -1,156 +1,75 @@
 ---
 name: "OPSX: Apply"
-description: Implement tasks from an OpenSpec change (Experimental)
-allowed-tools: Bash(openspec:*)
+description: Implement an OpenSpec change with pipeline-aware state tracking
+allowed-tools: Bash(openspec:*), Bash(node:*), Bash(git:*)
 category: Workflow
 tags: [workflow, artifacts, experimental]
 ---
 
-Implement tasks from an OpenSpec change.
+Implement tasks from an OpenSpec change while preserving resumable pipeline state.
 
-**Store selection:** If the user names a store (a store is a standalone OpenSpec repo registered on this machine) or the work lives in one, run `openspec store list --json` to discover registered store ids, then pass `--store <id>` on the commands that read or write specs and changes (`new change`, `status`, `instructions`, `list`, `show`, `validate`, `archive`, `doctor`, `context`). Other commands do not take the flag. Hints printed by commands already carry the flag; keep it on follow-ups. Without a store, commands act on the nearest local `openspec/` root.
+## Pipeline Integration (v2)
 
-**Input**: Optionally specify a change name (e.g., `/opsx:apply add-auth`). If omitted, check if it can be inferred from conversation context. If vague or ambiguous you MUST prompt for available changes.
+> **状态命令失败时，不得静默继续。** 任何 `dev-pipeline-state.mjs` 命令返回非零 exit code 时，必须暂停并报告用户。禁止跳过 pre-flight 或 post-flight。
 
-**Steps**
+| exit code | reason | action |
+|-----------|--------|--------|
+| 0 | success | Read the returned state and continue. |
+| 10 | state missing | Run `init`, set standalone mode, and create a Phase 2 audit entry. |
+| 11 | invalid transition or unmet gate | Stop and show the detail for user confirmation. |
+| 12 | I/O error or concurrent modification | Reload and retry once; if it fails again, stop and report it. |
 
-1. **Select the change**
+### Pre-flight: State Awareness
 
-   If a name is provided, use it. Otherwise:
-   - Infer from conversation context if the user mentioned a change
-   - Auto-select if only one active change exists
-   - If ambiguous, run `openspec list --json` to get available changes and use the **AskUserQuestion tool** to let the user select
-
-   Always announce: "Using change: <name>" and how to override (e.g., `/opsx:apply <other>`).
-
-2. **Check status to understand the schema**
+1. Select the change using the rules in the underlying Skill, then run:
    ```bash
-   openspec status --change "<name>" --json
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<name>"
    ```
-   Parse the JSON to understand:
-   - `schemaName`: The workflow being used (e.g., "spec-driven")
-   - `planningHome`, `changeRoot`, and `actionContext`: planning scope and edit constraints
-   - Which artifact contains the tasks (typically "tasks" for spec-driven, check status for others)
-
-3. **Get apply instructions**
-
+2. If the state is Schema v1, run `migrate-schema "<name>"`; require explicit approval before `migrate-schema "<name>" --confirm`.
+3. If state is missing, use AskUserQuestion to offer an optional external requirement association. Collect `featureId` and `featureUrl` when provided, then run `init` and set `executionMode` to `standalone`:
    ```bash
-   openspec instructions apply --change "<name>" --json
+   CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
    ```
+   The user may skip requirement association; in that case omit both feature flags instead of passing placeholders.
+4. Check `phaseHistory` for an `in-progress` Phase 2 entry executed by `openspec-apply-change`. Reuse it when present; otherwise start Phase 2 before transitioning. The history entry lets hybrid gate inference recognize that applying an existing proposal implies proposal approval:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 2 6 openspec-apply-change --start
+   ```
+5. Handle the recorded phase:
+   - Phase 0/1: transition to Phase 2 Step 6.
+   - Phase 2: resume implementation without another transition.
+   - Phase 3+: ask whether this is a repair pass; if confirmed, transition back to Phase 2 Step 6. Otherwise cancel.
 
-   This returns:
-   - `contextFiles`: artifact ID -> array of concrete file paths (varies by schema)
-   - Progress (total, complete, remaining)
-   - Task list with status
-   - Dynamic instruction based on current state
+### Execute
 
-   **Handle states:**
-   - If `state: "blocked"` (missing artifacts): show message, suggest using `/opsx:continue`
-   - If `state: "all_done"`: congratulate, suggest archive
-   - Otherwise: proceed to implementation
+Load and follow `.claude/skills/openspec-apply-change/SKILL.md` completely. Use its change selection, status, context files, implementation loop, task checkboxes, pause conditions, and guardrails.
 
-4. **Read context files**
+When all tasks are complete, ask what to do next: `Skip review and continue to tests/archive` / `Continue with pipeline review` / `Pause`.
 
-   Read every file path listed under `contextFiles` from the apply instructions output.
-   The files depend on the schema being used:
-   - **spec-driven**: proposal, specs, design, tasks
-   - Other schemas: follow the contextFiles from CLI output
+### Post-flight: Record State
 
-5. **Show current progress**
+Execute these commands **in order**, checking every exit code:
 
-   Display:
-   - Schema being used
-   - Progress: "N/M tasks complete"
-   - Remaining tasks overview
-   - Dynamic instruction from CLI
+1. `record-phase` first. Add `review-skipped` only when the user chose to skip review:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 2 8 openspec-apply-change [review-skipped]
+   ```
+2. Persist the implementation decision:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs decision "<name>" implementationConfirmed true
+   ```
+3. Transition according to the explicit choice:
+   ```bash
+   # Skip review
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 4 13
+   # Continue with review
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 3 9
+   # Pause
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs pause "<name>" "paused-after-standalone-apply"
+   ```
+   Run exactly one branch. For review, tell the user to continue with `/opsx-dev-pipeline <name>`.
+4. Run `get "<name>"`. Verify `implementationConfirmed=true`, Phase 2 has a completed entry, and `currentPhase` matches the selected branch. Warn and stop on mismatch.
 
-6. **Implement tasks (loop until done or blocked)**
-
-   For each pending task:
-   - Show which task is being worked on
-   - Make the code changes required
-   - Keep changes minimal and focused
-   - Mark task complete in the tasks file: `- [ ]` → `- [x]`
-   - Continue to next task
-
-   **Pause if:**
-   - Task is unclear → ask for clarification
-   - Implementation reveals a design issue → suggest updating artifacts
-   - Error or blocker encountered → report and wait for guidance
-   - User interrupts
-
-7. **On completion or pause, show status**
-
-   Display:
-   - Tasks completed this session
-   - Overall progress: "N/M tasks complete"
-   - If all done: suggest archive
-   - If paused: explain why and wait for guidance
-
-**Output During Implementation**
-
-```
-## Implementing: <change-name> (schema: <schema-name>)
-
-Working on task 3/7: <task description>
-[...implementation happening...]
-✓ Task complete
-
-Working on task 4/7: <task description>
-[...implementation happening...]
-✓ Task complete
-```
-
-**Output On Completion**
-
-```
-## Implementation Complete
-
-**Change:** <change-name>
-**Schema:** <schema-name>
-**Progress:** 7/7 tasks complete ✓
-
-### Completed This Session
-- [x] Task 1
-- [x] Task 2
-...
-
-All tasks complete! You can archive this change with `/opsx:archive`.
-```
-
-**Output On Pause (Issue Encountered)**
-
-```
-## Implementation Paused
-
-**Change:** <change-name>
-**Schema:** <schema-name>
-**Progress:** 4/7 tasks complete
-
-### Issue Encountered
-<description of the issue>
-
-**Options:**
-1. <option 1>
-2. <option 2>
-3. Other approach
-
-What would you like to do?
-```
-
-**Guardrails**
-- Keep going through tasks until done or blocked
-- Always read context files before starting (from the apply instructions output)
-- If task is ambiguous, pause and ask before implementing
-- If implementation reveals issues, pause and suggest artifact updates
-- Keep code changes minimal and scoped to each task
-- Update task checkbox immediately after completing each task
-- Pause on errors, blockers, or unclear requirements - don't guess
-- Use contextFiles from CLI output, don't assume specific file names
-
-**Fluid Workflow Integration**
-
-This skill supports the "actions on a change" model:
-
-- **Can be invoked anytime**: Before all artifacts are done (if tasks exist), after partial implementation, interleaved with other actions
-- **Allows artifact updates**: If implementation reveals design issues, suggest updating artifacts - not phase-locked, work fluidly
+If implementation pauses or fails, do not complete the audit entry. Preserve it as `in-progress`, call `pause`, and show the resume command `/opsx:apply <name>`.

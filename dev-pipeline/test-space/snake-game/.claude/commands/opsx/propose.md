@@ -1,110 +1,76 @@
 ---
 name: "OPSX: Propose"
-description: Propose a new change - create it and generate all artifacts in one step
-allowed-tools: Bash(openspec:*)
+description: Propose a new change with pipeline-aware state tracking
+allowed-tools: Bash(openspec:*), Bash(node:*), Bash(git:*)
 category: Workflow
 tags: [workflow, artifacts, experimental]
 ---
 
-Propose a new change - create the change and generate all artifacts in one step.
+Propose a new change and generate every artifact required before implementation.
 
-I'll create a change with artifacts:
-- proposal.md (what & why)
-- design.md (how)
-- tasks.md (implementation steps)
+## Pipeline Integration (v2)
 
-When ready to implement, run /opsx:apply
+> **状态命令失败时，不得静默继续。** 任何 `dev-pipeline-state.mjs` 命令返回非零 exit code 时，必须暂停并报告用户。禁止跳过 pre-flight 或 post-flight。
 
----
+State command exit codes:
 
-**Store selection:** If the user names a store (a store is a standalone OpenSpec repo registered on this machine) or the work lives in one, run `openspec store list --json` to discover registered store ids, then pass `--store <id>` on the commands that read or write specs and changes (`new change`, `status`, `instructions`, `list`, `show`, `validate`, `archive`, `doctor`, `context`). Other commands do not take the flag. Hints printed by commands already carry the flag; keep it on follow-ups. Without a store, commands act on the nearest local `openspec/` root.
+| exit code | reason | action |
+|-----------|--------|--------|
+| 0 | success | Read the returned state and continue. |
+| 10 | state missing | Run `init`, set standalone mode, and transition to Phase 1. |
+| 11 | invalid transition or unmet gate | Stop and show the detail for user confirmation. |
+| 12 | I/O error or concurrent modification | Reload and retry once; if it fails again, stop and report it. |
 
-**Input**: The argument after `/opsx:propose` is the change name (kebab-case), OR a description of what the user wants to build.
+### Pre-flight: State Awareness
 
-**Steps**
-
-1. **If no input provided, ask what they want to build**
-
-   Use the **AskUserQuestion tool** (open-ended, no preset options) to ask:
-   > "What change do you want to work on? Describe what you want to build or fix."
-
-   From their description, derive a kebab-case name (e.g., "add user authentication" → `add-user-auth`).
-
-   **IMPORTANT**: Do NOT proceed without understanding what the user wants to build.
-
-2. **Create the change directory**
+1. Resolve a kebab-case change name from the input. If no input was provided, ask the user what they want to build before continuing.
+2. Run:
    ```bash
-   openspec new change "<name>"
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<name>"
    ```
-   This creates a scaffolded change in the planning home resolved by the CLI with `.openspec.yaml`.
-
-3. **Get the artifact build order**
+3. If the state is Schema v1, run `migrate-schema "<name>"`, show the returned confirmation prompt, and only after explicit approval run `migrate-schema "<name>" --confirm`.
+4. If state is missing, use AskUserQuestion to ask whether the user wants to associate an external requirement such as a JIRA issue. Collect `featureId` and `featureUrl` when provided; the user may skip both. Then run these commands in order and check every exit code:
    ```bash
-   openspec status --change "<name>" --json
+   CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 1 3
    ```
-   Parse the JSON to get:
-   - `applyRequires`: array of artifact IDs needed before implementation (e.g., `["tasks"]`)
-   - `artifacts`: list of all artifacts with their status and dependencies
-   - `planningHome`, `changeRoot`, `artifactPaths`, and `actionContext`: path and scope context. Use these instead of assuming repo-local paths.
-
-4. **Create artifacts in sequence until apply-ready**
-
-   Use the **TodoWrite tool** to track progress through the artifacts.
-
-   Loop through artifacts in dependency order (artifacts with no pending dependencies first):
-
-   a. **For each artifact that is `ready` (dependencies satisfied)**:
-      - Get instructions:
-        ```bash
-        openspec instructions <artifact-id> --change "<name>" --json
-        ```
-      - The instructions JSON includes:
-        - `context`: Project background (constraints for you - do NOT include in output)
-        - `rules`: Artifact-specific rules (constraints for you - do NOT include in output)
-        - `template`: The structure to use for your output file
-        - `instruction`: Schema-specific guidance for this artifact type
-        - `resolvedOutputPath`: Resolved path or pattern to write the artifact
-        - `dependencies`: Completed artifacts to read for context
-      - Read any completed dependency files for context
-      - Create the artifact file using `template` as the structure and write it to `resolvedOutputPath`
-      - Apply `context` and `rules` as constraints - but do NOT copy them into the file
-      - Show brief progress: "Created <artifact-id>"
-
-   b. **Continue until all `applyRequires` artifacts are complete**
-      - After creating each artifact, re-run `openspec status --change "<name>" --json`
-      - Check if every artifact ID in `applyRequires` has `status: "done"` in the artifacts array
-      - Stop when all `applyRequires` artifacts are done
-
-   c. **If an artifact requires user input** (unclear context):
-      - Use **AskUserQuestion tool** to clarify
-      - Then continue with creation
-
-5. **Show final status**
+   Omit both feature flags when the user skips requirement association. Never pass placeholder values.
+5. For existing state:
+   - Phase 0: transition to Phase 1 Step 3.
+   - Phase 1: continue.
+   - Phase 2+: warn that work is already in progress and ask: `Re-propose and update artifacts` / `Continue from current phase` / `Cancel`. Only `Re-propose` may continue. If the mode is `pipeline`, first set `executionMode` to `hybrid`, then transition back to Phase 1 Step 3.
+6. Check `phaseHistory` for an `in-progress` Phase 1 entry executed by `openspec-propose`. Reuse it when present; otherwise start the audit entry below. Starting it also changes an existing `pipeline` state to `hybrid`:
    ```bash
-   openspec status --change "<name>"
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 1 3 openspec-propose --start
    ```
 
-**Output**
+### Execute
 
-After completing all artifacts, summarize:
-- Change name and location
-- List of artifacts created with brief descriptions
-- What's ready: "All artifacts created! Ready for implementation."
-- Prompt: "Run `/opsx:apply` to start implementing."
+Load and follow the complete instructions in `.claude/skills/openspec-propose/SKILL.md`. Keep that Skill as the source of truth for artifact creation, dependency order, store selection, clarification, and output paths.
 
-**Artifact Creation Guidelines**
+### Post-flight: Record State
 
-- Follow the `instruction` field from `openspec instructions` for each artifact type
-- The schema defines what each artifact should contain - follow it
-- Read dependency artifacts for context before creating new ones
-- Use `template` as the structure for your output file - fill in its sections
-- **IMPORTANT**: `context` and `rules` are constraints for YOU, not content for the file
-  - Do NOT copy `<context>`, `<rules>`, `<project_context>` blocks into the artifact
-  - These guide what you write, but should never appear in the output
+After all required artifacts exist and the user confirms the proposal, execute the following commands **in order**, checking each exit code before continuing:
 
-**Guardrails**
-- Create ALL artifacts needed for implementation (as defined by schema's `apply.requires`)
-- Always read dependency artifacts before creating a new one
-- If context is critically unclear, ask the user - but prefer making reasonable decisions to keep momentum
-- If a change with that name already exists, ask if user wants to continue it or create a new one
-- Verify each artifact file exists after writing before proceeding to next
+1. `record-phase`, because later recovery and inference depend on `phaseHistory`:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 1 5 openspec-propose
+   ```
+2. `decision`, after the phase record is durable:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs decision "<name>" requirementsConfirmed true
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs decision "<name>" proposalApproved true
+   ```
+3. `transition`, after `proposalApproved` is durable:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 2 6
+   ```
+4. Consistency check:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<name>"
+   ```
+   Verify `currentPhase=2`, `currentStep=6`, both decisions are `true`, and Phase 1 has a completed history entry. If any value differs, warn explicitly and stop.
+
+Show the change location, completed artifacts, `Phase 1 complete`, and the next choices: `/opsx:apply <name>` for standalone work or `/opsx-dev-pipeline <name>` for the gated pipeline.

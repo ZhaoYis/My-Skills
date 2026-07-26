@@ -29,10 +29,11 @@ node <SKILL_ROOT>/scripts/preflight.mjs
    ```bash
    node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<name>"
    ```
-2. 并行核对事实：活跃/归档 change、任务勾选、状态中记录的审查报告、Git 分支和冲突状态。
-3. 状态不存在但 change 存在时，展示检测事实并询问：`按检测结果重建状态` / `选择其他 change` / `终止流程`。只有用户确认后才执行 `init` 和必要的 `set`/`transition`。
-4. 状态与事实不一致时，列出差异并执行 `pause`；禁止按文件是否存在自动跳阶段。
-5. 状态一致时使用 **AskQuestion** 确认：`从记录的 Phase/Step 继续` / `从头开始（新建 change）` / `终止流程`。
+2. 若 `schemaVersion=1`，执行 `migrate-schema "<name>"` 展示迁移详情；只有用户明确确认后才执行 `migrate-schema "<name>" --confirm`。拒绝迁移时保持 v1 原文件不变并终止续接。
+3. 并行核对事实：活跃/归档 change、任务勾选、状态中记录的审查报告、Git 分支和冲突状态。
+4. 状态不存在但 change 存在时，展示检测事实并询问：`按检测结果重建状态` / `选择其他 change` / `终止流程`。只有用户确认后才执行 `init` 和必要的 `set`/`transition`。
+5. 状态与事实不一致时，列出差异并执行 `pause`；禁止按文件是否存在自动跳阶段。
+6. 状态一致且 `executionMode=pipeline` 时，使用 **AskQuestion** 确认：`从记录的 Phase/Step 继续` / `从头开始（新建 change）` / `终止流程`。
 
 ### 2.b 用户提供了需求描述
 
@@ -44,6 +45,29 @@ node <SKILL_ROOT>/scripts/preflight.mjs
   ```
 - 进入 **Phase1 Step3（决策点 1a）**
 
-### 2.c 用户未提供任何输入
+### 2.c 检测到非 pipeline 执行模式
+
+当状态中 `executionMode` 为 `standalone` 或 `hybrid` 时：
+
+1. 按 `phaseHistory` 展示时间线。每条至少包含 Phase、Step、`executedBy`、状态和完成/开始时间；`in-progress` 显示为待续接，`abandoned` 显示为已放弃。例如：
+   ```text
+   检测到 change 曾由独立命令执行：
+   ✅ Phase 1 Step 5 (propose) - openspec-propose - 2026-07-26 10:15
+   ✅ Phase 2 Step 8 (apply)   - openspec-apply-change - 2026-07-26 11:00
+   ⬚ Phase 3 (review)         - 被跳过 [review-skipped]
+   ⏳ Phase 5 Step 16 (verify) - openspec-verify-change - 进行中
+   ```
+2. 单独展示全局 `gatesBypassed`；为空时明确显示“无”。
+3. 先执行 gate 补偿，任何结果都必须写入状态后再继续：
+   - `tests.status=pending`：**AskQuestion**：`passed` / `failed` / `skipped` / `重新运行`。确认结果使用 `set tests.status`；选择重新运行则进入 Phase4，禁止预写通过。
+   - `verify.status=pending`：**AskQuestion**：`passed` / `failed` / `skipped` / `重新验证`。通过或失败使用 `attempt verify`，显式跳过使用 `set verify.status skipped`；选择重新验证则进入 Phase5 Step16。
+   - `decisions.postArchiveAction` 缺失且已经归档或即将进入 Phase6：**AskQuestion**：`merge` / `push-only` / `local-only`，使用 `decision` 持久化。此字段禁止从 Git 或文件事实推断。
+4. 使用 **AskQuestion** 确认续接方式：
+   - `从当前 Phase/Step 继续（推荐）`：保留 `hybrid`/`standalone` 记录，进入状态中记录的步骤。
+   - `重新开始完整流水线`：要求新 change 名称，使用 `init` 创建新的 `executionMode=pipeline` 状态；保留原状态作为审计记录，不覆盖或删除。
+   - `终止流程`：退出，不修改状态。
+5. 所有状态写入后执行 `get "<name>"` 自检；对比 Phase、gate 结果和 delivery 决策。不一致时警告并暂停。
+
+### 2.d 用户未提供任何输入
 
 - 发送文本消息询问需求描述或 change 名称，等待回复后走 2.a 或 2.b

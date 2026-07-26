@@ -1,6 +1,9 @@
 ---
 name: opsx-dev-pipeline
 description: 执行基于 OpenSpec 和 Git 的门禁式需求开发与交付流程，覆盖预检、提案确认、实现、代码审查、测试、验证归档、提交、推送与合并，并支持中断恢复。用户要求实现或继续一个 OpenSpec change、按阶段推进完整开发流水线、审查并交付变更，或处理 opsx-dev-pipeline 时使用。
+version: "0.2.2"
+license: "MIT"
+repository: "git+https://github.com/ZhaoYis/My-Skills.git"
 ---
 
 # 需求开发全流程流水线
@@ -11,6 +14,7 @@ description: 执行基于 OpenSpec 和 Git 的门禁式需求开发与交付流�
 
 ## 执行约束
 
+- 开始执行前读取 `openspec/config.yaml` 的 `language` 与 `rules.language`。所有 AI 产出物必须遵循该语言约束，包括 OpenSpec 提案、设计、规格、任务、审查报告、README、CLAUDE.md、代码注释、commit message、PR 描述和审查评论。
 - 用户补充需求、提案修改或实施说明后，必须在同一回复中同步当前 **Phase/ change / 下一动作**，推进到下一步或决策点。
 - 除用户明确选择「终止流程」或「暂停流水线」外，不得单方结束全流程。
 - 高风险决策必须显式确认；推荐项不等于自动代选。
@@ -24,8 +28,6 @@ description: 执行基于 OpenSpec 和 Git 的门禁式需求开发与交付流�
 
 **`<SKILL_ROOT>`**：本技能安装根目录（内含 `scripts/`）。命令在目标 git 仓库根目录执行。
 - 对于 Claude Code 安装：`<SKILL_ROOT>` = `.claude/skills/opsx-dev-pipeline`
-- 对于 Cursor 安装：`<SKILL_ROOT>` = `.cursor/rules/opsx-dev-pipeline`
-- 对于 Codex 模板安装：`<SKILL_ROOT>` = `.codex/prompts/opsx-dev-pipeline`；通过 `.codex/prompts/opsx-dev-pipeline.md` 入口加载本文件。
 - 若宿主将 Skill 安装到其他位置，`<SKILL_ROOT>` = 当前 `SKILL.md` 所在目录；不要假设当前工作目录就是 Skill 根目录。
 - 脚本路径示例：`node .claude/skills/opsx-dev-pipeline/scripts/preflight.mjs`
 - 引用前先确认目录存在：`test -d "<SKILL_ROOT>/scripts" || echo "scripts not found"`
@@ -34,11 +36,19 @@ description: 执行基于 OpenSpec 和 Git 的门禁式需求开发与交付流�
 ## 状态协议
 
 - 新 change：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<change>" "<source-branch>"`
+- 读取状态：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<change>"`
+- 确认迁移 v1：先运行 `migrate-schema "<change>"` 获取确认提示，用户同意后运行 `migrate-schema "<change>" --confirm`
+- 阶段审计开始：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs record-phase "<change>" <phase> <step> <executed-by> --start`
+- 阶段审计完成：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs record-phase "<change>" <phase> <step> <executed-by> [bypassed-gates...]`
+- 阶段审计放弃：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs record-phase "<change>" <phase> <step> <executed-by> --abandon`
 - 记录决策：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<change>" <key> <json-value>`
 - 记录结果：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<change>" <field> <json-value>`
+- 记录尝试：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs attempt "<change>" <review|tests|verify> <status>`
 - 阶段迁移：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<change>" <phase> <step>`
 - 暂停流程：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs pause "<change>" "<reason>"`
 - 完成交付：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs complete "<change>"`
+
+Schema v2 使用 `_version` 做乐观锁，`executionMode` 区分 `pipeline` / `standalone` / `hybrid`，并以 `phaseHistory` 和 `gatesBypassed` 提供独立命令审计。任何状态命令返回 exit code 10/11/12 时，按“状态不存在 / 非法迁移或 gate / I/O 或并发冲突”处理；并发冲突只重载重试一次，仍失败则暂停。写入后必须用 `get` 对比预期关键字段。
 
 ## Phase引用表
 

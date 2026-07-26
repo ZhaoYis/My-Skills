@@ -3,6 +3,7 @@
   "projectName": "snake-game",
   "tool": "claude",
   "stack": "frontend",
+  "language": "zh",
   "features": [
     "base",
     "skills",
@@ -10,7 +11,7 @@
     "docs",
     "schema"
   ],
-  "templateVersion": "0.2.1",
+  "templateVersion": "0.2.2",
   "packageName": "opsx-dev-pipeline",
   "managedAssets": [
     {
@@ -172,6 +173,30 @@
     {
       "id": "opsx-dev-pipeline-skill-bundle:scripts/validate-change.mjs",
       "destination": ".claude/skills/opsx-dev-pipeline/scripts/validate-change.mjs"
+    },
+    {
+      "id": "opsx-propose-command",
+      "destination": ".claude/commands/opsx/propose.md"
+    },
+    {
+      "id": "opsx-apply-command",
+      "destination": ".claude/commands/opsx/apply.md"
+    },
+    {
+      "id": "opsx-archive-command",
+      "destination": ".claude/commands/opsx/archive.md"
+    },
+    {
+      "id": "opsx-verify-command",
+      "destination": ".claude/commands/opsx/verify.md"
+    },
+    {
+      "id": "opsx-sync-command",
+      "destination": ".claude/commands/opsx/sync.md"
+    },
+    {
+      "id": "opsx-explore-command",
+      "destination": ".claude/commands/opsx/explore.md"
     }
   ]
 }

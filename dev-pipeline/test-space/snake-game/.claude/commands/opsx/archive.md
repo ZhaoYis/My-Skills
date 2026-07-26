@@ -1,161 +1,70 @@
 ---
 name: "OPSX: Archive"
-description: Archive a completed change in the experimental workflow
-allowed-tools: Bash(openspec:*)
+description: Archive an OpenSpec change with pipeline gate and delivery state tracking
+allowed-tools: Bash(openspec:*), Bash(node:*), Bash(git:*)
 category: Workflow
 tags: [workflow, archive, experimental]
 ---
 
-Archive a completed change in the experimental workflow.
+Archive a completed change and persist the final pipeline gates.
 
-**Store selection:** If the user names a store (a store is a standalone OpenSpec repo registered on this machine) or the work lives in one, run `openspec store list --json` to discover registered store ids, then pass `--store <id>` on the commands that read or write specs and changes (`new change`, `status`, `instructions`, `list`, `show`, `validate`, `archive`, `doctor`, `context`). Other commands do not take the flag. Hints printed by commands already carry the flag; keep it on follow-ups. Without a store, commands act on the nearest local `openspec/` root.
+## Pipeline Integration (v2)
 
-**Input**: Optionally specify a change name after `/opsx:archive` (e.g., `/opsx:archive add-auth`). If omitted, check if it can be inferred from conversation context. If vague or ambiguous you MUST prompt for available changes.
+> **状态命令失败时，不得静默继续。** 任何 `dev-pipeline-state.mjs` 命令返回非零 exit code 时，必须暂停并报告用户。禁止跳过 pre-flight 或 post-flight。
 
-**Steps**
+| exit code | reason | action |
+|-----------|--------|--------|
+| 0 | success | Read the returned state and continue. |
+| 10 | state missing | Run `init`, set standalone mode, and reconstruct only confirmed gate results. |
+| 11 | invalid transition or unmet gate | Stop and show the detail for user confirmation. |
+| 12 | I/O error or concurrent modification | Reload and retry once; if it fails again, stop and report it. |
 
-1. **If no change name provided, prompt for selection**
+### Pre-flight: State Awareness
 
-   Run `openspec list --json` to get available changes. Use the **AskUserQuestion tool** to let the user select.
-
-   Show only active changes (not already archived).
-   Include the schema used for each change if available.
-
-   **IMPORTANT**: Do NOT guess or auto-select a change. Always let the user choose.
-
-2. **Check artifact completion status**
-
-   Run `openspec status --change "<name>" --json` to check artifact completion.
-
-   Parse the JSON to understand:
-   - `schemaName`: The workflow being used
-   - `planningHome`, `changeRoot`, `artifactPaths`, and `actionContext`: path and scope context
-   - `artifacts`: List of artifacts with their status (`done` or other)
-
-   **If any artifacts are not `done`:**
-   - Display warning listing incomplete artifacts
-   - Prompt user for confirmation to continue
-   - Proceed if user confirms
-
-3. **Check task completion status**
-
-   Read the tasks file (typically `tasks.md`) to check for incomplete tasks.
-
-   Count tasks marked with `- [ ]` (incomplete) vs `- [x]` (complete).
-
-   **If incomplete tasks found:**
-   - Display warning showing count of incomplete tasks
-   - Prompt user for confirmation to continue
-   - Proceed if user confirms
-
-   **If no tasks file exists:** Proceed without task-related warning.
-
-4. **Assess delta spec sync state**
-
-   Use `artifactPaths.specs.existingOutputPaths` from status JSON to check for delta specs. If none exist, proceed without sync prompt.
-
-   **If delta specs exist:**
-   - Compare each delta spec with its corresponding main spec at `openspec/specs/<capability>/spec.md`
-   - Determine what changes would be applied (adds, modifications, removals, renames)
-   - Show a combined summary before prompting
-
-   **Prompt options:**
-   - If changes needed: "Sync now (recommended)", "Archive without syncing"
-   - If already synced: "Archive now", "Sync anyway", "Cancel"
-
-   If user chooses sync, use Task tool (subagent_type: "general-purpose", prompt: "Use Skill tool to invoke openspec-sync-specs for change '<name>'. Delta spec analysis: <include the analyzed delta spec summary>"). Proceed to archive regardless of choice.
-
-5. **Perform the archive**
-
-   Create an `archive` directory under `planningHome.changesDir` if it doesn't exist:
+1. Select an active change using the underlying Skill rules, then run `get "<name>"` with the pipeline state script.
+2. For Schema v1, run `migrate-schema "<name>"`; require explicit approval before adding `--confirm`.
+3. If state is missing, use AskUserQuestion to ask whether to associate an external requirement. Collect `featureId` and `featureUrl` when supplied, initialize the state, and set `executionMode` to `standalone`:
    ```bash
-   mkdir -p "<planningHome.changesDir>/archive"
+   CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
    ```
-
-   Generate target name using current date: `YYYY-MM-DD-<change-name>`
-
-   **Check if target already exists:**
-   - If yes: Fail with error, suggest renaming existing archive or using different date
-   - If no: Move `changeRoot` to the archive directory
-
+   If the user skips requirement association, omit both feature flags. Do not store placeholder values.
+4. Compensate missing gates without guessing:
+   - If `tests.status` is pending, ask `passed` / `failed` / `skipped` / `rerun tests`. Persist a confirmed result with `set tests.status`; stop on failed.
+   - If `verify.status` is pending, ask `passed` / `failed` / `skipped` / `run /opsx:verify`. Persist `passed` or `failed` through `attempt verify`, and a confirmed skip through `set verify.status`; stop on failed.
+5. Check `phaseHistory` for an `in-progress` Phase 5 entry executed by `openspec-archive-change`. Reuse it when present; otherwise start the archive audit entry below. Starting it changes an existing strict `pipeline` state to `hybrid` before any standalone forward transition:
    ```bash
-   mv "<changeRoot>" "<planningHome.changesDir>/archive/YYYY-MM-DD-<name>"
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 15 openspec-archive-change --start
    ```
+6. If `currentPhase<5`, transition to Phase 5 Step 15 only after the test gate and audit entry are durable.
 
-6. **Display summary**
+### Execute
 
-   Show archive completion summary including:
-   - Change name
-   - Schema that was used
-   - Archive location
-   - Spec sync status (synced / sync skipped / no delta specs)
-   - Note about any warnings (incomplete artifacts/tasks)
+Load and follow `.claude/skills/openspec-archive-change/SKILL.md` completely, including artifact/task warnings, delta-spec assessment, store-aware paths, archive collision handling, and the final archive summary.
 
-**Output On Success**
+After a successful archive, resolve the actual archive path from the Skill result or filesystem. Ask the user to choose `merge` / `push-only` / `local-only`; this intent must never be inferred.
 
-```
-## Archive Complete
+### Post-flight: Record State
 
-**Change:** <change-name>
-**Schema:** <schema-name>
-**Archived to:** the archive path derived from `planningHome.changesDir`/YYYY-MM-DD-<name>/
-**Specs:** ✓ Synced to main specs
+Execute these commands **in order**, checking every exit code:
 
-All artifacts complete. All tasks complete.
-```
+1. Persist the actual archive path:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" archivePath '"<actual-archive-path>"'
+   ```
+2. Complete `record-phase` before later transition logic reads the history:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 19 openspec-archive-change
+   ```
+3. Persist the explicit delivery decision:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs decision "<name>" postArchiveAction '"<merge|push-only|local-only>"'
+   ```
+4. Transition only after verify, archive path, and delivery decision are durable:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 6 20
+   ```
+5. Run `get "<name>"`. Verify `currentPhase=6`, `archivePath` is exact, `verify.status` is `passed` or `skipped`, the delivery choice matches, and the archive history entry is completed. Warn and stop on mismatch.
 
-**Output On Success (No Delta Specs)**
-
-```
-## Archive Complete
-
-**Change:** <change-name>
-**Schema:** <schema-name>
-**Archived to:** the archive path derived from `planningHome.changesDir`/YYYY-MM-DD-<name>/
-**Specs:** No delta specs
-
-All artifacts complete. All tasks complete.
-```
-
-**Output On Success With Warnings**
-
-```
-## Archive Complete (with warnings)
-
-**Change:** <change-name>
-**Schema:** <schema-name>
-**Archived to:** the archive path derived from `planningHome.changesDir`/YYYY-MM-DD-<name>/
-**Specs:** Sync skipped (user chose to skip)
-
-**Warnings:**
-- Archived with 2 incomplete artifacts
-- Archived with 3 incomplete tasks
-- Delta spec sync was skipped (user chose to skip)
-
-Review the archive if this was not intentional.
-```
-
-**Output On Error (Archive Exists)**
-
-```
-## Archive Failed
-
-**Change:** <change-name>
-**Target:** the archive path derived from `planningHome.changesDir`/YYYY-MM-DD-<name>/
-
-Target archive directory already exists.
-
-**Options:**
-1. Rename the existing archive
-2. Delete the existing archive if it's a duplicate
-3. Wait until a different date to archive
-```
-
-**Guardrails**
-- Always prompt for change selection if not provided
-- Use artifact graph (openspec status --json) for completion checking
-- Don't block archive on warnings - just inform and confirm
-- Preserve .openspec.yaml when moving to archive (it moves with the directory)
-- Show clear summary of what happened
-- If sync is requested, use the Skill tool to invoke `openspec-sync-specs` (agent-driven)
-- If delta specs exist, always run the sync assessment and show the combined summary before prompting
+Show `/opsx-dev-pipeline <name>` as the next action for commit, push, and optional merge delivery.

@@ -1,3 +1,4 @@
+language: zh
 schema: frontend
 context: |
   Project: snake-game
@@ -8,6 +9,11 @@ context: |
   Code Quality: Biome for linting/formatting
 
 rules:
+  language:
+    - "所有文档、规格、提案、设计和任务必须使用简体中文编写"
+    - "所有代码注释必须使用简体中文编写"
+    - "所有 commit message 必须使用简体中文编写"
+    - "所有 PR 描述和代码审查评论必须使用简体中文编写"
   proposal:
     - "Must include UI/UX impact analysis"
     - "Must specify browser/device compatibility requirements"

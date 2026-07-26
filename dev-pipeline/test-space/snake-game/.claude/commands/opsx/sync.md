@@ -1,144 +1,53 @@
 ---
 name: "OPSX: Sync"
-description: Sync delta specs from a change to main specs
-allowed-tools: Bash(openspec:*)
+description: Sync delta specs with read-through pipeline state tracking
+allowed-tools: Bash(openspec:*), Bash(node:*), Bash(git:*)
 category: Workflow
 tags: [workflow, specs, experimental]
 ---
 
-Sync delta specs from a change to main specs.
+Sync delta specs from an active change to main specs and audit the operation.
 
-This is an **agent-driven** operation - you will read delta specs and directly edit main specs to apply the changes. This allows intelligent merging (e.g., adding a scenario without copying the entire requirement).
+## Pipeline Integration (v2)
 
-**Store selection:** If the user names a store (a store is a standalone OpenSpec repo registered on this machine) or the work lives in one, run `openspec store list --json` to discover registered store ids, then pass `--store <id>` on the commands that read or write specs and changes (`new change`, `status`, `instructions`, `list`, `show`, `validate`, `archive`, `doctor`, `context`). Other commands do not take the flag. Hints printed by commands already carry the flag; keep it on follow-ups. Without a store, commands act on the nearest local `openspec/` root.
+> **状态命令失败时，不得静默继续。** 任何 `dev-pipeline-state.mjs` 命令返回非零 exit code 时，必须暂停并报告用户。禁止跳过 pre-flight 或 post-flight。
 
-**Input**: Optionally specify a change name after `/opsx:sync` (e.g., `/opsx:sync add-auth`). If omitted, check if it can be inferred from conversation context. If vague or ambiguous you MUST prompt for available changes.
+| exit code | reason | action |
+|-----------|--------|--------|
+| 0 | success | Read the returned state and continue. |
+| 10 | state missing | Run `init` and set standalone mode. |
+| 11 | invalid command | Stop and show the detail for user confirmation. |
+| 12 | I/O error or concurrent modification | Reload and retry once; if it fails again, stop and report it. |
 
-**Steps**
+### Pre-flight: State Awareness
 
-1. **If no change name provided, prompt for selection**
-
-   Run `openspec list --json` to get available changes. Use the **AskUserQuestion tool** to let the user select.
-
-   Show changes that have delta specs (under `specs/` directory).
-
-   **IMPORTANT**: Do NOT guess or auto-select a change. Always let the user choose.
-
-2. **Resolve change context**
-
-   Run:
+1. Select a change with delta specs using the underlying Skill rules.
+2. Run `get "<name>"`. For Schema v1, require explicit confirmation through `migrate-schema` and `migrate-schema --confirm`.
+3. If state is missing, use AskUserQuestion to ask whether to associate an external requirement and collect `featureId` and `featureUrl` when provided:
    ```bash
-   openspec status --change "<name>" --json
+   CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
+   ```
+   Omit both feature flags if the user skips requirement association. Do not pass placeholder values.
+4. Reuse an `in-progress` Phase 5 entry executed by `openspec-sync-specs` when present; otherwise start the sync audit entry:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 17 openspec-sync-specs --start
    ```
 
-3. **Find delta specs**
+### Execute
 
-   Use `artifactPaths.specs.existingOutputPaths` from the status JSON as the list of delta spec files.
+Load and follow `.claude/skills/openspec-sync-specs/SKILL.md` completely. Preserve its intelligent merge semantics, idempotency, change path resolution, and summary requirements.
 
-   Each delta spec file contains sections like:
-   - `## ADDED Requirements` - New requirements to add
-   - `## MODIFIED Requirements` - Changes to existing requirements
-   - `## REMOVED Requirements` - Requirements to remove
-   - `## RENAMED Requirements` - Requirements to rename (FROM:/TO: format)
+### Post-flight: Record State
 
-   If no delta specs found, inform user and stop.
+Execute these commands **in order**, checking every exit code:
 
-4. **For each delta spec, apply changes to main specs**
+1. Complete the audit record:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 17 openspec-sync-specs
+   ```
+2. No decision or transition is implied by sync.
+3. Run `get "<name>"` and verify Phase 5 Step 17 has a completed `openspec-sync-specs` entry. Warn and stop on mismatch.
 
-   For each repo-local capability delta spec path returned by the CLI:
-
-   a. **Read the delta spec** to understand the intended changes
-
-   b. **Read the main spec** at `openspec/specs/<capability>/spec.md` (may not exist yet)
-
-   c. **Apply changes intelligently**:
-
-      **ADDED Requirements:**
-      - If requirement doesn't exist in main spec → add it
-      - If requirement already exists → update it to match (treat as implicit MODIFIED)
-
-      **MODIFIED Requirements:**
-      - Find the requirement in main spec
-      - Apply the changes - this can be:
-        - Adding new scenarios (don't need to copy existing ones)
-        - Modifying existing scenarios
-        - Changing the requirement description
-      - Preserve scenarios/content not mentioned in the delta
-
-      **REMOVED Requirements:**
-      - Remove the entire requirement block from main spec
-
-      **RENAMED Requirements:**
-      - Find the FROM requirement, rename to TO
-
-   d. **Create new main spec** if capability doesn't exist yet:
-      - Create `openspec/specs/<capability>/spec.md`
-      - Add Purpose section (can be brief, mark as TBD)
-      - Add Requirements section with the ADDED requirements
-
-5. **Show summary**
-
-   After applying all changes, summarize:
-   - Which capabilities were updated
-   - What changes were made (requirements added/modified/removed/renamed)
-
-**Delta Spec Format Reference**
-
-```markdown
-## ADDED Requirements
-
-### Requirement: New Feature
-The system SHALL do something new.
-
-#### Scenario: Basic case
-- **WHEN** user does X
-- **THEN** system does Y
-
-## MODIFIED Requirements
-
-### Requirement: Existing Feature
-#### Scenario: New scenario to add
-- **WHEN** user does A
-- **THEN** system does B
-
-## REMOVED Requirements
-
-### Requirement: Deprecated Feature
-
-## RENAMED Requirements
-
-- FROM: `### Requirement: Old Name`
-- TO: `### Requirement: New Name`
-```
-
-**Key Principle: Intelligent Merging**
-
-Unlike programmatic merging, you can apply **partial updates**:
-- To add a scenario, just include that scenario under MODIFIED - don't copy existing scenarios
-- The delta represents *intent*, not a wholesale replacement
-- Use your judgment to merge changes sensibly
-
-**Output On Success**
-
-```
-## Specs Synced: <change-name>
-
-Updated main specs:
-
-**<capability-1>**:
-- Added requirement: "New Feature"
-- Modified requirement: "Existing Feature" (added 1 scenario)
-
-**<capability-2>**:
-- Created new spec file
-- Added requirement: "Another Feature"
-
-Main specs are now updated. The change remains active - archive when implementation is complete.
-```
-
-**Guardrails**
-- Read both delta and main specs before making changes
-- Preserve existing content not mentioned in delta
-- If something is unclear, ask for clarification
-- Show what you're changing as you go
-- The operation should be idempotent - running twice should give same result
+If no delta specs exist, still complete the audit entry and report that sync was a no-op. If execution is interrupted, preserve the entry as `in-progress` and call `pause`.

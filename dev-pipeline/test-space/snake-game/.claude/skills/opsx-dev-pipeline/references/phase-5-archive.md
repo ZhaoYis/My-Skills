@@ -10,6 +10,8 @@ node <SKILL_ROOT>/scripts/change-status.mjs "<name>"
 
 ## Step16：archive 前 verify 门禁
 
+- 若 `executionMode=standalone|hybrid`，先读取 `verify.status` 和 Phase5 Step16 的 `phaseHistory`。只有持久化状态为 `passed` 或经用户确认的 `skipped` 才可复用；仅存在 verify 历史、报告文件或后续 Phase 记录时不得推断通过。
+- 独立 verify 留下 `in-progress` 记录时，提示使用 `/opsx:verify <name>` 续接，或由用户明确选择重新验证/跳过；不得静默开始 archive。
 - 若 `openspec/config.yaml` 或项目约定有 verify 命令，先执行并确保通过
 - verify 失败 → **AskQuestion**（决策点 5a）：`修复后重试 verify` / `回到 Phase2 修复代码` / `回到 Phase1 修改提案（需求或设计有误）` / `暂停流水线` / `终止流程`
   - 每次执行后调用 `node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs attempt "<name>" verify passed` 或 `verify failed`

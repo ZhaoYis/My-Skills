@@ -1,23 +1,23 @@
 # CLAUDE.md
 
-This repository was initialized for Claude Code via opsx-dev-pipeline.
+本仓库已通过 opsx-dev-pipeline 为 Claude Code 完成初始化。
 
-## Quick Start
+## 快速开始
 
-- Skills directory: `.claude/skills`
-- Commands directory: `.claude/commands`
-- Start a change: `/opsx-dev-pipeline` — drives the full OpenSpec + Git pipeline (Phase0–6)
+- Skills 目录：`.claude/skills`
+- Commands 目录：`.claude/commands`
+- 开始一个变更：`/opsx-dev-pipeline`，驱动完整的 OpenSpec + Git 流水线（Phase 0-6）
 
-## Pipeline Overview
+## 流水线概览
 
-| Phase| Description |
-|-------|-------------|
-| 0 | Entrance — preflight checks |
-| 1 | Propose — create change and generate artifacts |
-| 2 | Apply — implement tasks with self-review gate |
-| 3 | Review — multi-dimension code review |
-| 4 | Unit Tests — test identification and execution gate |
-| 5 | Archive — verify, delta spec sync, and archive |
-| 6 | Merge & Push — commit, push, optional merge and tag |
+| 阶段 | 说明 |
+|------|------|
+| 0 | 入口与预检 |
+| 1 | 提案：创建 change 并生成制品 |
+| 2 | 应用：实施任务并通过自审门禁 |
+| 3 | 审查：多维度代码审查 |
+| 4 | 单元测试：识别并执行测试门禁 |
+| 5 | 归档：验证、同步增量规格并归档 |
+| 6 | 合并与推送：提交、推送以及可选的合并和标签 |
 
-Run `/opsx-dev-pipeline` with a requirement description or an existing change name to begin.
+运行 `/opsx-dev-pipeline` 并提供需求描述或已有 change 名称即可开始。
