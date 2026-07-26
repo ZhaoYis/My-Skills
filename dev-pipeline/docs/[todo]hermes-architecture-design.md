@@ -16,7 +16,25 @@
 
 **修复措辞和代码只能加固现有模式，不改变根本问题：模型有绕过门禁的路径。**
 
-Hermes 解决这个问题的方式是：**把敏感命令从模型的可见路径中移除，所有操作必须经过一个中央门禁层。**
+Hermes 的解决方案是**三层防御**，只有最后一层是代码强制的：
+
+```
+Layer 1: 入口约束（引导层）
+  模型通过 /opsx-dev-pipeline 进入 → SKILL.md.hbs 加载 → 模型知道"我在跑流水线"
+  防什么：模型不知道需要用门禁
+
+Layer 2: 对话循环（粘性层）
+  advance → checkpoint/execute → 模型行动 → advance → ...
+  Hermes 的结构化返回就是下一步的提示，模型不需要记住"下一步该调什么"
+  防什么：模型在执行中偏离流程
+
+Layer 3: 被调用方内部门禁（强制层）
+  archive.mjs 启动时检查 hasPhaseInHistory(state, 5)
+  git 操作在 Hermes 内部闭环
+  防什么：模型跳过 Hermes 直接操作底层工具
+```
+
+**诚实声明**：Layer 1 和 2 依赖模型协作。模型有 shell 权限，在技术上可以绕过它们。这不是疏忽——这是 LLM-agent 架构的固有限制。Hermes 的设计目标是把**意外绕过**（模型不知道、顺手用了更短路径）降到最低，而不是阻止**故意绕过**（模型明确拒绝遵守指令）。
 
 ---
 
@@ -40,12 +58,12 @@ Model 可见的唯一接口：
 │                                                   │
 │  hermes advance <name>    ← 推进流程到下一站      │
 │  hermes decide <name>     ← 在决策点做出选择      │
+│  hermes reset <name>      ← 回退到之前阶段        │
 │  hermes status <name>     ← 查询当前状态          │
 │  hermes history <name>    ← 查询阶段历史          │
-│                                                   │
-│  （archive.mjs、git、transition 不再暴露给模型）  │
 └────────────────────┬─────────────────────────────┘
-                     │ 内部调用
+                     │ Layer 3 强制层：内部执行
+                     │ archive.mjs / git / 状态转换
                      ▼
 ┌──────────────────────────────────────────────────┐
 │  dev-pipeline-state.mjs（状态机 + 门禁引擎）      │
@@ -61,9 +79,10 @@ Model 可见的唯一接口：
 ```
 
 核心原则：
-- **Hermes 是唯一入口**：模型不能绕过 Hermes 执行任何 Phase 推进操作
+- **Hermes 是推荐入口**：Layer 1+2 引导模型使用 Hermes，降低意外绕过的概率
+- **archive.mjs / git 内部闭环**：Layer 3 在被调用方内部检查门禁，不依赖模型遵守指令
 - **Hermes 是薄壳**：不复制状态机逻辑，调用 `dev-pipeline-state.mjs` 的内部 API
-- **模板继续承载指令**：Hermes 返回门禁和状态信息，执行指令仍在模板文件中
+- **模板继续承载指令**：Hermes 返回状态信息，创造性工作的执行指令仍在模板文件中
 
 ---
 
@@ -324,15 +343,22 @@ advance → { type: "execute", phase: 5 }  ← 状态已记录
 ```
 {
   pipeline: "<name>",
-  executionMode: "pipeline",
   currentPhase: 3,
   currentStep: 12,
-  phaseHistory: [...],
-  decisions: { proposalApproved: true, implementationConfirmed: true, ... },
-  tests: { status: "pending" },
-  verify: { status: "pending" },
-  archivePath: null,
-  postArchiveAction: null
+  phaseHistory: [
+    { phase: 0, step: "start", timestamp: "..." },
+    { phase: 1, step: "start", timestamp: "..." },
+    ...
+  ],
+  decisions: {
+    dp1: { option: "approve", timestamp: "..." },
+    dp2: { option: "review", timestamp: "..." },
+    // dp3 尚未决定，不在此 map 中
+  },
+  loopCounts: {
+    dp1: 1,
+    dp3: 2     // 仅可循环的检查点
+  }
 }
 ```
 
@@ -406,7 +432,8 @@ templates/common/skills/opsx-dev-pipeline/
 ├── scripts/
 │   ├── dev-pipeline-state.mjs     ← 状态机引擎（保留，供 Hermes 调用）
 │   ├── hermes.mjs                  ← 新增：Hermes CLI 入口
-│   └── archive.mjs                 ← 保留（Hermes 内部调用，不暴露给模型）
+│   ├── hermes.test.mjs             ← 新增：Hermes 单元测试
+│   └── archive.mjs                 ← 保留（Hermes 内部调用，加内部门禁）
 ├── references/                     ← 模板文件（保留，模型读取指令）
 │   ├── phase-1-proposal.md.hbs
 │   ├── phase-2-implementation.md.hbs
@@ -428,24 +455,31 @@ import {
   saveState,
   validateGates,
   hasPhaseInHistory,
+  recordPhase,
   formatLocalTime,
   SCHEMA_VERSION,
 } from './dev-pipeline-state.mjs';
+
+// Hermes 内部执行的 CLI 操作
+import { execArchive } from './archive.mjs';
+import { execSync } from 'child_process';
 ```
 
 不复制状态机逻辑，只做编排：
-- `advance`：调用 `validateGates` → 调用内部 `recordPhase` → 返回结构化结果
-- `decide`：更新 `state.decisions` → 调用 `saveState`
-- `status`/`history`：调用 `loadState` → 格式化返回
+- `advance`：`classifyState` → 停顿点早返回 / `getNextState` → `validateGates` → `recordPhase` → 循环
+- `decide`：验证 checkpoint → 写入 `state.decisions` → `saveState`
+- `reset`：验证回退方向 → 清除 `decisions` + `phaseHistory` → `recordPhase` 到目标阶段
+- `status`/`history`：`loadState` → 格式化返回
+- 内部执行：`archive.mjs`、`git commit/push/merge` 在 advance 循环内自动触发
 
 ---
 
 ## SKILL.md.hbs 全局约束（新增）
 
 ```markdown
-## Hermes 门禁协议
+## Hermes 流水线协议
 
-所有 Phase 推进操作必须通过 `hermes` 命令执行：
+所有 Phase 推进操作通过 `hermes` 命令执行：
 
 - **推进流程**：`node <SKILL_ROOT>/scripts/hermes.mjs advance "<name>"`
   - 每次完成当前阶段的执行工作后调用
@@ -455,12 +489,6 @@ import {
 - **做出决策**：`node <SKILL_ROOT>/scripts/hermes.mjs decide "<name>" <option-id>`
   - 仅在用户做出显式选择后调用
   - 不得预设选项或自动选择
-
-- **禁止直接调用**：
-  - `archive.mjs` — Hermes 内部调用，模型不得直接使用
-  - `dev-pipeline-state.mjs transition` — Hermes 内部调用
-  - `git commit` / `git push` — Hermes 在 deliver 阶段内部调用
-  - 任何绕过 Hermes 的状态修改命令
 
 - **查询状态**：`node <SKILL_ROOT>/scripts/hermes.mjs status "<name>"`
 ```
@@ -477,19 +505,25 @@ import {
 
 **步骤 1 — Hermes 核心 + 模板适配**
 
-1. 创建 `hermes.mjs`（advance / decide / status / history）
-2. 在 `hermes advance` 中实现停顿点定义和累积门禁检查
-3. 更新所有模板文件中的命令引用（`transition` → `hermes advance`，`archive.mjs` → 删除直接调用）
-4. 更新 `SKILL.md.hbs` 添加 Hermes 全局约束
+1. 创建 `hermes.mjs`（advance / decide / reset / status / history）
+2. 在 `hermes advance` 中实现 while 循环 + 停顿点分类 + 累积门禁检查
+3. 实现 `getNextState` 分支映射和 `classifyState` 停顿点判断
+4. 实现循环计数器（`countCheckpointVisits` + `CHECKPOINT_MAX_LOOPS`）
+5. 实现 `archive.mjs` 内部门禁检查（`hasPhaseInHistory(state, 5)`）
+6. 更新所有模板文件（`transition` → `hermes advance`，删除 `archive.mjs`/`git` 直接调用）
+7. 更新 `SKILL.md.hbs` 添加 Hermes 流水线协议
 
 **步骤 2 — 单元测试 + 端到端验证**
 
-1. 新增 `hermes.test.mjs`，覆盖 `advance` 和 `decide` 的：
+1. 新增测试覆盖：
    - 各 Phase 的 checkpoint 正确返回
    - 跨 Phase 跳转被门禁拒绝
    - 门禁满足后允许通过
    - `decide` 在非决策点调用时拒绝
-2. 端到端验证：运行完整流水线，确认每个决策点都被触发
+   - `reset` 只能回退，不能跳进
+   - 循环计数器达到上限后移除循环选项
+   - `archive.mjs` 在 Phase 5 之前调用时报错
+2. 端到端验证：人工运行完整流水线，确认每个决策点都被触发
 
 ### 向后兼容
 
