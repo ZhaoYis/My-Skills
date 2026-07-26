@@ -36,7 +36,7 @@
     "test:watch": "vitest",
     "prepublishOnly": "npm run build",
     "pack:check": "npm pack --dry-run",
-    "init:smoke": "tsx src/bin/opsx-dev-pipeline.ts init --tool claude --yes --dry-run",
+    "init:smoke": "tsx src/bin/opsx-dev-pipeline.ts init --tool claude --stack backend --yes --dry-run",
     "format": "biome format --write .",
     "format:check": "biome format .",
     "lint": "biome lint src test test-pipeline/src test-pipeline/scenarios",

@@ -93,6 +93,7 @@ describe('buildInstallPlan', () => {
       packageLicense: PACKAGE_LICENSE,
       packageRepoUrl: PACKAGE_REPO_URL,
       skillRootNote: '- Custom root: `.custom/skills/opsx-dev-pipeline`',
+      askTool: 'AskUserQuestion',
     });
 
     const rendered = await renderTemplate(
@@ -300,7 +301,7 @@ describe('buildInstallPlan', () => {
     for (const command of standaloneCommands) {
       const rendered = await renderTemplate(
         path.join(PACKAGE_ROOT, 'templates/common/commands/opsx', `${command}.md.hbs`),
-        { skillsDir, commandsDir },
+        { skillsDir, commandsDir, askTool: 'AskUserQuestion' },
       );
 
       expect(rendered).toContain(

@@ -18,8 +18,8 @@ import type { PipelineManifest } from '../../src/core/manifest/types.js';
 import {
   MANIFEST_FILE,
   MANIFEST_PACKAGE_JSON_KEY,
-  PACKAGE_LICENSE,
   PACKAGE_JSON_FILE,
+  PACKAGE_LICENSE,
   PACKAGE_REPO_URL,
   PACKAGE_VERSION,
 } from '../../src/core/runtime/meta.js';
@@ -121,6 +121,24 @@ const toolExpectations = {
   ],
 } as const;
 
+const askToolExpectations = {
+  claude: {
+    skillRoot: '.claude/skills/opsx-dev-pipeline',
+    commandsRoot: '.claude/commands/opsx',
+    askTool: 'AskUserQuestion',
+  },
+  cursor: {
+    skillRoot: '.cursor/rules/opsx-dev-pipeline',
+    commandsRoot: '.cursor/commands/opsx',
+    askTool: 'AskQuestion',
+  },
+  codex: {
+    skillRoot: '.codex/prompts/opsx-dev-pipeline',
+    commandsRoot: '.codex/commands/opsx',
+    askTool: 'AskUserQuestion',
+  },
+} as const;
+
 describe('tool matrix', () => {
   it.each(
     Object.entries(toolExpectations),
@@ -143,6 +161,20 @@ describe('tool matrix', () => {
         expect(await fs.pathExists(path.join(dir, file))).toBe(false);
       }
     }
+
+    const { skillRoot, commandsRoot, askTool } =
+      askToolExpectations[tool as keyof typeof askToolExpectations];
+    const skill = await fs.readFile(path.join(dir, skillRoot, 'SKILL.md'), 'utf8');
+    const entrance = await fs.readFile(
+      path.join(dir, skillRoot, 'references/phase-0-entrance.md'),
+      'utf8',
+    );
+    const propose = await fs.readFile(path.join(dir, commandsRoot, 'propose.md'), 'utf8');
+    expect(skill).toContain(`决策点首选 **${askTool}** tool`);
+    expect(entrance).toContain(`必须使用 **${askTool}** 询问用户是否关联外部需求`);
+    expect(propose).toMatch(new RegExp(`^allowed-tools: Bash\\(openspec:\\*\\), ${askTool}$`, 'm'));
+    expect(propose).toContain(`MUST call ${askTool} and wait for an explicit choice`);
+    expect([skill, entrance, propose].join('\n')).not.toMatch(/\{\{[^}]+\}\}/);
 
     // Negative: no removed preset skills or commands in any adapter output
     const allFiles = await listAllFiles(dir);
@@ -337,7 +369,7 @@ describe('tool matrix', () => {
     expect(entrance).toContain('gate 补偿');
     expect(entrance).toContain('postArchiveAction');
     expect(entrance).toContain('首次创建状态的统一规则');
-    expect(entrance).toContain('必须使用 **AskQuestion** 询问用户是否关联外部需求');
+    expect(entrance).toContain('必须使用 **AskUserQuestion** 询问用户是否关联外部需求');
     expect(entrance).toContain('--feature-id "<featureId>"');
     expect(entrance).toContain('--feature-id "<featureId>" --feature-url "<featureUrl>"');
     expect(entrance).toContain('--skip-feature-association');

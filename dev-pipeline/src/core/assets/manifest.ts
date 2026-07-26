@@ -71,7 +71,16 @@ export const assetManifest: AssetDefinition[] = [
     source: 'templates/common/skills/opsx-dev-pipeline',
     destination: '{{skillsDir}}/opsx-dev-pipeline',
     includeExtensions: ['.md', '.hbs', '.mjs', '.yaml'],
-    templateFiles: ['SKILL.md.hbs'],
+    templateFiles: [
+      'SKILL.md.hbs',
+      'phase-0-entrance.md.hbs',
+      'phase-1-propose.md.hbs',
+      'phase-2-apply.md.hbs',
+      'phase-3-review.md.hbs',
+      'phase-4-unit-tests.md.hbs',
+      'phase-5-archive.md.hbs',
+      'phase-6-merge-push.md.hbs',
+    ],
     excludePatterns: ['.gitkeep'],
   },
   {

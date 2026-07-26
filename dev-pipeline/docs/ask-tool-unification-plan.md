@@ -10,7 +10,31 @@
 | Cursor | `AskQuestion` | Cursor 内置的询问工具 |
 | Codex | 无专用工具 | 依赖降级策略（编号选项列表） |
 
-### 当前问题
+### 根因：信号冲突导致 AI 绕过工具调用
+
+AI 在运行时同时接收来自多个文件的指令。以下是 Claude Code 环境下的信号链：
+
+```
+信号 1 — command 模板 (propose.md.hbs)：
+  allowed-tools: ..., AskUserQuestion           ✅ 正确声明
+  MUST call AskUserQuestion                      ✅ 正确指令
+
+信号 2 — SKILL.md.hbs（全局策略）：
+  首选 **AskQuestion** tool                      🚨 Claude Code 无此工具
+  不可用时改用编号选项列表                         🚨 明确授权降级
+
+信号 3 — reference 文件 (phase-*.md)：
+  必须使用 **AskQuestion** 询问...               🚨 全部指向错误工具名
+```
+
+**AI 的推理链**：
+
+1. 读取 SKILL.md → "首选 **AskQuestion**"
+2. 检索可用工具 → 存在 `AskUserQuestion`，不存在 `AskQuestion`
+3. SKILL.md 降级策略 → "不可用时改用编号选项列表"
+4. 结论 → `AskQuestion` 不可用，**按降级策略输出文本选项** ✅（AI 认为这样做合规）
+
+即使 command 模板写了 "MUST call AskUserQuestion"，SKILL.md 的降级授权给了 AI 一条合法的绕过路径。AI 判定 `AskQuestion ≠ AskUserQuestion`，认定目标工具不可用，然后按降级策略直接文本输出。
 
 ```
 模板/引用文件                      硬编码名称        正确环境      错误环境
@@ -20,7 +44,7 @@ skills/.../SKILL.md.hbs         AskQuestion        Cursor         Claude Code, C
 skills/.../references/*.md      AskQuestion        Cursor         Claude Code, Codex
 ```
 
-**核心矛盾**：Reference 文件（`phase-*.md`）硬编码了 `AskQuestion`（Cursor 的工具名），在 Claude Code 环境中该工具不存在，导致每次都降级到编号列表——`AskUserQuestion` 实际不生效。Command 模板则反向硬编码了 `AskUserQuestion`，部署到 Cursor 时工具名也不正确。
+**核心矛盾**：SKILL.md 和 reference 文件硬编码了 `AskQuestion`（Cursor 工具名），在 Claude Code 中该工具不存在，降级策略触发后 AI 直接输出文本选项——`AskUserQuestion` 永远不会被调用。Command 模板则反向硬编码了 `AskUserQuestion`，部署到 Cursor 时同样不可用。
 
 ## 设计方案
 
@@ -47,7 +71,7 @@ skills/.../references/*.md      AskQuestion        Cursor         Claude Code, C
 
 ## 实施步骤
 
-### Step 1: 新增模板上下文变量
+### ✅ Step 1: 新增模板上下文变量
 
 **文件**: `src/core/init/buildInstallPlan.ts`
 
@@ -68,7 +92,7 @@ return {
 };
 ```
 
-### Step 2: 修改 Command 模板（5 个文件）
+### ✅ Step 2: 修改 Command 模板（5 个文件）
 
 每个文件有 **2 处** `AskUserQuestion` → `{{askTool}}`：
 
@@ -91,7 +115,7 @@ return {
 
 > `templates/common/commands/opsx/explore.md.hbs` **不需要修改**——它不使用任何询问工具。
 
-### Step 3: 修改 SKILL.md.hbs（1 处）
+### ✅ Step 3: 修改 SKILL.md.hbs（1 处）
 
 **文件**: `templates/common/skills/opsx-dev-pipeline/SKILL.md.hbs`
 
@@ -100,7 +124,7 @@ return {
 + 决策点首选 **{{askTool}}** tool；不可用时改用编号选项列表并等待用户回复，不得自动代选。
 ```
 
-### Step 4: 转换 Reference 文件为模板（7 个文件）
+### ✅ Step 4: 转换 Reference 文件为模板（7 个文件）
 
 将静态 `.md` 重命名为 `.md.hbs`，使它们能被 Handlebars 渲染。
 
@@ -139,7 +163,7 @@ templateFiles: [
 ],
 ```
 
-### Step 5: 更新测试
+### ✅ Step 5: 更新测试
 
 **文件**: `test/unit/build-install-plan.test.ts`（~line 300-305）
 

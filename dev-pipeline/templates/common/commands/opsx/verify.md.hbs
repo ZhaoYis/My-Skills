@@ -1,7 +1,7 @@
 ---
 name: "OPSX: Verify"
 description: Verify implementation against OpenSpec artifacts with pipeline state tracking
-allowed-tools: Bash(openspec:*)
+allowed-tools: Bash(openspec:*), {{askTool}}
 category: Workflow
 tags: [workflow, verify, experimental]
 ---
@@ -23,7 +23,7 @@ Verify that implementation matches the change artifacts and record the result.
 
 1. Select a change using the underlying Skill rules and confirm it exists with `openspec status --change "<name>" --json`.
 2. Run `get "<name>"`. For Schema v1, require confirmation through `migrate-schema` before `migrate-schema --confirm`.
-3. If state is missing, **MUST call AskUserQuestion and wait for an explicit choice**: `Associate external requirement` / `Skip association`. Never infer a skip from context. If the user chooses association, collect `featureId` and optional `featureUrl`. Run exactly one `init` branch:
+3. If state is missing, **MUST call {{askTool}} and wait for an explicit choice**: `Associate external requirement` / `Skip association`. Never infer a skip from context. If the user chooses association, collect `featureId` and optional `featureUrl`. Run exactly one `init` branch:
    ```bash
    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
    # Associate external requirement without a URL

@@ -16,6 +16,12 @@ import { isAppendableInstallFile } from './isAppendableInstallFile.js';
 import { renderString } from './renderTemplates.js';
 import type { InstallPlan } from './types.js';
 
+const ASK_TOOL_MAP: Record<ToolId, string> = {
+  claude: 'AskUserQuestion',
+  cursor: 'AskQuestion',
+  codex: 'AskUserQuestion',
+};
+
 export interface BuildInstallPlanInput {
   rootDir: string;
   targetDir: string;
@@ -69,6 +75,7 @@ export function buildTemplateContext(params: {
     packageLicense: PACKAGE_LICENSE,
     packageRepoUrl: PACKAGE_REPO_URL,
     skillRootNote: params.skillRootNote?.replaceAll('{skillsDir}', params.skillsDir),
+    askTool: ASK_TOOL_MAP[params.toolId],
   };
 }
 

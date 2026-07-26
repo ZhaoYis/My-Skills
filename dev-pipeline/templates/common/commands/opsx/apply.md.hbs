@@ -1,7 +1,7 @@
 ---
 name: "OPSX: Apply"
 description: Implement an OpenSpec change with pipeline-aware state tracking
-allowed-tools: Bash(openspec:*)
+allowed-tools: Bash(openspec:*), {{askTool}}
 category: Workflow
 tags: [workflow, artifacts, experimental]
 ---
@@ -26,7 +26,7 @@ Implement tasks from an OpenSpec change while preserving resumable pipeline stat
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<name>"
    ```
 2. If the state is Schema v1, run `migrate-schema "<name>"`; require explicit approval before `migrate-schema "<name>" --confirm`.
-3. If state is missing, **MUST call AskUserQuestion and wait for an explicit choice**: `Associate external requirement` / `Skip association`. Never infer a skip from a detailed request, absent issue information, or an instruction to proceed. If the user chooses association, collect `featureId` and optional `featureUrl`. Run exactly one `init` branch, then set `executionMode` to `standalone`:
+3. If state is missing, **MUST call {{askTool}} and wait for an explicit choice**: `Associate external requirement` / `Skip association`. Never infer a skip from a detailed request, absent issue information, or an instruction to proceed. If the user chooses association, collect `featureId` and optional `featureUrl`. Run exactly one `init` branch, then set `executionMode` to `standalone`:
    ```bash
    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
    # Associate external requirement without a URL

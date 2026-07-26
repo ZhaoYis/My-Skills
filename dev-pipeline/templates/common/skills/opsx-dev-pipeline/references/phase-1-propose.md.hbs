@@ -4,7 +4,7 @@
 
 在生成制品前先确认理解正确。用中性表述给出：影响范围、关键链路、待确认问题。
 
-使用 **AskQuestion**：
+使用 **{{askTool}}**：
 - `确认需求理解，开始生成制品（推荐）` → 进入Step4
 - `补充/修改需求理解` → 文本对话澄清后回到本决策点
 - `终止流程` → 退出
@@ -22,7 +22,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" requirementsC
 ```bash
 node <SKILL_ROOT>/scripts/new-change.mjs "<name>"
 ```
-若名称冲突，**AskQuestion**：`在已有 change 上继续` / `创建新名称`。
+若名称冲突，**{{askTool}}**：`在已有 change 上继续` / `创建新名称`。
 
 对每个 `ready` 状态的制品：
 ```bash
@@ -36,7 +36,7 @@ node <SKILL_ROOT>/scripts/instructions.mjs "<name>" <artifact-id>
 
 **硬性规则：用户明确选择「确认提案，开始实施」前，禁止进入 Phase2。**
 
-展示提案摘要（对照用户原始需求：范围、关键行为、非目标与假设），然后 **AskQuestion**：
+展示提案摘要（对照用户原始需求：范围、关键行为、非目标与假设），然后 **{{askTool}}**：
 - `确认提案，开始实施` → 进入 Phase2
 - `提案不符合预期，我要补充/修改` → 文本对话收集反馈，改制品后回到本决策点
 - `终止流程` → 退出
