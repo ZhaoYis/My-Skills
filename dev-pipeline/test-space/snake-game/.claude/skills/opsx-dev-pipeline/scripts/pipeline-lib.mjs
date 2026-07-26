@@ -149,7 +149,7 @@ export function runJsonCommand(args, { failureReason, nextAction }) {
   let output;
   try {
     output = execFileSync(command, commandArgs, {
-      cwd: getRepoRoot(),
+      cwd: findOpenSpecRoot(),
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
       maxBuffer: MAX_BUFFER,
@@ -184,5 +184,5 @@ export function runJsonCommand(args, { failureReason, nextAction }) {
 export function prepareOpenSpecRepo() {
   requireCommand('openspec', 'openspec-cli-not-found', 'install-openspec');
   requireCommand('node', 'node-cli-not-found', 'install-node');
-  return getRepoRoot();
+  return findOpenSpecRoot();
 }

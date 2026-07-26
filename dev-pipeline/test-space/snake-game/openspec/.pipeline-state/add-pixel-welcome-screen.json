@@ -1,12 +1,12 @@
 {
   "schemaVersion": 2,
-  "_version": 32,
+  "_version": 37,
   "changeName": "add-pixel-welcome-screen",
   "sourceBranch": "feature/lite",
   "targetBranch": null,
   "currentPhase": 6,
   "currentStep": 20,
-  "status": "active",
+  "status": "completed",
   "executionMode": "hybrid",
   "createdBy": "大師兄丶",
   "createdByEmail": "zhaoyi_dsx@163.com",
@@ -183,18 +183,19 @@
     },
     {
       "phase": 6,
-      "step": 20,
+      "step": 22,
       "executedBy": "pipeline",
-      "status": "in-progress",
+      "status": "completed",
       "startedAt": "2026-07-26 21:27:34",
-      "completedAt": null,
+      "completedAt": "2026-07-26 21:29:17",
       "decisions": {
         "requirementsConfirmed": true,
         "proposalApproved": true,
         "implementationConfirmed": true,
         "reviewDisposition": "review",
         "reviewResult": "passed",
-        "postArchiveAction": "push-only"
+        "postArchiveAction": "push-only",
+        "sourcePushApproved": true
       },
       "gatesBypassed": []
     }
@@ -206,7 +207,8 @@
     "implementationConfirmed": true,
     "reviewDisposition": "review",
     "reviewResult": "passed",
-    "postArchiveAction": "push-only"
+    "postArchiveAction": "push-only",
+    "sourcePushApproved": true
   },
   "review": {
     "round": 1,
@@ -227,12 +229,12 @@
   },
   "archivePath": "openspec/changes/archive/2026-07-26-add-pixel-welcome-screen",
   "delivery": {
-    "commitSha": null,
+    "commitSha": "9a5640f",
     "mergeCommitSha": null,
-    "sourcePushed": false,
+    "sourcePushed": true,
     "targetPushed": false,
     "tag": null
   },
   "createdAt": "2026-07-26 20:53:27",
-  "updatedAt": "2026-07-26 21:27:34"
+  "updatedAt": "2026-07-26 21:29:17"
 }

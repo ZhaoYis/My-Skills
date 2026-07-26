@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { emitError, getRepoRoot, requireCommand } from './pipeline-lib.mjs';
+import { emitError, findOpenSpecRoot, getRepoRoot, requireCommand } from './pipeline-lib.mjs';
 
 const MAX_BUFFER = 10 * 1024 * 1024;
 
@@ -25,6 +25,7 @@ function commandSucceeds(command, args, cwd) {
 requireCommand('openspec', 'openspec-cli-not-found', 'install-openspec');
 requireCommand('node', 'node-cli-not-found', 'install-node');
 const repoRoot = getRepoRoot();
+const openspecRoot = findOpenSpecRoot();
 
 let openspecVersion;
 try {
@@ -44,7 +45,7 @@ try {
   );
 }
 
-if (!existsSync(path.join(repoRoot, 'openspec/config.yaml'))) {
+if (!existsSync(path.join(openspecRoot, 'openspec/config.yaml'))) {
   emitError(
     'openspec-not-initialized',
     '仓库根目录缺少 openspec/config.yaml',
@@ -64,7 +65,7 @@ if (!commandSucceeds('git', ['config', 'user.email'], repoRoot)) {
 let listOutput;
 try {
   listOutput = execFileSync('openspec', ['list', '--json'], {
-    cwd: repoRoot,
+    cwd: openspecRoot,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
     maxBuffer: MAX_BUFFER,
