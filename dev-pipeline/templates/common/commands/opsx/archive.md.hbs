@@ -23,12 +23,13 @@ Archive a completed change and persist the final pipeline gates.
 
 1. Select an active change using the underlying Skill rules, then run `get "<name>"` with the pipeline state script.
 2. For Schema v1, run `migrate-schema "<name>"`; require explicit approval before adding `--confirm`.
-3. If state is missing, initialize it and set `executionMode` to `standalone`:
+3. If state is missing, use AskUserQuestion to ask whether to associate an external requirement. Collect `featureId` and `featureUrl` when supplied, initialize the state, and set `executionMode` to `standalone`:
    ```bash
    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH"
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
    ```
+   If the user skips requirement association, omit both feature flags. Do not store placeholder values.
 4. Compensate missing gates without guessing:
    - If `tests.status` is pending, ask `passed` / `failed` / `skipped` / `rerun tests`. Persist a confirmed result with `set tests.status`; stop on failed.
    - If `verify.status` is pending, ask `passed` / `failed` / `skipped` / `run /opsx:verify`. Persist `passed` or `failed` through `attempt verify`, and a confirmed skip through `set verify.status`; stop on failed.

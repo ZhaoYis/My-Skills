@@ -1,4 +1,7 @@
+import { execSync } from 'node:child_process';
+import crypto from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { emitError, findOpenSpecRoot, validateChangeName } from './pipeline-lib.mjs';
 
@@ -11,6 +14,9 @@ const mutablePaths = new Set([
   'sourceBranch',
   'targetBranch',
   'executionMode',
+  'featureInfo',
+  'featureInfo.featureId',
+  'featureInfo.featureUrl',
   'archivePath',
   'review.reportPath',
   'review.status',
@@ -52,6 +58,73 @@ function rememberReadVersion(state) {
   return state;
 }
 
+function resolveCreatedBy() {
+  try {
+    const name = execSync('git config user.name', {
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    }).trim();
+    if (name) return name;
+  } catch {
+    // Fall through to local environment identity.
+  }
+
+  if (process.env.USER) return process.env.USER;
+  try {
+    const username = os.userInfo().username;
+    if (username) return username;
+  } catch {
+    // Fall through to hostname.
+  }
+  return os.hostname() || 'unknown';
+}
+
+function resolveCreatedByEmail() {
+  try {
+    const email = execSync('git config user.email', {
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    }).trim();
+    if (email) return email;
+  } catch {
+    // An email is optional.
+  }
+  return '';
+}
+
+function collectMachineInfo() {
+  return {
+    platform: os.platform(),
+    hostname: os.hostname(),
+    osRelease: os.release(),
+    nodeVersion: process.version,
+    arch: os.arch(),
+  };
+}
+
+function computeFingerprint(createdAt, createdBy, featureId, nonce) {
+  const input = `${createdAt}|${createdBy}|${featureId || ''}|${nonce}`;
+  return crypto.createHash('md5').update(input).digest('hex');
+}
+
+function ensureMetaFields(state) {
+  if (!state.createdBy) state.createdBy = 'unknown';
+  if (!state.createdByEmail) state.createdByEmail = '';
+  if (!state.machineInfo?.platform) {
+    state.machineInfo = {
+      platform: state.machineInfo?.platform || 'unknown',
+      hostname: state.machineInfo?.hostname || 'unknown',
+      osRelease: state.machineInfo?.osRelease || 'unknown',
+      nodeVersion: state.machineInfo?.nodeVersion || 'unknown',
+      arch: state.machineInfo?.arch || 'unknown',
+    };
+  }
+  if (!state.featureInfo) state.featureInfo = null;
+  if (!state.fingerprintId) state.fingerprintId = '';
+  if (!state.fingerprintNonce) state.fingerprintNonce = '';
+  return state;
+}
+
 async function tryReadState(root, changeName) {
   try {
     return JSON.parse(await readFile(statePath(root, changeName), 'utf8'));
@@ -75,7 +148,7 @@ async function loadState(root, changeName) {
       );
       return null;
     }
-    return rememberReadVersion(state);
+    return rememberReadVersion(ensureMetaFields(state));
   } catch (error) {
     emitError(
       'pipeline-state-invalid',
@@ -224,7 +297,73 @@ function migrateToV2(state) {
   state.executionMode = state.executionMode || 'pipeline';
   state.phaseHistory = Array.isArray(state.phaseHistory) ? state.phaseHistory : [];
   state.gatesBypassed = Array.isArray(state.gatesBypassed) ? state.gatesBypassed : [];
-  return state;
+  return ensureMetaFields(state);
+}
+
+function parseInitArgs(args) {
+  const sourceBranch = args[0] && !args[0].startsWith('--') ? args[0] : null;
+  const namedArgs = {};
+  const namedStart = sourceBranch ? 1 : 0;
+
+  for (let index = namedStart; index < args.length; index += 1) {
+    const key = args[index];
+    const value = args[index + 1];
+    if (key.startsWith('--') && value && !value.startsWith('--')) {
+      namedArgs[key] = value;
+      index += 1;
+    }
+  }
+
+  return { sourceBranch, namedArgs };
+}
+
+function recordPipelineTransition(state, fromPhase, fromStep, toPhase, toStep, now) {
+  const findPipelineInProgress = (phase) =>
+    state.phaseHistory.find(
+      (entry) =>
+        entry.phase === phase && entry.executedBy === 'pipeline' && entry.status === 'in-progress',
+    );
+
+  if (fromPhase === toPhase) {
+    const currentEntry = findPipelineInProgress(toPhase);
+    if (currentEntry) {
+      currentEntry.step = toStep;
+      currentEntry.decisions = { ...state.decisions };
+      return;
+    }
+  } else {
+    const previousEntry = findPipelineInProgress(fromPhase);
+    if (previousEntry) {
+      previousEntry.step = fromStep;
+      previousEntry.status = 'completed';
+      previousEntry.completedAt = now;
+      previousEntry.decisions = { ...state.decisions };
+    } else {
+      state.phaseHistory.push({
+        phase: fromPhase,
+        step: fromStep,
+        executedBy: 'pipeline',
+        status: 'completed',
+        startedAt: now,
+        completedAt: now,
+        decisions: { ...state.decisions },
+        gatesBypassed: [],
+      });
+    }
+  }
+
+  if (!findPipelineInProgress(toPhase)) {
+    state.phaseHistory.push({
+      phase: toPhase,
+      step: toStep,
+      executedBy: 'pipeline',
+      status: 'in-progress',
+      startedAt: now,
+      completedAt: null,
+      decisions: { ...state.decisions },
+      gatesBypassed: [],
+    });
+  }
 }
 
 const attemptRules = {
@@ -265,18 +404,41 @@ if (!command) {
       if (existingState) {
         output({ status: 'ok', reason: 'pipeline-state-already-exists', state: existingState });
       } else if (process.exitCode === undefined) {
+        const { sourceBranch, namedArgs } = parseInitArgs(args);
+        const createdBy = namedArgs['--created-by'] || resolveCreatedBy();
+        const createdByEmail = resolveCreatedByEmail();
+        const featureId = namedArgs['--feature-id'] || null;
+        const featureUrl = namedArgs['--feature-url'] || null;
         const now = new Date().toISOString();
+        const nonce = crypto.randomBytes(4).toString('hex');
         const state = {
           schemaVersion: SCHEMA_VERSION,
           _version: 0,
           changeName,
-          sourceBranch: args[0] || null,
+          sourceBranch,
           targetBranch: null,
           currentPhase: 0,
           currentStep: 1,
           status: 'active',
           executionMode: 'pipeline',
-          phaseHistory: [],
+          createdBy,
+          createdByEmail,
+          machineInfo: collectMachineInfo(),
+          featureInfo: featureId ? { featureId, featureUrl } : null,
+          fingerprintId: computeFingerprint(now, createdBy, featureId, nonce),
+          fingerprintNonce: nonce,
+          phaseHistory: [
+            {
+              phase: 0,
+              step: 1,
+              executedBy: 'pipeline',
+              status: 'in-progress',
+              startedAt: now,
+              completedAt: null,
+              decisions: {},
+              gatesBypassed: [],
+            },
+          ],
           gatesBypassed: [],
           decisions: {},
           review: { round: 0, reportPath: null, status: 'pending' },
@@ -466,6 +628,8 @@ if (!command) {
         } else if (command === 'transition') {
           const toPhase = Number(args[0]);
           const toStep = Number(args[1]);
+          const fromPhase = state.currentPhase;
+          const fromStep = state.currentStep;
           if (
             !Number.isInteger(toPhase) ||
             toPhase < 0 ||
@@ -478,30 +642,36 @@ if (!command) {
               'choose-valid-transition',
               EXIT_INVALID_TRANSITION,
             );
-          } else if (!allowedTransition(state.currentPhase, toPhase, state.executionMode)) {
+          } else if (!allowedTransition(fromPhase, toPhase, state.executionMode)) {
             emitError(
               'pipeline-transition-not-allowed',
-              `不允许从 Phase${state.currentPhase} 跳转到 Phase${toPhase}`,
+              `不允许从 Phase${fromPhase} 跳转到 Phase${toPhase}`,
               'follow-pipeline-transitions',
               EXIT_INVALID_TRANSITION,
             );
           } else {
             applyGateInference(state);
-            if (await saveState(root, state)) {
-              const gateError = validateGates(state, state.currentPhase, toPhase);
-              if (gateError) {
-                emitError(
-                  gateError[0],
-                  gateError[1],
-                  'complete-required-gate',
-                  EXIT_INVALID_TRANSITION,
-                );
-              } else {
-                state.currentPhase = toPhase;
-                state.currentStep = toStep;
-                state.status = 'active';
-                if (await saveState(root, state)) output({ status: 'ok', state });
-              }
+            const gateError = validateGates(state, fromPhase, toPhase);
+            if (gateError) {
+              emitError(
+                gateError[0],
+                gateError[1],
+                'complete-required-gate',
+                EXIT_INVALID_TRANSITION,
+              );
+            } else {
+              state.currentPhase = toPhase;
+              state.currentStep = toStep;
+              state.status = 'active';
+              recordPipelineTransition(
+                state,
+                fromPhase,
+                fromStep,
+                toPhase,
+                toStep,
+                new Date().toISOString(),
+              );
+              if (await saveState(root, state)) output({ status: 'ok', state });
             }
           }
         } else if (command === 'pause') {

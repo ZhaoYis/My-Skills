@@ -23,12 +23,13 @@ Verify that implementation matches the change artifacts and record the result.
 
 1. Select a change using the underlying Skill rules and confirm it exists with `openspec status --change "<name>" --json`.
 2. Run `get "<name>"`. For Schema v1, require confirmation through `migrate-schema` before `migrate-schema --confirm`.
-3. If state is missing:
+3. If state is missing, use AskUserQuestion to offer an optional external requirement association and collect `featureId` and `featureUrl` when provided:
    ```bash
    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH"
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
    ```
+   Omit both feature flags when the user skips the association; never pass placeholders.
 4. Reuse an `in-progress` Phase 5 entry executed by `openspec-verify-change` when present; otherwise start the verification audit entry:
    ```bash
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 16 openspec-verify-change --start

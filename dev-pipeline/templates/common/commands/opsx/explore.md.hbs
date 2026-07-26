@@ -26,8 +26,9 @@ Enter read-only explore mode with awareness of active pipeline context.
    ```bash
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<name>"
    ```
-3. If state exists, summarize `currentPhase`, `currentStep`, `executionMode`, recent `phaseHistory`, decisions, and bypassed gates as context. Do not ask gate compensation questions in explore mode.
+3. If state exists, summarize `currentPhase`, `currentStep`, `executionMode`, `featureInfo`, recent `phaseHistory`, decisions, and bypassed gates as context. Do not ask gate compensation questions in explore mode.
 4. If state is Schema v1, mention that pipeline takeover will require confirmed migration. Do not run migration here.
+5. If state is missing, continue read-only and explain that a state-creating command will offer optional `featureId`/`featureUrl` association before `init`. Do not collect or persist metadata in explore mode.
 
 ### Execute
 

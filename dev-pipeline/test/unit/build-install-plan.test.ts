@@ -226,6 +226,14 @@ describe('buildInstallPlan', () => {
         `node ${skillsDir}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs`,
       );
       expect(rendered).not.toMatch(/\{\{[^}]+\}\}/);
+      if (command === 'explore') {
+        expect(rendered).toContain('featureInfo');
+        expect(rendered).toContain('Do not collect or persist metadata in explore mode.');
+      } else {
+        expect(rendered).toContain('AskUserQuestion');
+        expect(rendered).toContain('--feature-id "<featureId>"');
+        expect(rendered).toContain('--feature-url "<featureUrl>"');
+      }
     }
   });
 

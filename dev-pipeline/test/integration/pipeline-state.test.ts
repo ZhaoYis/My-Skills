@@ -17,10 +17,23 @@ interface StateResult {
   payload: Record<string, unknown>;
 }
 
+interface PhaseHistoryEntry {
+  phase: number;
+  step: number;
+  executedBy: string;
+  status: 'in-progress' | 'completed' | 'abandoned';
+  startedAt: string;
+  completedAt: string | null;
+  decisions: Record<string, unknown>;
+  gatesBypassed: string[];
+}
+
 beforeEach(async () => {
   repo = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-state-'));
   createdDirs.push(repo);
   await run('git', ['init', '--quiet']);
+  await run('git', ['config', 'user.name', 'Pipeline Tester']);
+  await run('git', ['config', 'user.email', 'pipeline@example.com']);
 });
 
 afterEach(async () => {
@@ -47,7 +60,7 @@ describe('pipeline state machine', () => {
       schemaVersion: number;
       _version: number;
       executionMode: string;
-      phaseHistory: unknown[];
+      phaseHistory: PhaseHistoryEntry[];
       gatesBypassed: unknown[];
       _readVersion?: number;
     };
@@ -57,13 +70,288 @@ describe('pipeline state machine', () => {
       schemaVersion: 2,
       _version: 1,
       executionMode: 'pipeline',
-      phaseHistory: [],
       gatesBypassed: [],
     });
+    expect(initializedState.phaseHistory).toEqual([
+      expect.objectContaining({
+        phase: 0,
+        step: 1,
+        executedBy: 'pipeline',
+        status: 'in-progress',
+        completedAt: null,
+      }),
+    ]);
     expect(initializedState._readVersion).toBeUndefined();
 
     const persisted = await fs.readJson(path.join(repo, 'openspec/.pipeline-state/schema-v2.json'));
     expect(persisted._readVersion).toBeUndefined();
+  });
+
+  it('initializes creator, machine, feature and fingerprint metadata', async () => {
+    const initialized = await state('init', 'metadata-fields', 'feature/metadata-fields');
+    const initializedState = initialized.payload.state as {
+      createdBy: string;
+      createdByEmail: string;
+      machineInfo: Record<string, string>;
+      featureInfo: null;
+      fingerprintId: string;
+      fingerprintNonce: string;
+    };
+
+    expect(initializedState).toMatchObject({
+      createdBy: 'Pipeline Tester',
+      createdByEmail: 'pipeline@example.com',
+      featureInfo: null,
+      machineInfo: {
+        platform: os.platform(),
+        hostname: os.hostname(),
+        osRelease: os.release(),
+        nodeVersion: process.version,
+        arch: os.arch(),
+      },
+    });
+    expect(initializedState.fingerprintId).toMatch(/^[a-f0-9]{32}$/);
+    expect(initializedState.fingerprintNonce).toMatch(/^[a-f0-9]{8}$/);
+  });
+
+  it('accepts feature metadata during initialization', async () => {
+    const initialized = await state(
+      'init',
+      'feature-metadata',
+      'feature/metadata',
+      '--feature-id',
+      'PROJ-1234',
+      '--feature-url',
+      'https://jira.example.com/browse/PROJ-1234',
+    );
+
+    expect(initialized.payload.state).toMatchObject({
+      sourceBranch: 'feature/metadata',
+      featureInfo: {
+        featureId: 'PROJ-1234',
+        featureUrl: 'https://jira.example.com/browse/PROJ-1234',
+      },
+    });
+  });
+
+  it('accepts a createdBy override during initialization', async () => {
+    const initialized = await state(
+      'init',
+      'creator-override',
+      'feature/creator-override',
+      '--created-by',
+      'testuser',
+    );
+
+    expect(initialized.payload.state).toMatchObject({
+      createdBy: 'testuser',
+      createdByEmail: 'pipeline@example.com',
+    });
+  });
+
+  it('generates a unique fingerprint for each change', async () => {
+    const first = await state('init', 'fingerprint-one', 'feature/fingerprint-one');
+    const second = await state('init', 'fingerprint-two', 'feature/fingerprint-two');
+
+    expect((first.payload.state as { fingerprintId: string }).fingerprintId).not.toBe(
+      (second.payload.state as { fingerprintId: string }).fingerprintId,
+    );
+  });
+
+  it('fills metadata defaults when loading an older Schema v2 state', async () => {
+    const stateDir = path.join(repo, 'openspec/.pipeline-state');
+    await fs.ensureDir(stateDir);
+    await fs.writeJson(path.join(stateDir, 'older-v2.json'), {
+      schemaVersion: 2,
+      _version: 7,
+      changeName: 'older-v2',
+      currentPhase: 1,
+      currentStep: 3,
+      executionMode: 'pipeline',
+      phaseHistory: [],
+      gatesBypassed: [],
+      decisions: {},
+    });
+
+    const loaded = await state('get', 'older-v2');
+    expect(loaded.payload.state).toMatchObject({
+      createdBy: 'unknown',
+      createdByEmail: '',
+      machineInfo: {
+        platform: 'unknown',
+        hostname: 'unknown',
+        osRelease: 'unknown',
+        nodeVersion: 'unknown',
+        arch: 'unknown',
+      },
+      featureInfo: null,
+      fingerprintId: '',
+      fingerprintNonce: '',
+    });
+  });
+
+  it('records pipeline phase history during transitions', async () => {
+    await state('init', 'transition-history', 'feature/transition-history');
+    await state('transition', 'transition-history', '1', '3');
+    await state('decision', 'transition-history', 'proposalApproved', 'true');
+    const transitioned = await state('transition', 'transition-history', '2', '6');
+    const transitionedState = transitioned.payload.state as {
+      _version: number;
+      phaseHistory: PhaseHistoryEntry[];
+    };
+
+    expect(transitionedState._version).toBe(4);
+    expect(transitionedState.phaseHistory).toEqual([
+      expect.objectContaining({ phase: 0, executedBy: 'pipeline', status: 'completed' }),
+      expect.objectContaining({ phase: 1, executedBy: 'pipeline', status: 'completed' }),
+      expect.objectContaining({ phase: 2, executedBy: 'pipeline', status: 'in-progress' }),
+    ]);
+  });
+
+  it('reuses pipeline history for transitions within the same phase', async () => {
+    await state('init', 'same-phase-history', 'feature/same-phase-history');
+    await state('transition', 'same-phase-history', '1', '3');
+    await state('transition', 'same-phase-history', '1', '4');
+    await state('transition', 'same-phase-history', '1', '5');
+    const current = await state('get', 'same-phase-history');
+    const history = (current.payload.state as { phaseHistory: PhaseHistoryEntry[] }).phaseHistory;
+    const phaseOneEntries = history.filter(
+      (entry) => entry.phase === 1 && entry.executedBy === 'pipeline',
+    );
+
+    expect(phaseOneEntries).toEqual([
+      expect.objectContaining({ step: 5, status: 'in-progress', completedAt: null }),
+    ]);
+  });
+
+  it('allows featureInfo to be updated through mutable state paths', async () => {
+    await state('init', 'mutable-feature', 'feature/mutable-feature');
+    const updated = await state('set', 'mutable-feature', 'featureInfo.featureId', '"PROJ-5678"');
+    const withUrl = await state(
+      'set',
+      'mutable-feature',
+      'featureInfo.featureUrl',
+      '"https://jira.example.com/browse/PROJ-5678"',
+    );
+
+    expect(updated.code).toBe(0);
+    expect(withUrl.payload.state).toMatchObject({
+      featureInfo: {
+        featureId: 'PROJ-5678',
+        featureUrl: 'https://jira.example.com/browse/PROJ-5678',
+      },
+    });
+  });
+
+  it('keeps fingerprint metadata stable across transitions', async () => {
+    const initialized = await state('init', 'stable-fingerprint', 'feature/stable-fingerprint');
+    const initialState = initialized.payload.state as {
+      fingerprintId: string;
+      fingerprintNonce: string;
+    };
+    await state('transition', 'stable-fingerprint', '1', '3');
+    await state('transition', 'stable-fingerprint', '1', '5');
+    const current = await state('get', 'stable-fingerprint');
+
+    expect(current.payload.state).toMatchObject({
+      fingerprintId: initialState.fingerprintId,
+      fingerprintNonce: initialState.fingerprintNonce,
+    });
+  });
+
+  it('records both sides of a backward phase transition', async () => {
+    await state('init', 'backward-history', 'feature/backward-history');
+    await state('set', 'backward-history', 'executionMode', 'standalone');
+    await state('decision', 'backward-history', 'proposalApproved', 'true');
+    await state('set', 'backward-history', 'tests.status', 'passed');
+    await state('transition', 'backward-history', '5', '15');
+    const transitioned = await state('transition', 'backward-history', '2', '6');
+    const history = (transitioned.payload.state as { phaseHistory: PhaseHistoryEntry[] })
+      .phaseHistory;
+
+    expect(history).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ phase: 5, executedBy: 'pipeline', status: 'completed' }),
+        expect.objectContaining({ phase: 2, executedBy: 'pipeline', status: 'in-progress' }),
+      ]),
+    );
+  });
+
+  it('keeps standalone record-phase entries separate from transition history', async () => {
+    await state('init', 'interleaved-history', 'feature/interleaved-history');
+    await state('transition', 'interleaved-history', '1', '3');
+    await state('record-phase', 'interleaved-history', '1', '3', 'openspec-propose', '--start');
+    await state('record-phase', 'interleaved-history', '1', '5', 'openspec-propose');
+    await state('decision', 'interleaved-history', 'proposalApproved', 'true');
+    const transitioned = await state('transition', 'interleaved-history', '2', '6');
+    const history = (transitioned.payload.state as { phaseHistory: PhaseHistoryEntry[] })
+      .phaseHistory;
+
+    expect(history).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          phase: 1,
+          executedBy: 'pipeline',
+          status: 'completed',
+        }),
+        expect.objectContaining({
+          phase: 1,
+          executedBy: 'openspec-propose',
+          status: 'completed',
+        }),
+        expect.objectContaining({
+          phase: 2,
+          executedBy: 'pipeline',
+          status: 'in-progress',
+        }),
+      ]),
+    );
+  });
+
+  it('keeps complete lifecycle history across repeated forward and backward transitions', async () => {
+    await state('init', 'repeated-history', 'feature/repeated-history');
+    await state('transition', 'repeated-history', '1', '3');
+    await state('decision', 'repeated-history', 'proposalApproved', 'true');
+    await state('transition', 'repeated-history', '2', '6');
+    await state('transition', 'repeated-history', '1', '3');
+    await state('transition', 'repeated-history', '2', '6');
+    await state('decision', 'repeated-history', 'implementationConfirmed', 'true');
+    const transitioned = await state('transition', 'repeated-history', '4', '13');
+    const history = (transitioned.payload.state as { phaseHistory: PhaseHistoryEntry[] })
+      .phaseHistory;
+
+    expect(history.map(({ phase, status }) => ({ phase, status }))).toEqual([
+      { phase: 0, status: 'completed' },
+      { phase: 1, status: 'completed' },
+      { phase: 2, status: 'completed' },
+      { phase: 1, status: 'completed' },
+      { phase: 2, status: 'completed' },
+      { phase: 4, status: 'in-progress' },
+    ]);
+    expect(history.filter((entry) => entry.status === 'in-progress')).toHaveLength(1);
+    expect(history.slice(0, -1).every((entry) => entry.completedAt !== null)).toBe(true);
+  });
+
+  it('tracks a pure pipeline Phase 0 lifecycle from initialization', async () => {
+    const initialized = await state('init', 'phase-zero-lifecycle', 'feature/phase-zero');
+    const initialEntry = (initialized.payload.state as { phaseHistory: PhaseHistoryEntry[] })
+      .phaseHistory[0];
+    expect(initialEntry).toMatchObject({
+      phase: 0,
+      executedBy: 'pipeline',
+      status: 'in-progress',
+      completedAt: null,
+    });
+
+    const transitioned = await state('transition', 'phase-zero-lifecycle', '1', '3');
+    const completedEntry = (transitioned.payload.state as { phaseHistory: PhaseHistoryEntry[] })
+      .phaseHistory[0];
+    expect(completedEntry).toMatchObject({
+      phase: 0,
+      executedBy: 'pipeline',
+      status: 'completed',
+    });
+    expect(completedEntry?.startedAt).not.toBe(completedEntry?.completedAt);
   });
 
   it('migrates Schema v1 only after confirmation and remains idempotent', async () => {
@@ -146,8 +434,8 @@ describe('pipeline state machine', () => {
 
     expect(currentState.executionMode).toBe('hybrid');
     expect(currentState.gatesBypassed).toEqual(['review-skipped']);
-    expect(currentState.phaseHistory).toHaveLength(2);
-    expect(currentState.phaseHistory[0]).toMatchObject({
+    expect(currentState.phaseHistory).toHaveLength(3);
+    expect(currentState.phaseHistory[1]).toMatchObject({
       phase: 2,
       step: 8,
       executedBy: 'openspec-apply-change',
@@ -155,12 +443,12 @@ describe('pipeline state machine', () => {
       decisions: { implementationConfirmed: true },
       gatesBypassed: ['review-skipped'],
     });
-    expect(currentState.phaseHistory[0]?.completedAt).toBeTruthy();
-    expect(currentState.phaseHistory[1]).toMatchObject({
+    expect(currentState.phaseHistory[1]?.completedAt).toBeTruthy();
+    expect(currentState.phaseHistory[2]).toMatchObject({
       phase: 3,
       status: 'abandoned',
     });
-    expect(currentState.phaseHistory[1]?.completedAt).toBeTruthy();
+    expect(currentState.phaseHistory[2]?.completedAt).toBeTruthy();
   });
 
   it('requires Schema v2 before recording phase history', async () => {
@@ -209,7 +497,7 @@ describe('pipeline state machine', () => {
       current.payload.state as {
         phaseHistory: Array<{ executedBy: string; status: string; completedAt: string | null }>;
       }
-    ).phaseHistory;
+    ).phaseHistory.filter((entry) => entry.executedBy !== 'pipeline');
     expect(history).toEqual([
       expect.objectContaining({
         executedBy: 'openspec-verify-change',
