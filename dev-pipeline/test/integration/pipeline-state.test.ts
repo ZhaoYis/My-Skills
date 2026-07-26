@@ -50,10 +50,72 @@ function run(command: string, args: string[]): Promise<StateResult> {
 }
 
 function state(...args: string[]): Promise<StateResult> {
+  const hasFeatureDecision =
+    args.includes('--feature-id') || args.includes('--skip-feature-association');
+  const normalizedArgs =
+    args[0] === 'init' && !hasFeatureDecision ? [...args, '--skip-feature-association'] : args;
+  return run(process.execPath, [stateScript, ...normalizedArgs]);
+}
+
+function rawState(...args: string[]): Promise<StateResult> {
   return run(process.execPath, [stateScript, ...args]);
 }
 
 describe('pipeline state machine', () => {
+  it('rejects initialization without an explicit feature association decision', async () => {
+    const result = await rawState('init', 'missing-feature-decision', 'feature/missing-decision');
+
+    expect(result.code).toBe(11);
+    expect(result.payload).toMatchObject({
+      reason: 'feature-association-decision-required',
+      nextAction: 'provide-feature-id-or-skip-feature-association',
+    });
+    expect(
+      await fs.pathExists(
+        path.join(repo, 'openspec/.pipeline-state/missing-feature-decision.json'),
+      ),
+    ).toBe(false);
+  });
+
+  it('accepts an explicit feature association skip', async () => {
+    const result = await rawState(
+      'init',
+      'explicit-feature-skip',
+      'feature/explicit-skip',
+      '--skip-feature-association',
+    );
+
+    expect(result.code).toBe(0);
+    expect(result.payload.state).toMatchObject({ featureInfo: null });
+  });
+
+  it('rejects conflicting feature association options', async () => {
+    const result = await rawState(
+      'init',
+      'conflicting-feature-options',
+      'feature/conflicting-options',
+      '--feature-id',
+      'PROJ-1234',
+      '--skip-feature-association',
+    );
+
+    expect(result.code).toBe(11);
+    expect(result.payload).toMatchObject({ reason: 'feature-association-options-conflict' });
+  });
+
+  it('rejects a feature URL without a feature ID', async () => {
+    const result = await rawState(
+      'init',
+      'feature-url-without-id',
+      'feature/url-without-id',
+      '--feature-url',
+      'https://jira.example.com/browse/PROJ-1234',
+    );
+
+    expect(result.code).toBe(11);
+    expect(result.payload).toMatchObject({ reason: 'feature-id-required' });
+  });
+
   it('initializes Schema v2 with standalone integration fields', async () => {
     const initialized = await state('init', 'schema-v2', 'feature/schema-v2');
     const initializedState = initialized.payload.state as {

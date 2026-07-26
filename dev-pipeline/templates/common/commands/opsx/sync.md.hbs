@@ -1,7 +1,7 @@
 ---
 name: "OPSX: Sync"
 description: Sync delta specs with read-through pipeline state tracking
-allowed-tools: Bash(openspec:*), Bash(node:*), Bash(git:*)
+allowed-tools: Bash(openspec:*)
 category: Workflow
 tags: [workflow, specs, experimental]
 ---
@@ -23,13 +23,18 @@ Sync delta specs from an active change to main specs and audit the operation.
 
 1. Select a change with delta specs using the underlying Skill rules.
 2. Run `get "<name>"`. For Schema v1, require explicit confirmation through `migrate-schema` and `migrate-schema --confirm`.
-3. If state is missing, use AskUserQuestion to ask whether to associate an external requirement and collect `featureId` and `featureUrl` when provided:
+3. If state is missing, **MUST call AskUserQuestion and wait for an explicit choice**: `Associate external requirement` / `Skip association`. Never infer a skip from context. If the user chooses association, collect `featureId` and optional `featureUrl`. Run exactly one `init` branch:
    ```bash
    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+   # Associate external requirement without a URL
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>"
+   # Associate external requirement with a URL
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   # Explicitly skip association
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --skip-feature-association
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
    ```
-   Omit both feature flags if the user skips requirement association. Do not pass placeholder values.
+   Run exactly one `init` command and never pass placeholder values.
 4. Reuse an `in-progress` Phase 5 entry executed by `openspec-sync-specs` when present; otherwise start the sync audit entry:
    ```bash
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 17 openspec-sync-specs --start

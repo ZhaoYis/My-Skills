@@ -1,7 +1,7 @@
 ---
 name: "OPSX: Verify"
 description: Verify implementation against OpenSpec artifacts with pipeline state tracking
-allowed-tools: Bash(openspec:*), Bash(node:*), Bash(git:*)
+allowed-tools: Bash(openspec:*)
 category: Workflow
 tags: [workflow, verify, experimental]
 ---
@@ -23,13 +23,18 @@ Verify that implementation matches the change artifacts and record the result.
 
 1. Select a change using the underlying Skill rules and confirm it exists with `openspec status --change "<name>" --json`.
 2. Run `get "<name>"`. For Schema v1, require confirmation through `migrate-schema` before `migrate-schema --confirm`.
-3. If state is missing, use AskUserQuestion to offer an optional external requirement association and collect `featureId` and `featureUrl` when provided:
+3. If state is missing, **MUST call AskUserQuestion and wait for an explicit choice**: `Associate external requirement` / `Skip association`. Never infer a skip from context. If the user chooses association, collect `featureId` and optional `featureUrl`. Run exactly one `init` branch:
    ```bash
    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+   # Associate external requirement without a URL
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>"
+   # Associate external requirement with a URL
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   # Explicitly skip association
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --skip-feature-association
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
    ```
-   Omit both feature flags when the user skips the association; never pass placeholders.
+   Run exactly one `init` command and never pass placeholder values.
 4. Reuse an `in-progress` Phase 5 entry executed by `openspec-verify-change` when present; otherwise start the verification audit entry:
    ```bash
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 16 openspec-verify-change --start

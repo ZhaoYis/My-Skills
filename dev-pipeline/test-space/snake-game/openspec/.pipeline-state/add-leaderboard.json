@@ -1,12 +1,12 @@
 {
   "schemaVersion": 2,
-  "_version": 21,
+  "_version": 27,
   "changeName": "add-leaderboard",
   "sourceBranch": "feature/lite",
   "targetBranch": null,
   "currentPhase": 6,
   "currentStep": 20,
-  "status": "active",
+  "status": "completed",
   "executionMode": "standalone",
   "createdBy": "大師兄丶",
   "createdByEmail": "zhaoyi_dsx@163.com",
@@ -143,16 +143,18 @@
     },
     {
       "phase": 6,
-      "step": 20,
+      "step": 26,
       "executedBy": "openspec-dev-pipeline",
-      "status": "in-progress",
+      "status": "completed",
       "startedAt": "2026-07-26T07:12:47.091Z",
-      "completedAt": null,
+      "completedAt": "2026-07-26T07:13:59.644Z",
       "decisions": {
         "requirementsConfirmed": true,
         "proposalApproved": true,
         "implementationConfirmed": true,
-        "postArchiveAction": "push-only"
+        "postArchiveAction": "push-only",
+        "commitApproved": true,
+        "sourcePushApproved": true
       },
       "gatesBypassed": []
     }
@@ -164,7 +166,9 @@
     "requirementsConfirmed": true,
     "proposalApproved": true,
     "implementationConfirmed": true,
-    "postArchiveAction": "push-only"
+    "postArchiveAction": "push-only",
+    "commitApproved": true,
+    "sourcePushApproved": true
   },
   "review": {
     "round": 0,
@@ -185,12 +189,12 @@
   },
   "archivePath": "openspec/changes/archive/2026-07-26-add-leaderboard",
   "delivery": {
-    "commitSha": null,
+    "commitSha": "a57b929",
     "mergeCommitSha": null,
-    "sourcePushed": false,
+    "sourcePushed": true,
     "targetPushed": false,
     "tag": null
   },
   "createdAt": "2026-07-26T06:52:15.912Z",
-  "updatedAt": "2026-07-26T07:12:47.092Z"
+  "updatedAt": "2026-07-26T07:14:02.875Z"
 }

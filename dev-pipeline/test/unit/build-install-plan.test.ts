@@ -312,8 +312,12 @@ describe('buildInstallPlan', () => {
         expect(rendered).toContain('Do not collect or persist metadata in explore mode.');
       } else {
         expect(rendered).toContain('AskUserQuestion');
+        expect(rendered).toMatch(/^allowed-tools: .*AskUserQuestion$/m);
+        expect(rendered).toContain('MUST call AskUserQuestion and wait for an explicit choice');
         expect(rendered).toContain('--feature-id "<featureId>"');
         expect(rendered).toContain('--feature-url "<featureUrl>"');
+        expect(rendered).toContain('--skip-feature-association');
+        expect(rendered).not.toContain('[--feature-url');
       }
     }
   });

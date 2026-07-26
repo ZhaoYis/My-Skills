@@ -59,7 +59,7 @@ async function executePhase0(
   scenario: ScenarioConfig,
 ): Promise<Record<string, unknown>> {
   const preflight = await runSkillScript(env, 'preflight.mjs');
-  await runState(env, 'init', scenario.changeName, env.sourceBranch);
+  await runState(env, 'init', scenario.changeName, env.sourceBranch, '--skip-feature-association');
   await runState(env, 'transition', scenario.changeName, '1', '3');
   return { preflight };
 }

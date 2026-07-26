@@ -1,7 +1,7 @@
 ---
 name: "OPSX: Apply"
 description: Implement an OpenSpec change with pipeline-aware state tracking
-allowed-tools: Bash(openspec:*), Bash(node:*), Bash(git:*)
+allowed-tools: Bash(openspec:*)
 category: Workflow
 tags: [workflow, artifacts, experimental]
 ---
@@ -26,13 +26,18 @@ Implement tasks from an OpenSpec change while preserving resumable pipeline stat
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<name>"
    ```
 2. If the state is Schema v1, run `migrate-schema "<name>"`; require explicit approval before `migrate-schema "<name>" --confirm`.
-3. If state is missing, use AskUserQuestion to offer an optional external requirement association. Collect `featureId` and `featureUrl` when provided, then run `init` and set `executionMode` to `standalone`:
+3. If state is missing, **MUST call AskUserQuestion and wait for an explicit choice**: `Associate external requirement` / `Skip association`. Never infer a skip from a detailed request, absent issue information, or an instruction to proceed. If the user chooses association, collect `featureId` and optional `featureUrl`. Run exactly one `init` branch, then set `executionMode` to `standalone`:
    ```bash
    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+   # Associate external requirement without a URL
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>"
+   # Associate external requirement with a URL
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   # Explicitly skip association
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --skip-feature-association
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
    ```
-   The user may skip requirement association; in that case omit both feature flags instead of passing placeholders.
+   Run exactly one `init` command and never pass placeholder values.
 4. Check `phaseHistory` for an `in-progress` Phase 2 entry executed by `openspec-apply-change`. Reuse it when present; otherwise start Phase 2 before transitioning. The history entry lets hybrid gate inference recognize that applying an existing proposal implies proposal approval:
    ```bash
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 2 6 openspec-apply-change --start

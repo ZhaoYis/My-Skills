@@ -336,6 +336,12 @@ describe('tool matrix', () => {
     expect(entrance).toContain('phaseHistory');
     expect(entrance).toContain('gate 补偿');
     expect(entrance).toContain('postArchiveAction');
+    expect(entrance).toContain('首次创建状态的统一规则');
+    expect(entrance).toContain('必须使用 **AskQuestion** 询问用户是否关联外部需求');
+    expect(entrance).toContain('--feature-id "<featureId>"');
+    expect(entrance).toContain('--feature-id "<featureId>" --feature-url "<featureUrl>"');
+    expect(entrance).toContain('--skip-feature-association');
+    expect(entrance).toContain('不得推断为跳过');
 
     const archive = await fs.readFile(
       path.join(skillRoot, 'references/phase-5-archive.md'),

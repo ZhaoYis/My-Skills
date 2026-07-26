@@ -39,7 +39,7 @@ repository: "{{~packageRepoUrl~}}"
 
 ## 状态协议
 
-- 新 change：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<change>" "<source-branch>"`
+- 新 change：先按 Phase0 获取用户明确的需求关联决定，再运行 `init "<change>" "<source-branch>" --feature-id "<featureId>"`（有 URL 时追加 `--feature-url "<featureUrl>"`）或 `init "<change>" "<source-branch>" --skip-feature-association`
 - 读取状态：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<change>"`
 - 确认迁移 v1：先运行 `migrate-schema "<change>"` 获取确认提示，用户同意后运行 `migrate-schema "<change>" --confirm`
 - 阶段审计开始：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs record-phase "<change>" <phase> <step> <executed-by> --start`

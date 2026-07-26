@@ -1,7 +1,7 @@
 ---
 name: "OPSX: Propose"
 description: Propose a new change with pipeline-aware state tracking
-allowed-tools: Bash(openspec:*), Bash(node:*), Bash(git:*)
+allowed-tools: Bash(openspec:*)
 category: Workflow
 tags: [workflow, artifacts, experimental]
 ---
@@ -29,14 +29,19 @@ State command exit codes:
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<name>"
    ```
 3. If the state is Schema v1, run `migrate-schema "<name>"`, show the returned confirmation prompt, and only after explicit approval run `migrate-schema "<name>" --confirm`.
-4. If state is missing, use AskUserQuestion to ask whether the user wants to associate an external requirement such as a JIRA issue. Collect `featureId` and `featureUrl` when provided; the user may skip both. Then run these commands in order and check every exit code:
+4. If state is missing, **MUST call AskUserQuestion and wait for an explicit choice**: `Associate external requirement` / `Skip association`. This gate is mandatory even when the request is detailed or the user says to proceed; never infer a skip from context. If the user chooses association, collect `featureId` and optional `featureUrl`. Then run exactly one `init` branch, followed by the remaining commands, and check every exit code:
    ```bash
    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+   # Associate external requirement without a URL
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>"
+   # Associate external requirement with a URL
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   # Explicitly skip association
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --skip-feature-association
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 1 3
    ```
-   Omit both feature flags when the user skips requirement association. Never pass placeholder values.
+   Run exactly one `init` command and never pass placeholder values.
 5. For existing state:
    - Phase 0: transition to Phase 1 Step 3.
    - Phase 1: continue.
