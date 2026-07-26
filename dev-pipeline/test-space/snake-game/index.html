@@ -640,6 +640,27 @@
             [ITEM_TYPES.SHIELD]:    { score: 0,  time: 0,  label: '护盾' },
         });
 
+        // ─── Bomb System ──────────────────────────────
+        const BOMB_TYPES = Object.freeze({
+            DORMANT:  'dormant',
+            UNSTABLE: 'unstable',
+        });
+
+        const EXPLOSION_RADIUS = 1;  // 3×3 = 1 cell in each direction
+
+        const BOMB_CONFIG = {
+            spawnIntervalMin: 4000,   // ms
+            spawnIntervalMax: 6000,
+            maxBombs: 6,
+            dormantProb: 0.70,
+            unstableFuseMin: 3000,    // ms
+            unstableFuseMax: 8000,
+            dormantSegmentLossMin: 2,
+            dormantSegmentLossMax: 3,
+            explosionDuration: 400,   // ms
+            chainBaseScore: 5,        // points per severed segment
+        };
+
         // ─── Skin Registry ─────────────────────────
         const SKINS = Object.freeze({
             classic: {
@@ -676,6 +697,20 @@
                     pauseBg: 'rgba(15, 23, 42, 0.6)',
                     pauseText: '#f1f5f9',
                     pauseSubtext: '#94a3b8',
+                    // Bomb & Explosion
+                    bombDormantBody: '#b91c1c',
+                    bombDormantHighlight: '#fca5a5',
+                    bombDormantDark: '#7f1d1d',
+                    bombDormantGlow: 'rgba(185, 28, 28, 0.5)',
+                    bombUnstableBody: '#ea580c',
+                    bombUnstableHighlight: '#fed7aa',
+                    bombUnstableDark: '#9a3412',
+                    bombUnstableGlow: 'rgba(234, 88, 12, 0.65)',
+                    bombUnstableGlowMid: 'rgba(251, 146, 60, 0.3)',
+                    bombUnstableSpark: 'rgba(255, 237, 160, 0.9)',
+                    explosionBlast: 'rgba(251, 146, 60, 0.7)',
+                    explosionGround: 'rgba(239, 68, 68, 0.6)',
+                    explosionParticle: 'rgba(255, 200, 50, 0.9)',
                 },
                 ambientGlow1: 'rgba(34, 211, 238, 0.08)',
                 ambientGlow2: 'rgba(16, 185, 129, 0.06)',
@@ -714,6 +749,20 @@
                     pauseBg: 'rgba(0, 0, 0, 0.7)',
                     pauseText: '#e0e0e0',
                     pauseSubtext: '#888888',
+                    // Bomb & Explosion
+                    bombDormantBody: '#555555',
+                    bombDormantHighlight: '#999999',
+                    bombDormantDark: '#333333',
+                    bombDormantGlow: 'rgba(100, 100, 100, 0.5)',
+                    bombUnstableBody: '#ff8800',
+                    bombUnstableHighlight: '#ffcc00',
+                    bombUnstableDark: '#cc5500',
+                    bombUnstableGlow: 'rgba(255, 136, 0, 0.7)',
+                    bombUnstableGlowMid: 'rgba(255, 170, 0, 0.3)',
+                    bombUnstableSpark: 'rgba(255, 255, 100, 0.9)',
+                    explosionBlast: 'rgba(255, 170, 0, 0.7)',
+                    explosionGround: 'rgba(255, 100, 0, 0.6)',
+                    explosionParticle: 'rgba(255, 220, 50, 0.9)',
                 },
                 ambientGlow1: 'rgba(0, 255, 0, 0.05)',
                 ambientGlow2: 'rgba(255, 176, 0, 0.03)',
@@ -752,6 +801,20 @@
                     pauseBg: 'rgba(11, 11, 46, 0.7)',
                     pauseText: '#e8e8f0',
                     pauseSubtext: '#9ca3af',
+                    // Bomb & Explosion
+                    bombDormantBody: '#7c3aed',
+                    bombDormantHighlight: '#c4b5fd',
+                    bombDormantDark: '#4c1d95',
+                    bombDormantGlow: 'rgba(124, 58, 237, 0.5)',
+                    bombUnstableBody: '#d946ef',
+                    bombUnstableHighlight: '#f0abfc',
+                    bombUnstableDark: '#86198f',
+                    bombUnstableGlow: 'rgba(217, 70, 239, 0.65)',
+                    bombUnstableGlowMid: 'rgba(232, 121, 249, 0.3)',
+                    bombUnstableSpark: 'rgba(255, 200, 255, 0.9)',
+                    explosionBlast: 'rgba(217, 70, 239, 0.7)',
+                    explosionGround: 'rgba(168, 85, 247, 0.6)',
+                    explosionParticle: 'rgba(255, 180, 255, 0.9)',
                 },
                 ambientGlow1: 'rgba(167, 139, 250, 0.08)',
                 ambientGlow2: 'rgba(99, 102, 241, 0.05)',
@@ -790,6 +853,20 @@
                     pauseBg: 'rgba(28, 18, 13, 0.7)',
                     pauseText: '#fdf0e6',
                     pauseSubtext: '#b8a090',
+                    // Bomb & Explosion
+                    bombDormantBody: '#92400e',
+                    bombDormantHighlight: '#fcd34d',
+                    bombDormantDark: '#78350f',
+                    bombDormantGlow: 'rgba(146, 64, 14, 0.5)',
+                    bombUnstableBody: '#f97316',
+                    bombUnstableHighlight: '#fed7aa',
+                    bombUnstableDark: '#9a3412',
+                    bombUnstableGlow: 'rgba(249, 115, 22, 0.65)',
+                    bombUnstableGlowMid: 'rgba(251, 146, 60, 0.3)',
+                    bombUnstableSpark: 'rgba(254, 240, 138, 0.9)',
+                    explosionBlast: 'rgba(251, 146, 60, 0.7)',
+                    explosionGround: 'rgba(239, 68, 68, 0.6)',
+                    explosionParticle: 'rgba(255, 220, 100, 0.9)',
                 },
                 ambientGlow1: 'rgba(251, 146, 60, 0.08)',
                 ambientGlow2: 'rgba(245, 158, 11, 0.04)',
@@ -837,6 +914,13 @@
         let shieldActive = false;          // shield power-up
         let boostActive = false;           // lightning speed boost
         let boostEndTime = 0;              // performance.now() when boost expires
+
+        // ─── Bomb State ──────────────────────────────
+        let bombs = [];              // { x, y, type, spawnTime, fuseDuration }
+        let explosions = [];         // { x, y, startTime, chainLevel }
+        let bombSpawnAccumulator = 0;
+        let nextBombSpawnDelay = BOMB_CONFIG.spawnIntervalMin
+            + Math.random() * (BOMB_CONFIG.spawnIntervalMax - BOMB_CONFIG.spawnIntervalMin);
 
         // ─── Canvas Setup ──────────────────────────
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -984,9 +1068,138 @@
             }
         }
 
+        // ─── Bomb Logic ────────────────────────────
+        function getCellsInRadius(x, y, radius) {
+            const cells = [];
+            for (let dx = -radius; dx <= radius; dx++) {
+                for (let dy = -radius; dy <= radius; dy++) {
+                    const cx = x + dx;
+                    const cy = y + dy;
+                    if (cx >= 0 && cx < COLS && cy >= 0 && cy < ROWS) {
+                        cells.push({ x: cx, y: cy });
+                    }
+                }
+            }
+            return cells;
+        }
+
+        function cellIsOccupiedByBomb(cell) {
+            return bombs.some(b => b.x === cell.x && b.y === cell.y);
+        }
+
+        function bombAt(cell) {
+            return bombs.find(b => b.x === cell.x && b.y === cell.y);
+        }
+
+        function spawnBomb() {
+            if (bombs.length >= BOMB_CONFIG.maxBombs) return;
+
+            // Find a random empty cell (not snake, not food, not bomb)
+            let pos = null;
+            for (let attempt = 0; attempt < 200; attempt++) {
+                const candidate = randomCell();
+                if (!snakeOccupies(candidate)
+                    && !(food && cellEquals(food, candidate))
+                    && !cellIsOccupiedByBomb(candidate)) {
+                    pos = candidate;
+                    break;
+                }
+            }
+            if (!pos) return; // no room
+
+            const type = Math.random() < BOMB_CONFIG.dormantProb
+                ? BOMB_TYPES.DORMANT
+                : BOMB_TYPES.UNSTABLE;
+
+            const bomb = {
+                x: pos.x,
+                y: pos.y,
+                type: type,
+                spawnTime: performance.now(),
+                fuseDuration: type === BOMB_TYPES.UNSTABLE
+                    ? BOMB_CONFIG.unstableFuseMin
+                        + Math.random() * (BOMB_CONFIG.unstableFuseMax - BOMB_CONFIG.unstableFuseMin)
+                    : Infinity,
+            };
+            bombs.push(bomb);
+        }
+
+        function triggerExplosion(bomb, chainLevel) {
+            // Remove the triggering bomb
+            const bombIdx = bombs.indexOf(bomb);
+            if (bombIdx !== -1) bombs.splice(bombIdx, 1);
+
+            const cells = getCellsInRadius(bomb.x, bomb.y, EXPLOSION_RADIUS);
+
+            // Check snake head first
+            const head = snake[0];
+            const headInBlast = cells.some(c => cellEquals(c, head));
+
+            if (headInBlast) {
+                if (shieldActive) {
+                    // Shield saves from death, direction reverses
+                    shieldActive = false;
+                    shieldIndicator.classList.remove('active');
+                    direction = { x: -direction.x, y: -direction.y };
+                    nextDirection = { ...direction };
+                    // Flash screen
+                    canvasWrapper.classList.remove('flash');
+                    void canvasWrapper.offsetWidth;
+                    canvasWrapper.classList.add('flash');
+                } else {
+                    // Death by explosion
+                    gameOver(false, 'bomb');
+                    return;
+                }
+            }
+
+            // Check snake body (find closest-to-head segment in blast)
+            let minBodyIdx = Infinity;
+            for (const cell of cells) {
+                for (let i = 1; i < snake.length; i++) {
+                    if (cellEquals(cell, snake[i]) && i < minBodyIdx) {
+                        minBodyIdx = i;
+                    }
+                }
+            }
+
+            if (minBodyIdx < Infinity) {
+                // Sever body at that point
+                const severed = snake.length - minBodyIdx;
+                snake = snake.slice(0, minBodyIdx);
+                // Score for severed segments with chain multiplier
+                score += severed * BOMB_CONFIG.chainBaseScore * chainLevel;
+                currentScoreEl.textContent = score;
+            }
+
+            // Destroy food if in blast
+            if (food && cells.some(c => cellEquals(c, food))) {
+                foodItem = null;
+                food = spawnFood();
+            }
+
+            // Chain reaction — check other bombs in blast
+            const otherBombs = bombs.filter(b =>
+                b !== bomb && cells.some(c => c.x === b.x && c.y === b.y)
+            );
+            for (const other of otherBombs) {
+                // Guard: bomb may have been removed by a prior recursive call
+                if (!bombs.includes(other)) continue;
+                triggerExplosion(other, chainLevel + 1);
+            }
+
+            // Record explosion animation
+            explosions.push({
+                x: bomb.x,
+                y: bomb.y,
+                startTime: performance.now(),
+                chainLevel: chainLevel,
+            });
+        }
+
         // ─── Game Logic ────────────────────────────
         function rollItemType() {
-            if (gameMode !== 'timed') return null; // classic mode — no special items
+            // Special items now spawn in both classic and timed modes
             const roll = Math.random();
             let cumulative = 0;
             for (const entry of ITEM_PROBABILITIES) {
@@ -998,10 +1211,13 @@
 
         function spawnFood() {
             let pos;
+            function isEmpty(cell) {
+                return !snakeOccupies(cell) && !cellIsOccupiedByBomb(cell);
+            }
             // Try a limited number of times to find an empty cell
             for (let i = 0; i < 1000; i++) {
                 pos = randomCell();
-                if (!snakeOccupies(pos)) {
+                if (isEmpty(pos)) {
                     foodItem = rollItemType();
                     return pos;
                 }
@@ -1009,7 +1225,7 @@
             // If the board is nearly full, scan all cells
             for (let x = 0; x < COLS; x++) {
                 for (let y = 0; y < ROWS; y++) {
-                    if (!snakeOccupies({ x, y })) {
+                    if (isEmpty({ x, y })) {
                         foodItem = rollItemType();
                         return { x, y };
                     }
@@ -1050,7 +1266,19 @@
                 shieldIndicator.classList.remove('active');
             } else {
                 timerCard.classList.add('timer-hidden');
+                // Classic mode: items possible, but no shield/boost carryover
+                shieldActive = false;
+                boostActive = false;
+                boostEndTime = 0;
+                shieldIndicator.classList.remove('active');
             }
+
+            // Reset bomb state for both modes
+            bombs = [];
+            explosions = [];
+            bombSpawnAccumulator = 0;
+            nextBombSpawnDelay = BOMB_CONFIG.spawnIntervalMin
+                + Math.random() * (BOMB_CONFIG.spawnIntervalMax - BOMB_CONFIG.spawnIntervalMin);
 
             updateBestDisplay();
             foodItem = rollItemType();
@@ -1100,6 +1328,26 @@
 
             // Add new head
             snake.unshift(newHead);
+
+            // Check bomb collision
+            const hitBomb = bombAt(newHead);
+            if (hitBomb) {
+                if (hitBomb.type === BOMB_TYPES.DORMANT) {
+                    // Touch dormant: lose 2-3 segments, bomb disappears
+                    const loss = BOMB_CONFIG.dormantSegmentLossMin
+                        + Math.floor(Math.random()
+                            * (BOMB_CONFIG.dormantSegmentLossMax - BOMB_CONFIG.dormantSegmentLossMin + 1));
+                    if (snake.length <= loss) {
+                        return gameOver(false, 'bomb');
+                    }
+                    snake = snake.slice(0, snake.length - loss);
+                    bombs.splice(bombs.indexOf(hitBomb), 1);
+                } else {
+                    // Touch unstable: immediate explosion
+                    triggerExplosion(hitBomb, 1);
+                    if (!isRunning) return; // died in explosion
+                }
+            }
 
             // Check food collision
             if (food && cellEquals(newHead, food)) {
@@ -1158,6 +1406,11 @@
                 titleEl.textContent = '⏰ 时间到!';
                 titleEl.classList.remove('game-over');
                 titleEl.style.color = '#fbbf24';
+                finalScoreEl.textContent = score;
+            } else if (reason === 'bomb') {
+                titleEl.textContent = '💥 被炸死了!';
+                titleEl.classList.add('game-over');
+                titleEl.style.color = '';
                 finalScoreEl.textContent = score;
             } else {
                 titleEl.textContent = '游戏结束';
@@ -1235,6 +1488,24 @@
                     }
                 }
 
+                // ── Bomb spawn timer ──
+                bombSpawnAccumulator += dt;
+                while (bombSpawnAccumulator >= nextBombSpawnDelay) {
+                    bombSpawnAccumulator -= nextBombSpawnDelay;
+                    spawnBomb();
+                    nextBombSpawnDelay = BOMB_CONFIG.spawnIntervalMin
+                        + Math.random() * (BOMB_CONFIG.spawnIntervalMax - BOMB_CONFIG.spawnIntervalMin);
+                }
+
+                // ── Unstable bomb fuse check ──
+                for (let i = bombs.length - 1; i >= 0; i--) {
+                    const b = bombs[i];
+                    if (b.type === BOMB_TYPES.UNSTABLE && now - b.spawnTime >= b.fuseDuration) {
+                        triggerExplosion(b, 1);
+                        if (!isRunning) return; // died in explosion
+                    }
+                }
+
                 // ── Lightning boost check ──
                 if (boostActive && now >= boostEndTime) {
                     boostActive = false;
@@ -1266,6 +1537,172 @@
             }
 
             gameLoop = requestAnimationFrame(tick);
+        }
+
+        // ─── Bomb Drawing ────────────────────────────
+        function drawBombs() {
+            const cs = currentSkin.canvas;
+            const now = performance.now();
+
+            for (const bomb of bombs) {
+                const bx = bomb.x * CELL_SIZE + CELL_SIZE / 2;
+                const by = bomb.y * CELL_SIZE + CELL_SIZE / 2;
+                const r = CELL_SIZE / 2 - 2;
+
+                if (bomb.type === BOMB_TYPES.DORMANT) {
+                    // Slow breathing pulse
+                    const pulse = 1 + 0.08 * Math.sin(now / 1000);
+                    const glowR = r * 1.5 * pulse;
+
+                    // Outer glow
+                    const glow = ctx.createRadialGradient(bx, by, r * 0.3, bx, by, glowR);
+                    glow.addColorStop(0, cs.bombDormantGlow);
+                    glow.addColorStop(1, 'rgba(0,0,0,0)');
+                    ctx.fillStyle = glow;
+                    ctx.beginPath();
+                    ctx.arc(bx, by, glowR, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Body
+                    const grad = ctx.createRadialGradient(bx - 1, by - 1, 0, bx, by, r);
+                    grad.addColorStop(0, cs.bombDormantHighlight || '#e88');
+                    grad.addColorStop(0.4, cs.bombDormantBody);
+                    grad.addColorStop(1, cs.bombDormantDark || '#622');
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(bx, by, r * pulse, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Metallic highlight
+                    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+                    ctx.beginPath();
+                    ctx.arc(bx - r * 0.25, by - r * 0.25, r * 0.3, 0, Math.PI * 2);
+                    ctx.fill();
+
+                } else {
+                    // Unstable — erratic pulse
+                    const jitter = 1 + 0.12 * Math.sin(now / 200)
+                        + 0.08 * Math.sin(now / 317)
+                        + 0.05 * Math.sin(now / 523);
+                    const glowR = r * 1.6 * jitter;
+
+                    // Outer glow
+                    const glow = ctx.createRadialGradient(bx, by, r * 0.2, bx, by, glowR);
+                    glow.addColorStop(0, cs.bombUnstableGlow);
+                    glow.addColorStop(0.4, cs.bombUnstableGlowMid || 'rgba(255,140,0,0.25)');
+                    glow.addColorStop(1, 'rgba(0,0,0,0)');
+                    ctx.fillStyle = glow;
+                    ctx.beginPath();
+                    ctx.arc(bx, by, glowR, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Body
+                    const grad = ctx.createRadialGradient(bx - 1, by - 1, 0, bx, by, r);
+                    grad.addColorStop(0, cs.bombUnstableHighlight || '#ffc');
+                    grad.addColorStop(0.35, cs.bombUnstableBody);
+                    grad.addColorStop(1, cs.bombUnstableDark || '#830');
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(bx, by, r * jitter, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Spark particles (intermittent)
+                    if (Math.random() > 0.3) {
+                        const sparkCount = 2 + Math.floor(Math.random() * 3);
+                        for (let s = 0; s < sparkCount; s++) {
+                            const angle = Math.random() * Math.PI * 2;
+                            const dist = r * 1.1 + Math.random() * r * 0.8;
+                            const sx = bx + Math.cos(angle) * dist;
+                            const sy = by + Math.sin(angle) * dist;
+                            ctx.fillStyle = cs.bombUnstableSpark;
+                            ctx.beginPath();
+                            ctx.arc(sx, sy, 1 + Math.random() * 1.5, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
+            }
+        }
+
+        function drawExplosions() {
+            const cs = currentSkin.canvas;
+            const now = performance.now();
+
+            for (let i = explosions.length - 1; i >= 0; i--) {
+                const exp = explosions[i];
+                const elapsed = now - exp.startTime;
+                const duration = BOMB_CONFIG.explosionDuration;
+
+                if (elapsed >= duration) {
+                    explosions.splice(i, 1);
+                    continue;
+                }
+
+                const progress = elapsed / duration;
+                const cx = exp.x * CELL_SIZE + CELL_SIZE / 2;
+                const cy = exp.y * CELL_SIZE + CELL_SIZE / 2;
+
+                if (progress < 0.125) {
+                    // Phase 1: Flash (0-50ms) — white bloom at center
+                    const flashAlpha = 1 - progress / 0.125;
+                    ctx.fillStyle = `rgba(255,255,255,${flashAlpha})`;
+                    const flashR = CELL_SIZE * 0.8;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, flashR, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Phase 2: Blast wave (50-500ms)
+                const blastProgress = Math.max(0, progress - 0.05);
+                const blastRadius = CELL_SIZE * 2 * Math.min(1, blastProgress * 2.5);
+                const blastAlpha = Math.max(0, 0.7 - blastProgress * 1.4);
+
+                // Build blast gradient with current alpha
+                const blast = ctx.createRadialGradient(cx, cy, blastRadius * 0.2, cx, cy, blastRadius);
+                const blastColor = cs.explosionBlast.replace(/[\d.]+\)$/, blastAlpha.toFixed(2) + ')');
+                blast.addColorStop(0, blastColor);
+                blast.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = blast;
+                ctx.fillRect(cx - blastRadius, cy - blastRadius, blastRadius * 2, blastRadius * 2);
+
+                // Phase 3: Fire grid (3×3 cells get fire overlay)
+                const cells = getCellsInRadius(exp.x, exp.y, EXPLOSION_RADIUS);
+                const fireAlpha = Math.max(0, 0.45 - progress * 0.9);
+                const groundColor = cs.explosionGround.replace(/[\d.]+\)$/, fireAlpha.toFixed(2) + ')');
+                for (const cell of cells) {
+                    ctx.fillStyle = groundColor;
+                    ctx.fillRect(cell.x * CELL_SIZE, cell.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                }
+
+                // Chain multiplier text
+                if (exp.chainLevel >= 2) {
+                    const textAlpha = Math.max(0, 1 - progress * 2.5);
+                    const textY = exp.y * CELL_SIZE - 10 - progress * 30;
+                    ctx.fillStyle = `rgba(255, 200, 50, ${textAlpha})`;
+                    ctx.font = 'bold 14px "Segoe UI", system-ui, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`×${exp.chainLevel}`, cx, textY);
+                    ctx.textAlign = 'start';
+                }
+
+                // Explosion particles
+                const seed = exp.x * 1000 + exp.y; // deterministic seed per explosion
+                const particleCount = 12;
+                for (let p = 0; p < particleCount; p++) {
+                    const pAngle = (Math.PI * 2 * p) / particleCount + seed * 0.01;
+                    const pDist = CELL_SIZE * 0.5 + progress * CELL_SIZE * 2.5;
+                    const px = cx + Math.cos(pAngle) * pDist;
+                    const py = cy + Math.sin(pAngle) * pDist;
+                    const pAlpha = Math.max(0, 0.7 - progress * 1.5);
+                    // Deterministic size from seed — avoids flicker across frames
+                    const pSize = (2 + ((seed + p) % 3)) * (1 - progress);
+                    const partColor = cs.explosionParticle.replace(/[\d.]+\)$/, pAlpha.toFixed(2) + ')');
+                    ctx.fillStyle = partColor;
+                    ctx.beginPath();
+                    ctx.arc(px, py, pSize, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
         }
 
         // ─── Drawing ────────────────────────────────
@@ -1469,6 +1906,12 @@
                     ctx.fill();
                 }
             }
+
+            // Bombs (behind snake — snake walks over them when touching)
+            drawBombs();
+
+            // Explosions (above everything)
+            drawExplosions();
 
             // Snake
             const totalLen = snake.length;

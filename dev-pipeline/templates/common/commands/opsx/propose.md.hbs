@@ -1,0 +1,75 @@
+---
+name: "OPSX: Propose"
+description: Propose a new change with pipeline-aware state tracking
+allowed-tools: Bash(openspec:*), Bash(node:*), Bash(git:*)
+category: Workflow
+tags: [workflow, artifacts, experimental]
+---
+
+Propose a new change and generate every artifact required before implementation.
+
+## Pipeline Integration (v2)
+
+> **状态命令失败时，不得静默继续。** 任何 `dev-pipeline-state.mjs` 命令返回非零 exit code 时，必须暂停并报告用户。禁止跳过 pre-flight 或 post-flight。
+
+State command exit codes:
+
+| exit code | reason | action |
+|-----------|--------|--------|
+| 0 | success | Read the returned state and continue. |
+| 10 | state missing | Run `init`, set standalone mode, and transition to Phase 1. |
+| 11 | invalid transition or unmet gate | Stop and show the detail for user confirmation. |
+| 12 | I/O error or concurrent modification | Reload and retry once; if it fails again, stop and report it. |
+
+### Pre-flight: State Awareness
+
+1. Resolve a kebab-case change name from the input. If no input was provided, ask the user what they want to build before continuing.
+2. Run:
+   ```bash
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<name>"
+   ```
+3. If the state is Schema v1, run `migrate-schema "<name>"`, show the returned confirmation prompt, and only after explicit approval run `migrate-schema "<name>" --confirm`.
+4. If state is missing, run these commands in order and check every exit code:
+   ```bash
+   CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH"
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 1 3
+   ```
+5. For existing state:
+   - Phase 0: transition to Phase 1 Step 3.
+   - Phase 1: continue.
+   - Phase 2+: warn that work is already in progress and ask: `Re-propose and update artifacts` / `Continue from current phase` / `Cancel`. Only `Re-propose` may continue. If the mode is `pipeline`, first set `executionMode` to `hybrid`, then transition back to Phase 1 Step 3.
+6. Check `phaseHistory` for an `in-progress` Phase 1 entry executed by `openspec-propose`. Reuse it when present; otherwise start the audit entry below. Starting it also changes an existing `pipeline` state to `hybrid`:
+   ```bash
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 1 3 openspec-propose --start
+   ```
+
+### Execute
+
+Load and follow the complete instructions in `{{skillsDir}}/openspec-propose/SKILL.md`. Keep that Skill as the source of truth for artifact creation, dependency order, store selection, clarification, and output paths.
+
+### Post-flight: Record State
+
+After all required artifacts exist and the user confirms the proposal, execute the following commands **in order**, checking each exit code before continuing:
+
+1. `record-phase`, because later recovery and inference depend on `phaseHistory`:
+   ```bash
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 1 5 openspec-propose
+   ```
+2. `decision`, after the phase record is durable:
+   ```bash
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs decision "<name>" requirementsConfirmed true
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs decision "<name>" proposalApproved true
+   ```
+3. `transition`, after `proposalApproved` is durable:
+   ```bash
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 2 6
+   ```
+4. Consistency check:
+   ```bash
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<name>"
+   ```
+   Verify `currentPhase=2`, `currentStep=6`, both decisions are `true`, and Phase 1 has a completed history entry. If any value differs, warn explicitly and stop.
+
+Show the change location, completed artifacts, `Phase 1 complete`, and the next choices: `/opsx:apply <name>` for standalone work or `/opsx-dev-pipeline <name>` for the gated pipeline.

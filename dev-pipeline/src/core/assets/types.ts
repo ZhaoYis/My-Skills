@@ -15,6 +15,8 @@ export interface AssetDefinition {
   includeExtensions?: string[];
   templateFiles?: string[];
   excludePatterns?: string[];
+  /** Replace a file generated earlier in the init workflow, then manage it normally. */
+  replaceOnInit?: boolean;
   /** Bundle members that require an optional feature to be enabled. */
   bundleGatedFiles?: Array<{ path: string; feature: FeatureId }>;
 }

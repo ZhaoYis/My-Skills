@@ -1,13 +1,13 @@
-import fs from 'fs-extra';
 import path from 'node:path';
+import fs from 'fs-extra';
 import { getToolAdapter } from '../adapters/registry.js';
 import type { FeatureId, StackId, ToolId } from '../adapters/types.js';
 import { assetManifest } from '../assets/manifest.js';
 import type { AssetDefinition, InstallFile } from '../assets/types.js';
-import { PACKAGE_NAME, TEMPLATE_VERSION } from '../runtime/meta.js';
 import type { ManagedAssetRecord } from '../manifest/types.js';
-import { renderString } from './renderTemplates.js';
+import { PACKAGE_NAME, TEMPLATE_VERSION } from '../runtime/meta.js';
 import { isAppendableInstallFile } from './isAppendableInstallFile.js';
+import { renderString } from './renderTemplates.js';
 import type { InstallPlan } from './types.js';
 
 export interface BuildInstallPlanInput {
@@ -146,6 +146,9 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
     .filter((asset) => input.features.includes(asset.feature))
     .filter((asset) => !asset.stacks || asset.stacks.includes(stack))
     .filter((asset) => !asset.tools || asset.tools.includes(input.tool));
+  const replaceOnInitIds = new Set(
+    selectedAssets.filter((asset) => asset.replaceOnInit).map((asset) => asset.id),
+  );
 
   const managed = indexManagedAssets(input.managedAssets);
 
@@ -192,7 +195,11 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
           ...file,
           exists,
           appendable,
-          resolution: exists ? (input.force ? 'overwrite' : 'unresolved') : 'none',
+          resolution: exists
+            ? input.force || (input.mode === 'init' && replaceOnInitIds.has(file.assetId))
+              ? 'overwrite'
+              : 'unresolved'
+            : 'none',
         } satisfies InstallFile;
       }),
   );

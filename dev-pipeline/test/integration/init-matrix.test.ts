@@ -1,6 +1,6 @@
-import fs from 'fs-extra';
 import os from 'node:os';
 import path from 'node:path';
+import fs from 'fs-extra';
 import prompts from 'prompts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { runDoctorCommand } from '../../src/cli/commands/doctor.js';
@@ -8,17 +8,18 @@ import { runDoctorCommand } from '../../src/cli/commands/doctor.js';
 vi.mock('prompts', () => ({
   default: vi.fn(),
 }));
+
 import { runSyncCommand } from '../../src/cli/commands/sync.js';
 import { runUninstallCommand } from '../../src/cli/commands/uninstall.js';
 import { runUpgradeCommand } from '../../src/cli/commands/upgrade.js';
 import { runInit as runInitImpl } from '../../src/core/init/runInit.js';
+import { readManifest as readStoredManifest } from '../../src/core/manifest/io.js';
+import type { PipelineManifest } from '../../src/core/manifest/types.js';
 import {
   MANIFEST_FILE,
   MANIFEST_PACKAGE_JSON_KEY,
   PACKAGE_JSON_FILE,
 } from '../../src/core/runtime/meta.js';
-import { readManifest as readStoredManifest } from '../../src/core/manifest/io.js';
-import type { PipelineManifest } from '../../src/core/manifest/types.js';
 
 const createdDirs: string[] = [];
 
@@ -55,8 +56,6 @@ async function listAllFiles(root: string): Promise<string[]> {
   return results;
 }
 
-const RETAINED_SKILL = 'opsx-dev-pipeline';
-const RETAINED = [RETAINED_SKILL];
 const removed = [
   'opsx-learn',
   'opsx-analysis',
@@ -82,6 +81,10 @@ const toolExpectations = {
     { path: '.claude/skills/opsx-dev-pipeline/scripts/archive.mjs', present: true },
     { path: '.claude/skills/opsx-dev-pipeline/agents/openai.yaml', present: true },
     { path: '.claude/commands/opsx-dev-pipeline.md', present: true },
+    ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore'].map((command) => ({
+      path: `.claude/commands/opsx/${command}.md`,
+      present: true as const,
+    })),
   ],
   cursor: [
     { path: '.cursor/rules/opsx-dev-pipeline.mdc', present: true },
@@ -92,6 +95,10 @@ const toolExpectations = {
     { path: '.cursor/rules/opsx-dev-pipeline/scripts/archive.mjs', present: true },
     { path: '.cursor/rules/opsx-dev-pipeline/agents/openai.yaml', present: true },
     { path: '.cursor/commands/opsx-dev-pipeline.md', present: true },
+    ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore'].map((command) => ({
+      path: `.cursor/commands/opsx/${command}.md`,
+      present: true as const,
+    })),
     { path: '.cursor/commands/README.md', present: true },
   ],
   codex: [
@@ -103,6 +110,10 @@ const toolExpectations = {
     { path: '.codex/prompts/opsx-dev-pipeline/scripts/archive.mjs', present: true },
     { path: '.codex/prompts/opsx-dev-pipeline/agents/openai.yaml', present: true },
     { path: '.codex/commands/opsx-dev-pipeline.md', present: true },
+    ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore'].map((command) => ({
+      path: `.codex/commands/opsx/${command}.md`,
+      present: true as const,
+    })),
     { path: '.codex/commands/README.md', present: true },
   ],
 } as const;
@@ -277,6 +288,9 @@ describe('tool matrix', () => {
     expect(skillContent).toContain('Phase引用表');
     expect(skillContent).toContain('执行约束');
     expect(skillContent).toContain('错误处理速查');
+    expect(skillContent).toContain('migrate-schema');
+    expect(skillContent).toContain('record-phase');
+    expect(skillContent).toContain('executionMode');
 
     // Verify all phase reference files exist
     for (const phase of [0, 1, 2, 3, 4, 5, 6]) {
@@ -309,6 +323,22 @@ describe('tool matrix', () => {
     );
     expect(propose).toContain('决策点 1a');
     expect(propose).toContain('需求理解确认');
+
+    const entrance = await fs.readFile(
+      path.join(skillRoot, 'references/phase-0-entrance.md'),
+      'utf8',
+    );
+    expect(entrance).toContain('检测到非 pipeline 执行模式');
+    expect(entrance).toContain('phaseHistory');
+    expect(entrance).toContain('gate 补偿');
+    expect(entrance).toContain('postArchiveAction');
+
+    const archive = await fs.readFile(
+      path.join(skillRoot, 'references/phase-5-archive.md'),
+      'utf8',
+    );
+    expect(archive).toContain('executionMode=standalone|hybrid');
+    expect(archive).toContain('/opsx:verify <name>');
 
     // Verify scripts directory exists with essential scripts
     const scriptsDir = path.join(skillRoot, 'scripts');

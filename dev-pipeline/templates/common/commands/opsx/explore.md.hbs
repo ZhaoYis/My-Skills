@@ -1,0 +1,38 @@
+---
+name: "OPSX: Explore"
+description: Explore ideas and code with read-only pipeline context
+allowed-tools: Bash(openspec:*), Bash(node:*)
+category: Workflow
+tags: [workflow, explore, experimental, thinking]
+---
+
+Enter read-only explore mode with awareness of active pipeline context.
+
+## Pipeline Integration (v2)
+
+> **状态命令失败时，不得静默继续。** 任何 unexpected `dev-pipeline-state.mjs` failure must be reported. Explore must never initialize, migrate, or modify pipeline state.
+
+| exit code | reason | action |
+|-----------|--------|--------|
+| 0 | success | Read the returned state and show relevant context. |
+| 10 | state missing | Report that the change is untracked, then continue read-only without initialization. |
+| 11 | invalid command or input | Stop the state lookup and report the detail. |
+| 12 | I/O error or concurrent modification | Reload and retry once; if it fails again, stop the state lookup and report it. |
+
+### Pre-flight: Read-only State Awareness
+
+1. Run `openspec list --json` as required by the underlying Skill.
+2. If the user mentions a change, or exactly one active change is clearly relevant, run:
+   ```bash
+   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<name>"
+   ```
+3. If state exists, summarize `currentPhase`, `currentStep`, `executionMode`, recent `phaseHistory`, decisions, and bypassed gates as context. Do not ask gate compensation questions in explore mode.
+4. If state is Schema v1, mention that pipeline takeover will require confirmed migration. Do not run migration here.
+
+### Execute
+
+Load and follow `{{skillsDir}}/openspec-explore/SKILL.md` completely. Preserve its thinking-only stance, OpenSpec awareness, artifact capture boundaries, and prohibition on implementation.
+
+### Post-flight
+
+Do not run `record-phase`, `decision`, `set`, `attempt`, `transition`, `pause`, `complete`, or `migrate-schema`. Explore never changes pipeline state.

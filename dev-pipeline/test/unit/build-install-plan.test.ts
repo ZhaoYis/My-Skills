@@ -1,18 +1,15 @@
-import fs from 'fs-extra';
 import os from 'node:os';
 import path from 'node:path';
+import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
+import { ALL_FEATURE_IDS, type ToolAdapter, type ToolId } from '../../src/core/adapters/types.js';
 import { buildInstallPlan } from '../../src/core/init/buildInstallPlan.js';
-import {
-  ALL_FEATURE_IDS,
-  type FeatureId,
-  type ToolAdapter,
-  type ToolId,
-} from '../../src/core/adapters/types.js';
+import { renderTemplate } from '../../src/core/init/renderTemplates.js';
 import type { ManagedAssetRecord } from '../../src/core/manifest/types.js';
 import { PACKAGE_ROOT } from '../helpers/package-root.js';
 
 const createdDirs: string[] = [];
+const standaloneCommands = ['propose', 'apply', 'archive', 'verify', 'sync', 'explore'] as const;
 
 afterEach(async () => {
   await Promise.all(createdDirs.splice(0).map((dir) => fs.remove(dir)));
@@ -117,26 +114,14 @@ describe('buildInstallPlan', () => {
       plan.files.some(
         (file) =>
           file.destinationPath ===
-          path.join(
-            '/tmp/demo',
-            skillsDir,
-            'opsx-dev-pipeline',
-            'scripts',
-            'archive.mjs',
-          ),
+          path.join('/tmp/demo', skillsDir, 'opsx-dev-pipeline', 'scripts', 'archive.mjs'),
       ),
     ).toBe(true);
     expect(
       plan.files.some(
         (file) =>
           file.destinationPath ===
-          path.join(
-            '/tmp/demo',
-            skillsDir,
-            'opsx-dev-pipeline',
-            'scripts',
-            'preflight.mjs',
-          ),
+          path.join('/tmp/demo', skillsDir, 'opsx-dev-pipeline', 'scripts', 'preflight.mjs'),
       ),
     ).toBe(true);
     expect(
@@ -145,6 +130,14 @@ describe('buildInstallPlan', () => {
           file.destinationPath === path.join('/tmp/demo', commandsDir, 'opsx-dev-pipeline.md'),
       ),
     ).toBe(true);
+    for (const command of standaloneCommands) {
+      expect(
+        plan.files.some(
+          (file) =>
+            file.destinationPath === path.join('/tmp/demo', commandsDir, 'opsx', `${command}.md`),
+        ),
+      ).toBe(true);
+    }
     // negative: no removed preset skills or commands in plan
     const removed = [
       'opsx-learn',
@@ -187,6 +180,53 @@ describe('buildInstallPlan', () => {
 
     const readmeFile = plan.files.find((file) => file.assetId === 'common-readme');
     expect(readmeFile?.resolution).toBe('overwrite');
+  });
+
+  it('replaces OpenSpec-generated command entries only during init', async () => {
+    const targetDir = await createTempTargetDir();
+    const commandPath = path.join(targetDir, '.claude/commands/opsx/propose.md');
+    await fs.ensureDir(path.dirname(commandPath));
+    await fs.writeFile(commandPath, '# OpenSpec generated\n');
+    await fs.writeFile(path.join(targetDir, 'README.md'), '# existing\n');
+
+    const initPlan = await buildInstallPlan({ ...createPlanInput(), targetDir });
+    expect(initPlan.files.find((file) => file.assetId === 'opsx-propose-command')?.resolution).toBe(
+      'overwrite',
+    );
+    expect(initPlan.files.find((file) => file.assetId === 'common-readme')?.resolution).toBe(
+      'unresolved',
+    );
+
+    const syncPlan = await buildInstallPlan({
+      ...createPlanInput([
+        { id: 'opsx-propose-command', destination: '.claude/commands/opsx/propose.md' },
+      ]),
+      targetDir,
+      mode: 'sync',
+    });
+    expect(syncPlan.files).toHaveLength(1);
+    expect(syncPlan.files[0]).toMatchObject({
+      assetId: 'opsx-propose-command',
+      resolution: 'unresolved',
+    });
+  });
+
+  it.each([
+    ['.claude/skills', '.claude/commands'],
+    ['.cursor/rules', '.cursor/commands'],
+    ['.codex/prompts', '.codex/commands'],
+  ] as const)('renders standalone command templates for %s', async (skillsDir, commandsDir) => {
+    for (const command of standaloneCommands) {
+      const rendered = await renderTemplate(
+        path.join(PACKAGE_ROOT, 'templates/common/commands/opsx', `${command}.md.hbs`),
+        { skillsDir, commandsDir },
+      );
+
+      expect(rendered).toContain(
+        `node ${skillsDir}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs`,
+      );
+      expect(rendered).not.toMatch(/\{\{[^}]+\}\}/);
+    }
   });
 
   it('marks sync files as unresolved without force', async () => {

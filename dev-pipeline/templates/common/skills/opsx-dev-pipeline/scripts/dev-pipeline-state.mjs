@@ -5,10 +5,12 @@ import { emitError, findOpenSpecRoot, validateChangeName } from './pipeline-lib.
 const EXIT_STATE_NOT_FOUND = 10;
 const EXIT_INVALID_TRANSITION = 11;
 const EXIT_STATE_IO = 12;
+const SCHEMA_VERSION = 2;
 
 const mutablePaths = new Set([
   'sourceBranch',
   'targetBranch',
+  'executionMode',
   'archivePath',
   'review.reportPath',
   'review.status',
@@ -25,6 +27,8 @@ const mutablePaths = new Set([
   'delivery.tag',
 ]);
 
+const executionModes = new Set(['pipeline', 'standalone', 'hybrid']);
+
 function output(payload, exitCode = 0) {
   process.stdout.write(`${JSON.stringify(payload)}\n`);
   process.exitCode = exitCode;
@@ -34,26 +38,51 @@ function statePath(root, changeName) {
   return path.join(root, 'openspec', '.pipeline-state', `${changeName}.json`);
 }
 
-async function loadState(root, changeName) {
+function diskVersion(state) {
+  return Number.isInteger(state?._version) ? state._version : 0;
+}
+
+function rememberReadVersion(state) {
+  Object.defineProperty(state, '_readVersion', {
+    value: diskVersion(state),
+    writable: true,
+    configurable: true,
+    enumerable: false,
+  });
+  return state;
+}
+
+async function tryReadState(root, changeName) {
   try {
-    const raw = await readFile(statePath(root, changeName), 'utf8');
-    return JSON.parse(raw);
+    return JSON.parse(await readFile(statePath(root, changeName), 'utf8'));
   } catch (error) {
     if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  }
+}
+
+async function loadState(root, changeName) {
+  try {
+    const state = await tryReadState(root, changeName);
+    if (!state) {
       emitError(
         'pipeline-state-not-found',
         `找不到 change ${changeName} 的流水线状态`,
         'initialize-or-reconstruct-state',
         EXIT_STATE_NOT_FOUND,
       );
-    } else {
-      emitError(
-        'pipeline-state-invalid',
-        `无法读取流水线状态：${String(error)}`,
-        'repair-state-file',
-        EXIT_STATE_IO,
-      );
+      return null;
     }
+    return rememberReadVersion(state);
+  } catch (error) {
+    emitError(
+      'pipeline-state-invalid',
+      `无法读取流水线状态：${String(error)}`,
+      'repair-state-file',
+      EXIT_STATE_IO,
+    );
     return null;
   }
 }
@@ -62,11 +91,44 @@ async function saveState(root, state) {
   const target = statePath(root, state.changeName);
   const directory = path.dirname(target);
   const temporary = `${target}.${process.pid}.tmp`;
+
+  let currentOnDisk;
+  try {
+    currentOnDisk = await tryReadState(root, state.changeName);
+  } catch (error) {
+    emitError(
+      'pipeline-state-invalid',
+      `无法检查流水线状态版本：${String(error)}`,
+      'repair-state-file',
+      EXIT_STATE_IO,
+    );
+    return false;
+  }
+
+  const readVersion = state._readVersion;
+  if (
+    (currentOnDisk && readVersion === undefined) ||
+    (!currentOnDisk && readVersion !== undefined) ||
+    (currentOnDisk && diskVersion(currentOnDisk) !== readVersion)
+  ) {
+    emitError(
+      'pipeline-state-concurrent-modification',
+      `状态文件已被其他会话修改（读取版本: ${readVersion ?? 'none'}，磁盘版本: ${
+        currentOnDisk ? diskVersion(currentOnDisk) : 'none'
+      }）`,
+      'reload-state-and-retry',
+      EXIT_STATE_IO,
+    );
+    return false;
+  }
+
+  state._version = diskVersion(state) + 1;
   state.updatedAt = new Date().toISOString();
   try {
     await mkdir(directory, { recursive: true });
     await writeFile(temporary, `${JSON.stringify(state, null, 2)}\n`, { mode: 0o600 });
     await rename(temporary, target);
+    rememberReadVersion(state);
   } catch (error) {
     emitError(
       'pipeline-state-write-failed',
@@ -97,7 +159,7 @@ function setNested(target, dottedPath, value) {
   cursor[segments.at(-1)] = value;
 }
 
-function allowedTransition(from, to) {
+function allowedTransition(from, to, executionMode = 'pipeline') {
   const allowed = {
     0: [0, 1],
     1: [1, 2],
@@ -107,7 +169,29 @@ function allowedTransition(from, to) {
     5: [1, 2, 5, 6],
     6: [6],
   };
+
+  if (executionMode === 'pipeline') {
+    return allowed[from]?.includes(to) ?? false;
+  }
+  if (to > from) return true;
+  if (to === 1 || to === 2) return true;
   return allowed[from]?.includes(to) ?? false;
+}
+
+function hasPhaseInHistory(state, minPhase) {
+  return (state.phaseHistory || []).some((entry) => entry.phase >= minPhase);
+}
+
+function applyGateInference(state) {
+  const mode = state.executionMode || 'pipeline';
+  if (mode === 'pipeline') return;
+
+  if (!state.decisions.proposalApproved && hasPhaseInHistory(state, 2)) {
+    state.decisions.proposalApproved = true;
+  }
+  if (!state.decisions.implementationConfirmed && hasPhaseInHistory(state, 3)) {
+    state.decisions.implementationConfirmed = true;
+  }
 }
 
 function validateGates(state, from, to) {
@@ -134,6 +218,15 @@ function validateGates(state, from, to) {
   return null;
 }
 
+function migrateToV2(state) {
+  state.schemaVersion = SCHEMA_VERSION;
+  state._version = diskVersion(state);
+  state.executionMode = state.executionMode || 'pipeline';
+  state.phaseHistory = Array.isArray(state.phaseHistory) ? state.phaseHistory : [];
+  state.gatesBypassed = Array.isArray(state.gatesBypassed) ? state.gatesBypassed : [];
+  return state;
+}
+
 const attemptRules = {
   review: {
     statuses: ['passed', 'issues-found'],
@@ -148,7 +241,7 @@ const [command, changeName, ...args] = process.argv.slice(2);
 if (!command) {
   emitError(
     'missing-command',
-    '用法：dev-pipeline-state.mjs <init|get|decision|set|attempt|transition|pause|complete> <change>',
+    '用法：dev-pipeline-state.mjs <init|get|decision|set|attempt|record-phase|migrate-schema|transition|pause|complete> <change>',
     'provide-state-command',
     EXIT_INVALID_TRANSITION,
   );
@@ -159,16 +252,14 @@ if (!command) {
     if (command === 'init') {
       let existingState = null;
       try {
-        existingState = JSON.parse(await readFile(statePath(root, changeName), 'utf8'));
+        existingState = await tryReadState(root, changeName);
       } catch (error) {
-        if (!(error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT')) {
-          emitError(
-            'pipeline-state-invalid',
-            `已有状态无法解析：${String(error)}`,
-            'repair-state-file',
-            EXIT_STATE_IO,
-          );
-        }
+        emitError(
+          'pipeline-state-invalid',
+          `已有状态无法解析：${String(error)}`,
+          'repair-state-file',
+          EXIT_STATE_IO,
+        );
       }
 
       if (existingState) {
@@ -176,13 +267,17 @@ if (!command) {
       } else if (process.exitCode === undefined) {
         const now = new Date().toISOString();
         const state = {
-          schemaVersion: 1,
+          schemaVersion: SCHEMA_VERSION,
+          _version: 0,
           changeName,
           sourceBranch: args[0] || null,
           targetBranch: null,
           currentPhase: 0,
           currentStep: 1,
           status: 'active',
+          executionMode: 'pipeline',
+          phaseHistory: [],
+          gatesBypassed: [],
           decisions: {},
           review: { round: 0, reportPath: null, status: 'pending' },
           tests: { command: null, attempts: 0, status: 'pending', detail: null },
@@ -205,6 +300,104 @@ if (!command) {
       if (state) {
         if (command === 'get') {
           output({ status: 'ok', state });
+        } else if (command === 'migrate-schema') {
+          if (state.schemaVersion === SCHEMA_VERSION) {
+            output({ status: 'ok', reason: 'already-v2', state });
+          } else if (!args.includes('--confirm')) {
+            output({
+              status: 'prompt',
+              reason: 'migration-requires-confirmation',
+              detail:
+                'Schema v1 状态需要用户确认后才能升级到 v2；使用 --confirm 保留原数据并补齐新字段。',
+              state,
+            });
+          } else {
+            migrateToV2(state);
+            if (await saveState(root, state)) {
+              output({ status: 'ok', reason: 'schema-migrated', state });
+            }
+          }
+        } else if (command === 'record-phase') {
+          if (state.schemaVersion !== SCHEMA_VERSION) {
+            emitError(
+              'pipeline-state-migration-required',
+              'record-phase 仅支持 Schema v2，请先确认迁移状态文件',
+              'run-migrate-schema-with-confirmation',
+              EXIT_INVALID_TRANSITION,
+            );
+          } else {
+            const phase = Number(args[0]);
+            const step = Number(args[1]);
+            const executedBy = args[2];
+            const flagsAndGates = args.slice(3);
+            const start = flagsAndGates.includes('--start');
+            const abandon = flagsAndGates.includes('--abandon');
+            const bypassedGates = flagsAndGates.filter(
+              (value) => value !== '--start' && value !== '--abandon',
+            );
+
+            if (
+              !Number.isInteger(phase) ||
+              phase < 0 ||
+              phase > 6 ||
+              !Number.isInteger(step) ||
+              !executedBy
+            ) {
+              emitError(
+                'invalid-phase-record',
+                'record-phase 需要 Phase 0-6、整数 Step 和 executed-by',
+                'provide-valid-phase-record',
+                EXIT_INVALID_TRANSITION,
+              );
+            } else {
+              const now = new Date().toISOString();
+              let entry = !start
+                ? state.phaseHistory.find(
+                    (candidate) =>
+                      candidate.phase === phase &&
+                      candidate.executedBy === executedBy &&
+                      candidate.status === 'in-progress',
+                  )
+                : null;
+              const completingExisting = Boolean(entry);
+
+              if (!entry) {
+                entry = {
+                  phase,
+                  step,
+                  executedBy,
+                  status: 'in-progress',
+                  startedAt: now,
+                  completedAt: null,
+                  decisions: { ...state.decisions },
+                  gatesBypassed: [],
+                };
+                state.phaseHistory.push(entry);
+              }
+
+              entry.step = step;
+              entry.executedBy = executedBy;
+              entry.decisions = { ...state.decisions };
+              entry.gatesBypassed = Array.from(
+                new Set([...(entry.gatesBypassed || []), ...bypassedGates]),
+              );
+
+              if (abandon) {
+                entry.status = 'abandoned';
+                entry.completedAt = now;
+              } else if (!start && completingExisting) {
+                entry.status = 'completed';
+                entry.completedAt = now;
+              }
+
+              state.gatesBypassed = Array.from(
+                new Set([...(state.gatesBypassed || []), ...bypassedGates]),
+              );
+              if (state.executionMode === 'pipeline') state.executionMode = 'hybrid';
+
+              if (await saveState(root, state)) output({ status: 'ok', state });
+            }
+          }
         } else if (command === 'decision') {
           const [key, rawValue] = args;
           if (!key || rawValue === undefined || !/^[A-Za-z][A-Za-z0-9]*$/.test(key)) {
@@ -220,21 +413,24 @@ if (!command) {
           }
         } else if (command === 'set') {
           const [fieldPath, rawValue] = args;
-          if (!mutablePaths.has(fieldPath) || rawValue === undefined) {
+          const parsedValue = rawValue === undefined ? undefined : parseValue(rawValue);
+          const invalidExecutionMode =
+            fieldPath === 'executionMode' && !executionModes.has(parsedValue);
+          if (!mutablePaths.has(fieldPath) || rawValue === undefined || invalidExecutionMode) {
             emitError(
               'invalid-state-field',
-              `不允许修改状态字段：${fieldPath ?? ''}`,
+              `不允许修改状态字段或字段值：${fieldPath ?? ''}`,
               'choose-supported-state-field',
               EXIT_INVALID_TRANSITION,
             );
           } else {
-            setNested(state, fieldPath, parseValue(rawValue));
+            setNested(state, fieldPath, parsedValue);
             if (await saveState(root, state)) output({ status: 'ok', state });
           }
         } else if (command === 'attempt') {
           const [scope, attemptStatus] = args;
           const rule = attemptRules[scope];
-          if (!rule || !rule.statuses.includes(attemptStatus)) {
+          if (!rule?.statuses.includes(attemptStatus)) {
             emitError(
               'invalid-attempt',
               'attempt 需要 scope=review|tests|verify 和对应的合法状态',
@@ -282,7 +478,7 @@ if (!command) {
               'choose-valid-transition',
               EXIT_INVALID_TRANSITION,
             );
-          } else if (!allowedTransition(state.currentPhase, toPhase)) {
+          } else if (!allowedTransition(state.currentPhase, toPhase, state.executionMode)) {
             emitError(
               'pipeline-transition-not-allowed',
               `不允许从 Phase${state.currentPhase} 跳转到 Phase${toPhase}`,
@@ -290,19 +486,22 @@ if (!command) {
               EXIT_INVALID_TRANSITION,
             );
           } else {
-            const gateError = validateGates(state, state.currentPhase, toPhase);
-            if (gateError) {
-              emitError(
-                gateError[0],
-                gateError[1],
-                'complete-required-gate',
-                EXIT_INVALID_TRANSITION,
-              );
-            } else {
-              state.currentPhase = toPhase;
-              state.currentStep = toStep;
-              state.status = 'active';
-              if (await saveState(root, state)) output({ status: 'ok', state });
+            applyGateInference(state);
+            if (await saveState(root, state)) {
+              const gateError = validateGates(state, state.currentPhase, toPhase);
+              if (gateError) {
+                emitError(
+                  gateError[0],
+                  gateError[1],
+                  'complete-required-gate',
+                  EXIT_INVALID_TRANSITION,
+                );
+              } else {
+                state.currentPhase = toPhase;
+                state.currentStep = toStep;
+                state.status = 'active';
+                if (await saveState(root, state)) output({ status: 'ok', state });
+              }
             }
           }
         } else if (command === 'pause') {
