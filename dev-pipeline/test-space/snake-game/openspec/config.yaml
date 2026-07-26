@@ -9,7 +9,7 @@ context: |
   Code Quality: Biome for linting/formatting
 
 rules:
-  ask-tool: AskUserQuestion
+  ask-tool: AskQuestion
   language:
     - "所有文档、规格、提案、设计和任务必须使用简体中文编写"
     - "所有代码注释必须使用简体中文编写"
