@@ -87,4 +87,15 @@ node <SKILL_ROOT>/scripts/preflight.mjs
 
 ### 2.d 用户未提供任何输入
 
-- 发送文本消息询问需求描述或 change 名称，等待回复后走 2.a 或 2.b
+1. 使用 **AskQuestion** 询问用户意图：
+   - **header**：`入口选择`
+   - **question**：`预检通过。你未提供 change 名称或需求描述。请选择你要做什么？`
+   - **options**：
+     - `已有 change 名称` — 输入已有 change 名称，续接或重建流水线
+     - `新的需求描述` — 描述新需求，创建 change 并走完整提案→实施→审查→归档→交付流程
+     - `查看已有 change 列表` — 列出所有可用 change，再决定续接或新建
+
+2. 根据用户选择：
+   - 选择 `已有 change 名称` → 发送文本消息请用户输入 change 名称，收到后走 **2.a** 路径
+   - 选择 `新的需求描述` → 发送文本消息请用户描述需求，收到后走 **2.b** 路径
+   - 选择 `查看已有 change 列表` → 运行 `node <SKILL_ROOT>/scripts/list-changes.mjs`（或 `openspec list --json`）展示可用 change，展示后重新回到步骤 1（再次使用 **AskQuestion**，此时可额外追加当前已有的 change 名称作为附加选项供快速选择）

@@ -1,12 +1,12 @@
 {
   "schemaVersion": 2,
-  "_version": 26,
+  "_version": 31,
   "changeName": "add-beginner-tutorial",
   "sourceBranch": "feature/lite",
   "targetBranch": null,
   "currentPhase": 6,
   "currentStep": 20,
-  "status": "active",
+  "status": "completed",
   "executionMode": "hybrid",
   "createdBy": "大師兄丶",
   "createdByEmail": "zhaoyi_dsx@163.com",
@@ -164,18 +164,19 @@
     },
     {
       "phase": 6,
-      "step": 20,
+      "step": 22,
       "executedBy": "pipeline",
-      "status": "in-progress",
+      "status": "completed",
       "startedAt": "2026-07-26 22:01:35",
-      "completedAt": null,
+      "completedAt": "2026-07-26 22:01:59",
       "decisions": {
         "requirementsConfirmed": true,
         "proposalApproved": true,
         "implementationConfirmed": true,
         "reviewDisposition": "review",
         "reviewResult": "passed",
-        "postArchiveAction": "push-only"
+        "postArchiveAction": "push-only",
+        "sourcePushApproved": true
       },
       "gatesBypassed": []
     }
@@ -187,7 +188,8 @@
     "implementationConfirmed": true,
     "reviewDisposition": "review",
     "reviewResult": "passed",
-    "postArchiveAction": "push-only"
+    "postArchiveAction": "push-only",
+    "sourcePushApproved": true
   },
   "review": {
     "round": 1,
@@ -208,12 +210,12 @@
   },
   "archivePath": "openspec/changes/archive/2026-07-26-add-beginner-tutorial",
   "delivery": {
-    "commitSha": null,
+    "commitSha": "4736c7c",
     "mergeCommitSha": null,
-    "sourcePushed": false,
+    "sourcePushed": true,
     "targetPushed": false,
     "tag": null
   },
   "createdAt": "2026-07-26 21:41:51",
-  "updatedAt": "2026-07-26 22:01:35"
+  "updatedAt": "2026-07-26 22:02:00"
 }
