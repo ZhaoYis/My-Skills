@@ -1126,6 +1126,267 @@
                 font-size: 3rem;
             }
         }
+
+        /* ═══════════════════════════════════════════
+           Tutorial System — 新手引导
+           ═══════════════════════════════════════════ */
+
+        /* ── Tip Carousel ── */
+        .tip-carousel {
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            font-size: clamp(0.45rem, 1.5vw, 0.6rem);
+            color: var(--gb-light);
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: unset;
+            text-align: center;
+            min-height: 1.4em;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        .tip-carousel.fade {
+            opacity: 0;
+        }
+
+        /* ── Help Modal ── */
+        .help-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .help-modal.active {
+            display: flex;
+        }
+
+        .help-modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+        }
+
+        .help-modal-panel {
+            position: relative;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 90vw;
+            max-width: 520px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            animation: helpFadeIn 0.25s ease-out;
+        }
+
+        @keyframes helpFadeIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .help-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .help-modal-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--text);
+            margin: 0;
+        }
+
+        .help-modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .help-modal-close:hover {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .help-modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 20px;
+        }
+
+        .help-section {
+            margin-bottom: 16px;
+        }
+
+        .help-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .help-section h3 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 6px;
+        }
+
+        .help-section p {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin: 2px 0;
+        }
+
+        .help-section p strong {
+            color: var(--text);
+        }
+
+        .help-modal-footer {
+            padding: 12px 20px 16px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        /* ── Tutorial Toast ── */
+        .tutorial-toast {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            background: color-mix(in srgb, var(--surface) 92%, transparent);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            transform: translateX(-50%) translateY(-10px);
+            max-width: 90vw;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tutorial-toast.show {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ── D-Pad Highlight ── */
+        .dpad.tutorial-highlight .dpad-btn {
+            animation: dpadPulse 0.8s ease-in-out infinite;
+        }
+
+        .dpad.tutorial-highlight .dpad-btn:nth-child(1) { animation-delay: 0s; }
+        .dpad.tutorial-highlight .dpad-btn:nth-child(2) { animation-delay: 0.2s; }
+        .dpad.tutorial-highlight .dpad-btn:nth-child(3) { animation-delay: 0.4s; }
+        .dpad.tutorial-highlight .dpad-btn:nth-child(4) { animation-delay: 0.6s; }
+
+        @keyframes dpadPulse {
+            0%, 100% {
+                border-color: var(--accent);
+                box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.5);
+            }
+            50% {
+                border-color: var(--accent);
+                box-shadow: 0 0 0 8px rgba(34, 211, 238, 0);
+            }
+        }
+
+        /* ── Global Help Button ── */
+        .help-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            padding: 0;
+            font-family: inherit;
+            position: absolute;
+            top: 12px;
+            right: 12px;
+        }
+
+        .help-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: scale(1.1);
+        }
+
+        .help-btn-global {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            padding: 0;
+            font-family: inherit;
+        }
+
+        .help-btn-global:hover {
+            transform: scale(1.15);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        @media (max-width: 600px) {
+            .help-modal-panel {
+                width: 96vw;
+                max-height: 80vh;
+                border-radius: 12px;
+            }
+            .tutorial-toast {
+                font-size: 0.72rem;
+                padding: 8px 14px;
+                top: 8px;
+            }
+            .help-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 1.1rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1141,11 +1402,53 @@
                     <div class="mini-canvas-wrapper">
                         <canvas id="miniCanvas"></canvas>
                     </div>
+                    <p class="tip-carousel" id="tipCarousel"></p>
                     <p class="prompt-hint">▶ PRESS ENTER</p>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- ════════ Help Modal ════════ -->
+    <div class="help-modal" id="helpModal">
+        <div class="help-modal-backdrop"></div>
+        <div class="help-modal-panel">
+            <div class="help-modal-header">
+                <h2 class="help-modal-title">? 玩法说明</h2>
+                <button class="help-modal-close" id="helpModalClose">✕</button>
+            </div>
+            <div class="help-modal-body">
+                <section class="help-section">
+                    <h3>🎮 操作方式</h3>
+                    <p>桌面端：方向键 ↑ ↓ ← → 或 W A S D 控制蛇移动，空格键暂停/继续。</p>
+                    <p>移动端：屏幕下方方向按钮控制移动，滑动屏幕也可改变方向。</p>
+                </section>
+                <section class="help-section">
+                    <h3>🐍 游戏模式</h3>
+                    <p><strong>经典模式</strong>：无限时间，挑战最高分。蛇碰到墙壁、自身或炸弹爆炸即结束。</p>
+                    <p><strong>计时模式</strong>：限时 60 秒（上限 90 秒），吃食物延长时间。时间耗尽或蛇死亡即结束。</p>
+                </section>
+                <section class="help-section">
+                    <h3>💣 炸弹</h3>
+                    <p><strong>休眠炸弹（灰色）</strong>：碰到会缩短蛇身 2~3 节，然后消失。不会立即死亡。</p>
+                    <p><strong>不稳定炸弹（红色闪烁）</strong>：碰到即爆炸！3×3 范围爆炸，炸到蛇头直接死亡，炸到蛇身截断并加分。附近炸弹会连锁引爆。</p>
+                </section>
+                <section class="help-section">
+                    <h3>🍎 道具（计时模式）</h3>
+                    <p><strong>普通食物</strong>：+10 分，+5 秒</p>
+                    <p><strong>金苹果</strong>：+20 分，+10 秒</p>
+                    <p><strong>闪电</strong>：加速 5 秒</p>
+                    <p><strong>护盾</strong>：抵挡一次伤害（碰撞或爆炸），蛇自动反向</p>
+                </section>
+            </div>
+            <div class="help-modal-footer">
+                <button class="btn btn-primary" id="helpModalGotIt">知道了</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div class="tutorial-toast" id="tutorialToast"></div>
 
     <div class="container">
         <!-- Header -->
@@ -1174,6 +1477,7 @@
 
             <!-- Start Overlay -->
             <div class="overlay" id="startOverlay">
+                <button class="help-btn" id="helpBtnStart" aria-label="玩法说明">?</button>
                 <div class="overlay-title">🐍 贪吃蛇</div>
                 <div class="mode-cards" id="modeCards">
                     <div class="mode-card selected" data-mode="classic" id="modeCardClassic" tabindex="0" role="radio" aria-checked="true">
@@ -1267,6 +1571,7 @@
             <button class="skin-swatch" data-skin="midnight" data-name="午夜" aria-label="午夜皮肤"></button>
             <button class="skin-swatch" data-skin="sunset" data-name="暖橙" aria-label="暖橙皮肤"></button>
             <span style="width:1px;background:var(--border);margin:0 4px;align-self:stretch;"></span>
+            <button class="help-btn-global" id="helpBtnGlobal" aria-label="玩法说明" title="玩法说明">?</button>
             <button class="btn-icon" id="muteBtn" aria-label="切换静音" title="切换静音">🔊</button>
         </div>
 
@@ -1635,7 +1940,8 @@
                 // 播放开机音效（此时已有用户手势，AudioContext 可以 resume）
                 playBootSound();
 
-                // 停止迷你蛇动画
+                // 停止轮播和迷你蛇动画
+                if (window._tutorial) window._tutorial.stopTipCarousel();
                 miniStop();
 
                 // 触发 CRT 关机动画
@@ -1672,6 +1978,8 @@
             // ─── Initialization ──────────────────────
             function initWelcomeScreen() {
                 miniStart();
+                // 启动轮播提示
+                if (window._tutorial) window._tutorial.startTipCarousel();
                 // 尝试播放开机音效 — 如果浏览器阻止（需要用户手势），
                 // 则在 exitWelcomeScreen 中由用户手势触发再播放
                 if (typeof AudioManager !== 'undefined') {
@@ -1686,6 +1994,204 @@
             window._welcomeScreen = {
                 init: initWelcomeScreen,
                 exit: exitWelcomeScreen,
+            };
+        })();
+
+        // ═══════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════
+        //  Tutorial System — 新手引导
+        // ═══════════════════════════════════════════════════
+        (function () {
+            var STORAGE_KEY = 'snake-tutorial-hints';
+            var toastQueue = [];
+            var isShowingToast = false;
+            var currentToastTimeout = null;
+            var tipCarouselInterval = null;
+
+            // ─── Hint State ──────────────────────────
+            function loadSeen() {
+                try {
+                    var raw = localStorage.getItem(STORAGE_KEY);
+                    return raw ? JSON.parse(raw) : {};
+                } catch (e) { return {}; }
+            }
+
+            function saveSeen(seen) {
+                try { localStorage.setItem(STORAGE_KEY, JSON.stringify(seen)); } catch (e) { /* 降级 */ }
+            }
+
+            function shouldShow(key) {
+                return !loadSeen()[key];
+            }
+
+            function markSeen(key) {
+                var seen = loadSeen();
+                seen[key] = true;
+                saveSeen(seen);
+            }
+
+            // ─── Toast ───────────────────────────────
+            function showToastEl(msg, duration) {
+                var toast = document.getElementById('tutorialToast');
+                if (!toast) return;
+                toast.textContent = msg;
+                toast.classList.add('show');
+                if (currentToastTimeout) clearTimeout(currentToastTimeout);
+                currentToastTimeout = setTimeout(function () {
+                    toast.classList.remove('show');
+                    isShowingToast = false;
+                    processQueue();
+                }, duration || 4000);
+            }
+
+            function enqueueToast(msg, duration) {
+                if (isShowingToast) {
+                    toastQueue.push({ msg: msg, duration: duration || 4000 });
+                } else {
+                    isShowingToast = true;
+                    showToastEl(msg, duration);
+                }
+            }
+
+            function processQueue() {
+                if (toastQueue.length === 0) return;
+                var next = toastQueue.shift();
+                isShowingToast = true;
+                showToastEl(next.msg, next.duration);
+            }
+
+            // ─── Help Modal ──────────────────────────
+            function showHelpModal() {
+                var modal = document.getElementById('helpModal');
+                if (modal) modal.classList.add('active');
+            }
+
+            function hideHelpModal() {
+                var modal = document.getElementById('helpModal');
+                if (modal) modal.classList.remove('active');
+            }
+
+            // ─── Tip Carousel ────────────────────────
+            var TIPS = [
+                '💡 用方向键控制蛇移动',
+                '💡 红色炸弹会爆炸！快躲开',
+                '💡 吃金苹果获得双倍分数',
+            ];
+            var tipIndex = 0;
+
+            function startTipCarousel() {
+                var el = document.getElementById('tipCarousel');
+                if (!el) return;
+                el.textContent = TIPS[0];
+                tipIndex = 0;
+                tipCarouselInterval = setInterval(function () {
+                    tipIndex = (tipIndex + 1) % TIPS.length;
+                    el.classList.add('fade');
+                    setTimeout(function () {
+                        el.textContent = TIPS[tipIndex];
+                        el.classList.remove('fade');
+                    }, 500);
+                }, 3000);
+            }
+
+            function stopTipCarousel() {
+                if (tipCarouselInterval) {
+                    clearInterval(tipCarouselInterval);
+                    tipCarouselInterval = null;
+                }
+            }
+
+            // ─── Hook Helpers ────────────────────────
+            function hookBomb(bombType) {
+                if (bombType === 'dormant' && shouldShow('bombDormant')) {
+                    enqueueToast('⚠ 灰色炸弹：碰到会缩短蛇身');
+                    markSeen('bombDormant');
+                }
+                if (bombType === 'unstable' && shouldShow('bombUnstable')) {
+                    enqueueToast('⚠ 红色炸弹：3 秒后爆炸！快躲开');
+                    markSeen('bombUnstable');
+                }
+            }
+
+            function hookItem(itemType) {
+                if (itemType === 'shield' && shouldShow('shield')) {
+                    enqueueToast('🛡 护盾已激活！可抵挡一次伤害');
+                    markSeen('shield');
+                }
+                if (itemType === 'lightning' && shouldShow('lightning')) {
+                    enqueueToast('⚡ 闪电：加速 5 秒！');
+                    markSeen('lightning');
+                }
+                if (itemType === 'golden' && shouldShow('golden')) {
+                    enqueueToast('🍎 金苹果：双倍分数和时间');
+                    markSeen('golden');
+                }
+            }
+
+            function hookTimedMode() {
+                if (shouldShow('timedMode')) {
+                    enqueueToast('⏱ 限时 60 秒！吃食物延长时间');
+                    markSeen('timedMode');
+                }
+            }
+
+            function hookDpad() {
+                var isMobile = window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 600;
+                if (!isMobile) return;
+                if (!shouldShow('dpad')) return;
+
+                var dpad = document.getElementById('dpad');
+                if (dpad) {
+                    dpad.classList.add('tutorial-highlight');
+                    enqueueToast('👆 用方向键控制蛇移动', 5000);
+                    setTimeout(function () {
+                        dpad.classList.remove('tutorial-highlight');
+                    }, 5000);
+                }
+                markSeen('dpad');
+            }
+
+            // ─── Wire up Help Buttons ────────────────
+            function initHelpButtons() {
+                var helpBtnStart = document.getElementById('helpBtnStart');
+                var helpBtnGlobal = document.getElementById('helpBtnGlobal');
+                var helpModalClose = document.getElementById('helpModalClose');
+                var helpModalGotIt = document.getElementById('helpModalGotIt');
+                var helpModal = document.getElementById('helpModal');
+
+                if (helpBtnStart) helpBtnStart.addEventListener('click', showHelpModal);
+                if (helpBtnGlobal) helpBtnGlobal.addEventListener('click', showHelpModal);
+                if (helpModalClose) helpModalClose.addEventListener('click', hideHelpModal);
+                if (helpModalGotIt) helpModalGotIt.addEventListener('click', hideHelpModal);
+
+                // 点击遮罩关闭
+                if (helpModal) {
+                    helpModal.addEventListener('click', function (e) {
+                        if (e.target === helpModal || e.target.classList.contains('help-modal-backdrop')) {
+                            hideHelpModal();
+                        }
+                    });
+                }
+
+                // Escape 关闭
+                document.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape' && helpModal && helpModal.classList.contains('active')) {
+                        hideHelpModal();
+                    }
+                });
+            }
+
+            // 暴露给全局
+            window._tutorial = {
+                startTipCarousel: startTipCarousel,
+                stopTipCarousel: stopTipCarousel,
+                initHelpButtons: initHelpButtons,
+                hookBomb: hookBomb,
+                hookItem: hookItem,
+                hookTimedMode: hookTimedMode,
+                hookDpad: hookDpad,
+                showHelpModal: showHelpModal,
+                hideHelpModal: hideHelpModal,
             };
         })();
 
@@ -2496,6 +3002,9 @@
                     : Infinity,
             };
             bombs.push(bomb);
+
+            // 教程钩子：首次遇到炸弹
+            if (window._tutorial) window._tutorial.hookBomb(type);
         }
 
         function triggerExplosion(bomb, chainLevel) {
@@ -2747,12 +3256,19 @@
                 if (itemType === ITEM_TYPES.LIGHTNING) {
                     boostActive = true;
                     boostEndTime = performance.now() + BOOST_DURATION;
+                    if (window._tutorial) window._tutorial.hookItem('lightning');
                 }
 
                 // Shield effect
                 if (itemType === ITEM_TYPES.SHIELD) {
                     shieldActive = true;
                     shieldIndicator.classList.add('active');
+                    if (window._tutorial) window._tutorial.hookItem('shield');
+                }
+
+                // Golden apple hook
+                if (itemType === ITEM_TYPES.GOLDEN && window._tutorial) {
+                    window._tutorial.hookItem('golden');
                 }
 
                 food = spawnFood();
@@ -3572,6 +4088,16 @@
             isPaused = false;
             startOverlay.classList.remove('active');
             gameOverOverlay.classList.remove('active');
+
+            // 教程钩子：计时模式首次提示
+            if (gameMode === 'timed' && window._tutorial) {
+                window._tutorial.hookTimedMode();
+            }
+            // 教程钩子：移动端 D-pad 引导
+            if (window._tutorial) {
+                window._tutorial.hookDpad();
+            }
+
             startGameLoop();
         }
 
@@ -3779,6 +4305,9 @@
         startOverlay.classList.remove('active');
 
         // 启动像素欢迎界面
+        // 初始化帮助按钮
+        if (window._tutorial) window._tutorial.initHelpButtons();
+
         if (window._welcomeScreen) {
             window._welcomeScreen.init();
         }
