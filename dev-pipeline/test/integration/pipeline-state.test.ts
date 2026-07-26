@@ -413,7 +413,10 @@ describe('pipeline state machine', () => {
       executedBy: 'pipeline',
       status: 'completed',
     });
-    expect(completedEntry?.startedAt).not.toBe(completedEntry?.completedAt);
+    expect(completedEntry?.startedAt).toBeTruthy();
+    expect(completedEntry?.completedAt).toBeTruthy();
+    // yyyy-MM-dd HH:mm:ss 格式支持字典序比较
+    expect(completedEntry!.startedAt <= completedEntry!.completedAt).toBe(true);
   });
 
   it('migrates Schema v1 only after confirmation and remains idempotent', async () => {
