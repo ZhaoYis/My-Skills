@@ -237,39 +237,27 @@ function setNested(target, dottedPath, value) {
   cursor[segments.at(-1)] = value;
 }
 
-function allowedTransition(from, to, executionMode = 'pipeline') {
+function allowedTransition(from, to, state) {
   const allowed = {
     0: [0, 1],
     1: [1, 2],
     2: [1, 2, 3, 4],
     3: [2, 3, 4],
-    4: [4, 5],
+    4: [2, 4, 5],
     5: [1, 2, 5, 6],
     6: [6],
   };
 
-  if (executionMode === 'pipeline') {
-    return allowed[from]?.includes(to) ?? false;
-  }
-  if (to > from) return true;
-  if (to === 1 || to === 2) return true;
-  return allowed[from]?.includes(to) ?? false;
-}
+  if (allowed[from]?.includes(to)) return true;
 
-function hasPhaseInHistory(state, minPhase) {
-  return (state.phaseHistory || []).some((entry) => entry.phase >= minPhase);
-}
-
-function applyGateInference(state) {
-  const mode = state.executionMode || 'pipeline';
-  if (mode === 'pipeline') return;
-
-  if (!state.decisions.proposalApproved && hasPhaseInHistory(state, 2)) {
-    state.decisions.proposalApproved = true;
+  if (to > from) {
+    for (let phase = from + 1; phase <= to; phase += 1) {
+      if (validateGates(state, phase - 1, phase)) return false;
+    }
+    return true;
   }
-  if (!state.decisions.implementationConfirmed && hasPhaseInHistory(state, 3)) {
-    state.decisions.implementationConfirmed = true;
-  }
+
+  return false;
 }
 
 function validateGates(state, from, to) {
@@ -294,6 +282,18 @@ function validateGates(state, from, to) {
     }
   }
   return null;
+}
+
+function validateTransitionGates(state, from, to) {
+  if (to > from) {
+    for (let phase = from + 1; phase <= to; phase += 1) {
+      const gateError = validateGates(state, phase - 1, phase);
+      if (gateError) return gateError;
+    }
+    return null;
+  }
+
+  return validateGates(state, from, to);
 }
 
 function migrateToV2(state) {
@@ -588,8 +588,6 @@ if (!command) {
               state.gatesBypassed = Array.from(
                 new Set([...(state.gatesBypassed || []), ...bypassedGates]),
               );
-              if (state.executionMode === 'pipeline') state.executionMode = 'hybrid';
-
               if (await saveState(root, state)) output({ status: 'ok', state });
             }
           }
@@ -675,17 +673,25 @@ if (!command) {
               'choose-valid-transition',
               EXIT_INVALID_TRANSITION,
             );
-          } else if (!allowedTransition(fromPhase, toPhase, state.executionMode)) {
-            emitError(
-              'pipeline-transition-not-allowed',
-              `不允许从 Phase${fromPhase} 跳转到 Phase${toPhase}`,
-              'follow-pipeline-transitions',
-              EXIT_INVALID_TRANSITION,
-            );
           } else {
-            applyGateInference(state);
-            const gateError = validateGates(state, fromPhase, toPhase);
-            if (gateError) {
+            const gateError = validateTransitionGates(state, fromPhase, toPhase);
+            if (!allowedTransition(fromPhase, toPhase, state)) {
+              if (gateError) {
+                emitError(
+                  gateError[0],
+                  gateError[1],
+                  'complete-required-gate',
+                  EXIT_INVALID_TRANSITION,
+                );
+              } else {
+                emitError(
+                  'pipeline-transition-not-allowed',
+                  `不允许从 Phase${fromPhase} 跳转到 Phase${toPhase}`,
+                  'follow-pipeline-transitions',
+                  EXIT_INVALID_TRANSITION,
+                );
+              }
+            } else if (gateError) {
               emitError(
                 gateError[0],
                 gateError[1],

@@ -4,13 +4,7 @@
   "tool": "codex",
   "stack": "frontend",
   "language": "zh",
-  "features": [
-    "base",
-    "skills",
-    "commands",
-    "docs",
-    "schema"
-  ],
+  "features": ["base", "skills", "commands", "docs", "schema"],
   "templateVersion": "0.2.3",
   "packageName": "opsx-dev-pipeline",
   "managedAssets": [

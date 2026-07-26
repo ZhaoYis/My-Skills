@@ -37,3 +37,10 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 5 15
 2. 使用 **AskQuestion** 确认记录内容后继续 → 进入 Phase5 Step15
 
 确认后记录 `tests.status=debt-recorded`。用户在决策点 4 直接跳过时记录 `tests.status=skipped` 和 `tests.detail`，再迁移到 Phase5；不得省略状态记录。
+
+进入 Phase5 前，无论选择测试通过、显式跳过还是记录技术债务，都必须执行：
+```bash
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 5 15
+```
+
+若 transition 失败并返回 `test-gate-required`，必须回到决策点 4，补齐用户选择和测试状态后再重试；不得直接执行 Phase5 命令。

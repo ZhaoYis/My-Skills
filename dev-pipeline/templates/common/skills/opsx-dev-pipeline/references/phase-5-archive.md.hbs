@@ -28,6 +28,8 @@ node <SKILL_ROOT>/scripts/change-status.mjs "<name>"
 
 ## Step18：执行归档
 
+**禁止在未经用户显式确认的情况下使用 `-y` flag。** `archive.mjs -y` 只能在用户通过 {{askTool}} 确认 verify 结果、Delta spec 同步选择和归档选项后执行；`-y` 仅用于把这些已确认选项传给非交互脚本，不代表可以代替用户确认。
+
 ```bash
 node <SKILL_ROOT>/scripts/archive.mjs "<name>" -y [--skip-specs]
 ```
@@ -52,5 +54,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" postArchiveAc
 node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" postArchiveAction '"push-only"'
 node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 6 20
 ```
+
+若 transition 失败，必须检查并补齐缺失的门禁（`verify.status`、`archivePath`、`postArchiveAction`），然后重新迁移；不得直接执行 Phase6 的提交、推送或合并命令。
 
 修复子 change 使用 `postArchiveAction=local-only`。终止或暂停时记录状态，不得删除状态文件。

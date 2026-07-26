@@ -326,6 +326,8 @@ describe('tool matrix', () => {
     expect(skillContent).toContain('migrate-schema');
     expect(skillContent).toContain('record-phase');
     expect(skillContent).toContain('executionMode');
+    expect(skillContent).toContain('「继续后续流程」选项仅跳过当前 Phase');
+    expect(skillContent).toContain('必须先执行 `transition` 命令并通过门禁验证');
 
     // Verify all phase reference files exist
     for (const phase of [0, 1, 2, 3, 4, 5, 6]) {
@@ -375,17 +377,31 @@ describe('tool matrix', () => {
     expect(entrance).toContain('--skip-feature-association');
     expect(entrance).toContain('不得推断为跳过');
 
+    const review = await fs.readFile(path.join(skillRoot, 'references/phase-3-review.md'), 'utf8');
+    expect(review).toContain('「继续后续流程」仅跳过修复当前审查发现的问题');
+    expect(review).toContain('transition "<name>" 4 14');
+
+    const unitTests = await fs.readFile(
+      path.join(skillRoot, 'references/phase-4-unit-tests.md'),
+      'utf8',
+    );
+    expect(unitTests).toContain('transition "<name>" 5 15');
+    expect(unitTests).toContain('test-gate-required');
+
     const archive = await fs.readFile(
       path.join(skillRoot, 'references/phase-5-archive.md'),
       'utf8',
     );
     expect(archive).toContain('executionMode=standalone|hybrid');
     expect(archive).toContain('/opsx:verify <name>');
+    expect(archive).toContain('禁止在未经用户显式确认的情况下使用 `-y` flag');
+    expect(archive).toContain('transition "<name>" 6 20');
 
     // Verify scripts directory exists with essential scripts
     const scriptsDir = path.join(skillRoot, 'scripts');
     expect(await fs.pathExists(path.join(scriptsDir, 'preflight.mjs'))).toBe(true);
     expect(await fs.pathExists(path.join(scriptsDir, 'archive.mjs'))).toBe(true);
+    expect(await fs.pathExists(path.join(scriptsDir, 'dev-pipeline-state.test.mjs'))).toBe(false);
   });
 
   it('renders tool display name in retained skills without template variables', async () => {

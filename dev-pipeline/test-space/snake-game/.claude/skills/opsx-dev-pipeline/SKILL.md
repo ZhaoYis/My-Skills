@@ -25,6 +25,8 @@ repository: "git+https://github.com/ZhaoYis/My-Skills.git"
 - 代码审查修复循环最多 3 轮，超过后强制暂停。
 - 暂停/终止时展示：change 名称、中断阶段、各 Phase完成状态、恢复指引（重新触发技能并传入 change 名称即可续跑）。
 - 进入 Phase 时先读取对应 reference；完成决策或门禁后先写入状态，再执行阶段迁移。
+- 每个 Phase 的「继续后续流程」选项仅跳过当前 Phase 的剩余工作，不得跳过后续 Phase 的任何决策点。从当前 Phase 切换到下一 Phase 时，必须先执行 `transition` 命令并通过门禁验证。若 transition 失败，必须展示失败原因并等待用户显式选择。
+- 禁止跳过中间 Phase 直接进入后续 Phase。Phase 推进必须按顺序进行，且每阶段必经其决策点。
 - 以 `openspec/.pipeline-state/<change>.json` 为恢复权威，并用 OpenSpec/Git 事实校验；不一致时暂停，不得猜测。
 
 **`<SKILL_ROOT>`**：本技能安装根目录（内含 `scripts/`）。命令在目标 git 仓库根目录执行。
@@ -49,7 +51,7 @@ repository: "git+https://github.com/ZhaoYis/My-Skills.git"
 - 暂停流程：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs pause "<change>" "<reason>"`
 - 完成交付：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs complete "<change>"`
 
-Schema v2 使用 `_version` 做乐观锁，`executionMode` 区分 `pipeline` / `standalone` / `hybrid`，并以 `phaseHistory` 和 `gatesBypassed` 提供独立命令审计。任何状态命令返回 exit code 10/11/12 时，按“状态不存在 / 非法迁移或 gate / I/O 或并发冲突”处理；并发冲突只重载重试一次，仍失败则暂停。写入后必须用 `get` 对比预期关键字段。
+Schema v2 使用 `_version` 做乐观锁；`executionMode` 仅作为 `pipeline` / `standalone` / `hybrid` 的执行来源审计标记，不影响阶段迁移和门禁验证；`phaseHistory` 和 `gatesBypassed` 提供独立命令审计。任何状态命令返回 exit code 10/11/12 时，按“状态不存在 / 非法迁移或 gate / I/O 或并发冲突”处理；并发冲突只重载重试一次，仍失败则暂停。写入后必须用 `get` 对比预期关键字段。
 
 ## Phase引用表
 

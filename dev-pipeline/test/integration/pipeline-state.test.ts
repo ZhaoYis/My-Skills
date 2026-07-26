@@ -325,6 +325,7 @@ describe('pipeline state machine', () => {
     await state('init', 'backward-history', 'feature/backward-history');
     await state('set', 'backward-history', 'executionMode', 'standalone');
     await state('decision', 'backward-history', 'proposalApproved', 'true');
+    await state('decision', 'backward-history', 'implementationConfirmed', 'true');
     await state('set', 'backward-history', 'tests.status', 'passed');
     await state('transition', 'backward-history', '5', '15');
     const transitioned = await state('transition', 'backward-history', '2', '6');
@@ -415,8 +416,9 @@ describe('pipeline state machine', () => {
     });
     expect(completedEntry?.startedAt).toBeTruthy();
     expect(completedEntry?.completedAt).toBeTruthy();
+    if (!completedEntry?.completedAt) throw new Error('Phase 0 history was not completed');
     // yyyy-MM-dd HH:mm:ss 格式支持字典序比较
-    expect(completedEntry!.startedAt <= completedEntry!.completedAt).toBe(true);
+    expect(completedEntry.startedAt <= completedEntry.completedAt).toBe(true);
   });
 
   it('migrates Schema v1 only after confirmation and remains idempotent', async () => {
@@ -497,7 +499,7 @@ describe('pipeline state machine', () => {
       gatesBypassed: string[];
     };
 
-    expect(currentState.executionMode).toBe('hybrid');
+    expect(currentState.executionMode).toBe('pipeline');
     expect(currentState.gatesBypassed).toEqual(['review-skipped']);
     expect(currentState.phaseHistory).toHaveLength(3);
     expect(currentState.phaseHistory[1]).toMatchObject({
@@ -576,57 +578,57 @@ describe('pipeline state machine', () => {
     ]);
   });
 
-  it('allows standalone forward jumps while preserving strict pipeline transitions', async () => {
-    await state('init', 'strict-jump', 'feature/strict-jump');
-    await state('transition', 'strict-jump', '1', '3');
-    expect((await state('transition', 'strict-jump', '3', '9')).payload.reason).toBe(
-      'pipeline-transition-not-allowed',
-    );
+  it.each([
+    'pipeline',
+    'standalone',
+    'hybrid',
+  ])('enforces cumulative gates in %s mode', async (executionMode) => {
+    const changeName = `${executionMode}-jump`;
+    await state('init', changeName, `feature/${executionMode}-jump`);
+    await state('set', changeName, 'executionMode', executionMode);
 
-    await state('init', 'standalone-jump', 'feature/standalone-jump');
-    await state('set', 'standalone-jump', 'executionMode', 'standalone');
-    await state('transition', 'standalone-jump', '1', '3');
-    const jump = await state('transition', 'standalone-jump', '3', '9');
-    expect(jump.code).toBe(0);
-    expect((jump.payload.state as { currentPhase: number }).currentPhase).toBe(3);
+    const jump = await state('transition', changeName, '5', '15');
+    expect(jump.code).toBe(11);
+    expect(jump.payload.reason).toBe('proposal-approval-required');
 
-    await state('init', 'hybrid-jump', 'feature/hybrid-jump');
-    await state('transition', 'hybrid-jump', '1', '3');
-    await state('record-phase', 'hybrid-jump', '5', '15', 'openspec-archive-change', '--start');
-    await state('set', 'hybrid-jump', 'tests.status', 'passed');
-    const hybridJump = await state('transition', 'hybrid-jump', '5', '15');
-    expect(hybridJump.code).toBe(0);
-    expect(hybridJump.payload.state).toMatchObject({
-      currentPhase: 5,
-      executionMode: 'hybrid',
-    });
+    const current = await state('get', changeName);
+    expect(current.payload.state).toMatchObject({ currentPhase: 0, executionMode });
   });
 
-  it('persists inferred proposal and implementation gates in hybrid mode', async () => {
+  it('allows a forward jump only after every intermediate gate is satisfied', async () => {
+    await state('init', 'gated-jump', 'feature/gated-jump');
+    await state('decision', 'gated-jump', 'proposalApproved', 'true');
+    await state('decision', 'gated-jump', 'implementationConfirmed', 'true');
+    await state('set', 'gated-jump', 'tests.status', 'skipped');
+
+    const jump = await state('transition', 'gated-jump', '5', '15');
+    expect(jump.code).toBe(0);
+    expect(jump.payload.state).toMatchObject({ currentPhase: 5, executionMode: 'pipeline' });
+  });
+
+  it('requires explicit proposal and implementation decisions in standalone mode', async () => {
     await state('init', 'gate-inference', 'feature/gate-inference');
     await state('set', 'gate-inference', 'executionMode', 'standalone');
     await state('transition', 'gate-inference', '1', '3');
     await state('record-phase', 'gate-inference', '2', '6', 'openspec-apply-change', '--start');
 
     const enterApply = await state('transition', 'gate-inference', '2', '6');
-    expect(enterApply.code).toBe(0);
-    expect(enterApply.payload.state).toMatchObject({
-      currentPhase: 2,
-      decisions: { proposalApproved: true },
-    });
+    expect(enterApply.code).toBe(11);
+    expect(enterApply.payload.reason).toBe('proposal-approval-required');
 
+    await state('decision', 'gate-inference', 'proposalApproved', 'true');
+    expect((await state('transition', 'gate-inference', '2', '6')).code).toBe(0);
     await state('record-phase', 'gate-inference', '3', '9', 'pipeline', '--start');
     const leaveApply = await state('transition', 'gate-inference', '3', '9');
-    expect(leaveApply.code).toBe(0);
-    expect(leaveApply.payload.state).toMatchObject({
-      currentPhase: 3,
-      decisions: { proposalApproved: true, implementationConfirmed: true },
-    });
+    expect(leaveApply.code).toBe(11);
+    expect(leaveApply.payload.reason).toBe('implementation-confirmation-required');
   });
 
   it('never infers the post-archive delivery action', async () => {
     await state('init', 'delivery-gate', 'feature/delivery-gate');
     await state('set', 'delivery-gate', 'executionMode', 'standalone');
+    await state('decision', 'delivery-gate', 'proposalApproved', 'true');
+    await state('decision', 'delivery-gate', 'implementationConfirmed', 'true');
     await state('set', 'delivery-gate', 'tests.status', 'passed');
     await state('transition', 'delivery-gate', '5', '15');
     await state('set', 'delivery-gate', 'verify.status', 'passed');
@@ -692,7 +694,7 @@ describe('pipeline state machine', () => {
     const invalid = await state('transition', 'resume-change', '4', '13');
 
     expect(invalid.code).toBe(11);
-    expect(invalid.payload.reason).toBe('pipeline-transition-not-allowed');
+    expect(invalid.payload.reason).toBe('proposal-approval-required');
 
     await state('pause', 'resume-change', 'waiting for user');
     const current = await state('get', 'resume-change');

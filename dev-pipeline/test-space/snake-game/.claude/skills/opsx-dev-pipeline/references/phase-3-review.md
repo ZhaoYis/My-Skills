@@ -49,9 +49,16 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs attempt "<name>" review passed 
 
 ### 审查无问题 → 直接进入 Phase4
 
+**重要：「继续后续流程」仅跳过修复当前审查发现的问题。选择此项后必须：**
+
+1. 先执行 `transition "<name>" 4 14` 进入 Phase4 决策点 4
+2. 等待用户在 Phase4 决策点 4 的显式选择
+3. 按 Phase4 → Phase5 → Phase6 顺序逐阶段推进，每阶段必经其决策点
+4. **禁止**跳过任何后续决策点直接执行归档、提交或推送命令
+
 进入后续流程前记录 `reviewDisposition`，再执行：
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 4 13
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 4 14
 ```
 
 回到 Phase2 时执行 `transition "<name>" 2 6`；暂停时执行 `pause`。修复循环轮次以状态中的 `review.round` 为准。
