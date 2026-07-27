@@ -1,9 +1,11 @@
 import { execFileSync, spawnSync } from 'node:child_process';
+import crypto from 'node:crypto';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { FINGERPRINT_PRIVATE_KEY_PEM } from '../../keys/fingerprint-key-pair.mjs';
 
 const script = fileURLToPath(
   new URL(
@@ -96,6 +98,58 @@ afterAll(async () => {
 });
 
 describe('dev-pipeline-state transition gates', () => {
+  it('encrypts a feature-bound fingerprint with the embedded public key', () => {
+    const result = spawnSync(
+      process.execPath,
+      [
+        script,
+        'init',
+        'encrypted-fingerprint',
+        'feature/encrypted-fingerprint',
+        '--created-by',
+        'Fingerprint Tester',
+        '--feature-id',
+        'REQ-2026-001',
+      ],
+      { cwd: repo, encoding: 'utf8' },
+    );
+
+    expect(result.status).toBe(0);
+
+    const state = JSON.parse(result.stdout).state;
+    expect(state.fingerprintId).toMatch(/^fp1\.[A-Za-z0-9_-]{342}$/);
+
+    const digest = crypto.privateDecrypt(
+      {
+        key: FINGERPRINT_PRIVATE_KEY_PEM,
+        padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+        oaepHash: 'sha256',
+      },
+      Buffer.from(state.fingerprintId.slice('fp1.'.length), 'base64url'),
+    );
+    const protectedFields = {
+      schemaVersion: state.schemaVersion,
+      changeName: state.changeName,
+      createdAt: state.createdAt,
+      createdBy: state.createdBy,
+      createdByEmail: state.createdByEmail,
+      machineInfo: state.machineInfo,
+      featureId: state.featureInfo.featureId,
+      fingerprintNonce: state.fingerprintNonce,
+    };
+    const expectedDigest = crypto
+      .createHash('sha256')
+      .update(JSON.stringify(protectedFields), 'utf8')
+      .digest();
+    const digestWithoutFeature = crypto
+      .createHash('sha256')
+      .update(JSON.stringify({ ...protectedFields, featureId: '' }), 'utf8')
+      .digest();
+
+    expect(digest.equals(expectedDigest)).toBe(true);
+    expect(digest.equals(digestWithoutFeature)).toBe(false);
+  });
+
   it('enforces the complete transition and cumulative gate matrix', async () => {
     for (const [from, to] of [
       [0, 1],

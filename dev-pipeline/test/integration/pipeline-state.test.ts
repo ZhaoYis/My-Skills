@@ -192,7 +192,7 @@ describe('pipeline state machine', () => {
         arch: os.arch(),
       },
     });
-    expect(initializedState.fingerprintId).toMatch(/^[a-f0-9]{32}$/);
+    expect(initializedState.fingerprintId).toMatch(/^fp1\.[A-Za-z0-9_-]{342}$/);
     expect(initializedState.fingerprintNonce).toMatch(/^[a-f0-9]{8}$/);
   });
 

@@ -165,6 +165,10 @@ describe('tool matrix', () => {
     const { skillRoot, commandsRoot, askTool } =
       askToolExpectations[tool as keyof typeof askToolExpectations];
     const skill = await fs.readFile(path.join(dir, skillRoot, 'SKILL.md'), 'utf8');
+    const devPipelineState = await fs.readFile(
+      path.join(dir, skillRoot, 'scripts/dev-pipeline-state.mjs'),
+      'utf8',
+    );
     const entrance = await fs.readFile(
       path.join(dir, skillRoot, 'references/phase-0-entrance.md'),
       'utf8',
@@ -175,6 +179,8 @@ describe('tool matrix', () => {
     expect(propose).toMatch(new RegExp(`^allowed-tools: Bash\\(openspec:\\*\\), ${askTool}$`, 'm'));
     expect(propose).toContain(`MUST call ${askTool} and wait for an explicit choice`);
     expect([skill, entrance, propose].join('\n')).not.toMatch(/\{\{[^}]+\}\}/);
+    expect(devPipelineState).toContain('-----BEGIN PUBLIC KEY-----');
+    expect(devPipelineState).not.toContain('PRIVATE KEY');
 
     // Negative: no removed preset skills or commands in any adapter output
     const allFiles = await listAllFiles(dir);

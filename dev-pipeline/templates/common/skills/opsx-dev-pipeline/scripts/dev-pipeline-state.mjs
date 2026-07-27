@@ -9,6 +9,16 @@ const EXIT_STATE_NOT_FOUND = 10;
 const EXIT_INVALID_TRANSITION = 11;
 const EXIT_STATE_IO = 12;
 const SCHEMA_VERSION = 3;
+const FINGERPRINT_PUBLIC_KEY_PEM = `
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3XzsU2MyYEy8heB9E8IN
+gAmAgOp5hTtY2/vl62mUP/6ab19k9K2cBrXHBWlOvcVEdXpWUjDSYJqt5zuK+Ti2
+tgJXgFVUDFrd9s9OGro/T4vaXlQQ8ytvtuMQvSDgT9kE4bw5RSgUtjbYSxyFN+9L
+YoEH02NyMQ9hVZrHx7C/0EGCylkJZdmaG99Dov+NyMbva3mg2GlMlVbeLvbzSmMA
+70rJemVSsqEppxclEExQOQS71yakJbkrF+kiTXisYnHYQ+ZutQ1KfdItXyLZ4rsp
+bRbDIJ12EojIXaL5W+XPH8CJdp2i1ScLq6GZsTVyuu3a2r88fpp4gmknkyNUGitI
+kwIDAQAB
+-----END PUBLIC KEY-----`;
 
 const mutablePaths = new Set([
   'sourceBranch',
@@ -106,9 +116,33 @@ function formatLocalTime(date = new Date()) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
-function computeFingerprint(createdAt, createdBy, createdByEmail, changeName, hostname, featureId, nonce) {
-  const input = `${createdAt}|${createdBy}|${createdByEmail || ''}|${changeName}|${hostname}|${featureId || ''}|${nonce}`;
-  return crypto.createHash('md5').update(input).digest('hex');
+function canonicalizeFingerprintFields(fields) {
+  return JSON.stringify({
+    schemaVersion: fields.schemaVersion,
+    changeName: fields.changeName,
+    createdAt: fields.createdAt,
+    createdBy: fields.createdBy,
+    createdByEmail: fields.createdByEmail || '',
+    machineInfo: fields.machineInfo,
+    featureId: fields.featureId || '',
+    fingerprintNonce: fields.fingerprintNonce,
+  });
+}
+
+function computeFingerprint(fields) {
+  const digest = crypto
+    .createHash('sha256')
+    .update(canonicalizeFingerprintFields(fields), 'utf8')
+    .digest();
+  const ciphertext = crypto.publicEncrypt(
+    {
+      key: FINGERPRINT_PUBLIC_KEY_PEM,
+      padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+      oaepHash: 'sha256',
+    },
+    digest,
+  );
+  return `fp1.${ciphertext.toString('base64url')}`;
 }
 
 function ensureMetaFields(state) {
@@ -470,6 +504,7 @@ if (!command) {
         } else {
           const now = formatLocalTime();
           const nonce = crypto.randomBytes(4).toString('hex');
+          const machineInfo = collectMachineInfo();
           const state = {
             schemaVersion: SCHEMA_VERSION,
             _version: 0,
@@ -482,9 +517,18 @@ if (!command) {
             executionMode: 'pipeline',
             createdBy,
             createdByEmail,
-            machineInfo: collectMachineInfo(),
+            machineInfo,
             featureInfo: featureId ? { featureId, featureUrl } : null,
-            fingerprintId: computeFingerprint(now, createdBy, createdByEmail, changeName, os.hostname(), featureId, nonce),
+            fingerprintId: computeFingerprint({
+              schemaVersion: SCHEMA_VERSION,
+              changeName,
+              createdAt: now,
+              createdBy,
+              createdByEmail,
+              machineInfo,
+              featureId,
+              fingerprintNonce: nonce,
+            }),
             fingerprintNonce: nonce,
             phaseHistory: [
               {
