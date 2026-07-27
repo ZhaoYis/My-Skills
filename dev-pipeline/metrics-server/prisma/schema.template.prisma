@@ -1,0 +1,265 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "__DB_PROVIDER__"
+  url      = env("DATABASE_URL")
+}
+
+model Team {
+  id         Int      @id @default(autoincrement())
+  name       String   @db.VarChar(128)
+  slug       String   @unique @db.VarChar(128)
+  parentId   Int?     @map("parent_id")
+  externalId String?  @unique @map("external_id") @db.VarChar(255)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  parent     Team?       @relation("TeamHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children   Team[]      @relation("TeamHierarchy")
+  developers Developer[]
+
+  @@index([parentId])
+  @@index([externalId])
+  @@map("teams")
+}
+
+model Developer {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique @db.VarChar(255)
+  displayName String?  @map("display_name") @db.VarChar(255)
+  role        String?  @db.VarChar(16)
+  teamId      Int?     @map("team_id")
+  externalId  String?  @unique @map("external_id") @db.VarChar(255)
+  firstSeenAt DateTime @map("first_seen_at")
+  lastSeenAt  DateTime @map("last_seen_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  team         Team?         @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  pipelineRuns PipelineRun[]
+
+  @@index([email])
+  @@index([teamId])
+  @@map("developers")
+}
+
+model Repo {
+  id                  Int       @id @default(autoincrement())
+  name                String    @db.VarChar(255)
+  gitUrl              String    @map("git_url") @db.VarChar(512)
+  gitBranch           String    @default("main") @map("git_branch") @db.VarChar(255)
+  collectSince        DateTime  @map("collect_since")
+  lastFetchedCommit   String?   @map("last_fetched_commit") @db.Char(40)
+  lastFetchedAt       DateTime? @map("last_fetched_at")
+  collectionStatus    String    @default("idle") @map("collection_status") @db.VarChar(16)
+  collectionStartedAt DateTime? @map("collection_started_at")
+  collectionError     String?   @map("collection_error") @db.Text
+  retentionDays       Int       @default(365) @map("retention_days")
+  isActive            Boolean   @default(true) @map("is_active")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  pipelineRuns   PipelineRun[]
+  collectionLogs CollectionLog[]
+
+  @@index([collectionStatus, isActive])
+  @@map("repos")
+}
+
+model PipelineRun {
+  id                    BigInt   @id @default(autoincrement())
+  repoId                Int      @map("repo_id")
+  developerId           Int?     @map("developer_id")
+  changeName            String   @map("change_name") @db.VarChar(128)
+  schemaVersion         Int      @default(3) @map("schema_version")
+  stateVersion          Int      @map("state_version")
+  sourceBranch          String   @map("source_branch") @db.VarChar(255)
+  targetBranch          String?  @map("target_branch") @db.VarChar(255)
+  currentPhase          Int      @map("current_phase")
+  currentStep           Int      @map("current_step")
+  status                String   @db.VarChar(16)
+  executionMode         String   @map("execution_mode") @db.VarChar(16)
+  isLatest              Boolean  @default(true) @map("is_latest")
+  fingerprintId         String   @map("fingerprint_id") @db.VarChar(512)
+  fingerprintNonce      String   @map("fingerprint_nonce") @db.Char(8)
+  fingerprintVerified   Boolean  @default(false) @map("fingerprint_verified")
+  fingerprintKeyVersion String?  @map("fingerprint_key_version") @db.VarChar(16)
+  createdByEmail        String   @map("created_by_email") @db.VarChar(255)
+  createdBy             String   @map("created_by") @db.VarChar(128)
+  createdAtSource       DateTime @map("created_at_source")
+  machinePlatform       String?  @map("machine_platform") @db.VarChar(64)
+  machineHostname       String?  @map("machine_hostname") @db.VarChar(255)
+  machineOsRelease      String?  @map("machine_os_release") @db.VarChar(64)
+  machineNodeVersion    String?  @map("machine_node_version") @db.VarChar(32)
+  machineArch           String?  @map("machine_arch") @db.VarChar(16)
+  featureId             String?  @map("feature_id") @db.VarChar(255)
+  featureUrl            String?  @map("feature_url") @db.VarChar(1024)
+  archivePath           String?  @map("archive_path") @db.VarChar(512)
+  pauseReason           String?  @map("pause_reason") @db.VarChar(255)
+  deliveryCommitSha     String?  @map("delivery_commit_sha") @db.Char(40)
+  deliveryMergeCommitSha String? @map("delivery_merge_commit_sha") @db.Char(40)
+  deliverySourcePushed  Boolean  @default(false) @map("delivery_source_pushed")
+  deliveryTargetPushed  Boolean  @default(false) @map("delivery_target_pushed")
+  deliveryTag           String?  @map("delivery_tag") @db.VarChar(255)
+  reviewStatus          String   @default("pending") @map("review_status") @db.VarChar(16)
+  reviewCurrentRound    Int      @default(0) @map("review_current_round")
+  testsCommand          String?  @map("tests_command") @db.VarChar(1024)
+  testsAttempts         Int      @default(0) @map("tests_attempts")
+  testsStatus           String   @default("pending") @map("tests_status") @db.VarChar(16)
+  testsDetail           String?  @map("tests_detail") @db.Text
+  verifyCommand         String?  @map("verify_command") @db.VarChar(1024)
+  verifyAttempts        Int      @default(0) @map("verify_attempts")
+  verifyStatus          String   @default("pending") @map("verify_status") @db.VarChar(16)
+  verifyDetail          String?  @map("verify_detail") @db.Text
+  createdAtPipeline     DateTime @map("created_at_pipeline")
+  updatedAtPipeline     DateTime @map("updated_at_pipeline")
+  changeDurationSeconds Int?     @map("change_duration_seconds")
+  contentHash           String   @map("content_hash") @db.Char(32)
+  rawStateJson          Json?    @map("raw_state_json")
+  commitSha             String   @map("commit_sha") @db.Char(40)
+  commitTimestamp       DateTime @map("commit_timestamp")
+  extractedAt           DateTime @default(now()) @map("extracted_at")
+
+  repo          Repo                     @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  developer     Developer?               @relation(fields: [developerId], references: [id], onDelete: SetNull)
+  phaseHistory  PhaseHistoryEntry[]
+  reviewRounds  ReviewRound[]
+  decisions     PipelineDecision[]
+  gatesBypassed PipelineGateBypassed[]
+
+  @@unique([repoId, changeName, contentHash])
+  @@index([repoId])
+  @@index([developerId])
+  @@index([isLatest])
+  @@index([fingerprintId])
+  @@index([fingerprintVerified])
+  @@index([status])
+  @@index([commitSha])
+  @@index([createdAtPipeline])
+  @@index([repoId, changeName])
+  @@map("pipeline_runs")
+}
+
+model PhaseHistoryEntry {
+  id              BigInt    @id @default(autoincrement())
+  runId           BigInt    @map("run_id")
+  phase           Int
+  step            Int
+  executedBy      String    @map("executed_by") @db.VarChar(128)
+  status          String    @db.VarChar(16)
+  startedAt       DateTime  @map("started_at")
+  completedAt     DateTime? @map("completed_at")
+  durationSeconds Int?      @map("duration_seconds")
+
+  run           PipelineRun          @relation(fields: [runId], references: [id], onDelete: Cascade)
+  decisions     PhaseEntryDecision[]
+  gatesBypassed PhaseEntryGate[]
+
+  @@index([runId])
+  @@index([phase])
+  @@map("phase_history_entries")
+}
+
+model ReviewRound {
+  id          BigInt   @id @default(autoincrement())
+  runId       BigInt   @map("run_id")
+  roundNumber Int      @map("round_number")
+  reportPath  String?  @map("report_path") @db.VarChar(512)
+  status      String   @db.VarChar(16)
+  recordedAt  DateTime @map("recorded_at")
+
+  run       PipelineRun           @relation(fields: [runId], references: [id], onDelete: Cascade)
+  decisions ReviewRoundDecision[]
+
+  @@unique([runId, roundNumber])
+  @@map("review_rounds")
+}
+
+model PipelineDecision {
+  id            BigInt      @id @default(autoincrement())
+  runId         BigInt      @map("run_id")
+  decisionKey   String      @map("decision_key") @db.VarChar(64)
+  decisionValue Json        @map("decision_value")
+  run           PipelineRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, decisionKey])
+  @@map("pipeline_decisions")
+}
+
+model PipelineGateBypassed {
+  id       BigInt      @id @default(autoincrement())
+  runId    BigInt      @map("run_id")
+  gateName String      @map("gate_name") @db.VarChar(128)
+  run      PipelineRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+  @@map("pipeline_gates_bypassed")
+}
+
+model PhaseEntryDecision {
+  id            BigInt            @id @default(autoincrement())
+  phaseEntryId  BigInt            @map("phase_entry_id")
+  decisionKey   String            @map("decision_key") @db.VarChar(64)
+  decisionValue Json              @map("decision_value")
+  phaseEntry    PhaseHistoryEntry @relation(fields: [phaseEntryId], references: [id], onDelete: Cascade)
+
+  @@unique([phaseEntryId, decisionKey])
+  @@map("phase_entry_decisions")
+}
+
+model PhaseEntryGate {
+  id           BigInt            @id @default(autoincrement())
+  phaseEntryId BigInt            @map("phase_entry_id")
+  gateName     String            @map("gate_name") @db.VarChar(128)
+  phaseEntry   PhaseHistoryEntry @relation(fields: [phaseEntryId], references: [id], onDelete: Cascade)
+
+  @@index([phaseEntryId])
+  @@map("phase_entry_gates")
+}
+
+model ReviewRoundDecision {
+  id             BigInt      @id @default(autoincrement())
+  reviewRoundId  BigInt      @map("review_round_id")
+  decisionKey    String      @map("decision_key") @db.VarChar(64)
+  decisionValue  Json        @map("decision_value")
+  reviewRound    ReviewRound @relation(fields: [reviewRoundId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewRoundId, decisionKey])
+  @@map("review_round_decisions")
+}
+
+model CollectionLog {
+  id                   BigInt    @id @default(autoincrement())
+  repoId               Int       @map("repo_id")
+  startedAt            DateTime  @map("started_at")
+  finishedAt           DateTime? @map("finished_at")
+  status               String    @default("running") @db.VarChar(16)
+  commitsScanned       Int       @default(0) @map("commits_scanned")
+  filesFound           Int       @default(0) @map("files_found")
+  runsUpserted         Int       @default(0) @map("runs_upserted")
+  runsSkipped          Int       @default(0) @map("runs_skipped")
+  fingerprintsRejected Int       @default(0) @map("fingerprints_rejected")
+  errorMessage         String?   @map("error_message") @db.Text
+
+  repo Repo @relation(fields: [repoId], references: [id], onDelete: Cascade)
+
+  @@index([repoId])
+  @@map("collection_logs")
+}
+
+model SyncLog {
+  id           BigInt    @id @default(autoincrement())
+  source       String    @db.VarChar(32)
+  status       String    @default("running") @db.VarChar(16)
+  startedAt    DateTime  @map("started_at")
+  finishedAt   DateTime? @map("finished_at")
+  teamsCreated Int       @default(0) @map("teams_created")
+  teamsUpdated Int       @default(0) @map("teams_updated")
+  devsLinked   Int       @default(0) @map("devs_linked")
+  errorMessage String?   @map("error_message") @db.Text
+
+  @@index([status])
+  @@map("sync_logs")
+}

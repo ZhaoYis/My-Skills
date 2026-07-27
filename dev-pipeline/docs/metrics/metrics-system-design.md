@@ -151,7 +151,7 @@ dev-pipeline/
 - `@updatedAt` 只对 Prisma Client 层生效；数据库层 MySQL 用 `ON UPDATE CURRENT_TIMESTAMP`，Pg 用触发器 Prisma 自动创建
 - JSON 字段在 MySQL 映射为 `Json`，Pg 映射为 `JsonB`，Prisma 统一处理
 
-### 3.2 完整 Prisma Schema
+### 3.2 完整 Prisma Schema（13 张表）
 
 ```prisma
 // prisma/schema.prisma
@@ -178,7 +178,6 @@ model Team {
   parent    Team?        @relation("TeamHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children  Team[]       @relation("TeamHierarchy")
   developers Developer[]
-  subTeams  Team[]       @relation("TeamHierarchy")
 
   @@index([parentId])
   @@index([externalId])
@@ -190,6 +189,7 @@ model Developer {
   id            Int       @id @default(autoincrement())
   email         String    @unique @db.VarChar(255)
   displayName   String?   @db.VarChar(255)
+  role          String?   @db.VarChar(16)   // admin | member (null=未分配)，预留 RBAC 扩展
   teamId        Int?
   externalId    String?   @unique @db.VarChar(255)
   firstSeenAt   DateTime
@@ -215,6 +215,7 @@ model Repo {
   lastFetchedCommit  String?   @db.Char(40)
   lastFetchedAt      DateTime?
   collectionStatus   String    @default("idle") @db.VarChar(16)   // idle | running | error
+  collectionStartedAt DateTime?                                              // 采集开始时间，用于超时检测
   collectionError    String?   @db.Text
   isActive           Boolean   @default(true)
   createdAt          DateTime  @default(now())
@@ -246,6 +247,9 @@ model PipelineRun {
   fingerprintNonce      String    @db.Char(8)
   fingerprintVerified   Boolean   @default(false)
   fingerprintKeyVersion String?   @db.VarChar(16)
+  createdByEmail         String    @db.VarChar(255)                 // 指纹验真字段，来自 state 文件
+  createdBy              String    @db.VarChar(128)                 // 指纹验真字段，来自 state 文件
+  createdAtSource        DateTime                                   // state 文件原始 createdAt，与 createdAtPipeline 区分
 
   // Machine info（扁平化，不拆表）
   machinePlatform      String?  @db.VarChar(64)
@@ -289,6 +293,7 @@ model PipelineRun {
 
   // Dedup & trace
   contentHash      String   @db.Char(32)
+  rawStateJson     Json?                                          // 原始 state JSON 全文，便于追溯和重新验真
   commitSha        String   @db.Char(40)
   commitTimestamp  DateTime
   extractedAt      DateTime  @default(now())
@@ -419,6 +424,22 @@ model CollectionLog {
 
   @@index([repoId])
 }
+
+// ─── 组织同步日志 ───
+
+model SyncLog {
+  id           BigInt    @id @default(autoincrement())
+  source       String    @db.VarChar(32)     // feishu | ldap | wecom
+  status       String    @default("running") @db.VarChar(16)  // running | completed | error
+  startedAt    DateTime
+  finishedAt   DateTime?
+  teamsCreated Int       @default(0)
+  teamsUpdated Int       @default(0)
+  devsLinked   Int       @default(0)
+  errorMessage String?   @db.Text
+
+  @@index([status])
+}
 ```
 
 ### 3.3 跨数据库兼容 — Prisma 自动处理
@@ -470,10 +491,10 @@ For each active repo:
 
   2. 确定 commit 范围并直接过滤到相关 commit:
      - 无 last_fetched_commit →
-         git log --reverse --after=<collect_since> --diff-filter=AM
+         git log --reverse --after=<collect_since> --diff-filter=ACMR
            --name-only -- openspec/.pipeline-state/ --format="%H %aI"
      - 有 last_fetched_commit →
-         git log --reverse <last_sha>..HEAD --diff-filter=AM
+         git log --reverse <last_sha>..HEAD --diff-filter=ACMR
            --name-only -- openspec/.pipeline-state/ --format="%H %aI"
 
      关键优化: --diff-filter=AM + 路径过滤，一步跳过 97% 无关 commit
@@ -487,7 +508,8 @@ For each active repo:
         iv.  fingerprint 校验失败 → 拒绝入库并记录 collection_log
         v.   计算 MD5(content)
         vi.  检查 content_hash 是否存在 → 跳过（去重）
-        vii. 事务内 upsert pipeline_run + 全部子表
+        vii. 将原始 JSON 存入 rawStateJson 字段
+        viii.事务内 upsert pipeline_run + 全部子表（含 stateVersion 比较）
      c. 记录 file count
 
   4. 更新 last_fetched_commit, last_fetched_at
@@ -538,6 +560,16 @@ fingerprintId = "fp1." + base64url(ciphertext)
 私钥通过 `FINGERPRINT_PRIVATE_KEYS` 注入为版本化 key ring，便于后续轮换；当前模板固定使用 `fp1` 公钥。启动时必须校验私钥可解析且包含 `fp1`，缺失时采集器 fail-fast，不能降级为跳过验真。
 
 > 安全边界：公钥加密可以检测密文或受保护字段被直接修改，但任何持有模板公钥的人仍能为伪造内容重新生成合法密文。因此它不等同于数字签名。若威胁模型包含恶意项目贡献者，应改为由受信服务持有私钥签名，或引入服务端签发的身份凭证。
+
+`canonicalJson` 规范基于 `dev-pipeline-state.mjs:119-130` 的 `canonicalizeFingerprintFields` 实现，关键规则：
+
+1. **字段顺序**：`schemaVersion`, `changeName`, `createdAt`, `createdBy`, `createdByEmail`, `machineInfo`, `featureId`, `fingerprintNonce`
+2. **空值处理**：`createdByEmail` 和 `featureId` 空值时序列化为 `""`；`machineInfo` 各字段不可为空
+3. **时间格式**：`createdAt` 为 `YYYY-MM-DD HH:mm:ss`（本地时间）
+4. **序列化**：`JSON.stringify` 无缩进，无 Unicode 转义（`JSON.stringify` 默认行为）
+5. `fingerprintNonce` 的作用是区分内容相同的 change（非密码学必需，RSA-OAEP 已有随机填充）
+
+采集端 `fingerprint-verifier.ts` 必须严格复现上述规则，验收时使用 `test-space/` 下的真实 state 文件作为测试向量。
 
 兼容与迁移规则：
 
@@ -616,7 +648,7 @@ WHERE repo_id = ? AND change_name = ? AND fingerprint_verified = 1
 ORDER BY state_version;
 ```
 
-### 4.5 边界情况处理
+### 4.9 边界情况处理
 
 | 场景 | 处理方式 |
 |------|---------|
@@ -626,7 +658,49 @@ ORDER BY state_version;
 | Schema 版本非 3 | skip + 记录 schema_version 值 |
 | 大批量 commits | 每 100 个 commit 一批事务 |
 | 采集中断 | 基于 last_fetched_commit 增量恢复 |
-| 并发采集 | `collection_status` 做乐观锁，运行前检查并抢占 |
+| 并发采集 | `collection_status` + `collectionStartedAt` 做超时可抢占锁；运行前检查 status 和超时（默认 2h）；事务内用 `stateVersion` 比较防旧版本覆盖 |
+
+### 4.7 采集锁超时恢复
+
+采集器崩溃可能导致 `collection_status` 卡在 `running`。通过 `collectionStartedAt` 时间戳检测僵尸锁：
+
+```typescript
+const LOCK_TIMEOUT_MS = parseInt(process.env.COLLECTOR_LOCK_TIMEOUT || '7200000'); // 默认 2h
+
+async function tryAcquireLock(repoId: number): Promise<boolean> {
+  const result = await prisma.repo.updateMany({
+    where: {
+      id: repoId,
+      OR: [
+        { collectionStatus: 'idle' },                                         // 空闲可直接抢占
+        { collectionStatus: 'running', collectionStartedAt: { lt: new Date(Date.now() - LOCK_TIMEOUT_MS) } }, // 超时僵尸锁
+      ],
+    },
+    data: { collectionStatus: 'running', collectionStartedAt: new Date(), collectionError: null },
+  });
+  return result.count > 0;
+}
+```
+
+### 4.8 `isLatest` upsert 版本竞态保护
+
+两个采集器并发处理同一 change 时，后到的旧版本可能覆盖新版本的 `isLatest`。通过 `stateVersion` 比较防止：
+
+```typescript
+// 事务内
+const currentLatest = await prisma.pipelineRun.findFirst({
+  where: { repoId, changeName, isLatest: true },
+  select: { stateVersion: true },
+});
+if (currentLatest && values.stateVersion <= currentLatest.stateVersion) {
+  return { action: 'skipped', reason: 'stale_version' };  // 旧版本，跳过
+}
+await prisma.pipelineRun.updateMany({
+  where: { repoId, changeName, isLatest: true },
+  data: { isLatest: false },
+});
+await prisma.pipelineRun.create({ data: { ...values, isLatest: true } });
+```
 
 ### 4.6 CLI 用法
 
@@ -648,6 +722,40 @@ npx tsx src/collector.ts --all --dry-run
 
 ## 5. API 端点
 
+### 5.0 API 响应格式约定
+
+所有 API 响应统一使用以下 JSON 结构：
+
+**不分页响应**：
+```json
+{
+    "success": true,
+    "code": 200,
+    "message": "请求成功",
+    "data": { ... }
+}
+```
+
+**分页响应**（适用列表类端点）：
+```json
+{
+    "success": true,
+    "code": 200,
+    "message": "请求成功",
+    "data": {
+        "pageNum": 1,
+        "pageSize": 20,
+        "totalCount": 156,
+        "totalPage": 8,
+        "records": [ ... ]
+    }
+}
+```
+
+分页参数通过 query string 传入：`?pageNum=1&pageSize=20`（默认 `pageSize=20`，最大 `1000`）。错误响应 `success=false`，`code` 为 HTTP 状态码，`message` 描述错误原因，`data` 为 null。
+
+---
+
 ### 5.1 认证与权限（OIDC 域账号集成）
 
 **整体流程**：metrics-website 集成域账号 OIDC → 登录成功后拿到用户身份 → 调用 metrics-server 的 `/api/auth/session` 换取 API JWT → 后续请求携带该 JWT。
@@ -667,7 +775,7 @@ npx tsx src/collector.ts --all --dry-run
     │                           │◀─────────────────────────│                        │
     │                           │  解析 → { email, name, sub }                      │
     │                           │                                                    │
-    │                           │  POST /api/auth/session                            │
+    │                           │  POST /api/v1/auth/session                            │
     │                           │  { email, name, sub }                              │
     │                           │───────────────────────────────────────────────────▶│
     │                           │                          │  查/建 developer 行      │
@@ -686,9 +794,57 @@ npx tsx src/collector.ts --all --dry-run
 
 **Auth 中间件**：验证 API JWT 签名 + 过期 → 提取 `{ developerId, email, teamId, isAdmin }` → 注入 `req.user`。
 
-**团队可见性中间件**：`/api/metrics/me` 过滤 `developer_id = req.user.developerId`；`/api/metrics/team/:id` 验证 id 在用户团队子树中（或 isAdmin）；isAdmin 不过滤。
+**团队可见性中间件**：`/api/v1/metrics/me` 过滤 `developer_id = req.user.developerId`；`/api/v1/metrics/team/:id` 验证 id 在用户团队子树中（或 isAdmin）；isAdmin 不过滤。
 
-**`POST /api/auth/session` — Developer 自动注册**：
+**`POST /api/v1/sync/org` — 组织数据同步**：
+
+从外部系统（飞书/LDAP/企业微信等）同步团队层级和开发者信息。以 `externalId` 为 merge key 全量覆盖团队结构；开发者通过 OIDC `sub`（对应 Developer 表的 `externalId`）匹配，自动关联 `email` 一致的采集记录。异步执行，结果写入 `SyncLog` 表。
+
+```typescript
+// services/sync-service.ts
+async function syncOrg(source: string, data: OrgData) {
+  const syncLog = await prisma.syncLog.create({
+    data: { source, status: 'running', startedAt: new Date() },
+  });
+  try {
+    let teamsCreated = 0, teamsUpdated = 0, devsLinked = 0;
+    // 1. 以 externalId 为 key upsert 团队层级（全量覆盖）
+    for (const team of data.teams) {
+      const result = await prisma.team.upsert({
+        where: { externalId: team.externalId },
+        create: { name: team.name, slug: team.slug, parentId: team.parentId, externalId: team.externalId },
+        update: { name: team.name, parentId: team.parentId },
+      });
+      result.createdAt === result.updatedAt ? teamsCreated++ : teamsUpdated++;
+    }
+    // 2. 以 externalId (OIDC sub) 匹配开发者，自动关联 email
+    for (const dev of data.developers) {
+      const existing = await prisma.developer.findFirst({
+        where: { OR: [{ externalId: dev.sub }, { email: dev.email }] },
+      });
+      if (existing) {
+        await prisma.developer.update({
+          where: { id: existing.id },
+          data: { teamId: dev.teamId, externalId: dev.sub, lastSeenAt: new Date() },
+        });
+        devsLinked++;
+      } else {
+        await prisma.developer.create({
+          data: { email: dev.email, displayName: dev.name, externalId: dev.sub, teamId: dev.teamId, firstSeenAt: new Date(), lastSeenAt: new Date() },
+        });
+      }
+    }
+    await prisma.syncLog.update({ where: { id: syncLog.id }, data: { status: 'completed', finishedAt: new Date(), teamsCreated, teamsUpdated, devsLinked } });
+  } catch (e) {
+    await prisma.syncLog.update({ where: { id: syncLog.id }, data: { status: 'error', errorMessage: e.message, finishedAt: new Date() } });
+  }
+}
+
+// GET /api/v1/sync/status 返回结果
+// { success: true, data: { lastSync: { source, status, teamsCreated, teamsUpdated, devsLinked, startedAt, finishedAt } } }
+```
+
+**`POST /api/v1/auth/session` — Developer 自动注册**：
 
 ```typescript
 async function createSession(email: string, name: string, sub: string) {
@@ -737,7 +893,7 @@ async function teamScope(req, res, next) {
 }
 ```
 
-**应用级**：`getTeamSubtreeIds` 内部加 60 秒 TTL 内存缓存，`/api/teams` 写操作时清除：
+**应用级**：`getTeamSubtreeIds` 内部加 60 秒 TTL 内存缓存，`/api/v1/teams` 写操作时清除：
 
 ```typescript
 // services/team-cache.ts
@@ -754,90 +910,110 @@ async function getTeamSubtreeIds(teamId: number): Promise<number[]> {
 }
 ```
 
-**个人视图例外**：`/api/metrics/me` 不触发递归查询——`WHERE developer_id = req.user.developerId`，这是最高频路径。
+**个人视图例外**：`/api/v1/metrics/me` 不触发递归查询——`WHERE developer_id = req.user.developerId`，这是最高频路径。
 
 ### 5.2 端点一览
 
 ```
-METHOD  PATH                              AUTH    说明
-──────  ────                              ────    ────
-GET     /api/health                       none    健康检查
+METHOD  PATH                                AUTH    说明
+──────  ────                                ────    ────
+GET     /api/v1/health                      none    健康检查
 
 # 指标查询
-GET     /api/metrics/me                   user    个人指标总览
-GET     /api/metrics/me/cycle-time        user    个人周期时间
-GET     /api/metrics/me/phases            user    个人各阶段耗时分布
-GET     /api/metrics/me/reviews           user    个人审查统计
-GET     /api/metrics/me/completions       user    个人完成率
-GET     /api/metrics/me/pauses            user    个人暂停频率
-GET     /api/metrics/me/bypasses          user    个人门禁跳过率
-GET     /api/metrics/team/:teamId         team    团队指标汇总
-GET     /api/metrics/team/:teamId/members team    团队成员明细列表
-GET     /api/metrics/team/:teamId/trend   team    团队趋势
-GET     /api/metrics/team/:teamId/phases  team    团队阶段分布
+GET     /api/v1/metrics/me                  user    个人指标总览
+GET     /api/v1/metrics/me/cycle-time       user    个人周期时间
+GET     /api/v1/metrics/me/phases           user    个人各阶段耗时分布
+GET     /api/v1/metrics/me/reviews          user    个人审查统计
+GET     /api/v1/metrics/me/completions      user    个人完成率
+GET     /api/v1/metrics/me/pauses           user    个人暂停频率
+GET     /api/v1/metrics/me/bypasses         user    个人门禁跳过率
+GET     /api/v1/metrics/team/:teamId        team    团队指标汇总
+GET     /api/v1/metrics/team/:teamId/members team   团队成员明细列表（分页）
+GET     /api/v1/metrics/team/:teamId/trend  team    团队趋势
+GET     /api/v1/metrics/team/:teamId/phases team    团队阶段分布
 
 # 管理
-GET     /api/repos                        admin   仓库列表
-GET     /api/repos/:id                    admin   仓库详情
-POST    /api/repos                        admin   添加仓库
-PUT     /api/repos/:id                    admin   更新仓库
-DELETE  /api/repos/:id                    admin   删除仓库
-POST    /api/repos/:id/reset-collection   admin   重置采集进度
+GET     /api/v1/repos                       admin   仓库列表（分页）
+GET     /api/v1/repos/:id                   admin   仓库详情
+POST    /api/v1/repos                       admin   添加仓库
+PUT     /api/v1/repos/:id                   admin   更新仓库
+DELETE  /api/v1/repos/:id                   admin   删除仓库
+POST    /api/v1/repos/:id/reset-collection  admin   重置采集进度
 
-GET     /api/teams                        admin   团队列表（树形）
-POST    /api/teams                        admin   创建团队
-PUT     /api/teams/:id                    admin   更新团队
-DELETE  /api/teams/:id                    admin   删除团队
+GET     /api/v1/teams                       admin   团队列表（树形）
+POST    /api/v1/teams                       admin   创建团队
+PUT     /api/v1/teams/:id                   admin   更新团队
+DELETE  /api/v1/teams/:id                   admin   删除团队
 
-GET     /api/developers                   admin   开发者列表
-PUT     /api/developers/:id               admin   更新开发者（分配团队）
+GET     /api/v1/developers                  admin   开发者列表（分页）
+PUT     /api/v1/developers/:id              admin   更新开发者（分配团队）
 
-GET     /api/collection/status            admin   采集状态
-GET     /api/collection/logs              admin   采集日志
-POST    /api/collection/trigger           admin   手动触发采集
-POST    /api/collection/trigger-all       admin   触发全部仓库
+GET     /api/v1/collection/status           admin   采集状态
+GET     /api/v1/collection/logs             admin   采集日志（分页）
+POST    /api/v1/collection/trigger          admin   手动触发采集
+POST    /api/v1/collection/trigger-all      admin   触发全部仓库
 
-POST    /api/sync/org                     admin   同步组织数据
-GET     /api/sync/status                  admin   上次同步状态
+POST    /api/v1/sync/org                    admin   同步组织数据
+GET     /api/v1/sync/status                 admin   上次同步状态
 ```
 
 ### 5.3 关键响应示例
 
-**GET /api/metrics/me**
+**GET /api/v1/metrics/me**
 ```json
 {
-  "totalRuns": 120,
-  "completedRuns": 98,
-  "completionRate": 0.817,
-  "avgCycleTimeMinutes": 45.3,
-  "medianCycleTimeMinutes": 32.1,
-  "avgReviewRounds": 1.3,
-  "reviewPassRate": 0.72,
-  "avgTestAttempts": 1.1,
-  "avgVerifyAttempts": 1.0,
-  "pauseCount": 5,
-  "bypassFrequency": { "review-skipped": 3, "tests-skipped": 8 },
-  "recentTrend": [
-    { "date": "2026-07-21", "runs": 5, "avgCycleMin": 40.2 }
-  ]
+  "success": true,
+  "code": 200,
+  "message": "请求成功",
+  "data": {
+    "totalRuns": 120,
+    "completedRuns": 98,
+    "completionRate": 0.817,
+    "abandonmentRate": 0.092,
+    "avgCycleTimeMinutes": 45.3,
+    "medianCycleTimeMinutes": 32.1,
+    "avgReviewRounds": 1.3,
+    "reviewPassRate": 0.72,
+    "avgTestAttempts": 1.1,
+    "avgVerifyAttempts": 1.0,
+    "avgRollbacksPerChange": 0.3,
+    "pauseCount": 5,
+    "bypassFrequency": { "review-skipped": 3, "tests-skipped": 8 },
+    "phaseBreakdown": [
+      { "phase": 0, "avgSec": 120, "p50Sec": 90, "p95Sec": 300 },
+      { "phase": 1, "avgSec": 1800, "p50Sec": 1200, "p95Sec": 7200 }
+    ],
+    "recentTrend": [
+      { "date": "2026-07-21", "runs": 5, "avgCycleMin": 40.2 }
+    ]
+  }
 }
 ```
 
-**GET /api/metrics/team/:teamId/members**
+**GET /api/v1/metrics/team/:teamId/members**（分页）
 ```json
 {
-  "members": [
-    {
-      "id": 1,
-      "displayName": "张三",
-      "email": "zhang@example.com",
-      "totalRuns": 45,
-      "completedRuns": 40,
-      "completionRate": 0.889,
-      "avgCycleTimeMinutes": 38.2,
-      "avgReviewRounds": 1.2
-    }
-  ]
+  "success": true,
+  "code": 200,
+  "message": "请求成功",
+  "data": {
+    "pageNum": 1,
+    "pageSize": 20,
+    "totalCount": 12,
+    "totalPage": 1,
+    "records": [
+      {
+        "id": 1,
+        "displayName": "张三",
+        "email": "zhang@example.com",
+        "totalRuns": 45,
+        "completedRuns": 40,
+        "completionRate": 0.889,
+        "avgCycleTimeMinutes": 38.2,
+        "avgReviewRounds": 1.2
+      }
+    ]
+  }
 }
 ```
 
@@ -857,10 +1033,12 @@ GET     /api/sync/status                  admin   上次同步状态
 | **平均审查轮次** | `AVG(review_current_round)` | 代码质量/返工程度 |
 | **审查一次通过率** | `COUNT(review_current_round=1 AND review_status='passed') / COUNT(status='completed')` | 首次代码质量 |
 | **测试一次通过率** | `COUNT(tests_attempts<=1 AND tests_status='passed') / COUNT(tests_attempts>0)` | 测试质量 |
-| **各阶段平均耗时** | `AVG(phaseHistory.duration) GROUP BY phase` | 瓶颈分析 |
+| **各阶段耗时分布** | `AVG` + `P50` + `P95`（`durationSeconds`）GROUP BY phase，Pg 用 `PERCENTILE_CONT`，MySQL 应用层计算 | 瓶颈分析（去极端值） |
 | **门禁跳过率** | `COUNT(gatesBypassed NOT EMPTY) / COUNT(*)` | 流程合规度 |
-| **暂停率** | `COUNT(status='paused', is_latest=1) / COUNT(is_latest=1)` | 流程中断频率 |
+| **暂停率** | `COUNT(DISTINCT phe.run_id WHERE phe.status='abandoned') / COUNT(DISTINCT pr.id)`（通过 phaseHistory 统计 abandon 事件） | 流程中断频率 |
 | **Phase 回退次数** | 相邻 phase entry 中 phase 向小跳转 | 决策变更频率 |
+| **完成率** | `COUNT(status='completed', is_latest=1, fingerprint_verified=1) / COUNT(is_latest=1, fingerprint_verified=1)` | 整体完成比例 |
+| **废弃率** | `COUNT(archivePath IS NOT NULL AND status != 'completed', is_latest=1, fingerprint_verified=1) / COUNT(is_latest=1, fingerprint_verified=1)` | 中途放弃的比例 |
 
 ### 6.2 关键指标计算说明
 
@@ -898,7 +1076,29 @@ async function effectiveCycleMs(pr: PrismaClient, runId: bigint): Promise<number
 }
 ```
 
+> **时区注意事项**：`startedAt`/`completedAt` 来自 state 文件的 `formatLocalTime`（本地时间，格式 `YYYY-MM-DD HH:mm:ss`）。由于产生和执行均在同一台开发者机器上，差值计算不受时区影响。采集端 `state-parser.ts` 解析时统一按 UTC 存入数据库（仅差值有意义，绝对值无意义），避免跨 DST 边界问题。
+```
+
 > 注意：有效周期时间排除了阶段之间的暂停间隙，但不排除 Phase 回退的时间——回退是实际发生的重做，应该算入成本。
+
+**Phase 回退次数查询**（MySQL 8+ / PostgreSQL 均支持 `LAG` 窗口函数）：
+
+```sql
+WITH phase_sequence AS (
+  SELECT
+    phe.run_id,
+    phe.phase,
+    LAG(phe.phase) OVER (PARTITION BY phe.run_id ORDER BY phe.started_at) AS prev_phase
+  FROM phase_history_entries phe
+  JOIN pipeline_runs pr ON pr.id = phe.run_id
+  WHERE pr.is_latest = 1
+    AND pr.fingerprint_verified = 1
+    AND pr.developer_id = ?
+)
+SELECT COUNT(*) AS rollback_count
+FROM phase_sequence
+WHERE phase < prev_phase;
+```
 
 ### 聚合查询示例（Prisma Client）
 
@@ -1016,15 +1216,27 @@ async function medianCycleTime(devId: number): Promise<number> {
 
 | 阶段 | 内容 | 预计 |
 |------|------|------|
-| **Phase 0: 指纹模板** | 生成生产 RSA key pair；仅将 `fp1` 公钥固化到项目模板；实现 RSA-OAEP 指纹生成和模板测试；私钥进入部署密钥系统 | 1 天 |
-| **Phase 1: 数据库基础** | 创建 `metrics-server/` 子项目；Prisma schema 定义（12 张表）；数据库连接与迁移生成 | 1-2 天 |
-| **Phase 2: 数据模型** | pipeline state v3 的 Zod schema；各表 repository 类（基于 Prisma Client）；单元测试 | 1-2 天 |
-| **Phase 3: 采集器引擎** | git-collector + state-extractor + fingerprint-verifier + upsert-engine；collection-service 编排；篡改与密钥错误集成测试 | 2-3 天 |
-| **Phase 4: API Server** | Express 中间件栈；认证/团队可见性中间件；CRUD 路由 | 2-3 天 |
-| **Phase 5: 指标服务** | metrics-service 聚合查询（Prisma Client + 原生 SQL，含 MySQL/Pg 差异处理）；所有 `/api/metrics/*` 端点 | 1-2 天 |
-| **Phase 6: 定时调度** | node-cron 定时器；采集锁机制 | 1 天 |
-| **Phase 7: Dashboard** | Next.js 脚手架；个人仪表盘 + 团队面板 + 管理页面；Recharts 图表 | 3-4 天 |
-| **Phase 8: 组织同步** | `POST /api/sync/org`；环境配置文档；MySQL/PostgreSQL 切换测试 | 2 天 |
+| ✅ **Phase 0: 指纹模板** | 生成生产 RSA key pair；仅将 `fp1` 公钥固化到项目模板；实现 RSA-OAEP 指纹生成和模板测试；私钥进入部署密钥系统 | 1 天 |
+| ✅ **Phase 1: 数据库基础** | 创建 `metrics-server/` 子项目；Prisma schema 定义（13 张表）；数据库连接与迁移生成 | 1-2 天 |
+| ✅ **Phase 2: 数据模型** | pipeline state v3 的 Zod schema；各表 repository 类（基于 Prisma Client）；单元测试 | 1-2 天 |
+| ✅ **Phase 3: 采集器引擎** | git-collector + state-extractor + fingerprint-verifier + upsert-engine；collection-service 编排；篡改与密钥错误集成测试 | 2-3 天 |
+| ✅ **Phase 4: API Server** | Express 中间件栈；认证/团队可见性中间件；CRUD 路由 | 2-3 天 |
+| ✅ **Phase 5: 指标服务** | metrics-service 聚合查询（Prisma Client + 原生 SQL，含 MySQL/Pg 差异处理）；所有 `/api/metrics/*` 端点 | 1-2 天 |
+| ✅ **Phase 6: 定时调度** | node-cron 定时器；采集锁机制 | 1 天 |
+| ✅ **Phase 7: Dashboard** | Next.js 脚手架；个人仪表盘 + 团队面板 + 管理页面；Recharts 图表 | 3-4 天 |
+| ✅ **Phase 8: 组织同步** | `POST /api/sync/org`；环境配置文档；MySQL/PostgreSQL 切换测试 | 2 天 |
+
+### 数据保留策略（预设计，Phase 1 不实现）
+
+| 层级 | 数据范围 | 保留期 | 说明 |
+|------|---------|--------|------|
+| 热数据 | `isLatest=true` 的记录 | 永久 | 指标查询主数据，数据量可控 |
+| 温数据 | 全部 `pipeline_runs` + 子表 | 12 个月 | 趋势分析，超过 12 个月归档 |
+| 冷数据 | 12 个月前的历史快照 | 对象存储 | 压缩归档，审计需要时恢复 |
+
+- Repo 表预留 `retentionDays Int @default(365)` 配置项
+- Cron 调度中预留 `retention-cleanup` 占位任务
+- 触发条件：`pipeline_runs` 总行数超过 100 万时启用清理
 
 ---
 

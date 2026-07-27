@@ -5,3 +5,8 @@ node_modules
 .vercel
 .playwright-mcp/
 keys/
+.env
+.env.*
+!.env.example
+metrics-server/.collector/
+*.tsbuildinfo
