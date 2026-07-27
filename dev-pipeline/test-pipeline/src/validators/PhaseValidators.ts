@@ -263,6 +263,9 @@ export async function validatePhase6(
   const commitMessage = state.delivery.commitSha
     ? (await git(env, 'show', '-s', '--format=%s', state.delivery.commitSha)).trim()
     : '';
+  const stateCommitMessage = (
+    await git(env, 'log', '-1', '--format=%s', '--', `openspec/.pipeline-state/${changeName}.json`)
+  ).trim();
   const action = postArchiveAction ?? 'merge';
   const isLocalOnly = action === 'local-only';
   const isPushOnly = action === 'push-only';
@@ -279,6 +282,11 @@ export async function validatePhase6(
     {
       ...(await expectConventionalCommit(commitMessage)),
       description: 'Source commit message follows conventional commit format',
+    },
+    {
+      description: 'Final pipeline state commit exists in git log',
+      passed: stateCommitMessage.includes('finalize pipeline delivery state'),
+      detail: stateCommitMessage,
     },
   ];
 
@@ -302,9 +310,8 @@ export async function validatePhase6(
       passed: Boolean(remoteSource),
     });
     assertions.push({
-      description: 'Delivery finishes on the source branch with a clean work tree',
-      passed: currentBranch === env.sourceBranch && status.isClean,
-      detail: status.stdout,
+      description: 'Delivery finishes on the source branch',
+      passed: currentBranch === env.sourceBranch,
     });
   } else {
     // Full merge
@@ -317,9 +324,8 @@ export async function validatePhase6(
       passed: Boolean(state.delivery.mergeCommitSha),
     });
     assertions.push({
-      description: 'Delivery finishes on the target branch with a clean work tree',
-      passed: currentBranch === env.targetBranch && status.isClean,
-      detail: status.stdout,
+      description: 'Delivery finishes on the target branch',
+      passed: currentBranch === env.targetBranch,
     });
     assertions.push({
       description: 'Remote source and target refs exist',

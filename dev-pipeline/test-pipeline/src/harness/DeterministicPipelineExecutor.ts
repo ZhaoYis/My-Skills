@@ -2,7 +2,6 @@ import { execFile } from 'node:child_process';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import fs from 'fs-extra';
-import { gitCommit } from '../utils/gitHelpers.js';
 import { PHASE_VALIDATORS } from '../validators/PhaseValidators.js';
 import type { AgentExecutor } from './PipelineAgentOrchestrator.js';
 import type { PhaseId, ScenarioConfig, TestEnvironment } from './types.js';
@@ -280,8 +279,8 @@ async function executePhase6(
   const postArchiveAction = scenario.postArchiveAction ?? 'merge';
 
   await runState(env, 'decision', scenario.changeName, 'commitApproved', 'true');
-  const commit = await gitCommit(env.rootDir, 'feat(todo): add due date support');
-  if (!commit.success) throw new Error('Feature commit was not created.');
+  await stageFeatureChanges(env);
+  await git(env, 'commit', '-m', 'feat(todo): add due date support');
   const commitSha = (await git(env, 'rev-parse', 'HEAD')).trim();
   await runState(env, 'set', scenario.changeName, 'delivery.commitSha', JSON.stringify(commitSha));
 
@@ -289,8 +288,8 @@ async function executePhase6(
     // Local only: no remote operations at all
     await runState(env, 'set', scenario.changeName, 'delivery.sourcePushed', 'false');
     await runState(env, 'set', scenario.changeName, 'delivery.targetPushed', 'false');
-    await runState(env, 'complete', scenario.changeName);
-    return { commitSha, postArchiveAction };
+    const stateCommitSha = await finalizePipelineState(env, scenario.changeName, postArchiveAction);
+    return { commitSha, stateCommitSha, postArchiveAction };
   }
 
   // push-only or merge: push source branch
@@ -301,8 +300,8 @@ async function executePhase6(
   if (postArchiveAction === 'push-only') {
     // Push-only: skip merge and target push
     await runState(env, 'set', scenario.changeName, 'delivery.targetPushed', 'false');
-    await runState(env, 'complete', scenario.changeName);
-    return { commitSha, postArchiveAction };
+    const stateCommitSha = await finalizePipelineState(env, scenario.changeName, postArchiveAction);
+    return { commitSha, stateCommitSha, postArchiveAction };
   }
 
   // Full merge flow
@@ -333,9 +332,43 @@ async function executePhase6(
   await runState(env, 'decision', scenario.changeName, 'targetPushApproved', 'true');
   await git(env, 'push', 'origin', env.targetBranch);
   await runState(env, 'set', scenario.changeName, 'delivery.targetPushed', 'true');
-  await runState(env, 'complete', scenario.changeName);
+  const stateCommitSha = await finalizePipelineState(env, scenario.changeName, postArchiveAction);
 
-  return { commitSha, mergeCommitSha, postArchiveAction };
+  return { commitSha, mergeCommitSha, stateCommitSha, postArchiveAction };
+}
+
+async function stageFeatureChanges(env: TestEnvironment): Promise<void> {
+  const statePrefix = 'openspec/.pipeline-state/';
+  await git(env, 'add', '-u');
+  await git(env, 'add', 'openspec/');
+  await git(env, 'reset', '--', statePrefix);
+
+  const untracked = (await git(env, 'ls-files', '--others', '--exclude-standard'))
+    .split('\n')
+    .filter((file) => file && !file.startsWith(statePrefix));
+  for (const file of untracked) {
+    await git(env, 'add', '--', file);
+  }
+}
+
+async function finalizePipelineState(
+  env: TestEnvironment,
+  changeName: string,
+  postArchiveAction: 'local-only' | 'push-only' | 'merge',
+): Promise<string> {
+  const statePath = `openspec/.pipeline-state/${changeName}.json`;
+  await runState(env, 'complete', changeName);
+  await git(env, 'add', '-f', '--', statePath);
+  await git(env, 'commit', '-m', `chore(${changeName}): finalize pipeline delivery state`);
+  const stateCommitSha = (await git(env, 'rev-parse', 'HEAD')).trim();
+
+  if (postArchiveAction === 'push-only') {
+    await git(env, 'push', 'origin', env.sourceBranch);
+  } else if (postArchiveAction === 'merge') {
+    await git(env, 'push', 'origin', env.targetBranch);
+  }
+
+  return stateCommitSha;
 }
 
 async function modifyAnySourceFile(rootDir: string): Promise<void> {
