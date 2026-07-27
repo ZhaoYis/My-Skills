@@ -12,7 +12,7 @@ import {
   PACKAGE_VERSION,
   TEMPLATE_VERSION,
 } from '../runtime/meta.js';
-import { isAppendableInstallFile } from './isAppendableInstallFile.js';
+import { findAssetDefinition, resolveFileWritePolicy } from './fileWritePolicy.js';
 import { renderString } from './renderTemplates.js';
 import type { InstallPlan } from './types.js';
 
@@ -221,7 +221,7 @@ async function expandBundle(
       kind:
         asset.templateFiles?.includes(fileName) || entry.endsWith('.hbs') ? 'template' : 'static',
       exists: false,
-      appendable: false,
+      appendStrategy: 'none',
       resolution: 'none',
     } satisfies InstallFile;
   });
@@ -251,10 +251,6 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
     )
     .filter((asset) => !asset.stacks || asset.stacks.includes(stack))
     .filter((asset) => !asset.tools || asset.tools.includes(input.tool));
-  const replaceOnInitIds = new Set(
-    selectedAssets.filter((asset) => asset.replaceOnInit).map((asset) => asset.id),
-  );
-
   const managed = indexManagedAssets(input.managedAssets);
 
   const upgradeAssetIds = new Set(
@@ -293,7 +289,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
           ),
           kind: asset.kind,
           exists: false,
-          appendable: false,
+          appendStrategy: 'none',
           resolution: 'none',
         } satisfies InstallFile,
       ];
@@ -306,16 +302,18 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
       .filter((file) => shouldIncludeInstallFile(file, input.mode, managed, upgradeAssetIds))
       .map(async (file) => {
         const exists = await fs.pathExists(file.destinationPath);
-        const appendable = isAppendableInstallFile(file);
+        const policy = resolveFileWritePolicy(findAssetDefinition(file.assetId), file, input.mode);
 
         return {
           ...file,
           exists,
-          appendable,
+          appendStrategy: policy.appendStrategy,
           resolution: exists
-            ? input.force || (input.mode === 'init' && replaceOnInitIds.has(file.assetId))
+            ? input.force
               ? 'overwrite'
-              : 'unresolved'
+              : policy.onConflict === 'prompt'
+                ? 'unresolved'
+                : policy.onConflict
             : 'none',
         } satisfies InstallFile;
       }),

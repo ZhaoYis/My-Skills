@@ -8,6 +8,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'base',
     source: 'templates/common/base/README.md.hbs',
     destination: 'README.md',
+    writePolicy: { appendStrategy: 'simple' },
   },
   {
     id: 'common-gitignore',
@@ -16,6 +17,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'base',
     source: 'templates/common/base/gitignore',
     destination: '.gitignore',
+    writePolicy: { appendStrategy: 'none' },
   },
   {
     id: 'frontend-schema-bundle',
@@ -34,6 +36,7 @@ export const assetManifest: AssetDefinition[] = [
       'tasks.md.hbs',
     ],
     excludePatterns: ['.gitkeep'],
+    writePolicy: { appendStrategy: 'simple', appendExtensions: ['.md'] },
     bundleGatedFiles: [],
   },
   {
@@ -53,6 +56,7 @@ export const assetManifest: AssetDefinition[] = [
       'tasks.md.hbs',
     ],
     excludePatterns: ['.gitkeep'],
+    writePolicy: { appendStrategy: 'simple', appendExtensions: ['.md'] },
     bundleGatedFiles: [],
   },
   {
@@ -62,6 +66,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'schema',
     source: 'templates/common/config/config.{{stack}}.yaml.hbs',
     destination: 'openspec/config.yaml',
+    writePolicy: { appendStrategy: 'config-merge' },
   },
   {
     id: 'opsx-dev-pipeline-skill-bundle',
@@ -82,6 +87,7 @@ export const assetManifest: AssetDefinition[] = [
       'phase-6-merge-push.md.hbs',
     ],
     excludePatterns: ['.gitkeep'],
+    writePolicy: { appendStrategy: 'simple', appendExtensions: ['.md'] },
   },
   {
     id: 'opsx-dev-pipeline-command',
@@ -90,6 +96,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'templates/common/commands/opsx-dev-pipeline.md.hbs',
     destination: '{{commandsDir}}/opsx-dev-pipeline.md',
+    writePolicy: { appendStrategy: 'simple' },
   },
   {
     id: 'opsx-propose-command',
@@ -98,7 +105,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'templates/common/commands/opsx/propose.md.hbs',
     destination: '{{commandsDir}}/opsx/propose.md',
-    replaceOnInit: true,
+    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite' } },
   },
   {
     id: 'opsx-apply-command',
@@ -107,7 +114,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'templates/common/commands/opsx/apply.md.hbs',
     destination: '{{commandsDir}}/opsx/apply.md',
-    replaceOnInit: true,
+    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite' } },
   },
   {
     id: 'opsx-archive-command',
@@ -116,7 +123,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'templates/common/commands/opsx/archive.md.hbs',
     destination: '{{commandsDir}}/opsx/archive.md',
-    replaceOnInit: true,
+    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite' } },
   },
   {
     id: 'opsx-verify-command',
@@ -125,7 +132,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'templates/common/commands/opsx/verify.md.hbs',
     destination: '{{commandsDir}}/opsx/verify.md',
-    replaceOnInit: true,
+    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite' } },
   },
   {
     id: 'opsx-sync-command',
@@ -134,7 +141,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'templates/common/commands/opsx/sync.md.hbs',
     destination: '{{commandsDir}}/opsx/sync.md',
-    replaceOnInit: true,
+    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite' } },
   },
   {
     id: 'opsx-explore-command',
@@ -143,7 +150,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'templates/common/commands/opsx/explore.md.hbs',
     destination: '{{commandsDir}}/opsx/explore.md',
-    replaceOnInit: true,
+    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite' } },
   },
   {
     id: 'claude-docs',
@@ -153,6 +160,7 @@ export const assetManifest: AssetDefinition[] = [
     tools: ['claude'],
     source: 'templates/tools/claude/overlay/CLAUDE.md.hbs',
     destination: 'CLAUDE.md',
+    writePolicy: { appendStrategy: 'simple' },
   },
   {
     id: 'cursor-docs',
@@ -162,6 +170,7 @@ export const assetManifest: AssetDefinition[] = [
     tools: ['cursor'],
     source: 'templates/tools/cursor/overlay/.cursor/rules/opsx-dev-pipeline.mdc.hbs',
     destination: '.cursor/rules/opsx-dev-pipeline.mdc',
+    writePolicy: { appendStrategy: 'simple' },
   },
   {
     id: 'cursor-command-guide',
@@ -171,6 +180,7 @@ export const assetManifest: AssetDefinition[] = [
     tools: ['cursor'],
     source: 'templates/tools/cursor/overlay/.cursor/commands/README.md.hbs',
     destination: '.cursor/commands/README.md',
+    writePolicy: { appendStrategy: 'simple' },
   },
   {
     id: 'codex-docs',
@@ -180,6 +190,7 @@ export const assetManifest: AssetDefinition[] = [
     tools: ['codex'],
     source: 'templates/tools/codex/overlay/.codex/prompts/opsx-dev-pipeline.md.hbs',
     destination: '.codex/prompts/opsx-dev-pipeline.md',
+    writePolicy: { appendStrategy: 'simple' },
   },
   {
     id: 'codex-command-guide',
@@ -189,5 +200,6 @@ export const assetManifest: AssetDefinition[] = [
     tools: ['codex'],
     source: 'templates/tools/codex/overlay/.codex/commands/README.md.hbs',
     destination: '.codex/commands/README.md',
+    writePolicy: { appendStrategy: 'simple' },
   },
 ];

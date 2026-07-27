@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import prompts from 'prompts';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolveInstallConflicts } from '../../src/core/init/resolveInstallConflicts.js';
 import type { InstallPlan } from '../../src/core/init/types.js';
 
@@ -37,7 +37,7 @@ function createPlan(files?: Partial<InstallPlan['files'][number]>[]): InstallPla
           destinationPath: '/tmp/README.md',
           kind: 'template',
           exists: true,
-          appendable: true,
+          appendStrategy: 'simple',
           resolution: 'unresolved',
         },
       ]
@@ -47,7 +47,7 @@ function createPlan(files?: Partial<InstallPlan['files'][number]>[]): InstallPla
       destinationPath: `/tmp/file-${index}.md`,
       kind: 'template',
       exists: true,
-      appendable: true,
+      appendStrategy: 'simple',
       resolution: 'unresolved',
       ...file,
     })),
@@ -77,8 +77,8 @@ describe('resolveInstallConflicts', () => {
     vi.mocked(prompts).mockResolvedValueOnce({ resolution: 'append-all-safe' });
     const plan = await resolveInstallConflicts(
       createPlan([
-        { destinationPath: '/tmp/README.md', appendable: true },
-        { destinationPath: '/tmp/config.json', appendable: false },
+        { destinationPath: '/tmp/README.md', appendStrategy: 'simple' },
+        { destinationPath: '/tmp/config.json', appendStrategy: 'none' },
       ]),
       { yes: false, force: false },
     );

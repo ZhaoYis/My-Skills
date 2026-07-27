@@ -100,8 +100,8 @@ export async function collectInputs(
         name: 'stack',
         message: 'Select your project stack',
         choices: [
-          { title: 'Frontend', value: 'frontend' satisfies StackId },
           { title: 'Backend', value: 'backend' satisfies StackId },
+          { title: 'Frontend', value: 'frontend' satisfies StackId },
         ],
         initial: requestedStack === 'frontend' ? 0 : 1,
       },

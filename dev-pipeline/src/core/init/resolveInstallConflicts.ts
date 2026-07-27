@@ -6,7 +6,7 @@ function getUnresolvedFiles(plan: InstallPlan) {
   return plan.files.filter((file) => file.resolution === 'unresolved');
 }
 
-function buildChoices(appendable: boolean) {
+function buildChoices(appendStrategy: InstallPlan['files'][number]['appendStrategy']) {
   const choices = [
     { title: '强制覆盖', value: 'overwrite' },
     { title: '跳过', value: 'skip' },
@@ -14,7 +14,7 @@ function buildChoices(appendable: boolean) {
     { title: '跳过当前及剩余全部', value: 'skip-all' },
   ] as Array<{ title: string; value: InstallConflictResolution | ConflictBulkAction }>;
 
-  if (appendable) {
+  if (appendStrategy !== 'none') {
     choices.splice(1, 0, { title: '追加', value: 'append' });
     choices.splice(4, 0, { title: '追加所有可追加文件，其余跳过', value: 'append-all-safe' });
   }
@@ -29,7 +29,7 @@ function applyBulkResolution(
 ) {
   for (let index = startIndex; index < files.length; index += 1) {
     const file = files[index];
-    if (!file || file.resolution !== 'unresolved') {
+    if (file?.resolution !== 'unresolved') {
       continue;
     }
 
@@ -43,7 +43,7 @@ function applyBulkResolution(
       continue;
     }
 
-    file.resolution = file.appendable ? 'append' : 'skip';
+    file.resolution = file.appendStrategy !== 'none' ? 'append' : 'skip';
   }
 }
 
@@ -73,8 +73,8 @@ export async function resolveInstallConflicts(
         type: 'select',
         name: 'resolution',
         message: `[${index + 1}/${unresolvedFiles.length}] 检测到重复文件：${file.destinationPath}`,
-        choices: buildChoices(file.appendable),
-        initial: file.appendable ? 1 : 0,
+        choices: buildChoices(file.appendStrategy),
+        initial: file.appendStrategy !== 'none' ? 1 : 0,
       },
       { onCancel: () => process.exit(1) },
     );

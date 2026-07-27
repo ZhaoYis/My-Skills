@@ -1,12 +1,12 @@
-import fs from 'fs-extra';
 import os from 'node:os';
 import path from 'node:path';
+import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { ToolAdapter } from '../../src/core/adapters/types.js';
 import { executeInstallPlan } from '../../src/core/init/executeInstallPlan.js';
 import type { InstallPlan } from '../../src/core/init/types.js';
-import { MANIFEST_FILE } from '../../src/core/runtime/meta.js';
 import { readManifest } from '../../src/core/manifest/io.js';
+import { MANIFEST_FILE } from '../../src/core/runtime/meta.js';
 
 const createdDirs: string[] = [];
 
@@ -83,7 +83,7 @@ describe('executeInstallPlan', () => {
           destinationPath: path.join(dir, 'README.md'),
           kind: 'template',
           exists: true,
-          appendable: true,
+          appendStrategy: 'simple',
           resolution: 'skip',
         },
         {
@@ -92,7 +92,7 @@ describe('executeInstallPlan', () => {
           destinationPath: path.join(dir, 'CLAUDE.md'),
           kind: 'template',
           exists: true,
-          appendable: true,
+          appendStrategy: 'simple',
           resolution: 'skip',
         },
       ],
@@ -123,7 +123,7 @@ describe('executeInstallPlan', () => {
           destinationPath: readmePath,
           kind: 'template',
           exists: true,
-          appendable: true,
+          appendStrategy: 'simple',
           resolution: 'append',
         },
       ],
@@ -144,7 +144,7 @@ describe('executeInstallPlan', () => {
   it('merges language settings into an existing OpenSpec config', async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-exec-config-language-'));
     createdDirs.push(dir);
-    const configPath = path.join(dir, 'openspec/config.yaml');
+    const configPath = path.join(dir, 'openspec/project-settings.yaml');
     const sourcePath = path.join(dir, 'config.template.yaml');
 
     await fs.outputFile(
@@ -168,7 +168,7 @@ describe('executeInstallPlan', () => {
             destinationPath: configPath,
             kind: 'template',
             exists: true,
-            appendable: true,
+            appendStrategy: 'config-merge',
             resolution: 'append',
           },
         ],

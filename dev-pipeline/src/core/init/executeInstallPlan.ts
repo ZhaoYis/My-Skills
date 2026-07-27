@@ -1,5 +1,5 @@
-import fs from 'fs-extra';
 import path from 'node:path';
+import fs from 'fs-extra';
 import pc from 'picocolors';
 import { readManifest, writeManifest } from '../manifest/io.js';
 import type { ManagedAssetRecord } from '../manifest/types.js';
@@ -181,9 +181,13 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
       const content = await renderTemplate(file.sourcePath, context);
 
       if (file.resolution === 'append') {
+        if (file.appendStrategy === 'none') {
+          throw new Error(`Append is not supported for: ${file.destinationPath}`);
+        }
+
         const existingContent = await fs.readFile(file.destinationPath, 'utf8');
         const nextContent =
-          path.basename(file.destinationPath) === 'config.yaml'
+          file.appendStrategy === 'config-merge'
             ? mergeConfigContent(existingContent, content)
             : appendContent(existingContent, content);
         await fs.outputFile(file.destinationPath, nextContent);

@@ -1,6 +1,6 @@
-import fs from 'fs-extra';
 import path from 'node:path';
-import { isAppendableInstallFile } from '../init/isAppendableInstallFile.js';
+import fs from 'fs-extra';
+import { findAssetDefinition, resolveFileWritePolicy } from '../init/fileWritePolicy.js';
 import type { ManifestReadResult } from '../manifest/io.js';
 import { inferInstallKind } from './inferInstallKind.js';
 import type { UninstallFile, UninstallPlan } from './types.js';
@@ -18,7 +18,9 @@ export async function buildUninstallPlan(input: BuildUninstallPlanInput): Promis
       const destinationPath = path.join(input.targetDir, asset.destination);
       const exists = await fs.pathExists(destinationPath);
       const kind = inferInstallKind(asset.id);
-      const appendable = isAppendableInstallFile({ kind, destinationPath });
+      const appendable =
+        resolveFileWritePolicy(findAssetDefinition(asset.id), { kind, destinationPath }, 'init')
+          .appendStrategy !== 'none';
 
       return {
         assetId: asset.id,

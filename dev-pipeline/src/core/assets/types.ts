@@ -2,6 +2,21 @@ import type { FeatureId, StackId, ToolId } from '../adapters/types.js';
 
 export type AssetKind = 'template' | 'static' | 'bundle';
 export type AssetScope = 'common' | 'tool';
+export type InstallMode = 'init' | 'sync' | 'upgrade';
+export type AppendStrategy = 'none' | 'simple' | 'config-merge';
+export type ExistingFileAction = 'prompt' | 'overwrite' | 'skip';
+
+export interface FileWritePolicy {
+  appendStrategy?: AppendStrategy;
+  appendBasenames?: string[];
+  appendExtensions?: string[];
+  onConflict?: Partial<Record<InstallMode, ExistingFileAction>>;
+}
+
+export interface ResolvedFileWritePolicy {
+  appendStrategy: AppendStrategy;
+  onConflict: ExistingFileAction;
+}
 
 export interface AssetDefinition {
   id: string;
@@ -15,8 +30,7 @@ export interface AssetDefinition {
   includeExtensions?: string[];
   templateFiles?: string[];
   excludePatterns?: string[];
-  /** Replace a file generated earlier in the init workflow, then manage it normally. */
-  replaceOnInit?: boolean;
+  writePolicy?: FileWritePolicy;
   /** Bundle members that require an optional feature to be enabled. */
   bundleGatedFiles?: Array<{ path: string; feature: FeatureId }>;
 }
@@ -29,6 +43,6 @@ export interface InstallFile {
   destinationPath: string;
   kind: 'template' | 'static';
   exists: boolean;
-  appendable: boolean;
+  appendStrategy: AppendStrategy;
   resolution: InstallConflictResolution;
 }
