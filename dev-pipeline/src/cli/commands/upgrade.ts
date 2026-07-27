@@ -1,13 +1,14 @@
 import path from 'node:path';
 import { loadToolRegistry } from '../../core/adapters/registry.js';
-import { readManifest } from '../../core/manifest/io.js';
-import { checkManifestVersion } from '../../core/manifest/versionCheck.js';
-import { resolvePackageRoot } from '../../core/runtime/resolvePackageRoot.js';
 import { buildInstallPlan } from '../../core/init/buildInstallPlan.js';
 import { executeInstallPlan } from '../../core/init/executeInstallPlan.js';
-import { resolveInstallConflicts } from '../../core/init/resolveInstallConflicts.js';
 import { collectExistingLanguage } from '../../core/init/resolveExistingLanguage.js';
+import { resolveInstallConflicts } from '../../core/init/resolveInstallConflicts.js';
+import { readManifest } from '../../core/manifest/io.js';
+import { checkManifestVersion } from '../../core/manifest/versionCheck.js';
 import type { InitOptions } from '../../core/prompts/types.js';
+import { resolvePackageRoot } from '../../core/runtime/resolvePackageRoot.js';
+import { refreshUpgradeFingerprints } from '../../core/upgrade/refreshFingerprints.js';
 import { ensureUpgradeVersionCheck } from '../../core/upgrade/versionPrompt.js';
 
 export async function runUpgradeCommand(options: InitOptions): Promise<void> {
@@ -53,4 +54,9 @@ export async function runUpgradeCommand(options: InitOptions): Promise<void> {
   });
 
   await executeInstallPlan(resolvedPlan);
+  await refreshUpgradeFingerprints({
+    rootDir,
+    targetDir,
+    dryRun: Boolean(options.dryRun),
+  });
 }

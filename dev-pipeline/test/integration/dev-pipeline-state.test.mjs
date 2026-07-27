@@ -1,6 +1,6 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import crypto from 'node:crypto';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -55,6 +55,30 @@ function baseState(changeName, currentPhase, overrides = {}) {
     updatedAt: '2026-07-26 00:00:00',
     ...overrides,
   };
+}
+
+function fingerprintFields(state) {
+  return {
+    schemaVersion: state.schemaVersion,
+    changeName: state.changeName,
+    createdAt: state.createdAt,
+    createdBy: state.createdBy,
+    createdByEmail: state.createdByEmail,
+    machineInfo: state.machineInfo,
+    featureId: state.featureInfo.featureId,
+    fingerprintNonce: state.fingerprintNonce,
+  };
+}
+
+function decryptFingerprint(state) {
+  return crypto.privateDecrypt(
+    {
+      key: FINGERPRINT_PRIVATE_KEY_PEM,
+      padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+      oaepHash: 'sha256',
+    },
+    Buffer.from(state.fingerprintId.slice('fp1.'.length), 'base64url'),
+  );
 }
 
 async function transition(from, to, overrides = {}) {
@@ -119,24 +143,8 @@ describe('dev-pipeline-state transition gates', () => {
     const state = JSON.parse(result.stdout).state;
     expect(state.fingerprintId).toMatch(/^fp1\.[A-Za-z0-9_-]{342}$/);
 
-    const digest = crypto.privateDecrypt(
-      {
-        key: FINGERPRINT_PRIVATE_KEY_PEM,
-        padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
-        oaepHash: 'sha256',
-      },
-      Buffer.from(state.fingerprintId.slice('fp1.'.length), 'base64url'),
-    );
-    const protectedFields = {
-      schemaVersion: state.schemaVersion,
-      changeName: state.changeName,
-      createdAt: state.createdAt,
-      createdBy: state.createdBy,
-      createdByEmail: state.createdByEmail,
-      machineInfo: state.machineInfo,
-      featureId: state.featureInfo.featureId,
-      fingerprintNonce: state.fingerprintNonce,
-    };
+    const digest = decryptFingerprint(state);
+    const protectedFields = fingerprintFields(state);
     const expectedDigest = crypto
       .createHash('sha256')
       .update(JSON.stringify(protectedFields), 'utf8')
@@ -148,6 +156,74 @@ describe('dev-pipeline-state transition gates', () => {
 
     expect(digest.equals(expectedDigest)).toBe(true);
     expect(digest.equals(digestWithoutFeature)).toBe(false);
+  });
+
+  it('skips compliant fingerprints and refreshes only noncompliant values', async () => {
+    const initResult = spawnSync(
+      process.execPath,
+      [
+        script,
+        'init',
+        'refresh-existing-fingerprint',
+        'feature/refresh-existing-fingerprint',
+        '--created-by',
+        'Upgrade Tester',
+        '--feature-id',
+        'REQ-2026-002',
+      ],
+      { cwd: repo, encoding: 'utf8' },
+    );
+    expect(initResult.status).toBe(0);
+
+    const originalState = JSON.parse(initResult.stdout).state;
+    const stateFile = path.join(stateDirectory, 'refresh-existing-fingerprint.json');
+    const compliantRefresh = spawnSync(process.execPath, [script, 'refresh-fingerprints', repo], {
+      cwd: repo,
+      encoding: 'utf8',
+    });
+    expect(compliantRefresh.status).toBe(0);
+    expect(JSON.parse(compliantRefresh.stdout)).toMatchObject({
+      eligible: 0,
+      refreshed: 0,
+    });
+    expect(JSON.parse(await readFile(stateFile, 'utf8'))).toEqual(originalState);
+
+    const legacyState = { ...originalState, fingerprintId: 'legacy-fingerprint' };
+    await writeFile(stateFile, `${JSON.stringify(legacyState, null, 2)}\n`);
+    const preview = spawnSync(
+      process.execPath,
+      [script, 'refresh-fingerprints', repo, '--dry-run'],
+      { cwd: repo, encoding: 'utf8' },
+    );
+    expect(preview.status).toBe(0);
+    expect(JSON.parse(preview.stdout)).toMatchObject({
+      status: 'ok',
+      eligible: 1,
+      refreshed: 0,
+      dryRun: true,
+    });
+    expect(JSON.parse(await readFile(stateFile, 'utf8'))).toEqual(legacyState);
+
+    const refresh = spawnSync(process.execPath, [script, 'refresh-fingerprints', repo], {
+      cwd: repo,
+      encoding: 'utf8',
+    });
+    expect(refresh.status).toBe(0);
+    const refreshResult = JSON.parse(refresh.stdout);
+    expect(refreshResult.compliant).toBeGreaterThanOrEqual(1);
+    expect(refreshResult.eligible).toBe(1);
+    expect(refreshResult.refreshed).toBe(refreshResult.eligible);
+
+    const refreshedState = JSON.parse(await readFile(stateFile, 'utf8'));
+    expect(refreshedState.fingerprintId).toMatch(/^fp1\.[A-Za-z0-9_-]{342}$/);
+    expect(refreshedState.fingerprintId).not.toBe(legacyState.fingerprintId);
+    expect({ ...refreshedState, fingerprintId: legacyState.fingerprintId }).toEqual(legacyState);
+
+    const expectedDigest = crypto
+      .createHash('sha256')
+      .update(JSON.stringify(fingerprintFields(refreshedState)), 'utf8')
+      .digest();
+    expect(decryptFingerprint(refreshedState).equals(expectedDigest)).toBe(true);
   });
 
   it('enforces the complete transition and cumulative gate matrix', async () => {
