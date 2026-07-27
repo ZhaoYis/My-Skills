@@ -1,6 +1,6 @@
 # Pipeline State Enhancement Plan: Metadata, Identity & Phase Timing
 
-> 日期: 2026-07-26 | 状态: ✅ 已实现并通过全量验证
+> 日期: 2026-07-26 | 状态: 元数据与 Phase timing 已实现；`fingerprintId` 非对称加密升级待实现（2026-07-27 设计同步）
 
 ---
 
@@ -47,9 +47,9 @@
   //   "featureUrl": "https://jira.example.com/browse/PROJ-1234"
   // }
 
-  // ── 新增：唯一标识 ──
-  "fingerprintId": "a1b2c3d4...",            // string, MD5 hex, init 时计算（非防篡改，仅做唯一标识）
-  "fingerprintNonce": "f3a81c2b"             // string, 8-char hex random, init 时生成
+  // ── 新增：防直接篡改指纹 ──
+  "fingerprintId": "fp1.SXJvQWVw...",         // string, RSA-OAEP-SHA256（RSA-2048）密文，init 时计算
+  "fingerprintNonce": "f3a81c2b"             // string, 8-char hex random，属于受保护字段
 }
 ```
 
@@ -63,36 +63,43 @@
 | `featureInfo` | `object \| null` | 关联的需求信息。`null` 表示未关联 |
 | `featureInfo.featureId` | `string` | 需求编号（如 JIRA issue key） |
 | `featureInfo.featureUrl` | `string` | 需求地址（如 JIRA URL） |
-| `fingerprintId` | `string` | MD5 指纹，用于唯一标识和统计去重（非防篡改签名） |
-| `fingerprintNonce` | `string` | 8 位十六进制随机数，参与指纹计算，使同内容 change 产生不同指纹 |
+| `fingerprintId` | `string` | `fp1.<base64url>`；固定 RSA-2048 模板公钥对受保护字段 SHA-256 摘要执行 RSA-OAEP-SHA256 加密 |
+| `fingerprintNonce` | `string` | 8 位十六进制随机数，参与受保护摘要计算并兼容既有 Schema |
 
-### 1.3 指纹算法（仅用于唯一标识）
+### 1.3 指纹算法（非对称加密）
 
 ```
-fingerprintId = md5(
-  createdAt + "|" +
-  createdBy + "|" +
-  createdByEmail + "|" +
-  changeName + "|" +
-  hostname + "|" +
-  (featureId || "") + "|" +
+protectedFields = canonicalJson({
+  schemaVersion,
+  changeName,
+  createdAt,
+  createdBy,
+  createdByEmail,
+  machineInfo,
+  featureId,
   fingerprintNonce
-)
+})
+
+digest = SHA-256(UTF-8(protectedFields))
+ciphertext = RSA-OAEP-SHA256.publicEncrypt(FINGERPRINT_PUBLIC_KEY_PEM, digest)
+fingerprintId = "fp1." + base64url(ciphertext)
 ```
 
-- **createdAt**: ISO 8601 时间戳（init 时的精确值）
-- **createdBy**: 创建者标识
-- **createdByEmail**: 创建者邮箱，无则为空字符串
-- **changeName**: change 名称（唯一标识）
-- **hostname**: 机器主机名（`os.hostname()`）
-- **featureId**: 需求 ID，无则为空字符串
+- **canonicalJson**: 固定字段顺序、UTF-8 编码和空值表示，生成端与采集端必须使用同一规范
+- **模板公钥**: 在 `dev-pipeline-state.mjs` 中固定提供 RSA-2048 公钥 `FINGERPRINT_PUBLIC_KEY_PEM`
+- **服务端私钥**: 只注入 metrics-server，使用 OAEP-SHA256 解密后通过 `timingSafeEqual` 比较摘要
+- **fingerprintId 格式**: `^fp1\.[A-Za-z0-9_-]{342}$`，数据库预留 `VARCHAR(512)`
+- **featureId**: 取 `featureInfo?.featureId ?? ""` 并参与指纹计算；受控修改需求 ID 时必须原子重算 `fingerprintId`
+- **featureUrl**: 不参与指纹计算；仅修改 URL 不触发重算
 - **fingerprintNonce**: 8 位随机十六进制数（`crypto.randomBytes(4).toString('hex')`）
 
-### 1.4 不可变字段
+固定公钥加密能够检测密文或受保护字段被直接修改，但不能阻止公钥持有者为伪造内容重新加密，因此不等同于数字签名。恶意贡献者属于威胁模型时，应改为受信服务私钥签名或服务端签发身份凭证。
 
-`createdBy`、`createdByEmail`、`machineInfo`、`fingerprintId`、`fingerprintNonce` 不加入 `mutablePaths` — 这些是创建时快照，不可修改。
+### 1.4 受保护字段与可变性
 
-可变字段：`featureInfo`、`featureInfo.featureId`、`featureInfo.featureUrl` 加入 `mutablePaths`，允许后续补充/修改需求关联。
+`createdBy`、`createdByEmail`、`machineInfo`、`fingerprintId`、`fingerprintNonce` 不加入 `mutablePaths`；其中 `fingerprintId` 只能由脚本在 `init`、legacy 迁移或需求 ID 受控变更时自动生成。
+
+`featureInfo`、`featureInfo.featureId`、`featureInfo.featureUrl` 保持在 `mutablePaths`，允许后续补充/修改需求关联。`featureId` 发生变化时必须保留原 `fingerprintNonce` 并在同一次 `saveState` 中重算 `fingerprintId`；直接编辑 JSON 不会触发重算，采集端应判定摘要不匹配。
 
 ---
 
@@ -143,10 +150,39 @@ function collectMachineInfo() {
   };
 }
 
-// 生成唯一指纹
-function computeFingerprint(createdAt, createdBy, featureId, nonce) {
-  const input = `${createdAt}|${createdBy}|${featureId || ''}|${nonce}`;
-  return crypto.createHash('md5').update(input).digest('hex');
+// 生产公钥由项目模板固定提供；私钥不得进入模板或源码仓库。
+const FINGERPRINT_PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
+<production-rsa-2048-public-key>
+-----END PUBLIC KEY-----`;
+
+function canonicalizeFingerprintFields(fields) {
+  return JSON.stringify({
+    schemaVersion: fields.schemaVersion,
+    changeName: fields.changeName,
+    createdAt: fields.createdAt,
+    createdBy: fields.createdBy,
+    createdByEmail: fields.createdByEmail,
+    machineInfo: fields.machineInfo,
+    featureId: fields.featureId || '',
+    fingerprintNonce: fields.fingerprintNonce,
+  });
+}
+
+// 加密受保护字段的 SHA-256 摘要。
+function computeFingerprint(fields) {
+  const digest = crypto
+    .createHash('sha256')
+    .update(canonicalizeFingerprintFields(fields), 'utf8')
+    .digest();
+  const ciphertext = crypto.publicEncrypt(
+    {
+      key: FINGERPRINT_PUBLIC_KEY_PEM,
+      padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+      oaepHash: 'sha256',
+    },
+    digest,
+  );
+  return `fp1.${ciphertext.toString('base64url')}`;
 }
 
 // 确保旧状态文件包含新字段
@@ -199,15 +235,25 @@ const featureUrl = namedArgs['--feature-url'] || null;
 
 const now = new Date().toISOString();
 const nonce = crypto.randomBytes(4).toString('hex');
+const machineInfo = collectMachineInfo();
 
 const state = {
   // ... 现有字段 ...
   createdBy,
   createdByEmail,
-  machineInfo: collectMachineInfo(),
+  machineInfo,
   featureInfo: featureId ? { featureId, featureUrl } : null,
   fingerprintNonce: nonce,
-  fingerprintId: computeFingerprint(now, createdBy, featureId, nonce),
+  fingerprintId: computeFingerprint({
+    schemaVersion: SCHEMA_VERSION,
+    changeName,
+    createdAt: now,
+    createdBy,
+    createdByEmail,
+    machineInfo,
+    featureId,
+    fingerprintNonce: nonce,
+  }),
   // ── 新增：init 时即创建 Phase 0 的 in-progress 条目 ──
   phaseHistory: [{
     phase: 0,
@@ -250,7 +296,32 @@ const mutablePaths = new Set([
 ]);
 ```
 
-> **设计决策**：`createdBy`、`createdByEmail`、`machineInfo`、`fingerprintId`、`fingerprintNonce` 不加入 mutablePaths — 这些是创建时快照，不可修改。
+> **设计决策**：`createdBy`、`createdByEmail`、`machineInfo`、`fingerprintId`、`fingerprintNonce` 不加入 mutablePaths。`fingerprintId` 由脚本自动维护，不能由调用者直接赋值。
+
+`set` 应在应用变更前后比较规范化需求 ID，并在同一次保存中重算指纹：
+
+```javascript
+const previousFeatureId = state.featureInfo?.featureId || '';
+setValueAtPath(state, fieldPath, value);
+const nextFeatureId = state.featureInfo?.featureId || '';
+
+if (nextFeatureId !== previousFeatureId) {
+  state.fingerprintId = computeFingerprint({
+    schemaVersion: state.schemaVersion,
+    changeName: state.changeName,
+    createdAt: state.createdAt,
+    createdBy: state.createdBy,
+    createdByEmail: state.createdByEmail,
+    machineInfo: state.machineInfo,
+    featureId: nextFeatureId,
+    fingerprintNonce: state.fingerprintNonce,
+  });
+}
+
+await saveState(root, state);
+```
+
+`featureInfo.featureUrl` 单独变化时 `nextFeatureId === previousFeatureId`，因此保持原指纹。任何字段校验或指纹重算失败都必须放弃本次保存，避免产生 `featureId` 与 `fingerprintId` 不一致的中间状态。
 
 ### 2.6 `transition` 命令变更 — 自动记录 Phase 历史
 
@@ -391,24 +462,30 @@ function migrateToV2(state) {
 
 | # | 测试名 | 验证内容 |
 |---|--------|---------|
-| 1 | `init` 包含所有新元数据字段 | createdBy、createdByEmail、machineInfo（含子字段）、featureInfo 为 null、fingerprintId 为 32 位 hex、fingerprintNonce 为 8 位 hex |
+| 1 | `init` 包含所有新元数据字段 | createdBy、createdByEmail、machineInfo（含子字段）、featureInfo 为 null、fingerprintId 匹配 `fp1` 格式、fingerprintNonce 为 8 位 hex |
 | 2 | `init` 接受 feature 参数 | --feature-id + --feature-url，验证 featureInfo 正确 |
 | 3 | `init` 接受 --created-by override | --created-by testuser，验证 createdBy 覆盖自动检测 |
 | 4 | fingerprint 唯一性 | 两个 change 的 fingerprintId 不同 |
 | 5 | 旧状态文件自动补齐 | 无新字段的 v2 文件 → loadState 后补齐默认值 |
 | 6 | `transition` 自动记录 phaseHistory | 0→1→2，phaseHistory 有完整条目，executedBy 为 'pipeline' |
 | 7 | `transition` 不重复记录 | 同 phase 内多次 transition 不产生重复条目 |
-| 8 | `mutablePaths` 允许修改 featureInfo | set 命令修改 featureInfo.featureId 成功 |
+| 8 | `mutablePaths` 允许修改 featureInfo | set 命令修改 featureInfo.featureId 成功，并原子生成新的 fingerprintId |
 | 9 | fingerprint 一致性 | 多次 transition 后 fingerprintId/fingerprintNonce 不变 |
 | 10 | transition 向后跳转的 phaseHistory | Phase 5→2 后目标 phase 有 in-progress，源 phase 有 completed |
 | 11 | record-phase + transition 交错 | hybrid 模式下互不覆盖，executedBy 正确区分 |
 | 12 | 连续多次 transition phaseHistory 完整性 | 0→1→2→1→2→4，各 phase startedAt/completedAt 正确，无重复 |
 | 13 | 纯 pipeline 模式 phaseHistory 完整生命周期 | 无 record-phase 调用，init 时 Phase 0 有 in-progress（startedAt），transition 0→1 后变为 completed（startedAt ≠ completedAt） |
+| 14 | fingerprint 私钥校验 | 使用测试 key pair 解密 `fp1` 并与重算 SHA-256 摘要匹配 |
+| 15 | 受保护字段篡改 | 直接修改 createdByEmail、changeName、machineInfo 或 featureId 后校验失败 |
+| 16 | 需求 ID 受控变更 | 通过 set 修改 featureId 后 fingerprintId 变化，新快照校验通过且 nonce 不变 |
+| 17 | 密文和密钥异常 | 修改密文字节、使用错误私钥或未知版本前缀均失败且不降级 |
+| 18 | legacy MD5 识别 | 32 位 MD5 仅标记为 `legacy-unverified`，不能进入可信指标 |
+| 19 | 需求 URL 变更 | 仅修改 featureUrl 时 fingerprintId 保持不变且校验通过 |
 
 ### 4.2 预期测试数量
 
 - 现有 14 个测试 → 保持不变
-- 新增 13 个测试 → 共计 27 个测试
+- 新增 19 个测试 → 共计 33 个测试
 
 ---
 
@@ -417,15 +494,16 @@ function migrateToV2(state) {
 | 步骤 | 内容 | 文件 | 风险 |
 |------|------|------|------|
 | 1 | ✅ 新增 import（crypto, os, child_process） | `dev-pipeline-state.mjs` | 低 |
-| 2 | ✅ 新增工具函数（resolveCreatedBy, resolveCreatedByEmail, collectMachineInfo, computeFingerprint, ensureMetaFields） | `dev-pipeline-state.mjs` | 低 |
+| 2 | ✅ 新增工具函数（resolveCreatedBy, resolveCreatedByEmail, collectMachineInfo, ensureMetaFields） | `dev-pipeline-state.mjs` | 低 |
 | 3 | ✅ 修改 `init` 命令：解析命名参数 + 新字段 | `dev-pipeline-state.mjs` | 中 |
 | 4 | ✅ 修改 `loadState`：调用 ensureMetaFields | `dev-pipeline-state.mjs` | 低 |
 | 5 | ✅ 新增 `mutablePaths` 条目（featureInfo 相关） | `dev-pipeline-state.mjs` | 低 |
 | 6 | ✅ 修改 `transition`：合并 saveState + 自动记录 phaseHistory（含向前/向后/补全逻辑） | `dev-pipeline-state.mjs` | 中 |
 | 7 | ✅ 修改 `migrate-schema`：调用 ensureMetaFields | `dev-pipeline-state.mjs` | 低 |
 | 8 | ✅ 修改 6 个 command 模板：pre-flight 增加 AskUserQuestion | `templates/common/commands/opsx/*.hbs` | 中 |
-| 9 | ✅ 新增 13 个测试用例 | `test/integration/pipeline-state.test.ts` | 中 |
-| 10 | ✅ 运行全量验证：typecheck + lint + test + test:pipeline + pack:check | — | 低 |
+| 9 | ⏳ 固化生产 `fp1` 公钥，实现包含 featureId 的 canonical JSON、RSA-OAEP-SHA256 计算及 featureId 变更时原子重算 | `dev-pipeline-state.mjs` | 高 |
+| 10 | ⏳ 增加非对称指纹、篡改、错误密钥和 legacy 迁移测试 | `test/integration/pipeline-state.test.ts`、metrics-server | 高 |
+| 11 | ⏳ 运行全量验证：typecheck + lint + test + test:pipeline + pack:check | — | 低 |
 
 ---
 
@@ -437,7 +515,10 @@ function migrateToV2(state) {
 | v1 状态文件 → v2 迁移 | `migrate-schema` 同时补齐新字段 |
 | `init` 不带新参数 | 自动采集 createdBy + createdByEmail + machineInfo；featureInfo 为 null |
 | `transition` 增加 phaseHistory | 不影响 gate 推断（gate 推断只看 executedBy 和 phase/status） |
-| fingerprint 字段为空字符串 | 旧状态补齐时为 `""`，为未来 verify-fingerprint 命令预留 |
+| 现有 32 位 MD5 fingerprint | 标记为 `legacy-unverified`；使用当前 featureId 与模板公钥迁移状态，历史快照默认不进入可信指标 |
+| fingerprint 字段为空字符串 | 保持 `""` 并视为未验真，不能进入可信指标 |
+| `fp1` 解密失败或摘要不匹配 | 拒绝当前快照，不得回退到 legacy 逻辑 |
+| 受控修改 featureId | 保持 fingerprintNonce，在同一次原子保存中生成新的 fingerprintId |
 
 ---
 
