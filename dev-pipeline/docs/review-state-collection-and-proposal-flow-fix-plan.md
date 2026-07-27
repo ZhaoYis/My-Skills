@@ -187,15 +187,15 @@ AI 按提案逐任务实施修复
 
 ## 实现步骤
 
-### Step 1：`dev-pipeline-state.mjs` — Schema 升级
+### ✅ Step 1：`dev-pipeline-state.mjs` — Schema 升级
 
-**1a. 升级 `SCHEMA_VERSION`：**
+**✅ 1a. 升级 `SCHEMA_VERSION`：**
 
 ```javascript
 const SCHEMA_VERSION = 3;  // 原值为 2
 ```
 
-**1b. 更新 `init` 中的 review 初始值：**
+**✅ 1b. 更新 `init` 中的 review 初始值：**
 
 ```javascript
 review: {
@@ -206,7 +206,7 @@ review: {
 },
 ```
 
-**1c. 更新 `mutablePaths`——移除 `review.status`，保留 `review.reportPath`：**
+**✅ 1c. 更新 `mutablePaths`——移除 `review.status`，保留 `review.reportPath`：**
 
 ```javascript
 const mutablePaths = new Set([
@@ -235,7 +235,7 @@ const mutablePaths = new Set([
 
 注意：`review.currentRound` 和 `review.rounds` **不**加入 `mutablePaths`，只能通过 `attempt` 命令自动管理。
 
-**1d. 更新 `attemptRules`——counter 改为 `currentRound`：**
+**✅ 1d. 更新 `attemptRules`——counter 改为 `currentRound`：**
 
 ```javascript
 const attemptRules = {
@@ -249,7 +249,7 @@ const attemptRules = {
 };
 ```
 
-**1e. 重构 `attempt` 命令中的 review 处理——连续 3 轮检查：**
+**✅ 1e. 重构 `attempt` 命令中的 review 处理——连续 3 轮检查：**
 
 ```javascript
 } else if (command === 'attempt') {
@@ -265,12 +265,18 @@ const attemptRules = {
       state.review.currentRound = Number(state.review.round) || 0;
     }
 
-    const nextRound = state.review.rounds.length + 1;
+    const lastRecordedRound = Number(state.review.rounds.at(-1)?.round ?? 0);
+    const nextRound = Math.max(
+      Number(state.review.currentRound) || 0,
+      lastRecordedRound,
+      state.review.rounds.length,
+    ) + 1;
+    const reportPath = state.review.reportPath || null;
     state.review.currentRound = nextRound;
 
     const roundEntry = {
       round: nextRound,
-      reportPath: state.review.reportPath || null,
+      reportPath,
       status: attemptStatus,
       timestamp: formatLocalTime(),
       decisions: { ...state.decisions },
@@ -278,7 +284,7 @@ const attemptRules = {
 
     state.review.rounds.push(roundEntry);
     state.review.status = attemptStatus;
-    state.review.reportPath = null;  // 重置暂存字段
+    state.review.reportPath = reportPath;  // 兼容字段镜像最后一轮
 
     // 上限检查：连续最近3轮是否都是 issues-found
     const lastThree = state.review.rounds.slice(-3);
@@ -311,7 +317,7 @@ const attemptRules = {
 }
 ```
 
-**1f. 新增 `migrateReviewToV3` 函数：**
+**✅ 1f. 新增 `migrateReviewToV3` 函数：**
 
 ```javascript
 function migrateReviewToV3(state) {
@@ -344,29 +350,27 @@ function migrateReviewToV3(state) {
 }
 ```
 
-**1g. 更新 `migrateToV2` → 增加 V2→V3 迁移链：**
+**✅ 1g. 增加旧版 Schema → V3 迁移链：**
 
 ```javascript
-function migrateToV2(state) {
-  state.schemaVersion = SCHEMA_VERSION;  // 现在为 3
+function migrateToLatestSchema(state) {
   state._version = diskVersion(state);
   state.executionMode = state.executionMode || 'pipeline';
   state.phaseHistory = Array.isArray(state.phaseHistory) ? state.phaseHistory : [];
   state.gatesBypassed = Array.isArray(state.gatesBypassed) ? state.gatesBypassed : [];
-  state = ensureMetaFields(state);
-  return migrateReviewToV3(state);  // 链式调用 V3 迁移
+  return migrateReviewToV3(ensureMetaFields(state));
 }
 ```
 
-**1h. 更新 `migrate-schema` 命令：**
+**✅ 1h. 更新 `migrate-schema` 命令：**
 
 - 已是最新 → 输出 `already-v3`
 - 需要迁移 → `migration-requires-confirmation` 提示（文案中提及 v3 / review rounds 集合）
 - `--confirm` → 执行迁移，链式处理 V1→V2→V3
 
-**1i. 更新 `record-phase` 的 Schema 版本校验文案**（"Schema v2" → "Schema v3"）。
+**✅ 1i. 更新 `record-phase` 的 Schema 版本校验文案**（"Schema v2" → "Schema v3"）。
 
-### Step 2：`phase-3-review.md.hbs` — 修复子流程重写
+### ✅ Step 2：`phase-3-review.md.hbs` — 修复子流程重写
 
 **替换原修复子流程（第 70-78 行）为：**
 
@@ -429,7 +433,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" fixApplied tr
 修复循环轮次以状态中的 `review.currentRound` 为准。
 ```
 
-### Step 3：`SKILL.md.hbs` — 新增约束
+### ✅ Step 3：`SKILL.md.hbs` — 新增约束
 
 在「执行约束」区域新增一条：
 
@@ -439,9 +443,9 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" fixApplied tr
 
 更新状态协议中的 `attempt` 命令说明，注明 review scope 会追加 rounds 条目。
 
-### Step 4：更新测试文件
+### ✅ Step 4：更新测试文件
 
-**4a. `test/integration/pipeline-state.test.ts`：**
+**✅ 4a. `test/integration/pipeline-state.test.ts`：**
 
 - 将所有 `review.round` 引用替换为 `review.currentRound`
 - 新增测试用例：
@@ -453,7 +457,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" fixApplied tr
   - `review.reportPath` / `review.status` 兼容字段始终等于最后一轮
   - `review.status` 不能通过 `set` 命令直接修改（已从 `mutablePaths` 移除）
 
-**4b. `test-pipeline/src/validators/PhaseValidators.ts`：**
+**✅ 4b. `test-pipeline/src/validators/PhaseValidators.ts`：**
 
 - 更新 `PipelineState` 接口中的 `review` 类型：
 
@@ -483,7 +487,7 @@ review: {
 }
 ```
 
-**4c. `test-pipeline/scenarios/error-recovery/review-fix-loop.test.ts`：**
+**✅ 4c. `test-pipeline/scenarios/error-recovery/review-fix-loop.test.ts`：**
 
 - 更新 `LoopState` 接口匹配新结构
 - 验证多轮 issues-found 后 `state.review.rounds.length === 3`
@@ -491,18 +495,18 @@ review: {
 - 验证 `state.review.currentRound === 3`、`state.status === 'paused'`
 - 验证恢复后（passed）`rounds` 包含 4 条记录
 
-**4d. `test-pipeline/src/harness/DeterministicPipelineExecutor.ts`：**
+**✅ 4d. `test-pipeline/src/harness/DeterministicPipelineExecutor.ts`：**
 
 - `executePhase3` 增加 `fix-and-rereview` 路径（当 `scenario.reviewDisposition === 'fix-and-rereview'` 时触发）
 - Round 1：写入审查报告 → `attempt review issues-found` → 生成 fix proposal → 记录 decisions → 修复代码
 - Round 2：写入新审查报告 → `attempt review passed` → transition 到 Phase 4
 - 新增辅助函数 `addNullCheck`
 
-**4e. `ScenarioConfig` 类型（`types.ts`）：**
+**✅ 4e. `ScenarioConfig` 类型（`types.ts`）：**
 
 - `reviewDisposition` 扩展为 `'review' | 'skip-review' | 'fix-and-rereview'`
 
-**4f. Happy-path 测试（4 个文件）：**
+**✅ 4f. Happy-path 测试（4 个文件）：**
 
 将 `review: { round: 1, status: 'passed' }` 替换为：
 
@@ -516,11 +520,11 @@ review: expect.objectContaining({
 }),
 ```
 
-**4g. `skip-review.test.ts`：**
+**✅ 4g. `skip-review.test.ts`：**
 
 将 `state.review.status` 读取更新为 `state.review.currentStatus`（或保持用 `status` 兼容字段），验证 `rounds` 为空。
 
-### Step 5：同步 test-space 副本
+### ✅ Step 5：同步 test-space 副本
 
 将更新后的模板文件复制到 `test-space/snake-game/` 下三处安装位置。
 

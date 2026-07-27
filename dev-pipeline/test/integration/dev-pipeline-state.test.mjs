@@ -17,7 +17,7 @@ let sequence = 0;
 
 function baseState(changeName, currentPhase, overrides = {}) {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     _version: 1,
     changeName,
     sourceBranch: 'feature/gate-test',
@@ -44,7 +44,7 @@ function baseState(changeName, currentPhase, overrides = {}) {
       implementationConfirmed: true,
       postArchiveAction: 'push-only',
     },
-    review: { round: 0, reportPath: null, status: 'pending' },
+    review: { currentRound: 0, rounds: [], reportPath: null, status: 'pending' },
     tests: { command: null, attempts: 0, status: 'passed', detail: null },
     verify: { command: null, attempts: 0, status: 'passed', detail: null },
     archivePath: 'openspec/changes/archive/gate-test',

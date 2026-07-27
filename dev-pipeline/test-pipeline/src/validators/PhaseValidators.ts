@@ -1,11 +1,11 @@
 import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import path from 'node:path';
+import { promisify } from 'node:util';
 import fs from 'fs-extra';
-import type { AssertionResult, ArtifactInfo, TestEnvironment } from '../harness/types.js';
+import type { ArtifactInfo, AssertionResult, TestEnvironment } from '../harness/types.js';
 import { expectConventionalCommit, expectFileContains } from '../utils/fileAssertions.js';
-import { fileExists, listFilesRecursive } from '../utils/tempDir.js';
 import { gitStatus } from '../utils/gitHelpers.js';
+import { fileExists, listFilesRecursive } from '../utils/tempDir.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -16,7 +16,18 @@ interface PipelineState {
   sourceBranch: string;
   targetBranch: string | null;
   archivePath: string | null;
-  review: { round: number; reportPath: string | null; status: string };
+  review: {
+    rounds: Array<{
+      round: number;
+      reportPath: string | null;
+      status: string;
+      timestamp: string;
+      decisions: Record<string, unknown>;
+    }>;
+    currentRound: number;
+    reportPath: string | null;
+    status: string;
+  };
   tests: { attempts: number; status: string; command: string | null };
   verify: { attempts: number; status: string; command: string | null };
   delivery: {
@@ -29,10 +40,7 @@ interface PipelineState {
 
 type ValidationResult = Promise<{ assertions: AssertionResult[]; artifacts: ArtifactInfo[] }>;
 
-export async function validatePhase0(
-  env: TestEnvironment,
-  changeName: string,
-): ValidationResult {
+export async function validatePhase0(env: TestEnvironment, changeName: string): ValidationResult {
   const state = await readState(env, changeName);
   return {
     assertions: [
@@ -53,10 +61,7 @@ export async function validatePhase0(
   };
 }
 
-export async function validatePhase1(
-  env: TestEnvironment,
-  changeName: string,
-): ValidationResult {
+export async function validatePhase1(env: TestEnvironment, changeName: string): ValidationResult {
   const state = await readState(env, changeName);
   const changeDir = path.join(env.rootDir, 'openspec', 'changes', changeName);
   const expected = ['proposal.md', 'design.md', 'tasks.md', 'specs/todo.md'];
@@ -118,35 +123,45 @@ async function sampleSpecificAssertions(rootDir: string): Promise<AssertionResul
   for (const file of checks) {
     if (await fileExists(file)) {
       anyFound = true;
-      const passed = (await expectFileContains(
-        file,
-        /dueDate|pipeline-change/,
-        `Source file ${path.relative(rootDir, file)} includes the expected change`,
-      )).passed;
+      const passed = (
+        await expectFileContains(
+          file,
+          /dueDate|pipeline-change/,
+          `Source file ${path.relative(rootDir, file)} includes the expected change`,
+        )
+      ).passed;
       if (passed) anyModified = true;
     }
   }
 
   if (!anyFound) {
-    return [{
-      description: 'At least one source file was modified',
-      passed: false,
-      detail: 'No known source files found to verify implementation changes',
-    }];
+    return [
+      {
+        description: 'At least one source file was modified',
+        passed: false,
+        detail: 'No known source files found to verify implementation changes',
+      },
+    ];
   }
 
-  return [{
-    description: 'At least one source file was modified by implementation',
-    passed: anyModified,
-    detail: anyModified ? undefined : 'Known source files exist but none contain the expected change pattern',
-  }];
+  return [
+    {
+      description: 'At least one source file was modified by implementation',
+      passed: anyModified,
+      detail: anyModified
+        ? undefined
+        : 'Known source files exist but none contain the expected change pattern',
+    },
+  ];
 }
 
 export async function validatePhase3(
   env: TestEnvironment,
   changeName: string,
+  reviewDisposition?: string,
 ): ValidationResult {
   const state = await readState(env, changeName);
+  const expectedRounds = reviewDisposition === 'fix-and-rereview' ? 2 : 1;
   const reviewPath = state.review.reportPath
     ? path.join(env.rootDir, state.review.reportPath)
     : path.join(env.rootDir, '__missing-review__');
@@ -155,8 +170,24 @@ export async function validatePhase3(
       stateAt(state, 4, 13),
       {
         description: 'Review attempt is recorded as passed',
-        passed: state.review.round === 1 && state.review.status === 'passed',
+        passed:
+          state.review.rounds.length === expectedRounds &&
+          state.review.currentRound === expectedRounds &&
+          state.review.status === 'passed' &&
+          state.review.rounds.at(-1)?.status === 'passed',
       },
+      ...(reviewDisposition === 'fix-and-rereview'
+        ? [
+            {
+              description: 'Review fix proposal is generated, approved and applied before rereview',
+              passed:
+                state.review.rounds[0]?.status === 'issues-found' &&
+                state.review.rounds[1]?.decisions.fixProposalGenerated === true &&
+                state.review.rounds[1]?.decisions.fixProposalApproved === true &&
+                state.review.rounds[1]?.decisions.fixApplied === true,
+            },
+          ]
+        : []),
       await expectFileContains(reviewPath, /security|secret/i, 'Review covers security'),
       await expectFileContains(reviewPath, /correctness/i, 'Review covers correctness'),
       await expectFileContains(reviewPath, /conventions/i, 'Review covers conventions'),
@@ -188,10 +219,7 @@ export async function validateUnitTests(
   };
 }
 
-export async function validateArchive(
-  env: TestEnvironment,
-  changeName: string,
-): ValidationResult {
+export async function validateArchive(env: TestEnvironment, changeName: string): ValidationResult {
   const state = await readState(env, changeName);
   const archivedPath = state.archivePath ? path.join(env.rootDir, state.archivePath) : '';
   const activePath = path.join(env.rootDir, 'openspec', 'changes', changeName);
@@ -320,7 +348,7 @@ export const PHASE_VALIDATORS: Record<
   'phase-0-entrance': (env, ctx) => validatePhase0(env, ctx.changeName),
   'phase-1-propose': (env, ctx) => validatePhase1(env, ctx.changeName),
   'phase-2-apply': (env, ctx) => validatePhase2(env, ctx.changeName, ctx.reviewDisposition),
-  'phase-3-review': (env, ctx) => validatePhase3(env, ctx.changeName),
+  'phase-3-review': (env, ctx) => validatePhase3(env, ctx.changeName, ctx.reviewDisposition),
   'phase-4-unit-tests': (env, ctx) => validateUnitTests(env, ctx.changeName, ctx.testsStatus),
   'phase-5-archive': (env, ctx) => validateArchive(env, ctx.changeName),
   'phase-6-merge-push': (env, ctx) => validatePhase6(env, ctx.changeName, ctx.postArchiveAction),

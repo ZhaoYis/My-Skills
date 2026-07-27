@@ -1,10 +1,10 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import fs from 'fs-extra';
 import path from 'node:path';
+import fs from 'fs-extra';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { deterministicPipelineExecutor } from '../../src/harness/DeterministicPipelineExecutor.js';
 import { PipelineAgentOrchestrator } from '../../src/harness/PipelineAgentOrchestrator.js';
-import { ALL_PHASES } from '../../src/harness/types.js';
 import type { PipelineReport, ScenarioConfig, TestEnvironment } from '../../src/harness/types.js';
+import { ALL_PHASES } from '../../src/harness/types.js';
 import { ReportGenerator } from '../../src/report/ReportGenerator.js';
 import { PipelineReportSchema } from '../../src/report/ReportSchema.js';
 
@@ -49,8 +49,12 @@ describe('E2E - Full gated delivery (Codex)', () => {
 
   it('installs the Codex skill bundle and records completed delivery state', async () => {
     expect(await fs.pathExists(path.join(env.skillRoot, 'SKILL.md'))).toBe(true);
-    expect(await fs.pathExists(path.join(env.rootDir, '.codex/prompts/opsx-dev-pipeline.md'))).toBe(true);
-    expect(await fs.pathExists(path.join(env.rootDir, '.codex/commands/opsx-dev-pipeline.md'))).toBe(true);
+    expect(await fs.pathExists(path.join(env.rootDir, '.codex/prompts/opsx-dev-pipeline.md'))).toBe(
+      true,
+    );
+    expect(
+      await fs.pathExists(path.join(env.rootDir, '.codex/commands/opsx-dev-pipeline.md')),
+    ).toBe(true);
     expect(await fs.readFile(path.join(env.rootDir, '.gitignore'), 'utf8')).toContain(
       'openspec/.pipeline-state/',
     );
@@ -63,7 +67,11 @@ describe('E2E - Full gated delivery (Codex)', () => {
       status: 'completed',
       sourceBranch: env.sourceBranch,
       targetBranch: env.targetBranch,
-      review: { round: 1, status: 'passed' },
+      review: {
+        currentRound: 1,
+        status: 'passed',
+        rounds: expect.arrayContaining([expect.objectContaining({ round: 1, status: 'passed' })]),
+      },
       tests: { attempts: 1, status: 'passed', command: 'npm test' },
       verify: { attempts: 1, status: 'passed', command: 'npm run verify' },
       delivery: { sourcePushed: true, targetPushed: true },

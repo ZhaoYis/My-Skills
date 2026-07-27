@@ -8,7 +8,7 @@ import { emitError, findOpenSpecRoot, validateChangeName } from './pipeline-lib.
 const EXIT_STATE_NOT_FOUND = 10;
 const EXIT_INVALID_TRANSITION = 11;
 const EXIT_STATE_IO = 12;
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 const mutablePaths = new Set([
   'sourceBranch',
@@ -19,7 +19,6 @@ const mutablePaths = new Set([
   'featureInfo.featureUrl',
   'archivePath',
   'review.reportPath',
-  'review.status',
   'tests.command',
   'tests.status',
   'tests.detail',
@@ -296,13 +295,41 @@ function validateTransitionGates(state, from, to) {
   return validateGates(state, from, to);
 }
 
-function migrateToV2(state) {
+function migrateReviewToV3(state) {
+  if (!Array.isArray(state.review?.rounds)) {
+    const oldRound = Number(state.review?.round ?? 0);
+    const oldStatus = String(state.review?.status ?? 'pending');
+    const oldReportPath = state.review?.reportPath || null;
+    const rounds = [];
+
+    if (oldRound > 0 && oldStatus !== 'pending') {
+      rounds.push({
+        round: oldRound,
+        reportPath: oldReportPath,
+        status: oldStatus,
+        timestamp: state.updatedAt || formatLocalTime(),
+        decisions: { ...(state.decisions || {}) },
+      });
+    }
+
+    state.review = {
+      currentRound: oldRound,
+      rounds,
+      reportPath: null,
+      status: oldStatus,
+    };
+  }
+
   state.schemaVersion = SCHEMA_VERSION;
+  return state;
+}
+
+function migrateToLatestSchema(state) {
   state._version = diskVersion(state);
   state.executionMode = state.executionMode || 'pipeline';
   state.phaseHistory = Array.isArray(state.phaseHistory) ? state.phaseHistory : [];
   state.gatesBypassed = Array.isArray(state.gatesBypassed) ? state.gatesBypassed : [];
-  return ensureMetaFields(state);
+  return migrateReviewToV3(ensureMetaFields(state));
 }
 
 function parseInitArgs(args) {
@@ -378,7 +405,7 @@ const attemptRules = {
   review: {
     statuses: ['passed', 'issues-found'],
     failureStatus: 'issues-found',
-    counter: 'round',
+    counter: 'currentRound',
   },
   tests: { statuses: ['passed', 'failed'], failureStatus: 'failed', counter: 'attempts' },
   verify: { statuses: ['passed', 'failed'], failureStatus: 'failed', counter: 'attempts' },
@@ -473,7 +500,12 @@ if (!command) {
             ],
             gatesBypassed: [],
             decisions: {},
-            review: { round: 0, reportPath: null, status: 'pending' },
+            review: {
+              currentRound: 0,
+              rounds: [],
+              reportPath: null,
+              status: 'pending',
+            },
             tests: { command: null, attempts: 0, status: 'pending', detail: null },
             verify: { command: null, attempts: 0, status: 'pending', detail: null },
             archivePath: null,
@@ -497,17 +529,17 @@ if (!command) {
           output({ status: 'ok', state });
         } else if (command === 'migrate-schema') {
           if (state.schemaVersion === SCHEMA_VERSION) {
-            output({ status: 'ok', reason: 'already-v2', state });
+            output({ status: 'ok', reason: 'already-v3', state });
           } else if (!args.includes('--confirm')) {
             output({
               status: 'prompt',
               reason: 'migration-requires-confirmation',
               detail:
-                'Schema v1 状态需要用户确认后才能升级到 v2；使用 --confirm 保留原数据并补齐新字段。',
+                '旧版 Schema 状态需要用户确认后才能升级到 v3；使用 --confirm 保留原数据，并将 review 转换为 rounds 集合。',
               state,
             });
           } else {
-            migrateToV2(state);
+            migrateToLatestSchema(state);
             if (await saveState(root, state)) {
               output({ status: 'ok', reason: 'schema-migrated', state });
             }
@@ -516,7 +548,7 @@ if (!command) {
           if (state.schemaVersion !== SCHEMA_VERSION) {
             emitError(
               'pipeline-state-migration-required',
-              'record-phase 仅支持 Schema v2，请先确认迁移状态文件',
+              'record-phase 仅支持 Schema v3，请先确认迁移状态文件',
               'run-migrate-schema-with-confirmation',
               EXIT_INVALID_TRANSITION,
             );
@@ -630,6 +662,56 @@ if (!command) {
               'provide-valid-attempt',
               EXIT_INVALID_TRANSITION,
             );
+          } else if (scope === 'review') {
+            if (!state.review || typeof state.review !== 'object') state.review = {};
+            if (!Array.isArray(state.review.rounds)) {
+              state.review.rounds = [];
+              state.review.currentRound = Number(state.review.round) || 0;
+            }
+
+            const lastRecordedRound = Number(state.review.rounds.at(-1)?.round ?? 0);
+            const nextRound =
+              Math.max(
+                Number(state.review.currentRound) || 0,
+                lastRecordedRound,
+                state.review.rounds.length,
+              ) + 1;
+            const reportPath = state.review.reportPath || null;
+            state.review.currentRound = nextRound;
+            state.review.rounds.push({
+              round: nextRound,
+              reportPath,
+              status: attemptStatus,
+              timestamp: formatLocalTime(),
+              decisions: { ...(state.decisions || {}) },
+            });
+            state.review.status = attemptStatus;
+            state.review.reportPath = reportPath;
+
+            const lastThree = state.review.rounds.slice(-3);
+            const limitReached =
+              lastThree.length === 3 &&
+              lastThree.every((round) => round.status === rule.failureStatus);
+            if (limitReached) {
+              state.status = 'paused';
+              state.pauseReason = 'review-attempt-limit-reached';
+            }
+            if (await saveState(root, state)) {
+              if (limitReached) {
+                output(
+                  {
+                    status: 'error',
+                    reason: 'review-attempt-limit-reached',
+                    detail: 'review 已连续记录 3 轮 issues-found，流水线已暂停',
+                    nextAction: 'manual-intervention-required',
+                    state,
+                  },
+                  EXIT_INVALID_TRANSITION,
+                );
+              } else {
+                output({ status: 'ok', state });
+              }
+            }
           } else {
             const currentCount = Number(state[scope][rule.counter] ?? 0);
             state[scope][rule.counter] = currentCount + 1;

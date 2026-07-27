@@ -1,11 +1,11 @@
 import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import path from 'node:path';
+import { promisify } from 'node:util';
 import fs from 'fs-extra';
+import { gitCommit } from '../utils/gitHelpers.js';
+import { PHASE_VALIDATORS } from '../validators/PhaseValidators.js';
 import type { AgentExecutor } from './PipelineAgentOrchestrator.js';
 import type { PhaseId, ScenarioConfig, TestEnvironment } from './types.js';
-import { PHASE_VALIDATORS } from '../validators/PhaseValidators.js';
-import { gitCommit } from '../utils/gitHelpers.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -91,11 +91,7 @@ async function executePhase1(
     path.join(changeDir, 'specs', 'todo.md'),
     '# Todo contract delta\n\nTodo MAY expose an optional dueDate string.\n',
   );
-  const validation = await runSkillScript(
-    env,
-    'validate-change.mjs',
-    scenario.changeName,
-  );
+  const validation = await runSkillScript(env, 'validate-change.mjs', scenario.changeName);
   await runState(env, 'decision', scenario.changeName, 'proposalApproved', 'true');
   await runState(env, 'transition', scenario.changeName, '2', '6');
   return { validation };
@@ -105,11 +101,7 @@ async function executePhase2(
   env: TestEnvironment,
   scenario: ScenarioConfig,
 ): Promise<Record<string, unknown>> {
-  const instructions = await runSkillScript(
-    env,
-    'instructions-apply.mjs',
-    scenario.changeName,
-  );
+  const instructions = await runSkillScript(env, 'instructions-apply.mjs', scenario.changeName);
   // Modify known source files; add dueDate to at least one to create a diff
   const modified = [
     await addDueDate(path.join(env.rootDir, 'backend/src/models/todo.ts')),
@@ -119,20 +111,20 @@ async function executePhase2(
   if (!modified.some(Boolean)) {
     await modifyAnySourceFile(env.rootDir);
   }
-  const tasksPath = path.join(
-    env.rootDir,
-    'openspec',
-    'changes',
-    scenario.changeName,
-    'tasks.md',
-  );
+  const tasksPath = path.join(env.rootDir, 'openspec', 'changes', scenario.changeName, 'tasks.md');
   const tasks = await fs.readFile(tasksPath, 'utf8');
   await fs.writeFile(tasksPath, tasks.replaceAll('- [ ]', '- [x]'));
   await runSkillScript(env, 'validate-change.mjs', scenario.changeName);
   await runState(env, 'decision', scenario.changeName, 'implementationConfirmed', 'true');
 
   const reviewDisposition = scenario.reviewDisposition ?? 'review';
-  await runState(env, 'decision', scenario.changeName, 'reviewDisposition', JSON.stringify(reviewDisposition));
+  await runState(
+    env,
+    'decision',
+    scenario.changeName,
+    'reviewDisposition',
+    JSON.stringify(reviewDisposition),
+  );
 
   if (reviewDisposition === 'skip-review') {
     await runState(env, 'transition', scenario.changeName, '4', '13');
@@ -147,14 +139,93 @@ async function executePhase3(
   scenario: ScenarioConfig,
 ): Promise<Record<string, unknown>> {
   const reviewRelative = `openspec/review/2099-01-01-00-00-${scenario.changeName}-pipeline-review.md`;
+
+  if (scenario.reviewDisposition === 'fix-and-rereview') {
+    await fs.outputFile(
+      path.join(env.rootDir, reviewRelative),
+      '# Review\n\n- Correctness: missing null check\n- Security and secret scan: passed\n- Conventions: passed\n',
+    );
+    await runState(
+      env,
+      'set',
+      scenario.changeName,
+      'review.reportPath',
+      JSON.stringify(reviewRelative),
+    );
+    await runState(env, 'attempt', scenario.changeName, 'review', 'issues-found');
+
+    const fixProposalRelative = `openspec/changes/${scenario.changeName}/fix-proposal-round-1.md`;
+    await fs.outputFile(
+      path.join(env.rootDir, fixProposalRelative),
+      '# Fix proposal: validate todo titles\n\n## Problem\n\nThe review found a missing null check for todo titles.\n\n## Proposed changes\n\nValidate the title before creating a todo.\n\n## Impact\n\nInvalid input is rejected before it reaches the in-memory store.\n',
+    );
+    await runState(
+      env,
+      'decision',
+      scenario.changeName,
+      'fixProposalPath',
+      JSON.stringify(fixProposalRelative),
+    );
+    await runState(env, 'decision', scenario.changeName, 'fixProposalGenerated', 'true');
+    await runState(env, 'decision', scenario.changeName, 'fixProposalApproved', 'true');
+    await addNullCheck(path.join(env.rootDir, 'backend/src/models/todo.ts'));
+    await runState(env, 'decision', scenario.changeName, 'fixApplied', 'true');
+
+    const rereviewRelative = `openspec/review/2099-01-01-00-01-${scenario.changeName}-pipeline-review-round-2.md`;
+    await fs.outputFile(
+      path.join(env.rootDir, rereviewRelative),
+      '# Review round 2\n\n- Correctness: passed\n- Security and secret scan: passed\n- Conventions: passed\n- Performance: no regression\n',
+    );
+    await runState(
+      env,
+      'set',
+      scenario.changeName,
+      'review.reportPath',
+      JSON.stringify(rereviewRelative),
+    );
+    await runState(env, 'attempt', scenario.changeName, 'review', 'passed');
+    await runState(env, 'transition', scenario.changeName, '4', '13');
+    return {
+      reviewPath: rereviewRelative,
+      initialReviewPath: reviewRelative,
+      fixProposalPath: fixProposalRelative,
+    };
+  }
+
   await fs.outputFile(
     path.join(env.rootDir, reviewRelative),
     '# Review\n\n- Correctness: passed\n- Security and secret scan: passed\n- Conventions: passed\n- Performance: no regression\n',
   );
-  await runState(env, 'set', scenario.changeName, 'review.reportPath', JSON.stringify(reviewRelative));
+  await runState(
+    env,
+    'set',
+    scenario.changeName,
+    'review.reportPath',
+    JSON.stringify(reviewRelative),
+  );
   await runState(env, 'attempt', scenario.changeName, 'review', 'passed');
   await runState(env, 'transition', scenario.changeName, '4', '13');
   return { reviewPath: reviewRelative };
+}
+
+async function addNullCheck(file: string): Promise<boolean> {
+  try {
+    await fs.access(file);
+  } catch {
+    return false;
+  }
+
+  const content = await fs.readFile(file, 'utf8');
+  const signature = 'export function createTodo(title: string): Todo {\n';
+  if (!content.includes(signature) || content.includes('title?.trim()')) return false;
+  await fs.writeFile(
+    file,
+    content.replace(
+      signature,
+      `${signature}  if (!title?.trim()) throw new Error('Todo title is required');\n`,
+    ),
+  );
+  return true;
 }
 
 async function executePhase4(
@@ -187,16 +258,17 @@ async function executePhase5(
   await runState(env, 'set', scenario.changeName, 'verify.command', '"npm run verify"');
   await runState(env, 'attempt', scenario.changeName, 'verify', 'passed');
   await runSkillScript(env, 'change-status.mjs', scenario.changeName);
-  const archive = await runSkillScript(
-    env,
-    'archive.mjs',
-    scenario.changeName,
-    '-y',
-  );
+  const archive = await runSkillScript(env, 'archive.mjs', scenario.changeName, '-y');
   const archivePath = String(archive.archivePath);
   await runState(env, 'set', scenario.changeName, 'archivePath', JSON.stringify(archivePath));
   const postArchiveAction = scenario.postArchiveAction ?? 'merge';
-  await runState(env, 'decision', scenario.changeName, 'postArchiveAction', JSON.stringify(postArchiveAction));
+  await runState(
+    env,
+    'decision',
+    scenario.changeName,
+    'postArchiveAction',
+    JSON.stringify(postArchiveAction),
+  );
   await runState(env, 'transition', scenario.changeName, '6', '20');
   return { archivePath, verify: verify.stdout, postArchiveAction };
 }

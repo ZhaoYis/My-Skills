@@ -156,8 +156,9 @@ export interface ScenarioConfig {
    * Override review disposition after Phase 2.
    * - `'review'` (default): proceed to Phase 3 code review
    * - `'skip-review'`: skip Phase 3 entirely and go straight to Phase 4
+   * - `'fix-and-rereview'`: record issues, generate and apply a fix proposal, then review again
    */
-  reviewDisposition?: 'review' | 'skip-review';
+  reviewDisposition?: 'review' | 'skip-review' | 'fix-and-rereview';
   /**
    * Override post-archive delivery action.
    * - `'merge'` (default): full Phase 6 with merge + target push

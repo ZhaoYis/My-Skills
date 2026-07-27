@@ -1,10 +1,10 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import fs from 'fs-extra';
 import path from 'node:path';
+import fs from 'fs-extra';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { deterministicPipelineExecutor } from '../../src/harness/DeterministicPipelineExecutor.js';
 import { PipelineAgentOrchestrator } from '../../src/harness/PipelineAgentOrchestrator.js';
-import { ALL_PHASES } from '../../src/harness/types.js';
 import type { PipelineReport, ScenarioConfig, TestEnvironment } from '../../src/harness/types.js';
+import { ALL_PHASES } from '../../src/harness/types.js';
 import { ReportGenerator } from '../../src/report/ReportGenerator.js';
 import { PipelineReportSchema } from '../../src/report/ReportSchema.js';
 
@@ -53,7 +53,9 @@ describe('E2E - Backend-only gated delivery', () => {
 
     // Backend-specific installed files
     expect(await fs.pathExists(path.join(env.rootDir, 'openspec', 'config.yaml'))).toBe(true);
-    expect(await fs.pathExists(path.join(env.rootDir, 'openspec', 'schemas', 'backend'))).toBe(true);
+    expect(await fs.pathExists(path.join(env.rootDir, 'openspec', 'schemas', 'backend'))).toBe(
+      true,
+    );
 
     expect(await fs.readFile(path.join(env.rootDir, '.gitignore'), 'utf8')).toContain(
       'openspec/.pipeline-state/',
@@ -67,7 +69,11 @@ describe('E2E - Backend-only gated delivery', () => {
       status: 'completed',
       sourceBranch: env.sourceBranch,
       targetBranch: env.targetBranch,
-      review: { round: 1, status: 'passed' },
+      review: {
+        currentRound: 1,
+        status: 'passed',
+        rounds: expect.arrayContaining([expect.objectContaining({ round: 1, status: 'passed' })]),
+      },
       tests: { attempts: 1, status: 'passed', command: 'npm test' },
       verify: { attempts: 1, status: 'passed', command: 'npm run verify' },
       delivery: { sourcePushed: true, targetPushed: true },

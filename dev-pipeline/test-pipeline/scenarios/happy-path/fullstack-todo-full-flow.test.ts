@@ -1,10 +1,10 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import fs from 'fs-extra';
 import path from 'node:path';
+import fs from 'fs-extra';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { deterministicPipelineExecutor } from '../../src/harness/DeterministicPipelineExecutor.js';
 import { PipelineAgentOrchestrator } from '../../src/harness/PipelineAgentOrchestrator.js';
-import { ALL_PHASES } from '../../src/harness/types.js';
 import type { PipelineReport, ScenarioConfig, TestEnvironment } from '../../src/harness/types.js';
+import { ALL_PHASES } from '../../src/harness/types.js';
 import { ReportGenerator } from '../../src/report/ReportGenerator.js';
 import { PipelineReportSchema } from '../../src/report/ReportSchema.js';
 
@@ -16,6 +16,7 @@ const scenario: ScenarioConfig = {
   openspecMode: 'mock',
   changeName: 'add-todo-due-date',
   featureDescription: 'Add an optional dueDate field to backend and frontend todo contracts',
+  reviewDisposition: 'fix-and-rereview',
 };
 
 describe('E2E - Full gated delivery', () => {
@@ -62,7 +63,22 @@ describe('E2E - Full gated delivery', () => {
       status: 'completed',
       sourceBranch: env.sourceBranch,
       targetBranch: env.targetBranch,
-      review: { round: 1, status: 'passed' },
+      review: {
+        currentRound: 2,
+        status: 'passed',
+        rounds: [
+          expect.objectContaining({ round: 1, status: 'issues-found' }),
+          expect.objectContaining({
+            round: 2,
+            status: 'passed',
+            decisions: expect.objectContaining({
+              fixProposalGenerated: true,
+              fixProposalApproved: true,
+              fixApplied: true,
+            }),
+          }),
+        ],
+      },
       tests: { attempts: 1, status: 'passed', command: 'npm test' },
       verify: { attempts: 1, status: 'passed', command: 'npm run verify' },
       delivery: { sourcePushed: true, targetPushed: true },

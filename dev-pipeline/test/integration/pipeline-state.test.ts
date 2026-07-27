@@ -28,6 +28,19 @@ interface PhaseHistoryEntry {
   gatesBypassed: string[];
 }
 
+interface ReviewState {
+  currentRound: number;
+  rounds: Array<{
+    round: number;
+    reportPath: string | null;
+    status: string;
+    timestamp: string;
+    decisions: Record<string, unknown>;
+  }>;
+  reportPath: string | null;
+  status: string;
+}
+
 beforeEach(async () => {
   repo = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-state-'));
   createdDirs.push(repo);
@@ -116,23 +129,30 @@ describe('pipeline state machine', () => {
     expect(result.payload).toMatchObject({ reason: 'feature-id-required' });
   });
 
-  it('initializes Schema v2 with standalone integration fields', async () => {
-    const initialized = await state('init', 'schema-v2', 'feature/schema-v2');
+  it('initializes Schema v3 with standalone integration fields and review rounds', async () => {
+    const initialized = await state('init', 'schema-v3', 'feature/schema-v3');
     const initializedState = initialized.payload.state as {
       schemaVersion: number;
       _version: number;
       executionMode: string;
       phaseHistory: PhaseHistoryEntry[];
       gatesBypassed: unknown[];
+      review: ReviewState;
       _readVersion?: number;
     };
 
     expect(initialized.code).toBe(0);
     expect(initializedState).toMatchObject({
-      schemaVersion: 2,
+      schemaVersion: 3,
       _version: 1,
       executionMode: 'pipeline',
       gatesBypassed: [],
+      review: {
+        currentRound: 0,
+        rounds: [],
+        reportPath: null,
+        status: 'pending',
+      },
     });
     expect(initializedState.phaseHistory).toEqual([
       expect.objectContaining({
@@ -145,7 +165,7 @@ describe('pipeline state machine', () => {
     ]);
     expect(initializedState._readVersion).toBeUndefined();
 
-    const persisted = await fs.readJson(path.join(repo, 'openspec/.pipeline-state/schema-v2.json'));
+    const persisted = await fs.readJson(path.join(repo, 'openspec/.pipeline-state/schema-v3.json'));
     expect(persisted._readVersion).toBeUndefined();
   });
 
@@ -421,7 +441,7 @@ describe('pipeline state machine', () => {
     expect(completedEntry.startedAt <= completedEntry.completedAt).toBe(true);
   });
 
-  it('migrates Schema v1 only after confirmation and remains idempotent', async () => {
+  it('migrates Schema v1 to v3 only after confirmation and remains idempotent', async () => {
     const stateDir = path.join(repo, 'openspec/.pipeline-state');
     await fs.ensureDir(stateDir);
     await fs.writeJson(path.join(stateDir, 'legacy-change.json'), {
@@ -454,17 +474,66 @@ describe('pipeline state machine', () => {
     expect(migrated.code).toBe(0);
     expect(migrated.payload).toMatchObject({ status: 'ok', reason: 'schema-migrated' });
     expect(migrated.payload.state).toMatchObject({
-      schemaVersion: 2,
+      schemaVersion: 3,
       _version: 1,
       executionMode: 'pipeline',
       phaseHistory: [],
       gatesBypassed: [],
       decisions: { proposalApproved: true },
+      review: {
+        currentRound: 0,
+        rounds: [],
+        reportPath: null,
+        status: 'pending',
+      },
     });
 
     const repeated = await state('migrate-schema', 'legacy-change', '--confirm');
-    expect(repeated.payload).toMatchObject({ status: 'ok', reason: 'already-v2' });
+    expect(repeated.payload).toMatchObject({ status: 'ok', reason: 'already-v3' });
     expect((repeated.payload.state as { _version: number })._version).toBe(1);
+  });
+
+  it('migrates a completed Schema v2 review into a v3 round and clears the staging path', async () => {
+    const stateDir = path.join(repo, 'openspec/.pipeline-state');
+    await fs.ensureDir(stateDir);
+    await fs.writeJson(path.join(stateDir, 'legacy-review.json'), {
+      schemaVersion: 2,
+      _version: 4,
+      changeName: 'legacy-review',
+      currentPhase: 3,
+      currentStep: 12,
+      executionMode: 'pipeline',
+      phaseHistory: [],
+      gatesBypassed: [],
+      decisions: { reviewDisposition: 'fix-and-rereview' },
+      review: {
+        round: 2,
+        reportPath: 'openspec/review/legacy-review.md',
+        status: 'issues-found',
+      },
+      updatedAt: '2026-07-27 14:30:00',
+    });
+
+    const migrated = await state('migrate-schema', 'legacy-review', '--confirm');
+    expect(migrated.code).toBe(0);
+    expect(migrated.payload.state).toMatchObject({
+      schemaVersion: 3,
+      _version: 5,
+      review: {
+        currentRound: 2,
+        reportPath: null,
+        status: 'issues-found',
+        rounds: [
+          {
+            round: 2,
+            reportPath: 'openspec/review/legacy-review.md',
+            status: 'issues-found',
+            timestamp: '2026-07-27 14:30:00',
+            decisions: { reviewDisposition: 'fix-and-rereview' },
+          },
+        ],
+      },
+    });
   });
 
   it('records resumable phase history, decision snapshots and bypassed gates', async () => {
@@ -518,7 +587,7 @@ describe('pipeline state machine', () => {
     expect(currentState.phaseHistory[2]?.completedAt).toBeTruthy();
   });
 
-  it('requires Schema v2 before recording phase history', async () => {
+  it('requires Schema v3 before recording phase history', async () => {
     const stateDir = path.join(repo, 'openspec/.pipeline-state');
     await fs.ensureDir(stateDir);
     await fs.writeJson(path.join(stateDir, 'legacy-record.json'), {
@@ -704,8 +773,92 @@ describe('pipeline state machine', () => {
     expect((await fs.readdir(stateDir)).sort()).toEqual(['resume-change.json']);
   });
 
+  it('records every review round with report, timestamp and decision snapshots', async () => {
+    await state('init', 'review-history', 'feature/review-history');
+    await state(
+      'set',
+      'review-history',
+      'review.reportPath',
+      '"openspec/review/review-history-round-1.md"',
+    );
+    await state('decision', 'review-history', 'reviewDisposition', 'fix-and-rereview');
+    await state('attempt', 'review-history', 'review', 'issues-found');
+
+    await state(
+      'decision',
+      'review-history',
+      'fixProposalPath',
+      'openspec/changes/review-history/fix-proposal-round-1.md',
+    );
+    await state('decision', 'review-history', 'fixProposalGenerated', 'true');
+    await state('decision', 'review-history', 'fixProposalApproved', 'true');
+    await state('decision', 'review-history', 'fixApplied', 'true');
+    await state(
+      'set',
+      'review-history',
+      'review.reportPath',
+      '"openspec/review/review-history-round-2.md"',
+    );
+    const second = await state('attempt', 'review-history', 'review', 'passed');
+    const review = (second.payload.state as { review: ReviewState }).review;
+
+    expect(review.currentRound).toBe(2);
+    expect(review.status).toBe('passed');
+    expect(review.reportPath).toBe('openspec/review/review-history-round-2.md');
+    expect(review.rounds).toHaveLength(2);
+    expect(review.rounds[0]).toMatchObject({
+      round: 1,
+      reportPath: 'openspec/review/review-history-round-1.md',
+      status: 'issues-found',
+      decisions: { reviewDisposition: 'fix-and-rereview' },
+    });
+    expect(review.rounds[0]?.timestamp).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+    expect(review.rounds[1]).toMatchObject({
+      round: 2,
+      reportPath: 'openspec/review/review-history-round-2.md',
+      status: 'passed',
+      decisions: {
+        fixProposalPath: 'openspec/changes/review-history/fix-proposal-round-1.md',
+        fixProposalGenerated: true,
+        fixProposalApproved: true,
+        fixApplied: true,
+      },
+    });
+    expect(review.rounds[1]?.timestamp).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+  });
+
+  it('does not allow review status or round history to be changed with set', async () => {
+    await state('init', 'protected-review', 'feature/protected-review');
+
+    for (const field of ['review.status', 'review.currentRound', 'review.rounds']) {
+      const result = await state('set', 'protected-review', field, 'passed');
+      expect(result.code).toBe(11);
+      expect(result.payload.reason).toBe('invalid-state-field');
+    }
+  });
+
+  it('counts only consecutive issues-found rounds toward the review limit', async () => {
+    await state('init', 'review-limit-reset', 'feature/review-limit-reset');
+    await state('attempt', 'review-limit-reset', 'review', 'issues-found');
+    await state('attempt', 'review-limit-reset', 'review', 'issues-found');
+    await state('attempt', 'review-limit-reset', 'review', 'passed');
+    await state('attempt', 'review-limit-reset', 'review', 'issues-found');
+    const fifth = await state('attempt', 'review-limit-reset', 'review', 'issues-found');
+
+    expect(fifth.code).toBe(0);
+    expect(fifth.payload.state).toMatchObject({
+      status: 'active',
+      review: { currentRound: 5, status: 'issues-found' },
+    });
+
+    const sixth = await state('attempt', 'review-limit-reset', 'review', 'issues-found');
+    expect(sixth.code).toBe(11);
+    expect(sixth.payload.reason).toBe('review-attempt-limit-reached');
+    expect((sixth.payload.state as { review: ReviewState }).review.rounds).toHaveLength(6);
+  });
+
   it.each([
-    ['review', 'issues-found', 'review-attempt-limit-reached', 'round'],
+    ['review', 'issues-found', 'review-attempt-limit-reached', 'currentRound'],
     ['tests', 'failed', 'tests-attempt-limit-reached', 'attempts'],
     ['verify', 'failed', 'verify-attempt-limit-reached', 'attempts'],
   ] as const)('pauses after the third failed %s attempt', async (scope, status, reason, counter) => {
@@ -720,13 +873,13 @@ describe('pipeline state machine', () => {
     const current = await state('get', `${scope}-limit`);
     const currentState = current.payload.state as {
       status: string;
-      review: { round: number };
+      review: { currentRound: number };
       tests: { attempts: number };
       verify: { attempts: number };
     };
     expect(currentState.status).toBe('paused');
     const attemptCount =
-      scope === 'review' ? currentState.review.round : currentState[scope][counter];
+      scope === 'review' ? currentState.review.currentRound : currentState[scope][counter];
     expect(attemptCount).toBe(3);
   });
 

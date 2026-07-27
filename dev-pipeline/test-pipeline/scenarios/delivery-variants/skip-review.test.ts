@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { deterministicPipelineExecutor } from '../../src/harness/DeterministicPipelineExecutor.js';
 import { PipelineAgentOrchestrator } from '../../src/harness/PipelineAgentOrchestrator.js';
-import { ALL_PHASES } from '../../src/harness/types.js';
 import type { PipelineReport, ScenarioConfig, TestEnvironment } from '../../src/harness/types.js';
+import { ALL_PHASES } from '../../src/harness/types.js';
 
 const scenario: ScenarioConfig = {
   name: 'skip-review-delivery',
@@ -20,14 +20,11 @@ describe('E2E - Skip review delivery', () => {
   let report: PipelineReport;
   let env: TestEnvironment;
 
-  beforeAll(
-    async () => {
-      orchestrator = new PipelineAgentOrchestrator(scenario, deterministicPipelineExecutor);
-      report = await orchestrator.runFullFlow();
-      env = orchestrator.getEnvironment();
-    },
-    120000,
-  );
+  beforeAll(async () => {
+    orchestrator = new PipelineAgentOrchestrator(scenario, deterministicPipelineExecutor);
+    report = await orchestrator.runFullFlow();
+    env = orchestrator.getEnvironment();
+  }, 120000);
 
   afterAll(async () => {
     if (env) await env.cleanup();
@@ -56,6 +53,8 @@ describe('E2E - Skip review delivery', () => {
     expect(state.status).toBe('completed');
     // Review was never executed (no review phase in the flow)
     expect(state.review.status).not.toBe('passed');
+    expect(state.review.currentRound).toBe(0);
+    expect(state.review.rounds).toEqual([]);
   });
 
   it('delivers the change to the remote target', async () => {
