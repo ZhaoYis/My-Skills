@@ -72,6 +72,9 @@
 fingerprintId = md5(
   createdAt + "|" +
   createdBy + "|" +
+  createdByEmail + "|" +
+  changeName + "|" +
+  hostname + "|" +
   (featureId || "") + "|" +
   fingerprintNonce
 )
@@ -79,6 +82,9 @@ fingerprintId = md5(
 
 - **createdAt**: ISO 8601 时间戳（init 时的精确值）
 - **createdBy**: 创建者标识
+- **createdByEmail**: 创建者邮箱，无则为空字符串
+- **changeName**: change 名称（唯一标识）
+- **hostname**: 机器主机名（`os.hostname()`）
 - **featureId**: 需求 ID，无则为空字符串
 - **fingerprintNonce**: 8 位随机十六进制数（`crypto.randomBytes(4).toString('hex')`）
 

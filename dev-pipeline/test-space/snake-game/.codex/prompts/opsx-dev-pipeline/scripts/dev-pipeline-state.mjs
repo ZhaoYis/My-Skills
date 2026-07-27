@@ -106,8 +106,8 @@ function formatLocalTime(date = new Date()) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
-function computeFingerprint(createdAt, createdBy, featureId, nonce) {
-  const input = `${createdAt}|${createdBy}|${featureId || ''}|${nonce}`;
+function computeFingerprint(createdAt, createdBy, createdByEmail, changeName, hostname, featureId, nonce) {
+  const input = `${createdAt}|${createdBy}|${createdByEmail || ''}|${changeName}|${hostname}|${featureId || ''}|${nonce}`;
   return crypto.createHash('md5').update(input).digest('hex');
 }
 
@@ -484,7 +484,7 @@ if (!command) {
             createdByEmail,
             machineInfo: collectMachineInfo(),
             featureInfo: featureId ? { featureId, featureUrl } : null,
-            fingerprintId: computeFingerprint(now, createdBy, featureId, nonce),
+            fingerprintId: computeFingerprint(now, createdBy, createdByEmail, changeName, os.hostname(), featureId, nonce),
             fingerprintNonce: nonce,
             phaseHistory: [
               {
