@@ -1,7 +1,9 @@
 import type { Response } from 'express';
+import { apiErrorSchema, apiSuccessSchema, paginationQuerySchema } from './contracts/registry.js';
 
 function jsonSafe(value: unknown): unknown {
   if (typeof value === 'bigint') return value.toString();
+  if (value instanceof Date) return value.toISOString();
   if (Array.isArray(value)) return value.map(jsonSafe);
   if (value && typeof value === 'object') {
     return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, jsonSafe(item)]));
@@ -10,11 +12,33 @@ function jsonSafe(value: unknown): unknown {
 }
 
 export function ok(res: Response, data: unknown, message = '请求成功', code = 200) {
-  return res.status(code).json({ success: true, code, message, data: jsonSafe(data) });
+  const payload = apiSuccessSchema.parse({ success: true, code, message, data: jsonSafe(data) });
+  return res.status(code).json(payload);
 }
 
-export function fail(res: Response, code: number, message: string) {
-  return res.status(code).json({ success: false, code, message, data: null });
+export function fail(
+  res: Response,
+  status: number,
+  message: string,
+  options: {
+    code?: string | number;
+    details?: unknown;
+    requestId?: string;
+    errorCategory?: string;
+  } = {},
+) {
+  const requestId =
+    options.requestId ?? ((res.locals?.requestId as string | undefined) || undefined);
+  if (res.locals) res.locals.errorCategory = options.errorCategory;
+  const payload = apiErrorSchema.parse({
+    success: false,
+    code: options.code ?? status,
+    message,
+    data: null,
+    ...(options.details === undefined ? {} : { details: jsonSafe(options.details) }),
+    ...(requestId ? { requestId } : {}),
+  });
+  return res.status(status).json(payload);
 }
 
 export function pagination<T>(records: T[], totalCount: number, pageNum: number, pageSize: number) {
@@ -22,7 +46,6 @@ export function pagination<T>(records: T[], totalCount: number, pageNum: number,
 }
 
 export function pageParams(query: Record<string, unknown>) {
-  const pageNum = Math.max(1, Number(query.pageNum) || 1);
-  const pageSize = Math.min(1000, Math.max(1, Number(query.pageSize) || 20));
+  const { pageNum, pageSize } = paginationQuerySchema.parse(query);
   return { pageNum, pageSize, skip: (pageNum - 1) * pageSize };
 }

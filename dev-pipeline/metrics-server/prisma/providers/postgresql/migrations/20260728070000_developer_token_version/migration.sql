@@ -1,0 +1,2 @@
+ALTER TABLE "developers"
+ADD COLUMN "token_version" INTEGER NOT NULL DEFAULT 0;

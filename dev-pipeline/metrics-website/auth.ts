@@ -1,4 +1,7 @@
 import NextAuth from 'next-auth';
+import { getWebsiteAuthConfig } from '@/lib/auth-config';
+
+const authConfig = getWebsiteAuthConfig();
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -6,9 +9,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       id: 'company-oidc',
       name: '域账号',
       type: 'oidc',
-      issuer: process.env.OIDC_ISSUER,
-      clientId: process.env.OIDC_CLIENT_ID,
-      clientSecret: process.env.OIDC_CLIENT_SECRET,
+      issuer: authConfig.oidcIssuer,
+      clientId: authConfig.oidcClientId,
+      clientSecret: authConfig.oidcClientSecret,
       checks: ['pkce', 'state'],
       profile(profile) {
         return {
@@ -22,9 +25,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token, profile }) {
       if (profile?.email && profile.sub) {
-        const response = await fetch(`${process.env.METRICS_API_URL}/auth/session`, {
+        const response = await fetch(`${authConfig.metricsApiUrl}/auth/session`, {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'x-api-key': process.env.METRICS_API_KEY ?? '' },
+          headers: {
+            'content-type': 'application/json',
+            'x-api-key': authConfig.metricsServiceKey ?? '',
+          },
           body: JSON.stringify({
             email: profile.email,
             name: profile.name ?? profile.preferred_username ?? profile.email,
@@ -45,7 +51,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     authorized({ auth: session, request }) {
       const publicRoute = request.nextUrl.pathname.startsWith('/signin') || request.nextUrl.pathname.startsWith('/api/auth');
-      return publicRoute || Boolean(session) || Boolean(process.env.METRICS_API_KEY);
+      if (!publicRoute) getWebsiteAuthConfig();
+      const developmentIdentity =
+        process.env.NODE_ENV === 'development' && Boolean(process.env.METRICS_DEV_DEVELOPER_ID);
+      return publicRoute || Boolean(session) || developmentIdentity;
     },
   },
   pages: { signIn: '/signin' },

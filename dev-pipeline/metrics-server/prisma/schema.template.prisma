@@ -8,13 +8,16 @@ datasource db {
 }
 
 model Team {
-  id         Int      @id @default(autoincrement())
-  name       String   @db.VarChar(128)
-  slug       String   @unique @db.VarChar(128)
-  parentId   Int?     @map("parent_id")
-  externalId String?  @unique @map("external_id") @db.VarChar(255)
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  id            Int       @id @default(autoincrement())
+  name          String    @db.VarChar(128)
+  slug          String    @unique @db.VarChar(128)
+  parentId      Int?      @map("parent_id")
+  externalId    String?   @unique @map("external_id") @db.VarChar(255)
+  syncSource    String?   @map("sync_source") @db.VarChar(32)
+  isActive      Boolean   @default(true) @map("is_active")
+  deactivatedAt DateTime? @map("deactivated_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
   parent     Team?       @relation("TeamHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children   Team[]      @relation("TeamHierarchy")
@@ -22,26 +25,32 @@ model Team {
 
   @@index([parentId])
   @@index([externalId])
+  @@index([syncSource, isActive])
   @@map("teams")
 }
 
 model Developer {
-  id          Int      @id @default(autoincrement())
-  email       String   @unique @db.VarChar(255)
-  displayName String?  @map("display_name") @db.VarChar(255)
-  role        String?  @db.VarChar(16)
-  teamId      Int?     @map("team_id")
-  externalId  String?  @unique @map("external_id") @db.VarChar(255)
-  firstSeenAt DateTime @map("first_seen_at")
-  lastSeenAt  DateTime @map("last_seen_at")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id            Int       @id @default(autoincrement())
+  email         String    @unique @db.VarChar(255)
+  displayName   String?   @map("display_name") @db.VarChar(255)
+  role          String?   @db.VarChar(16)
+  teamId        Int?      @map("team_id")
+  externalId    String?   @unique @map("external_id") @db.VarChar(255)
+  syncSource    String?   @map("sync_source") @db.VarChar(32)
+  isActive      Boolean   @default(true) @map("is_active")
+  deactivatedAt DateTime? @map("deactivated_at")
+  tokenVersion  Int       @default(0) @map("token_version")
+  firstSeenAt   DateTime  @map("first_seen_at")
+  lastSeenAt    DateTime  @map("last_seen_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
   team         Team?         @relation(fields: [teamId], references: [id], onDelete: SetNull)
   pipelineRuns PipelineRun[]
 
   @@index([email])
   @@index([teamId])
+  @@index([syncSource, isActive])
   @@map("developers")
 }
 
@@ -52,19 +61,26 @@ model Repo {
   gitBranch           String    @default("main") @map("git_branch") @db.VarChar(255)
   collectSince        DateTime  @map("collect_since")
   lastFetchedCommit   String?   @map("last_fetched_commit") @db.Char(40)
+  scanFromCommit      String?   @map("scan_from_commit") @db.Char(40)
+  scanToCommit        String?   @map("scan_to_commit") @db.Char(40)
+  lastRelevantCommit  String?   @map("last_relevant_commit") @db.Char(40)
+  checkpointPolicy    String    @default("advance-record-rejections") @map("checkpoint_policy") @db.VarChar(32)
   lastFetchedAt       DateTime? @map("last_fetched_at")
   collectionStatus    String    @default("idle") @map("collection_status") @db.VarChar(16)
   collectionStartedAt DateTime? @map("collection_started_at")
   collectionError     String?   @map("collection_error") @db.Text
   retentionDays       Int       @default(365) @map("retention_days")
   isActive            Boolean   @default(true) @map("is_active")
+  deletedAt           DateTime? @map("deleted_at")
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
 
   pipelineRuns   PipelineRun[]
   collectionLogs CollectionLog[]
+  retentionLogs  RetentionOperationLog[]
 
   @@index([collectionStatus, isActive])
+  @@index([deletedAt])
   @@map("repos")
 }
 
@@ -81,7 +97,9 @@ model PipelineRun {
   currentStep           Int      @map("current_step")
   status                String   @db.VarChar(16)
   executionMode         String   @map("execution_mode") @db.VarChar(16)
-  isLatest              Boolean  @default(true) @map("is_latest")
+  isLatest              Boolean  @default(false) @map("is_latest")
+  isLatestHistorical    Boolean  @default(false) @map("is_latest_historical")
+  snapshotSource        String   @default("collector") @map("snapshot_source") @db.VarChar(16)
   fingerprintId         String   @map("fingerprint_id") @db.VarChar(512)
   fingerprintNonce      String   @map("fingerprint_nonce") @db.Char(8)
   fingerprintVerified   Boolean  @default(false) @map("fingerprint_verified")
@@ -115,6 +133,7 @@ model PipelineRun {
   verifyDetail          String?  @map("verify_detail") @db.Text
   createdAtPipeline     DateTime @map("created_at_pipeline")
   updatedAtPipeline     DateTime @map("updated_at_pipeline")
+  completedAtPipeline   DateTime? @map("completed_at_pipeline")
   changeDurationSeconds Int?     @map("change_duration_seconds")
   contentHash           String   @map("content_hash") @db.Char(32)
   rawStateJson          Json?    @map("raw_state_json")
@@ -138,7 +157,11 @@ model PipelineRun {
   @@index([status])
   @@index([commitSha])
   @@index([createdAtPipeline])
+  @@index([completedAtPipeline])
   @@index([repoId, changeName])
+  @@index([repoId, changeName, isLatestHistorical])
+  @@index([snapshotSource])
+  @@index([developerId, isLatest, fingerprintVerified, snapshotSource, completedAtPipeline, repoId], map: "pipeline_runs_trusted_latest_query_idx")
   @@map("pipeline_runs")
 }
 
@@ -233,33 +256,101 @@ model ReviewRoundDecision {
 model CollectionLog {
   id                   BigInt    @id @default(autoincrement())
   repoId               Int       @map("repo_id")
-  startedAt            DateTime  @map("started_at")
+  queuedAt             DateTime  @default(now()) @map("queued_at")
+  startedAt            DateTime? @map("started_at")
   finishedAt           DateTime? @map("finished_at")
-  status               String    @default("running") @db.VarChar(16)
+  status               String    @default("queued") @db.VarChar(16)
+  dryRun               Boolean   @default(false) @map("dry_run")
+  mode                 String    @default("trusted") @db.VarChar(16)
+  triggerSource        String    @default("manual") @map("trigger_source") @db.VarChar(16)
+  workerId             String?   @map("worker_id") @db.VarChar(64)
+  attempt              Int       @default(1)
+  retryOfId            BigInt?   @map("retry_of_id")
+  cancelRequestedAt    DateTime? @map("cancel_requested_at")
+  cancelledAt          DateTime? @map("cancelled_at")
+  scanFromCommit       String?   @map("scan_from_commit") @db.Char(40)
+  scanToCommit         String?   @map("scan_to_commit") @db.Char(40)
+  lastRelevantCommit   String?   @map("last_relevant_commit") @db.Char(40)
+  batchSize            Int       @default(100) @map("batch_size")
+  batchesTotal         Int       @default(0) @map("batches_total")
+  batchesCompleted     Int       @default(0) @map("batches_completed")
+  heartbeatAt          DateTime? @map("heartbeat_at")
+  checkpointPolicy     String    @default("advance-record-rejections") @map("checkpoint_policy") @db.VarChar(32)
+  errorCategory        String?   @map("error_category") @db.VarChar(32)
+  transactionRetries   Int       @default(0) @map("transaction_retries")
+  forcePushDetected    Boolean   @default(false) @map("force_push_detected")
   commitsScanned       Int       @default(0) @map("commits_scanned")
   filesFound           Int       @default(0) @map("files_found")
   runsUpserted         Int       @default(0) @map("runs_upserted")
   runsSkipped          Int       @default(0) @map("runs_skipped")
   fingerprintsRejected Int       @default(0) @map("fingerprints_rejected")
+  rejectionDetails     Json?     @map("rejection_details")
   errorMessage         String?   @map("error_message") @db.Text
 
   repo Repo @relation(fields: [repoId], references: [id], onDelete: Cascade)
 
   @@index([repoId])
+  @@index([status, heartbeatAt])
+  @@index([status, queuedAt])
+  @@index([retryOfId])
   @@map("collection_logs")
 }
 
 model SyncLog {
-  id           BigInt    @id @default(autoincrement())
-  source       String    @db.VarChar(32)
-  status       String    @default("running") @db.VarChar(16)
-  startedAt    DateTime  @map("started_at")
-  finishedAt   DateTime? @map("finished_at")
-  teamsCreated Int       @default(0) @map("teams_created")
-  teamsUpdated Int       @default(0) @map("teams_updated")
-  devsLinked   Int       @default(0) @map("devs_linked")
-  errorMessage String?   @map("error_message") @db.Text
+  id              BigInt    @id @default(autoincrement())
+  source          String    @db.VarChar(32)
+  adapter         String?   @db.VarChar(32)
+  triggerSource   String    @default("upload") @map("trigger_source") @db.VarChar(32)
+  attempt         Int       @default(1)
+  retryOfId       BigInt?   @map("retry_of_id")
+  status          String    @default("running") @db.VarChar(16)
+  startedAt       DateTime  @map("started_at")
+  finishedAt      DateTime? @map("finished_at")
+  dryRun          Boolean   @default(false) @map("dry_run")
+  teamsCreated    Int       @default(0) @map("teams_created")
+  teamsUpdated    Int       @default(0) @map("teams_updated")
+  teamsMoved      Int       @default(0) @map("teams_moved")
+  teamsDeactivated Int      @default(0) @map("teams_deactivated")
+  devsCreated     Int       @default(0) @map("devs_created")
+  devsUpdated     Int       @default(0) @map("devs_updated")
+  devsLinked      Int       @default(0) @map("devs_linked")
+  devsMoved       Int       @default(0) @map("devs_moved")
+  devsUnassigned  Int       @default(0) @map("devs_unassigned")
+  devsDeactivated Int       @default(0) @map("devs_deactivated")
+  failures        Int       @default(0)
+  canonicalSnapshot Json?   @map("canonical_snapshot")
+  errorCategory   String?   @map("error_category") @db.VarChar(32)
+  errorMessage    String?   @map("error_message") @db.Text
 
   @@index([status])
+  @@index([startedAt])
+  @@index([retryOfId])
   @@map("sync_logs")
+}
+
+model RetentionOperationLog {
+  id              BigInt    @id @default(autoincrement())
+  repoId          Int?      @map("repo_id")
+  operation       String    @default("retention-cleanup") @db.VarChar(32)
+  status          String    @db.VarChar(16)
+  triggerSource   String    @map("trigger_source") @db.VarChar(16)
+  dryRun          Boolean   @default(true) @map("dry_run")
+  enabled         Boolean   @default(false)
+  startedAt       DateTime  @default(now()) @map("started_at")
+  finishedAt      DateTime? @map("finished_at")
+  cutoffAt        DateTime? @map("cutoff_at")
+  hotRuns         Int       @default(0) @map("hot_runs")
+  warmRuns        Int       @default(0) @map("warm_runs")
+  coldRuns        Int       @default(0) @map("cold_runs")
+  eligibleRuns    Int       @default(0) @map("eligible_runs")
+  deletedRuns     Int       @default(0) @map("deleted_runs")
+  preservedRuns   Int       @default(0) @map("preserved_runs")
+  details         Json?
+  errorMessage    String?   @map("error_message") @db.Text
+
+  repo Repo? @relation(fields: [repoId], references: [id], onDelete: SetNull)
+
+  @@index([repoId, startedAt])
+  @@index([status, startedAt])
+  @@map("retention_operation_logs")
 }

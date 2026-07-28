@@ -36,7 +36,7 @@
 
 **验收标准**
 
-- 空 PostgreSQL 和空 MySQL 均可从零部署 13 张表。
+- 空 PostgreSQL 和空 MySQL 均可从零部署 14 张表。
 - 两种数据库均能运行一次真实的 snapshot upsert、指标查询和组织同步测试。
 - CI 中分别执行 schema validate、migration deploy 和集成测试。
 
@@ -340,7 +340,7 @@ API Key 被映射为 `developerId=0` 的管理员；前端无 OIDC session 时�
 **详细功能**
 
 - 决定统一使用 Repository 层，或从设计文档和代码中移除该层，禁止两套模式并存。
-- 若保留 Repository：补齐 13 张表、事务接口、分页和常用查询，并让 service 只依赖 Repository。
+- 若保留 Repository：补齐 14 张表、事务接口、分页和常用查询，并让 service 只依赖 Repository。
 - Repository 不得只包装一行 Prisma 调用；应承载稳定的数据访问契约和可测试边界。
 
 **验收标准**
@@ -419,7 +419,7 @@ API Key 被映射为 `developerId=0` 的管理员；前端无 OIDC session 时�
 
 ---
 
-## 5. 建议实施顺序
+## 5. 实际实施顺序
 
 | 迭代 | 任务 | 交付目标 |
 |------|------|----------|
@@ -428,18 +428,20 @@ API Key 被映射为 `developerId=0` 的管理员；前端无 OIDC session 时�
 | **Iteration 3** | M014-M019 | 处理规模化性能、保留策略、工程边界、测试和生产可观测性 |
 | **收尾** | M020 | 根据自动化验收证据更新设计文档完成状态 |
 
-## 6. 当前完成判断
+## 6. 验收完成判断
 
-按当前代码状态，原设计 Phase 的更准确判断如下：
+M001-M020 已按上述顺序实施。Phase 状态使用代码、测试、文档、数据库和 UI 五类门禁，
+不再根据文件存在情况推断；逐任务记录见
+[M001-M020 验收证据](metrics-system-acceptance-evidence.md)。
 
-| Phase | 当前判断 | 主要原因 |
-|-------|----------|----------|
-| Phase 0 指纹模板 | 基本完成 | 模板生成和 fp1 校验存在，但 legacy 版本链策略仍需 M002 修复 |
-| Phase 1 数据库基础 | 部分完成 | PostgreSQL 已部署，MySQL migration 不可部署 |
-| Phase 2 数据模型 | 部分完成 | Schema/Zod 已有，Repository 层不完整且未实际使用 |
-| Phase 3 采集器引擎 | 部分完成 | 主链路存在，checkpoint、批次、重试和拒绝审计不完整 |
-| Phase 4 API Server | 基本完成 | 端点齐全，但参数契约、身份语义和自动化 API 测试不完整 |
-| Phase 5 指标服务 | 部分完成 | 大部分指标已实现，但存在公式和时间口径错误 |
-| Phase 6 定时调度 | 基本完成 | cron 和锁存在，缺少可靠 job、恢复和 retention 占位任务 |
-| Phase 7 Dashboard | 部分完成 | 只有总览和只读采集页，主要管理工作流缺失 |
-| Phase 8 组织同步 | 部分完成 | 有同步入口，但不是全量覆盖，缺少外部 adapter 和管理 UI |
+| Phase | 当前判断 | 主要证据范围 |
+|-------|----------|--------------|
+| Phase 0 指纹模板 | 已验证 | fp1、篡改/错误密钥/legacy/重复 snapshot 自动化矩阵 |
+| Phase 1 数据库基础 | 已验证 | 14 表双 provider migration、PostgreSQL 实库与 PostgreSQL/MySQL CI 矩阵 |
+| Phase 2 数据模型 | 已验证 | Schema/Zod、可信/历史/job/retention 字段及可注入数据端口 |
+| Phase 3 采集器引擎 | 已验证 | 本地 Git、checkpoint、批次、重试、锁、持久 job 与拒绝审计测试 |
+| Phase 4 API Server | 已验证 | 54 端点契约、HTTP 权限/错误矩阵、request ID 和健康检查 |
+| Phase 5 指标服务 | 已验证 | 指标口径、时间/仓库过滤、批量聚合、查询次数及数据库集成测试 |
+| Phase 6 定时调度 | 已验证 | 采集/retention 调度、恢复、状态指标及失败测试 |
+| Phase 7 Dashboard | 已验证 | production build 与桌面/移动 Playwright 用户工作流 |
+| Phase 8 组织同步 | 已验证 | canonical reconcile、回滚、adapter 契约、HTTP 与管理 UI 测试 |

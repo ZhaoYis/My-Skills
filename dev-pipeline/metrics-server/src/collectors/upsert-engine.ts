@@ -1,7 +1,8 @@
 import { Prisma, type PrismaClient } from '@prisma/client';
+import { clearMetricsCache } from '../services/metrics-cache.js';
 import { durationSeconds, parseStateDate } from '../utils/date.js';
 import { contentHash } from '../utils/hash.js';
-import type { FingerprintResult } from './fingerprint-verifier.js';
+import { type FingerprintResult, FingerprintVerificationError } from './fingerprint-verifier.js';
 import type { PipelineState } from './state-parser.js';
 
 export interface SnapshotMeta {
@@ -9,6 +10,7 @@ export interface SnapshotMeta {
   commitSha: string;
   commitTimestamp: Date;
   rawContent: string;
+  source?: 'collector' | 'history-import';
 }
 
 export type UpsertResult =
@@ -26,7 +28,20 @@ export async function upsertSnapshot(
   meta: SnapshotMeta,
 ): Promise<UpsertResult> {
   const hash = contentHash(meta.rawContent);
-  return db.$transaction(
+  const source = meta.source ?? 'collector';
+  if (!fingerprint.verified && source !== 'history-import') {
+    throw new FingerprintVerificationError(
+      'legacy-not-allowed',
+      'Legacy fingerprint requires history import mode',
+    );
+  }
+  if (fingerprint.verified && source === 'history-import') {
+    throw new FingerprintVerificationError(
+      'history-import-requires-legacy',
+      'History import mode only accepts legacy fingerprints',
+    );
+  }
+  const result = await db.$transaction(
     async (tx) => {
       const duplicate = await tx.pipelineRun.findUnique({
         where: {
@@ -40,13 +55,22 @@ export async function upsertSnapshot(
       });
       if (duplicate) return { action: 'skipped', reason: 'duplicate' } as const;
 
-      const current = await tx.pipelineRun.findFirst({
-        where: { repoId: meta.repoId, changeName: state.changeName, isLatest: true },
-        select: { stateVersion: true },
-      });
-      if (current && state._version <= current.stateVersion) {
+      const currentTrusted = fingerprint.verified
+        ? await tx.pipelineRun.findFirst({
+            where: { repoId: meta.repoId, changeName: state.changeName, isLatest: true },
+            select: { stateVersion: true, completedAtPipeline: true },
+          })
+        : null;
+      if (currentTrusted && state._version <= currentTrusted.stateVersion) {
         return { action: 'skipped', reason: 'stale-version' } as const;
       }
+
+      const currentHistorical = await tx.pipelineRun.findFirst({
+        where: { repoId: meta.repoId, changeName: state.changeName, isLatestHistorical: true },
+        select: { stateVersion: true },
+      });
+      const becomesHistoricalLatest =
+        !currentHistorical || state._version > currentHistorical.stateVersion;
 
       let developerId: number | null = null;
       const email = state.createdByEmail.trim().toLowerCase();
@@ -66,13 +90,23 @@ export async function upsertSnapshot(
         developerId = developer.id;
       }
 
-      await tx.pipelineRun.updateMany({
-        where: { repoId: meta.repoId, changeName: state.changeName, isLatest: true },
-        data: { isLatest: false },
-      });
+      if (fingerprint.verified) {
+        await tx.pipelineRun.updateMany({
+          where: { repoId: meta.repoId, changeName: state.changeName, isLatest: true },
+          data: { isLatest: false },
+        });
+      }
+      if (becomesHistoricalLatest) {
+        await tx.pipelineRun.updateMany({
+          where: { repoId: meta.repoId, changeName: state.changeName, isLatestHistorical: true },
+          data: { isLatestHistorical: false },
+        });
+      }
 
       const created = parseStateDate(state.createdAt);
       const updated = parseStateDate(state.updatedAt);
+      const completedAt =
+        state.status === 'completed' ? (currentTrusted?.completedAtPipeline ?? updated) : null;
       const run = await tx.pipelineRun.create({
         data: {
           repoId: meta.repoId,
@@ -86,7 +120,9 @@ export async function upsertSnapshot(
           currentStep: state.currentStep,
           status: state.status,
           executionMode: state.executionMode,
-          isLatest: true,
+          isLatest: fingerprint.verified,
+          isLatestHistorical: becomesHistoricalLatest,
+          snapshotSource: source,
           fingerprintId: state.fingerprintId,
           fingerprintNonce: state.fingerprintNonce,
           fingerprintVerified: fingerprint.verified,
@@ -120,7 +156,11 @@ export async function upsertSnapshot(
           verifyDetail: state.verify.detail,
           createdAtPipeline: created,
           updatedAtPipeline: updated,
-          changeDurationSeconds: Math.max(0, Math.floor((updated.getTime() - created.getTime()) / 1000)),
+          completedAtPipeline: completedAt,
+          changeDurationSeconds:
+            state.status === 'completed'
+              ? Math.max(0, Math.floor((updated.getTime() - created.getTime()) / 1000))
+              : null,
           contentHash: hash,
           rawStateJson: JSON.parse(meta.rawContent) as Prisma.InputJsonValue,
           commitSha: meta.commitSha,
@@ -179,4 +219,6 @@ export async function upsertSnapshot(
       timeout: 30_000,
     },
   );
+  if (result.action === 'inserted') clearMetricsCache(db);
+  return result;
 }

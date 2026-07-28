@@ -1,0 +1,14 @@
+{
+  "departments": [
+    { "department_id": "root", "name": "Engineering", "parent_department_id": "0" },
+    { "department_id": "platform", "name": "Platform", "parent_department_id": "root" }
+  ],
+  "users": [
+    {
+      "user_id": "ou_alice",
+      "name": "Alice",
+      "email": "ALICE@example.test",
+      "department_ids": ["platform"]
+    }
+  ]
+}

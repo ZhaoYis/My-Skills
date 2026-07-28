@@ -19,7 +19,9 @@ const service = new CollectionService(prisma);
 
 if (values.daemon) {
   startCollectorScheduler(values.schedule);
-  process.stdout.write(`Collector scheduled: ${values.schedule ?? getEnv().COLLECTOR_CRON_SCHEDULE}\n`);
+  process.stdout.write(
+    `Collector scheduled: ${values.schedule ?? getEnv().COLLECTOR_CRON_SCHEDULE}\n`,
+  );
 } else {
   const result = values.repo
     ? await service.collectRepo(Number(values.repo), values['dry-run'])
@@ -28,6 +30,8 @@ if (values.daemon) {
       : (() => {
           throw new Error('Use --all, --repo <id>, or --daemon');
         })();
-  process.stdout.write(`${JSON.stringify(result, (_, value) => (typeof value === 'bigint' ? value.toString() : value), 2)}\n`);
+  process.stdout.write(
+    `${JSON.stringify(result, (_, value) => (typeof value === 'bigint' ? value.toString() : value), 2)}\n`,
+  );
   await prisma.$disconnect();
 }

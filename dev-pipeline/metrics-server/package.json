@@ -13,11 +13,18 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
+    "test:db": "vitest run --no-file-parallelism --testTimeout 60000 --retry 1 test/upsert.integration.test.ts test/metrics.integration.test.ts test/sync.integration.test.ts test/checkpoint.integration.test.ts test/collection-lock.integration.test.mjs test/repos-http.integration.test.ts test/organization-http.integration.test.ts test/team-metrics-http.integration.test.ts test/collection-jobs-http.integration.test.ts test/sync-management-http.integration.test.ts test/auth-session.integration.test.ts test/metrics-performance.integration.test.ts test/retention.integration.test.ts",
+    "test:adapter:e2e": "tsx scripts/verify-feishu-adapter.ts",
+    "benchmark:metrics": "tsx scripts/benchmark-metrics.ts",
+    "contract:generate": "tsx scripts/generate-api-contract.ts",
+    "contract:check": "tsx scripts/generate-api-contract.ts --check",
     "lint": "biome check src test",
     "prisma:prepare": "node scripts/prepare-prisma-schema.mjs",
-    "prisma:generate": "npm run prisma:prepare && prisma generate",
-    "prisma:push": "npm run prisma:prepare && prisma db push",
-    "prisma:migrate": "npm run prisma:prepare && prisma migrate deploy"
+    "prisma:generate": "node scripts/run-prisma.mjs generate",
+    "prisma:validate": "node scripts/run-prisma.mjs validate",
+    "prisma:verify-db": "node scripts/verify-database.mjs",
+    "prisma:push": "node scripts/run-prisma.mjs db push",
+    "prisma:migrate": "node scripts/run-prisma.mjs migrate deploy"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

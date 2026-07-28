@@ -9,4 +9,6 @@ keys/
 .env.*
 !.env.example
 metrics-server/.collector/
+metrics-website/playwright-report/
+metrics-website/test-results/
 *.tsbuildinfo

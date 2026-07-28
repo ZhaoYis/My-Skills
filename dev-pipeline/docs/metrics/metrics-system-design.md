@@ -151,7 +151,7 @@ dev-pipeline/
 - `@updatedAt` 只对 Prisma Client 层生效；数据库层 MySQL 用 `ON UPDATE CURRENT_TIMESTAMP`，Pg 用触发器 Prisma 自动创建
 - JSON 字段在 MySQL 映射为 `Json`，Pg 映射为 `JsonB`，Prisma 统一处理
 
-### 3.2 完整 Prisma Schema（13 张表）
+### 3.2 完整 Prisma Schema（14 张表）
 
 ```prisma
 // prisma/schema.prisma
@@ -1192,7 +1192,7 @@ async function medianCycleTime(devId: number): Promise<number> {
 | `prisma@^6` | Prisma CLI + Migrate（devDependency） |
 | `zod@4` | Schema 校验（与现有项目一致） |
 | `simple-git@3` | Git 操作封装 |
-| `node-cron@3` | Cron 定时调度 |
+| `node-cron@4` | Cron 定时调度 |
 | `pino@9` | 结构化日志 |
 | `dotenv@16` | 环境变量 |
 | `jsonwebtoken@9` | JWT 认证 |
@@ -1212,19 +1212,31 @@ async function medianCycleTime(devId: number): Promise<number> {
 
 ---
 
-## 8. 实施顺序
+## 8. 实施状态与验收门禁
 
-| 阶段 | 内容 | 预计 |
-|------|------|------|
-| ✅ **Phase 0: 指纹模板** | 生成生产 RSA key pair；仅将 `fp1` 公钥固化到项目模板；实现 RSA-OAEP 指纹生成和模板测试；私钥进入部署密钥系统 | 1 天 |
-| ✅ **Phase 1: 数据库基础** | 创建 `metrics-server/` 子项目；Prisma schema 定义（13 张表）；数据库连接与迁移生成 | 1-2 天 |
-| ✅ **Phase 2: 数据模型** | pipeline state v3 的 Zod schema；各表 repository 类（基于 Prisma Client）；单元测试 | 1-2 天 |
-| ✅ **Phase 3: 采集器引擎** | git-collector + state-extractor + fingerprint-verifier + upsert-engine；collection-service 编排；篡改与密钥错误集成测试 | 2-3 天 |
-| ✅ **Phase 4: API Server** | Express 中间件栈；认证/团队可见性中间件；CRUD 路由 | 2-3 天 |
-| ✅ **Phase 5: 指标服务** | metrics-service 聚合查询（Prisma Client + 原生 SQL，含 MySQL/Pg 差异处理）；所有 `/api/metrics/*` 端点 | 1-2 天 |
-| ✅ **Phase 6: 定时调度** | node-cron 定时器；采集锁机制 | 1 天 |
-| ✅ **Phase 7: Dashboard** | Next.js 脚手架；个人仪表盘 + 团队面板 + 管理页面；Recharts 图表 | 3-4 天 |
-| ✅ **Phase 8: 组织同步** | `POST /api/sync/org`；环境配置文档；MySQL/PostgreSQL 切换测试 | 2 天 |
+Phase 状态不再由文件存在或人工判断直接标记。每个 Phase 只有满足全部适用门禁后才能
+标记为“已验证”；不适用项必须在证据表说明原因。逐项命令、结果和关键文件见
+[M001-M020 验收证据](metrics-system-acceptance-evidence.md)。
+
+| 门禁 | 完成条件 |
+|------|---------|
+| 代码 | 约定功能已实现，lint、typecheck 和 API contract check 通过 |
+| 测试 | 相关 unit、Git、HTTP 和回归测试通过，失败/权限/边界场景有自动化覆盖 |
+| 文档 | README、部署、数据库、安全和运维说明与当前实现一致 |
+| DB | 适用任务完成 provider schema/migration 校验及真实数据库 integration/API 验证 |
+| UI | 适用任务完成 production build 及桌面/移动 Playwright 工作流；无 UI 的底层任务明确为不适用 |
+
+| 阶段 | 当前状态 | 交付范围 |
+|------|----------|----------|
+| **Phase 0: 指纹模板** | 已验证 | fp1 RSA-OAEP、可信链、临时密钥矩阵、轮换与事故文档 |
+| **Phase 1: 数据库基础** | 已验证 | 14 表 Prisma 模型、PostgreSQL/MySQL 独立 migration、provider 防交叉与 CI 矩阵 |
+| **Phase 2: 数据模型** | 已验证 | pipeline state v3、可信/历史/job/retention 字段、可注入数据端口；未使用 Repository 骨架已删除 |
+| **Phase 3: 采集器引擎** | 已验证 | Git checkpoint、100 commit 批次、冲突重试、持久 job、拒绝审计与恢复 |
+| **Phase 4: API Server** | 已验证 | 54 个契约端点、身份/团队权限、统一响应、request ID、健康检查和监控 |
+| **Phase 5: 指标服务** | 已验证 | 可信过滤、统一时间/仓库范围、批量团队聚合、provider-aware 百分位与缓存 |
+| **Phase 6: 定时调度** | 已验证 | 采集/retention scheduler、锁与超时恢复、运行状态和监控指标 |
+| **Phase 7: Dashboard** | 已验证 | 个人、团队、仓库、组织、采集、同步、认证与错误状态桌面/移动工作流 |
+| **Phase 8: 组织同步** | 已验证 | canonical DTO、原子全量 reconcile、dry-run、三类 adapter 与管理 UI |
 
 ### 数据保留策略（预设计，Phase 1 不实现）
 

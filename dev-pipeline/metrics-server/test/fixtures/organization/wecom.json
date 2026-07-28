@@ -1,0 +1,14 @@
+{
+  "departments": [
+    { "id": 1, "name": "Engineering", "parentid": 0 },
+    { "id": 2, "name": "Platform", "parentid": 1 }
+  ],
+  "users": [
+    {
+      "userid": "alice",
+      "name": "Alice",
+      "email": "alice@example.test",
+      "department": [2]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "groups": [
+    { "dn": "ou=engineering,dc=example,dc=test", "name": "Engineering" },
+    {
+      "dn": "ou=platform,ou=engineering,dc=example,dc=test",
+      "name": "Platform",
+      "parentDn": "ou=engineering,dc=example,dc=test"
+    }
+  ],
+  "users": [
+    {
+      "dn": "uid=alice,ou=people,dc=example,dc=test",
+      "mail": "alice@example.test",
+      "displayName": "Alice",
+      "groupDn": "ou=platform,ou=engineering,dc=example,dc=test"
+    }
+  ]
+}

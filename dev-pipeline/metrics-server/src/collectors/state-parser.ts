@@ -26,7 +26,11 @@ const reviewRound = z.object({
 export const pipelineStateSchema = z.object({
   schemaVersion: z.literal(3),
   _version: z.number().int().nonnegative(),
-  changeName: z.string().min(1).max(128).regex(/^[a-z][a-z0-9-]*(\/[a-z][a-z0-9-]*)*$/),
+  changeName: z
+    .string()
+    .min(1)
+    .max(128)
+    .regex(/^[a-z][a-z0-9-]*(\/[a-z][a-z0-9-]*)*$/),
   sourceBranch: z.string().min(1).max(255),
   targetBranch: z.string().max(255).nullable(),
   currentPhase: z.number().int().min(0).max(6),
@@ -43,7 +47,10 @@ export const pipelineStateSchema = z.object({
     arch: z.string().min(1).max(16),
   }),
   featureInfo: z
-    .object({ featureId: z.string().min(1).max(255), featureUrl: z.string().url().max(1024).nullable() })
+    .object({
+      featureId: z.string().min(1).max(255),
+      featureUrl: z.string().url().max(1024).nullable(),
+    })
     .nullable(),
   fingerprintId: z.string().min(1).max(512),
   fingerprintNonce: z.string().regex(/^[a-fA-F0-9]{8}$/),
@@ -71,8 +78,16 @@ export const pipelineStateSchema = z.object({
   archivePath: z.string().max(512).nullable(),
   delivery: z
     .object({
-      commitSha: z.string().regex(/^[a-f0-9]{40}$/i).nullable().optional(),
-      mergeCommitSha: z.string().regex(/^[a-f0-9]{40}$/i).nullable().optional(),
+      commitSha: z
+        .string()
+        .regex(/^[a-f0-9]{40}$/i)
+        .nullable()
+        .optional(),
+      mergeCommitSha: z
+        .string()
+        .regex(/^[a-f0-9]{40}$/i)
+        .nullable()
+        .optional(),
       sourcePushed: z.boolean().optional(),
       targetPushed: z.boolean().optional(),
       tag: z.string().max(255).nullable().optional(),
