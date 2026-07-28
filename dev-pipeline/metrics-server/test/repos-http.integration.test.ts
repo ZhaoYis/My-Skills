@@ -1,4 +1,7 @@
 import { generateKeyPairSync } from 'node:crypto';
+import { writeFileSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { Server } from 'node:http';
 import { PrismaClient } from '@prisma/client';
 import express from 'express';
@@ -18,6 +21,7 @@ let server: Server | undefined;
 let baseUrl = '';
 let repoId: number | undefined;
 let disconnectAppDatabase: (() => Promise<void>) | undefined;
+const tmpDir = mkdtempSync(join(tmpdir(), 'repos-http-test-'));
 let cleanupFixture: (() => Promise<void>) | undefined;
 let fixture: Awaited<ReturnType<typeof createGitRepositoryFixture>>;
 
@@ -54,15 +58,15 @@ describe.runIf(enabled)('repository administration HTTP contract', () => {
       privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
       publicKeyEncoding: { type: 'spki', format: 'pem' },
     });
+    const keyPath = join(tmpDir, 'private.pem');
+    writeFileSync(keyPath, privateKey);
     Object.assign(process.env, {
       NODE_ENV: 'test',
       DB_PROVIDER: 'postgresql',
       DATABASE_URL: process.env.TEST_DATABASE_URL,
       JWT_SECRET: jwtSecret,
       API_KEY: apiKey,
-      FINGERPRINT_PRIVATE_KEYS: JSON.stringify({
-        fp1: Buffer.from(privateKey).toString('base64'),
-      }),
+      FINGERPRINT_PRIVATE_KEYS_PATH: keyPath,
       COLLECTOR_TEMP_DIR: fixture.collector,
     });
     const [{ apiRouter }, { prisma }] = await Promise.all([

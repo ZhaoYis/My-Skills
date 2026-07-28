@@ -14,7 +14,7 @@ import {
 import { extractStates } from '../collectors/state-extractor.js';
 import { type PipelineState, parsePipelineState } from '../collectors/state-parser.js';
 import { upsertSnapshot } from '../collectors/upsert-engine.js';
-import { type Env, getEnv } from '../config/env.js';
+import { type Env, getEnv, loadFingerprintKeys } from '../config/env.js';
 import { observability } from '../observability/metrics.js';
 import { logger } from '../utils/logger.js';
 import { isRetryableTransactionError, withTransactionRetry } from '../utils/transaction-retry.js';
@@ -112,7 +112,7 @@ export class CollectionService {
     private readonly db: PrismaClient,
     private readonly env: Env = getEnv(),
   ) {
-    this.keys = parsePrivateKeyRing(env.FINGERPRINT_PRIVATE_KEYS);
+    this.keys = parsePrivateKeyRing(loadFingerprintKeys(env.FINGERPRINT_PRIVATE_KEYS_PATH));
   }
 
   async acquireLock(repoId: number): Promise<boolean> {

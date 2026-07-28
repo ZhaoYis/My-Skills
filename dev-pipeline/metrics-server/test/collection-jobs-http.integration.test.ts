@@ -1,4 +1,7 @@
 import { generateKeyPairSync } from 'node:crypto';
+import { writeFileSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { Server } from 'node:http';
 import { PrismaClient } from '@prisma/client';
 import express from 'express';
@@ -19,9 +22,9 @@ const apiKey = 'm011-collection-jobs-service-key';
 const jwtSecret = 'm011-collection-jobs-secret-at-least-32-characters';
 const repoName = 'm011-collection-jobs';
 const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
-const fingerprintKeys = JSON.stringify({
-  fp1: Buffer.from(privateKey.export({ format: 'pem', type: 'pkcs8' })).toString('base64'),
-});
+const tmpDir = mkdtempSync(join(tmpdir(), 'collection-jobs-'));
+const keyPath = join(tmpDir, 'private.pem');
+writeFileSync(keyPath, privateKey.export({ format: 'pem', type: 'pkcs8' }));
 let fixture: Awaited<ReturnType<typeof createGitRepositoryFixture>> | undefined;
 let repoId: number | undefined;
 let server: Server | undefined;
@@ -80,7 +83,7 @@ describe.runIf(enabled)('durable collection job HTTP contract', () => {
       DATABASE_URL: process.env.TEST_DATABASE_URL,
       JWT_SECRET: jwtSecret,
       API_KEY: apiKey,
-      FINGERPRINT_PRIVATE_KEYS: fingerprintKeys,
+      FINGERPRINT_PRIVATE_KEYS_PATH: keyPath,
       COLLECTOR_TEMP_DIR: fixture.collector,
       COLLECTOR_LOCK_TIMEOUT: '1000',
       COLLECTOR_CONCURRENCY: '1',
@@ -93,7 +96,7 @@ describe.runIf(enabled)('durable collection job HTTP contract', () => {
       DATABASE_URL: process.env.TEST_DATABASE_URL,
       JWT_SECRET: jwtSecret,
       API_KEY: apiKey,
-      FINGERPRINT_PRIVATE_KEYS: fingerprintKeys,
+      FINGERPRINT_PRIVATE_KEYS_PATH: keyPath,
       COLLECTOR_TEMP_DIR: fixture.collector,
       COLLECTOR_LOCK_TIMEOUT: '1000',
       COLLECTOR_CONCURRENCY: '1',
@@ -141,7 +144,7 @@ describe.runIf(enabled)('durable collection job HTTP contract', () => {
         DB_PROVIDER: 'postgresql',
         DATABASE_URL: process.env.TEST_DATABASE_URL,
         JWT_SECRET: jwtSecret,
-        FINGERPRINT_PRIVATE_KEYS: fingerprintKeys,
+        FINGERPRINT_PRIVATE_KEYS_PATH: keyPath,
         COLLECTOR_TEMP_DIR: requiredFixture().collector,
         COLLECTOR_LOCK_TIMEOUT: '1000',
         COLLECTOR_CONCURRENCY: '1',

@@ -1,7 +1,14 @@
 import 'dotenv/config';
-import { createHash } from 'node:crypto';
+import { createHash, createPrivateKey } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { z } from 'zod';
 import { parsePrivateKeyRing } from '../collectors/fingerprint-verifier.js';
+
+export function loadFingerprintKeys(path: string): string {
+  const pem = readFileSync(path, 'utf8');
+  createPrivateKey(pem);
+  return JSON.stringify({ fp1: Buffer.from(pem).toString('base64') });
+}
 
 const providerProtocols = {
   postgresql: new Set(['postgresql:', 'postgres:']),
@@ -69,7 +76,7 @@ const envSchema = z
       (value) => (value === '' ? undefined : value),
       z.coerce.number().int().positive().optional(),
     ),
-    FINGERPRINT_PRIVATE_KEYS: z.string().default('{}'),
+    FINGERPRINT_PRIVATE_KEYS_PATH: z.string().default('private.pem'),
     COLLECTOR_TEMP_DIR: z.string().default('.collector'),
     COLLECTOR_CRON_SCHEDULE: z.string().default('0 */4 * * *'),
     COLLECTOR_CONCURRENCY: z.coerce.number().int().min(1).max(16).default(2),
@@ -153,13 +160,13 @@ const envSchema = z
         }
       }
       try {
-        parsePrivateKeyRing(env.FINGERPRINT_PRIVATE_KEYS);
+        parsePrivateKeyRing(loadFingerprintKeys(env.FINGERPRINT_PRIVATE_KEYS_PATH));
       } catch {
         context.addIssue({
           code: 'custom',
-          path: ['FINGERPRINT_PRIVATE_KEYS'],
+          path: ['FINGERPRINT_PRIVATE_KEYS_PATH'],
           message:
-            'FINGERPRINT_PRIVATE_KEYS must contain a valid RSA-2048 fp1 private key in production',
+            'FINGERPRINT_PRIVATE_KEYS_PATH must point to a valid RSA-2048 private key file in production',
         });
       }
       const corsOrigins = env.CORS_ORIGIN.split(',').map((value) => value.trim());

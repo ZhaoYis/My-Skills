@@ -1,4 +1,7 @@
 import { generateKeyPairSync } from 'node:crypto';
+import { writeFileSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { PrismaClient } from '@prisma/client';
 import { afterAll, describe, expect, it } from 'vitest';
 import { parseEnv } from '../src/config/env.js';
@@ -11,12 +14,14 @@ const database = db as PrismaClient;
 let repoId: number | undefined;
 let cleanupFixture: (() => Promise<void>) | undefined;
 
+const tmpDir = mkdtempSync(join(tmpdir(), 'checkpoint-test-'));
+const keyPath = join(tmpDir, 'private.pem');
 const { privateKey } = generateKeyPairSync('rsa', {
   modulusLength: 2048,
   privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
   publicKeyEncoding: { type: 'spki', format: 'pem' },
 });
-const privateKeys = JSON.stringify({ fp1: Buffer.from(privateKey).toString('base64') });
+writeFileSync(keyPath, privateKey);
 
 describe.runIf(enabled)('collection checkpoint persistence', () => {
   it('advances to remote HEAD even when no relevant commits exist', async () => {
@@ -37,7 +42,7 @@ describe.runIf(enabled)('collection checkpoint persistence', () => {
         NODE_ENV: 'test',
         DATABASE_URL: process.env.TEST_DATABASE_URL,
         JWT_SECRET: 'checkpoint-test-secret-at-least-32-characters',
-        FINGERPRINT_PRIVATE_KEYS: privateKeys,
+        FINGERPRINT_PRIVATE_KEYS_PATH: keyPath,
         COLLECTOR_TEMP_DIR: fixture.collector,
       }),
     );

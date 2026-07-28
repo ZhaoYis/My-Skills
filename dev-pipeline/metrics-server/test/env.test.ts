@@ -1,7 +1,13 @@
 import { generateKeyPairSync } from 'node:crypto';
+import { writeFileSync, unlinkSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parseEnv } from '../src/config/env.js';
 import { hashServiceApiKey } from '../src/services/service-key-service.js';
+
+const tmpDir = mkdtempSync(join(tmpdir(), 'env-test-'));
+const keyPath = join(tmpDir, 'private.pem');
 
 const baseEnv = {
   NODE_ENV: 'test',
@@ -12,6 +18,7 @@ const { privateKey } = generateKeyPairSync('rsa', {
   privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
   publicKeyEncoding: { type: 'spki', format: 'pem' },
 });
+writeFileSync(keyPath, privateKey);
 const productionEnv = {
   ...baseEnv,
   NODE_ENV: 'production',
@@ -25,9 +32,7 @@ const productionEnv = {
       purposes: ['session-exchange', 'management'],
     },
   }),
-  FINGERPRINT_PRIVATE_KEYS: JSON.stringify({
-    fp1: Buffer.from(privateKey).toString('base64'),
-  }),
+  FINGERPRINT_PRIVATE_KEYS_PATH: keyPath,
   CORS_ORIGIN: 'https://metrics.corp.internal',
 };
 
@@ -163,23 +168,20 @@ describe('database environment validation', () => {
   );
 
   it('rejects missing, invalid, or undersized fingerprint keys in production', () => {
-    expect(() => parseEnv({ ...productionEnv, FINGERPRINT_PRIVATE_KEYS: '{}' })).toThrow(
-      'FINGERPRINT_PRIVATE_KEYS',
-    );
-    expect(() => parseEnv({ ...productionEnv, FINGERPRINT_PRIVATE_KEYS: '{not-json' })).toThrow(
-      'FINGERPRINT_PRIVATE_KEYS',
-    );
+    expect(() =>
+      parseEnv({ ...productionEnv, FINGERPRINT_PRIVATE_KEYS_PATH: '/nonexistent/key.pem' }),
+    ).toThrow('FINGERPRINT_PRIVATE_KEYS_PATH');
     const weak = generateKeyPairSync('rsa', {
       modulusLength: 1024,
       privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
       publicKeyEncoding: { type: 'spki', format: 'pem' },
     }).privateKey;
+    const weakPath = join(tmpDir, 'weak.pem');
+    writeFileSync(weakPath, weak);
     expect(() =>
       parseEnv({
         ...productionEnv,
-        FINGERPRINT_PRIVATE_KEYS: JSON.stringify({
-          fp1: Buffer.from(weak).toString('base64'),
-        }),
+        FINGERPRINT_PRIVATE_KEYS_PATH: weakPath,
       }),
     ).toThrow('RSA-2048');
   });
