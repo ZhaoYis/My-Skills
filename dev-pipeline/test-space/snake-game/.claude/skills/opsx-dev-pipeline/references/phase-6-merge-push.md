@@ -37,6 +37,7 @@ git remote -v
 ```bash
 git add -u
 git add openspec/
+git reset -- openspec/.pipeline-state/
 git status --porcelain
 ```
 
@@ -138,7 +139,12 @@ git push origin "<target-branch>"
 node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<name>" delivery.targetPushed true
 ```
 
+target push 成功后先进入 Step26；完成最终状态提交与 target push 后，再回到 Step25 执行分支清理和标签创建。
+
 ## Step25：源分支清理与标签
+
+> ⚠️ **merge 模式前置条件**：请确认 Step26 的状态提交与推送已完成，
+> 再继续本步骤创建 tag。确保 tag 覆盖完整的流水线状态文件。
 
 只有 target push 成功后才能进入本 Step。先验证 source 已包含在远程 target：
 
@@ -149,21 +155,124 @@ git merge-base --is-ancestor "<source-branch>" "origin/<target-branch>"
 
 分别询问是否删除本地和远程源分支。本地只允许 `git branch -d "<source-branch>"`；远程删除使用 `git push origin --delete "<source-branch>"`，不得使用强制删除兜底。
 
-标签必须基于 target HEAD。先校验标签不存在并展示目标提交，再分别确认创建和推送：
+标签必须基于 target HEAD。读取 Step26.1 已确认并写入 `delivery.tag` 的标签名：未记录标签名时明确跳过；已记录时先校验标签不存在并展示目标提交，再执行已获确认的创建动作，并单独确认是否推送：
 
 ```bash
 git rev-parse -q --verify "refs/tags/<tag-name>"
 git tag -a "<tag-name>" -m "<message>"
 git push origin "<tag-name>"
+```
+
+标签处理结束后回到 26.3 执行最终确认和摘要。
+
+## Step26：完成状态、提交流水线记录与摘要
+
+### 26.1 完成流水线
+
+只有以下交付结果之一成立时才执行 `complete`：仅本地提交完成、source push 完成、或 target push 完成。
+
+恢复执行时先读取状态，并检查最后一次状态提交和工作区差异：
+
+```bash
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<name>"
+git log -1 --format="%s" -- openspec/.pipeline-state/<name>.json
+git diff --quiet HEAD -- openspec/.pipeline-state/<name>.json
+```
+
+只有状态已经是 `completed`、commit message 包含 `finalize pipeline delivery state`，且 `git diff --quiet` 返回 0 时，才说明最终状态已完整提交，可跳过 26.1 和 26.2。否则继续执行；不要先重复调用 `complete`，以免仅因刷新 `updatedAt` 产生多余提交。
+
+**merge 模式标签准备**：在 `complete` 前询问是否创建标签。选择标签时先校验名称与不存在性，展示将要标记的 target HEAD，并单独询问 `确认创建标签` / `不创建标签` / `终止流程`。确认创建后先记录标签名；实际 `git tag` 必须等 26.2 的状态提交和 26.3 的 target push 完成后，回到 Step25 执行：
+
+```bash
+git check-ref-format "refs/tags/<tag-name>"
+git rev-parse -q --verify "refs/tags/<tag-name>"
 node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<name>" delivery.tag '"<tag-name>"'
 ```
 
-## Step26：完成状态与摘要
-
-只有以下交付结果之一成立时才执行 `complete`：仅本地提交完成、source push 完成、或 target push 完成。
+这样最终状态提交会包含计划创建的标签名，而实际标签仍指向该最终状态提交。未选择标签时保持 `delivery.tag=null`。
 
 ```bash
 node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs complete "<name>"
 ```
 
-展示 change、归档路径、审查报告、测试/verify 结果、各决策、提交 SHA、source/target push、合并策略、分支清理和标签结果。跳过项明确标记，不得用“完成”掩盖暂停或失败。
+### 26.2 提交最终流水线状态
+
+> ⚠️ **merge 模式**：请在本步骤（提交状态 + push）完成后再执行 Step25 创建 tag，
+> 确保 tag 覆盖完整的流水线状态文件。
+
+Steps 22-26 均修改了 `openspec/.pipeline-state/<name>.json`
+（记录 push、合并、标签和完成状态），但 Step21 的提交已将 `.pipeline-state/` 排除。
+必须创建一个独立的提交将这些变更纳入仓库。
+
+1. **幂等性检查**——确认状态文件是否已被提交：
+
+   ```bash
+   git log -1 --format="%s" -- openspec/.pipeline-state/<name>.json
+   git diff --quiet HEAD -- openspec/.pipeline-state/<name>.json
+   ```
+
+   如果返回的 commit message 包含 `finalize pipeline delivery state`，且 `git diff --quiet` 返回 0，
+   说明状态已提交过 → 跳过 26.2，直接进入 26.3。
+   如果返回其他提交、空（文件从未被 commit），或状态文件仍有差异，继续执行以下步骤。
+
+2. 展示状态文件变更：
+
+   ```bash
+   git diff HEAD -- openspec/.pipeline-state/<name>.json
+   ```
+
+3. 确认当前分支（恢复上下文）：
+   - **local-only** 或 **push-only** 应位于 source branch。
+   - **merge** 应位于 target branch。
+   分支不符合预期时暂停并询问。
+
+4. **询问**：`确认提交最终流水线状态` / `终止流程`。确认后备注“用户已确认提交状态文件”并继续。
+
+   > 注意：不提供“跳过”选项——`.pipeline-state` 是统计与看板的数据源，跳过即数据丢失。
+
+5. 暂存并检查：
+
+   ```bash
+   git add -f -- openspec/.pipeline-state/<name>.json
+   git diff --cached --name-only
+   ```
+
+   如果输出多于一个文件，暂停并询问用户：是只提交状态文件（`git reset` 其他文件），还是一起提交。
+
+6. 提交：
+
+   ```bash
+   # 将 <change-name> 替换为当前 change 的实际名称（即 get "<name>" 中的 name）
+   git commit -m "chore(<change-name>): finalize pipeline delivery state"
+   ```
+
+   hook 失败时修复后重试；`--no-verify` 必须作为新的高风险决策单独确认。
+
+### 26.3 推送与摘要
+
+1. **推送**按交付模式决定：
+
+   - **local-only**：不推送，进入摘要。
+   - **push-only**：询问 `推送最终状态到 source branch` / `终止流程`。确认后：
+     ```bash
+     git push origin "<source-branch>"
+     ```
+   - **merge**：询问 `推送最终状态到 target branch` / `终止流程`。确认后：
+     ```bash
+     git push origin "<target-branch>"
+     ```
+     推送成功后进入 Step25；标签处理结束后返回本节继续最终确认和摘要。
+
+   推送失败不得自动 rebase。先 fetch 并展示 ahead/behind，
+   再询问 `pull --rebase`、保持本地等待人工处理或终止。
+   若最终无法推送成功，调用 `pause "<name>" "state-commit-push-failed"`。
+
+2. **推送成功后最终确认**：
+
+   ```bash
+   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<name>"
+   ```
+
+3. **展示摘要**：change、归档路径、审查报告、测试/verify 结果、各决策、提交 SHA、
+   source/target push、合并策略、分支清理和标签结果。
+   跳过项明确标记，不得用“完成”掩盖暂停或失败。

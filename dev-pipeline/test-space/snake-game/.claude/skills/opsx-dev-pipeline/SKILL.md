@@ -2,7 +2,7 @@
 name: opsx-dev-pipeline
 description: 执行基于 OpenSpec 和 Git 的门禁式需求开发与交付流程，覆盖预检、提案确认、实现、代码审查、测试、验证归档、提交、推送与合并，并支持中断恢复。用户要求实现或继续一个 OpenSpec change、按阶段推进完整开发流水线、审查并交付变更，或处理 opsx-dev-pipeline 时使用。
 allowed-tools: Bash(openspec:*), AskUserQuestion
-version: "0.2.4"
+version: "0.2.5"
 license: "MIT"
 repository: "git+https://github.com/ZhaoYis/My-Skills.git"
 ---
@@ -22,6 +22,7 @@ repository: "git+https://github.com/ZhaoYis/My-Skills.git"
 - 决策点首选 **AskUserQuestion** tool；不可用时改用编号选项列表并等待用户回复，不得自动代选。
 - 任务跟踪首选宿主提供的任务工具；不可用时在回复中维护等价 Markdown 清单，并将阶段、决策和门禁结果写入流水线状态文件。
 - 未经决策点 1 用户明确选择「确认提案，开始实施」，禁止进入 Phase2。
+- 代码审查发现问题后，选择「生成修复提案并应用」时必须先创建修复提案文档（`fix-proposal-round-N.md`）并等待用户确认，禁止跳过提案直接修改代码。修复提案路径通过 `decision fixProposalPath` 记录。
 - 代码审查修复循环最多 3 轮，超过后强制暂停。
 - 暂停/终止时展示：change 名称、中断阶段、各 Phase完成状态、恢复指引（重新触发技能并传入 change 名称即可续跑）。
 - 进入 Phase 时先读取对应 reference；完成决策或门禁后先写入状态，再执行阶段迁移。
@@ -40,18 +41,18 @@ repository: "git+https://github.com/ZhaoYis/My-Skills.git"
 
 - 新 change：先按 Phase0 获取用户明确的需求关联决定，再运行 `init "<change>" "<source-branch>" --feature-id "<featureId>"`（有 URL 时追加 `--feature-url "<featureUrl>"`）或 `init "<change>" "<source-branch>" --skip-feature-association`
 - 读取状态：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<change>"`
-- 确认迁移 v1：先运行 `migrate-schema "<change>"` 获取确认提示，用户同意后运行 `migrate-schema "<change>" --confirm`
+- 确认迁移旧版 Schema：先运行 `migrate-schema "<change>"` 获取确认提示，用户同意后运行 `migrate-schema "<change>" --confirm`
 - 阶段审计开始：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs record-phase "<change>" <phase> <step> <executed-by> --start`
 - 阶段审计完成：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs record-phase "<change>" <phase> <step> <executed-by> [bypassed-gates...]`
 - 阶段审计放弃：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs record-phase "<change>" <phase> <step> <executed-by> --abandon`
 - 记录决策：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<change>" <key> <json-value>`
 - 记录结果：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<change>" <field> <json-value>`
-- 记录尝试：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs attempt "<change>" <review|tests|verify> <status>`
+- 记录尝试：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs attempt "<change>" <review|tests|verify> <status>`；`review` scope 每次会向 `review.rounds` 追加含报告路径、结果、时间和当前 decisions 快照的条目
 - 阶段迁移：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<change>" <phase> <step>`
 - 暂停流程：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs pause "<change>" "<reason>"`
 - 完成交付：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs complete "<change>"`
 
-Schema v2 使用 `_version` 做乐观锁；`executionMode` 仅作为 `pipeline` / `standalone` / `hybrid` 的执行来源审计标记，不影响阶段迁移和门禁验证；`phaseHistory` 和 `gatesBypassed` 提供独立命令审计。任何状态命令返回 exit code 10/11/12 时，按“状态不存在 / 非法迁移或 gate / I/O 或并发冲突”处理；并发冲突只重载重试一次，仍失败则暂停。写入后必须用 `get` 对比预期关键字段。
+Schema v3 使用 `_version` 做乐观锁，并以 `review.currentRound` / `review.rounds` 保存审查历史；`executionMode` 仅作为 `pipeline` / `standalone` / `hybrid` 的执行来源审计标记，不影响阶段迁移和门禁验证；`phaseHistory` 和 `gatesBypassed` 提供独立命令审计。任何状态命令返回 exit code 10/11/12 时，按“状态不存在 / 非法迁移或 gate / I/O 或并发冲突”处理；并发冲突只重载重试一次，仍失败则暂停。写入后必须用 `get` 对比预期关键字段。
 
 ## Phase引用表
 
