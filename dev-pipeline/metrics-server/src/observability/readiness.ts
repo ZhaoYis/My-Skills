@@ -1,6 +1,6 @@
 import { parsePrivateKeyRing } from '../collectors/fingerprint-verifier.js';
 import { prisma } from '../config/database.js';
-import { type Env, getEnv } from '../config/env.js';
+import { type Env, getEnv, loadFingerprintKeys } from '../config/env.js';
 
 export interface ReadinessResult {
   ready: boolean;
@@ -15,7 +15,7 @@ export type DatabaseProbe = () => Promise<void>;
 
 export function criticalConfigurationReady(env: Env) {
   try {
-    parsePrivateKeyRing(env.FINGERPRINT_PRIVATE_KEYS);
+    parsePrivateKeyRing(loadFingerprintKeys(env.FINGERPRINT_PRIVATE_KEYS_PATH));
     return true;
   } catch {
     return false;

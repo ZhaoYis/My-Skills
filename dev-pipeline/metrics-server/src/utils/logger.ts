@@ -12,6 +12,7 @@ export const logger = pino({
       'apiKey',
       'DATABASE_URL',
       'JWT_SECRET',
+      'FINGERPRINT_PRIVATE_KEYS_PATH',
       'FINGERPRINT_PRIVATE_KEYS',
       'privateKey',
       '*.privateKey',

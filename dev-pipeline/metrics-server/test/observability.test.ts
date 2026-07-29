@@ -1,4 +1,7 @@
 import { generateKeyPairSync } from 'node:crypto';
+import { writeFileSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { Server } from 'node:http';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { parseEnv } from '../src/config/env.js';
@@ -13,6 +16,8 @@ const requestLog = {
 const metrics = new ObservabilityRegistry();
 let server: Server;
 let baseUrl = '';
+const tmpDir = mkdtempSync(join(tmpdir(), 'observability-test-'));
+const keyPath = join(tmpDir, 'private.pem');
 
 beforeAll(async () => {
   const { privateKey } = generateKeyPairSync('rsa', {
@@ -20,15 +25,14 @@ beforeAll(async () => {
     privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
     publicKeyEncoding: { type: 'spki', format: 'pem' },
   });
+  writeFileSync(keyPath, privateKey);
   Object.assign(process.env, {
     NODE_ENV: 'test',
     DB_PROVIDER: 'postgresql',
     DATABASE_URL: 'postgresql://postgres:password@localhost:5432/metrics',
     JWT_SECRET: 'observability-test-secret-at-least-32-characters',
     API_KEY: 'observability-service-key',
-    FINGERPRINT_PRIVATE_KEYS: JSON.stringify({
-      fp1: Buffer.from(privateKey).toString('base64'),
-    }),
+    FINGERPRINT_PRIVATE_KEYS_PATH: keyPath,
   });
   const { createApp } = await import('../src/server.js');
   const app = createApp({
@@ -98,7 +102,7 @@ describe('HTTP observability and health probes', () => {
     await expect(
       checkReadiness(async () => undefined, {
         ...env,
-        FINGERPRINT_PRIVATE_KEYS: '{}',
+        FINGERPRINT_PRIVATE_KEYS_PATH: '/nonexistent/key.pem',
       }),
     ).resolves.toMatchObject({
       ready: false,

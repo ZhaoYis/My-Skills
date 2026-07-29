@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process';
 import crypto from 'node:crypto';
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { emitError, findOpenSpecRoot, validateChangeName } from './pipeline-lib.mjs';
@@ -9,6 +9,15 @@ const EXIT_STATE_NOT_FOUND = 10;
 const EXIT_INVALID_TRANSITION = 11;
 const EXIT_STATE_IO = 12;
 const SCHEMA_VERSION = 3;
+const FINGERPRINT_PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxR/G1SNplC+T3pbvMW06
+77fPiNqn9VA7Kg0xCTW39QXwsKgVnQaqlG2cu/kkK2BXgP+SQVVz41Mfwrt7ZqqX
+zKFI+5uDPo7seAJa1e1Gyy8X9QOx5KahR8ZAT2qHZzsTt8kRHE5hpFf87E/BO4T7
+h1WsRB2CVBrcYryj9SD5pLcDquMf54Nv1QYfziNStiFDPaGDuUmVlUc6GQSv/i/Y
+o31rNlo04ct2GClECDv5e2gyHKQ5Jbe+E6He81Svyw74+jHUZzUETXbdQmv5wNhM
+cAPXRbQzWgK+LyZrJ3wCEinBfrWVzTRJ2qDX6CZWa1//S1lrpA8VsrMMU7il15HK
+tQIDAQAB
+-----END PUBLIC KEY-----`;
 
 const mutablePaths = new Set([
   'sourceBranch',
@@ -106,9 +115,160 @@ function formatLocalTime(date = new Date()) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
-function computeFingerprint(createdAt, createdBy, createdByEmail, changeName, hostname, featureId, nonce) {
-  const input = `${createdAt}|${createdBy}|${createdByEmail || ''}|${changeName}|${hostname}|${featureId || ''}|${nonce}`;
-  return crypto.createHash('md5').update(input).digest('hex');
+function canonicalizeFingerprintFields(fields) {
+  return JSON.stringify({
+    schemaVersion: fields.schemaVersion,
+    changeName: fields.changeName,
+    createdAt: fields.createdAt,
+    createdBy: fields.createdBy,
+    createdByEmail: fields.createdByEmail || '',
+    machineInfo: fields.machineInfo,
+    featureId: fields.featureId || '',
+    fingerprintNonce: fields.fingerprintNonce,
+  });
+}
+
+function computeFingerprint(fields) {
+  const digest = crypto
+    .createHash('sha256')
+    .update(canonicalizeFingerprintFields(fields), 'utf8')
+    .digest();
+  const ciphertext = crypto.publicEncrypt(
+    {
+      key: FINGERPRINT_PUBLIC_KEY_PEM,
+      padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+      oaepHash: 'sha256',
+    },
+    digest,
+  );
+  return `fp1.${ciphertext.toString('base64url')}`;
+}
+
+function fingerprintFieldsFromState(state) {
+  return {
+    schemaVersion: state.schemaVersion,
+    changeName: state.changeName,
+    createdAt: state.createdAt,
+    createdBy: state.createdBy,
+    createdByEmail: state.createdByEmail || '',
+    machineInfo: state.machineInfo,
+    featureId: state.featureInfo?.featureId || '',
+    fingerprintNonce: state.fingerprintNonce,
+  };
+}
+
+function isCurrentFingerprintId(value) {
+  if (typeof value !== 'string' || !/^fp1\.[A-Za-z0-9_-]{342}$/.test(value)) return false;
+  return Buffer.from(value.slice('fp1.'.length), 'base64url').length === 256;
+}
+
+function hasRefreshableFingerprint(state) {
+  return (
+    state &&
+    typeof state === 'object' &&
+    Number.isInteger(state.schemaVersion) &&
+    typeof state.changeName === 'string' &&
+    state.changeName.length > 0 &&
+    typeof state.createdAt === 'string' &&
+    state.createdAt.length > 0 &&
+    typeof state.createdBy === 'string' &&
+    state.createdBy.length > 0 &&
+    state.machineInfo &&
+    typeof state.machineInfo === 'object' &&
+    !Array.isArray(state.machineInfo) &&
+    typeof state.fingerprintNonce === 'string' &&
+    state.fingerprintNonce.length > 0
+  );
+}
+
+async function refreshFingerprints(root, dryRun) {
+  const directory = path.join(root, 'openspec', '.pipeline-state');
+  let entries;
+  try {
+    entries = await readdir(directory, { withFileTypes: true });
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      output({
+        status: 'ok',
+        reason: 'pipeline-state-directory-not-found',
+        detected: 0,
+        compliant: 0,
+        eligible: 0,
+        refreshed: 0,
+        skipped: 0,
+        dryRun,
+      });
+      return;
+    }
+    emitError(
+      'pipeline-state-scan-failed',
+      `无法扫描流水线状态目录：${String(error)}`,
+      'check-pipeline-state-directory',
+      EXIT_STATE_IO,
+    );
+    return;
+  }
+
+  const files = entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.json'))
+    .map((entry) => path.join(directory, entry.name))
+    .sort();
+  const states = [];
+  for (const file of files) {
+    try {
+      states.push({ file, state: JSON.parse(await readFile(file, 'utf8')) });
+    } catch (error) {
+      emitError(
+        'pipeline-state-invalid',
+        `无法读取流水线状态 ${path.basename(file)}：${String(error)}`,
+        'repair-state-file-and-retry-upgrade',
+        EXIT_STATE_IO,
+      );
+      return;
+    }
+  }
+
+  const compliant = states.filter(({ state }) => isCurrentFingerprintId(state?.fingerprintId));
+  const refreshable = states.filter(
+    ({ state }) =>
+      !isCurrentFingerprintId(state?.fingerprintId) && hasRefreshableFingerprint(state),
+  );
+  const updates = refreshable.map(({ file, state }) => ({
+    file,
+    state: {
+      ...state,
+      fingerprintId: computeFingerprint(fingerprintFieldsFromState(state)),
+    },
+  }));
+
+  if (!dryRun) {
+    for (const { file, state } of updates) {
+      const temporary = `${file}.${process.pid}.tmp`;
+      try {
+        await writeFile(temporary, `${JSON.stringify(state, null, 2)}\n`, { mode: 0o600 });
+        await rename(temporary, file);
+      } catch (error) {
+        emitError(
+          'pipeline-state-write-failed',
+          `无法更新流水线状态 ${path.basename(file)}：${String(error)}`,
+          'check-file-permissions-and-retry-upgrade',
+          EXIT_STATE_IO,
+        );
+        return;
+      }
+    }
+  }
+
+  output({
+    status: 'ok',
+    reason: dryRun ? 'fingerprint-refresh-preview' : 'fingerprints-refreshed',
+    detected: states.length,
+    compliant: compliant.length,
+    eligible: refreshable.length,
+    refreshed: dryRun ? 0 : updates.length,
+    skipped: states.length - compliant.length - refreshable.length,
+    dryRun,
+  });
 }
 
 function ensureMetaFields(state) {
@@ -411,19 +571,36 @@ const attemptRules = {
   verify: { statuses: ['passed', 'failed'], failureStatus: 'failed', counter: 'attempts' },
 };
 
-const [command, changeName, ...args] = process.argv.slice(2);
+const [command, ...commandArgs] = process.argv.slice(2);
 if (!command) {
   emitError(
     'missing-command',
-    '用法：dev-pipeline-state.mjs <init|get|decision|set|attempt|record-phase|migrate-schema|transition|pause|complete> <change>',
+    '用法：dev-pipeline-state.mjs <init|get|decision|set|attempt|record-phase|migrate-schema|transition|pause|complete> <change>，或 refresh-fingerprints <project-root> [--dry-run]',
     'provide-state-command',
     EXIT_INVALID_TRANSITION,
   );
 } else {
-  validateChangeName(changeName, EXIT_INVALID_TRANSITION);
-  const root = findOpenSpecRoot();
+  const [changeName, ...args] = commandArgs;
+  const refreshAllFingerprints = command === 'refresh-fingerprints';
+  let root;
+  if (refreshAllFingerprints) {
+    if (!changeName) {
+      emitError(
+        'missing-project-root',
+        'refresh-fingerprints 需要项目根目录',
+        'provide-project-root',
+        EXIT_INVALID_TRANSITION,
+      );
+    }
+    root = path.resolve(changeName);
+  } else {
+    validateChangeName(changeName, EXIT_INVALID_TRANSITION);
+    root = findOpenSpecRoot();
+  }
   if (root) {
-    if (command === 'init') {
+    if (refreshAllFingerprints) {
+      await refreshFingerprints(root, args.includes('--dry-run'));
+    } else if (command === 'init') {
       let existingState = null;
       try {
         existingState = await tryReadState(root, changeName);
@@ -470,6 +647,7 @@ if (!command) {
         } else {
           const now = formatLocalTime();
           const nonce = crypto.randomBytes(4).toString('hex');
+          const machineInfo = collectMachineInfo();
           const state = {
             schemaVersion: SCHEMA_VERSION,
             _version: 0,
@@ -482,9 +660,18 @@ if (!command) {
             executionMode: 'pipeline',
             createdBy,
             createdByEmail,
-            machineInfo: collectMachineInfo(),
+            machineInfo,
             featureInfo: featureId ? { featureId, featureUrl } : null,
-            fingerprintId: computeFingerprint(now, createdBy, createdByEmail, changeName, os.hostname(), featureId, nonce),
+            fingerprintId: computeFingerprint({
+              schemaVersion: SCHEMA_VERSION,
+              changeName,
+              createdAt: now,
+              createdBy,
+              createdByEmail,
+              machineInfo,
+              featureId,
+              fingerprintNonce: nonce,
+            }),
             fingerprintNonce: nonce,
             phaseHistory: [
               {

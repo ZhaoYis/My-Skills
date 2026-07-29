@@ -11,7 +11,7 @@
     "docs",
     "schema"
   ],
-  "templateVersion": "0.2.4",
+  "templateVersion": "0.2.5",
   "packageName": "opsx-dev-pipeline",
   "managedAssets": [
     {

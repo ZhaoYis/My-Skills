@@ -1,4 +1,7 @@
 import { generateKeyPairSync } from 'node:crypto';
+import { writeFileSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { PrismaClient } from '@prisma/client';
 import { afterAll, describe, expect, it } from 'vitest';
 import { CollectionService } from '../src/services/collection-service.ts';
@@ -12,6 +15,9 @@ const { privateKey } = generateKeyPairSync('rsa', {
   privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
   publicKeyEncoding: { type: 'spki', format: 'pem' },
 });
+const tmpDir = mkdtempSync(join(tmpdir(), 'collection-lock-'));
+const keyPath = join(tmpDir, 'private.pem');
+writeFileSync(keyPath, privateKey);
 
 const env = {
   NODE_ENV: 'test',
@@ -19,7 +25,7 @@ const env = {
   DB_PROVIDER: 'postgresql',
   DATABASE_URL: process.env.TEST_DATABASE_URL || 'postgresql://localhost/test',
   JWT_SECRET: '01234567890123456789012345678901',
-  FINGERPRINT_PRIVATE_KEYS: JSON.stringify({ fp1: Buffer.from(privateKey).toString('base64') }),
+  FINGERPRINT_PRIVATE_KEYS_PATH: keyPath,
   COLLECTOR_TEMP_DIR: '.collector',
   COLLECTOR_CRON_SCHEDULE: '0 */4 * * *',
   COLLECTOR_CONCURRENCY: 2,

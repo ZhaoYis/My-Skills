@@ -57,7 +57,7 @@ export function parsePrivateKeyRing(serialized: string): PrivateKeyRing {
     }
     ring.set(version, pem);
   }
-  if (!ring.has('fp1')) throw new Error('FINGERPRINT_PRIVATE_KEYS must include a valid fp1 key');
+  if (!ring.has('fp1')) throw new Error('FINGERPRINT_PRIVATE_KEYS_PATH must point to a valid RSA-2048 private key file');
   return ring;
 }
 
