@@ -83,6 +83,10 @@ const toolExpectations = {
     { path: '.claude/skills/opsx-dev-pipeline/scripts/preflight.mjs', present: true },
     { path: '.claude/skills/opsx-dev-pipeline/scripts/archive.mjs', present: true },
     { path: '.claude/skills/opsx-dev-pipeline/agents/openai.yaml', present: true },
+    { path: '.claude/skills/grill-me/SKILL.md', present: true },
+    { path: '.claude/skills/grill-me/agents/openai.yaml', present: true },
+    { path: '.claude/skills/grilling/SKILL.md', present: true },
+    { path: '.claude/skills/grilling/agents/openai.yaml', present: true },
     { path: '.claude/commands/opsx-dev-pipeline.md', present: true },
     ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore'].map((command) => ({
       path: `.claude/commands/opsx/${command}.md`,
@@ -97,6 +101,10 @@ const toolExpectations = {
     { path: '.cursor/rules/opsx-dev-pipeline/scripts/preflight.mjs', present: true },
     { path: '.cursor/rules/opsx-dev-pipeline/scripts/archive.mjs', present: true },
     { path: '.cursor/rules/opsx-dev-pipeline/agents/openai.yaml', present: true },
+    { path: '.cursor/rules/grill-me/SKILL.md', present: true },
+    { path: '.cursor/rules/grill-me/agents/openai.yaml', present: true },
+    { path: '.cursor/rules/grilling/SKILL.md', present: true },
+    { path: '.cursor/rules/grilling/agents/openai.yaml', present: true },
     { path: '.cursor/commands/opsx-dev-pipeline.md', present: true },
     ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore'].map((command) => ({
       path: `.cursor/commands/opsx/${command}.md`,
@@ -112,6 +120,10 @@ const toolExpectations = {
     { path: '.codex/prompts/opsx-dev-pipeline/scripts/preflight.mjs', present: true },
     { path: '.codex/prompts/opsx-dev-pipeline/scripts/archive.mjs', present: true },
     { path: '.codex/prompts/opsx-dev-pipeline/agents/openai.yaml', present: true },
+    { path: '.codex/prompts/grill-me/SKILL.md', present: true },
+    { path: '.codex/prompts/grill-me/agents/openai.yaml', present: true },
+    { path: '.codex/prompts/grilling/SKILL.md', present: true },
+    { path: '.codex/prompts/grilling/agents/openai.yaml', present: true },
     { path: '.codex/commands/opsx-dev-pipeline.md', present: true },
     ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore'].map((command) => ({
       path: `.codex/commands/opsx/${command}.md`,

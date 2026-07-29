@@ -90,6 +90,7 @@ my-project/
 | -------------------- | ------- | ------------------------------------ |
 | `/opsx-dev-pipeline` | 启动完整流水线 | 基于探索结论，从 Phase 0 到 Phase 6 全流程       |
 | `/opsx:explore`      | 需求探索    | 在正式创建变更前，深入理解需求、分析现有代码、评估技术方案        |
+| `/opsx:grill-me`     | 思路拷问    | 对需求方案进行深度拷问，逐一排查决策分支、发现盲区，验证思路是否完备  |
 | `/opsx:propose`      | 创建变更提案  | 生成 proposal + specs + design + tasks |
 | `/opsx:apply`        | 按任务实施   | 逐条实施 tasks.md 中的任务                   |
 | `/opsx:verify`       | 校验一致性   | 检查实现与规范的匹配度                          |
@@ -116,6 +117,24 @@ my-project/
 3. 评估与现有功能的兼容性和影响范围
 4. 输出探索结论，为后续提案提供充分上下文
 
+**探索之后，不确定方案是否完备？**
+
+当你面对以下情况时，建议在探索后追加 `/opsx:grill-me` 进行思路拷问：
+
+- 需求本身不够清晰，需要梳理想法
+- 担心方案有遗漏的边界情况或盲区
+- 技术选型或架构设计需要多角度推敲
+- 想确认自己"没想漏什么"
+
+**拷问阶段 AI 会做什么：**
+
+1. 逐一追问每个决策分支的依赖关系和约束条件
+2. 从安全、性能、可维护性、兼容性等维度挑战你的方案
+3. 帮你发现"没想到的问题"，而不是替你决策
+4. 最终达成共识，输出一份经得起推敲的方案
+
+> `/opsx:grill-me` 不会创建任何变更，只是一个纯粹的思维碰撞环节。考问完成后再进入提案，方案质量会显著提升。
+
 ---
 
 
@@ -126,14 +145,15 @@ my-project/
 
 ```mermaid
 flowchart LR
-    A["/opsx:explore<br/>需求探索"] --> B["/opsx-dev-pipeline<br/>发起流水线"]
-    B --> C["Phase 0<br/>预检"]
-    C --> D["Phase 1<br/>提案"]
-    D --> E["Phase 2<br/>实施"]
-    E --> F["Phase 3<br/>审查"]
-    F --> G["Phase 4<br/>单测"]
-    G --> H["Phase 5<br/>归档"]
-    H --> I["Phase 6<br/>交付"]
+    A["/opsx:explore<br/>需求探索"] --> B["/opsx:grill-me<br/>思路拷问（可选）"]
+    B --> C["/opsx-dev-pipeline<br/>发起流水线"]
+    C --> D["Phase 0<br/>预检"]
+    D --> E["Phase 1<br/>提案"]
+    E --> F["Phase 2<br/>实施"]
+    F --> G["Phase 3<br/>审查"]
+    G --> H["Phase 4<br/>单测"]
+    H --> I["Phase 5<br/>归档"]
+    I --> J["Phase 6<br/>交付"]
 ```
 
 
@@ -153,7 +173,13 @@ flowchart LR
 # - 确认与现有功能的兼容性和影响范围
 # - 输出探索结论，为后续提案提供充分上下文
 
-# 第二步：基于探索结论，启动完整流水线
+# 第二步（可选）：思路拷问 — 对方案进行深度推敲，发现盲区
+/opsx:grill-me
+
+# 拷问阶段 AI 会逐一追问每个决策分支，帮你发现"没想到的问题"
+# 确认方案完备后，再进入流水线
+
+# 第三步：基于探索结论（和拷问结果），启动完整流水线
 /opsx-dev-pipeline "基于刚才的探索结果，给 Todo 添加 dueDate 字段和过期提醒功能"
 
 # 流水线会自动执行：
@@ -182,12 +208,13 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    A["/opsx:explore<br/>需求探索"] --> B["/opsx:propose<br/>创建提案"]
-    B --> C["审阅提案<br/>proposal/specs/tasks"]
-    C --> D["/opsx:apply<br/>实施代码"]
-    D --> E["审阅代码<br/>检查实现"]
-    E --> F["/opsx:verify<br/>校验一致性"]
-    F --> G["/opsx:archive<br/>归档变更"]
+    A["/opsx:explore<br/>需求探索"] --> B["/opsx:grill-me<br/>思路拷问（可选）"]
+    B --> C["/opsx:propose<br/>创建提案"]
+    C --> D["审阅提案<br/>proposal/specs/tasks"]
+    D --> E["/opsx:apply<br/>实施代码"]
+    E --> F["审阅代码<br/>检查实现"]
+    F --> G["/opsx:verify<br/>校验一致性"]
+    G --> H["/opsx:archive<br/>归档变更"]
 ```
 
 
@@ -198,10 +225,11 @@ flowchart LR
 | 步骤    | 命令                          | 产出                                        | 对应流水线阶段        |
 | ----- | --------------------------- | ----------------------------------------- | -------------- |
 | 1. 探索 | `/opsx:explore "需求"`        | 探索结论（代码分析、方案评估）                           | Explore        |
-| 2. 提案 | `/opsx:propose "基于探索结论的需求"` | proposal.md, spec.md, design.md, tasks.md | Phase 1        |
-| 3. 实施 | `/opsx:apply`               | 代码变更，任务逐条勾选完成                             | Phase 2        |
-| 4. 校验 | `/opsx:verify`              | 一致性检查报告                                   | Phase 5 verify |
-| 5. 归档 | `/opsx:archive`             | Delta Specs 合并到主规范                        | Phase 5        |
+| 2. 拷问 | `/opsx:grill-me`（可选）       | 思路拷问与方案推敲，发现盲区、验证完备性                      | Grill          |
+| 3. 提案 | `/opsx:propose "基于探索结论的需求"` | proposal.md, spec.md, design.md, tasks.md | Phase 1        |
+| 4. 实施 | `/opsx:apply`               | 代码变更，任务逐条勾选完成                             | Phase 2        |
+| 5. 校验 | `/opsx:verify`              | 一致性检查报告                                   | Phase 5 verify |
+| 6. 归档 | `/opsx:archive`             | Delta Specs 合并到主规范                        | Phase 5        |
 
 
 **完整示例：**
@@ -216,7 +244,17 @@ flowchart LR
 # - 需要修改 Todo 模型、API 接口、前端表单 3 个模块
 # - 无兼容性风险，现有测试 12 个
 
-# 步骤 2：创建提案 — 基于探索结论生成规范
+# 步骤 2（可选）：思路拷问 — 对探索结论进行深度推敲
+/opsx:grill-me
+
+# AI 会逐条追问：
+# - "过期时间用 UTC 还是用户本地时区？如果用户跨时区呢？"
+# - "当 Todo 同时有 dueDate 和 reminder 时，哪个优先？"
+# - "过期提醒的触发时机是什么？每次查询时判断还是定时任务？"
+# - "是否需要考虑重复任务（recurring tasks）的场景？"
+# 每个问题等你回答后再继续，直到没有遗漏
+
+# 步骤 3：创建提案 — 基于探索结论和拷问结果生成规范
 /opsx:propose "基于探索结论，给 Todo 添加 dueDate 字段和过期提醒功能"
 
 # AI 生成：
@@ -226,7 +264,7 @@ flowchart LR
 # - openspec/changes/add-due-date/tasks.md      — 实施任务清单
 # 审阅这些文件，确认无误后进入下一步
 
-# 步骤 3：实施代码 — 按 tasks.md 逐条实现
+# 步骤 4：实施代码 — 按 tasks.md 逐条实现
 /opsx:apply
 
 # AI 按 tasks.md 中的 checkbox 逐条实施：
@@ -237,7 +275,7 @@ flowchart LR
 # - [x] 3.1 更新单元测试
 # 每完成一个任务自动勾选，实施完成后审阅代码变更
 
-# 步骤 4：校验一致性 — 确认实现与规范匹配
+# 步骤 5：校验一致性 — 确认实现与规范匹配
 /opsx:verify
 
 # AI 运行 openspec validate，检查：
@@ -245,7 +283,7 @@ flowchart LR
 # - Delta Specs 格式是否正确
 # - 是否有遗漏的变更
 
-# 步骤 5：归档变更 — 将 Delta Specs 合并到主规范
+# 步骤 6：归档变更 — 将 Delta Specs 合并到主规范
 /opsx:archive
 
 # AI 执行：
@@ -495,6 +533,7 @@ flowchart LR
 | 命令                   | 说明                 |
 | -------------------- | ------------------ |
 | `/opsx:explore`      | 需求探索（先探索，再开发）      |
+| `/opsx:grill-me`     | 思路拷问（探索后可选，推敲方案完备性） |
 | `/opsx-dev-pipeline` | 启动完整流水线（Phase 0-6） |
 | `/opsx:propose`      | 创建变更提案             |
 | `/opsx:apply`        | 按任务实施              |

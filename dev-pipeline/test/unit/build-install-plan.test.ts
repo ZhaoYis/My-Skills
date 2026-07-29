@@ -126,8 +126,11 @@ describe('buildInstallPlan', () => {
 
   it('selects one localized bundle template and removes its language suffix', async () => {
     const rootDir = await createTempTargetDir();
+    // Create skill directories for all 'skills' feature bundles
+    for (const skill of ['opsx-dev-pipeline', 'grill-me', 'grilling']) {
+      await fs.ensureDir(path.join(rootDir, 'templates/common/skills', skill, 'agents'));
+    }
     const sourceRoot = path.join(rootDir, 'templates/common/skills/opsx-dev-pipeline');
-    await fs.ensureDir(sourceRoot);
     await fs.writeFile(path.join(sourceRoot, 'guide.en.hbs'), '# English\n');
     await fs.writeFile(path.join(sourceRoot, 'guide.zh.hbs'), '# 中文\n');
     await fs.writeFile(path.join(sourceRoot, 'fallback.md.hbs'), '# fallback\n');
@@ -204,6 +207,34 @@ describe('buildInstallPlan', () => {
         (file) =>
           file.destinationPath ===
           path.join('/tmp/demo', skillsDir, 'opsx-dev-pipeline', 'scripts', 'preflight.mjs'),
+      ),
+    ).toBe(true);
+    expect(
+      plan.files.some(
+        (file) =>
+          file.destinationPath ===
+          path.join('/tmp/demo', skillsDir, 'grill-me', 'SKILL.md'),
+      ),
+    ).toBe(true);
+    expect(
+      plan.files.some(
+        (file) =>
+          file.destinationPath ===
+          path.join('/tmp/demo', skillsDir, 'grill-me', 'agents', 'openai.yaml'),
+      ),
+    ).toBe(true);
+    expect(
+      plan.files.some(
+        (file) =>
+          file.destinationPath ===
+          path.join('/tmp/demo', skillsDir, 'grilling', 'SKILL.md'),
+      ),
+    ).toBe(true);
+    expect(
+      plan.files.some(
+        (file) =>
+          file.destinationPath ===
+          path.join('/tmp/demo', skillsDir, 'grilling', 'agents', 'openai.yaml'),
       ),
     ).toBe(true);
     expect(
