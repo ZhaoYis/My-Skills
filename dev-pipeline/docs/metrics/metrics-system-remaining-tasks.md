@@ -20,7 +20,7 @@
 
 ## 2. P0 - 数据正确性与安全边界
 
-### [ ] M001 - 实现真正可部署的 PostgreSQL / MySQL 双数据库迁移
+### [x] M001 - 实现真正可部署的 PostgreSQL / MySQL 双数据库迁移
 
 **现状差距**
 
@@ -42,7 +42,7 @@
 
 **关联模块**：`metrics-server/prisma/`、`metrics-server/scripts/prepare-prisma-schema.mjs`、`metrics-server/package.json`
 
-### [ ] M002 - 修复 legacy 指纹覆盖可信最新快照的问题
+### [x] M002 - 修复 legacy 指纹覆盖可信最新快照的问题
 
 **现状差距**
 
@@ -64,7 +64,7 @@
 
 **关联模块**：`fingerprint-verifier.ts`、`upsert-engine.ts`、`collection-service.ts`、Prisma schema
 
-### [ ] M003 - 修复个人身份与 API Key 模式的语义冲突
+### [x] M003 - 修复个人身份与 API Key 模式的语义冲突
 
 **现状差距**
 
@@ -86,7 +86,7 @@ API Key 被映射为 `developerId=0` 的管理员；前端无 OIDC session 时�
 
 **关联模块**：`api/middleware/auth.ts`、`api/routes/metrics.ts`、`metrics-website/lib/api.ts`、NextAuth 配置
 
-### [ ] M004 - 修正核心指标计算口径
+### [x] M004 - 修正核心指标计算口径
 
 **现状差距**
 
@@ -111,7 +111,7 @@ API Key 被映射为 `developerId=0` 的管理员；前端无 OIDC session 时�
 
 **关联模块**：`metrics-service.ts`、`metrics` routes、Prisma schema、Dashboard
 
-### [ ] M005 - 前端区分“真实零数据”和“API 请求失败”
+### [x] M005 - 前端区分“真实零数据”和“API 请求失败”
 
 **现状差距**
 
@@ -133,7 +133,7 @@ API Key 被映射为 `developerId=0` 的管理员；前端无 OIDC session 时�
 
 **关联模块**：`metrics-website/lib/api.ts`、个人页、团队页、管理页、全局错误边界
 
-### [ ] M006 - 组织同步实现真正的全量覆盖和原子性
+### [x] M006 - 组织同步实现真正的全量覆盖和原子性
 
 **现状差距**
 
@@ -157,7 +157,7 @@ API Key 被映射为 `developerId=0` 的管理员；前端无 OIDC session 时�
 
 **关联模块**：`sync-service.ts`、`api/routes/sync.ts`、`team-cache.ts`、Prisma schema
 
-### [ ] M007 - 建立可靠的采集 checkpoint 与断点续传
+### [x] M007 - 建立可靠的采集 checkpoint 与断点续传
 
 **现状差距**
 
@@ -185,7 +185,7 @@ API Key 被映射为 `developerId=0` 的管理员；前端无 OIDC session 时�
 
 ## 3. P1 - 完整业务工作流
 
-### [ ] M008 - 完成仓库管理页面
+### [x] M008 - 完成仓库管理页面
 
 **详细功能**
 
@@ -203,7 +203,7 @@ API Key 被映射为 `developerId=0` 的管理员；前端无 OIDC session 时�
 
 **关联模块**：管理页面、repos routes、Repo schema
 
-### [ ] M009 - 完成团队与开发者管理页面
+### [x] M009 - 完成团队与开发者管理页面
 
 **详细功能**
 
@@ -220,7 +220,7 @@ API Key 被映射为 `developerId=0` 的管理员；前端无 OIDC session 时�
 
 **关联模块**：teams/developers routes、管理页面、NextAuth session
 
-### [ ] M010 - 完成团队面板和成员明细
+### [x] M010 - 完成团队面板和成员明细
 
 **详细功能**
 
@@ -237,7 +237,7 @@ API Key 被映射为 `developerId=0` 的管理员；前端无 OIDC session 时�
 
 **关联模块**：团队页面、team metrics routes、team-scope middleware
 
-### [ ] M011 - 完成采集运行管理与日志详情
+### [x] M011 - 完成采集运行管理与日志详情
 
 **详细功能**
 
@@ -254,7 +254,7 @@ API Key 被映射为 `developerId=0` 的管理员；前端无 OIDC session 时�
 
 **关联模块**：collection routes/service/log、scheduler、管理页面
 
-### [ ] M012 - 完成组织同步管理页面与外部适配层
+### [x] M012 - 完成组织同步管理页面与外部适配层
 
 **详细功能**
 
@@ -271,7 +271,7 @@ API Key 被映射为 `developerId=0` 的管理员；前端无 OIDC session 时�
 
 **关联模块**：sync routes/service、外部 adapter、管理页面
 
-### [ ] M013 - 完善 OIDC、角色与前端路由权限
+### [x] M013 - 完善 OIDC、角色与前端路由权限
 
 **详细功能**
 
@@ -289,7 +289,7 @@ API Key 被映射为 `developerId=0` 的管理员；前端无 OIDC session 时�
 
 **关联模块**：NextAuth、auth middleware/service、proxy、环境变量
 
-### [ ] M014 - 完善指标查询性能与大团队聚合
+### [x] M014 - 完善指标查询性能与大团队聚合
 
 **现状差距**
 
@@ -310,7 +310,7 @@ API Key 被映射为 `developerId=0` 的管理员；前端无 OIDC session 时�
 
 **关联模块**：`metrics-service.ts`、Prisma indexes、team cache
 
-### [ ] M015 - 补齐数据保留与安全删除策略
+### [x] M015 - 补齐数据保留与安全删除策略
 
 **详细功能**
 
@@ -331,7 +331,7 @@ API Key 被映射为 `developerId=0` 的管理员；前端无 OIDC session 时�
 
 ## 4. P2 - 工程完整性与长期维护
 
-### [ ] M016 - 整理并落实 Repository 层边界
+### [x] M016 - 整理并落实 Repository 层边界
 
 **现状差距**
 
@@ -350,7 +350,7 @@ API Key 被映射为 `developerId=0` 的管理员；前端无 OIDC session 时�
 
 **关联模块**：`metrics-server/src/models/`、所有 services/routes
 
-### [ ] M017 - 建立 API 契约与输入输出验证
+### [x] M017 - 建立 API 契约与输入输出验证
 
 **详细功能**
 
@@ -367,7 +367,7 @@ API Key 被映射为 `developerId=0` 的管理员；前端无 OIDC session 时�
 
 **关联模块**：API routes/response、website types/api client
 
-### [ ] M018 - 补齐端到端自动化测试
+### [x] M018 - 补齐端到端自动化测试
 
 **详细功能**
 
@@ -384,7 +384,7 @@ API Key 被映射为 `developerId=0` 的管理员；前端无 OIDC session 时�
 
 **关联模块**：`metrics-server/test/`、`metrics-website/test/`、CI 配置
 
-### [ ] M019 - 完善可观测性和生产配置
+### [x] M019 - 完善可观测性和生产配置
 
 **详细功能**
 
@@ -401,7 +401,7 @@ API Key 被映射为 `developerId=0` 的管理员；前端无 OIDC session 时�
 
 **关联模块**：env、logger、server、scheduler、部署文档
 
-### [ ] M020 - 修正文档完成状态并建立验收追踪
+### [x] M020 - 修正文档完成状态并建立验收追踪
 
 **详细功能**
 

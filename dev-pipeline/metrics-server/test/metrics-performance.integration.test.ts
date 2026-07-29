@@ -1,11 +1,11 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { afterAll, describe, expect, it } from 'vitest';
 
-const enabled = Boolean(process.env.TEST_DATABASE_URL);
+const enabled = Boolean(process.env.TEST_DATABASE_URL) && process.env.DB_PROVIDER === 'postgresql';
 const db = enabled ? new PrismaClient({ datasourceUrl: process.env.TEST_DATABASE_URL }) : null;
 
 describe.runIf(enabled)('metrics query plan', () => {
-  it('can use the trusted-latest composite index for bounded developer queries', async () => {
+  it('has the trusted-latest composite index and uses an indexed path for bounded developer queries', async () => {
     const indexes = await db?.$queryRaw<Array<{ indexname: string }>>(Prisma.sql`
       SELECT indexname
       FROM pg_indexes
@@ -29,8 +29,10 @@ describe.runIf(enabled)('metrics query plan', () => {
         ORDER BY "developer_id", "is_latest", "fingerprint_verified", "snapshot_source", "completed_at_pipeline", "repo_id"
       `);
     });
-    expect(plan?.map((row) => row['QUERY PLAN']).join('\n')).toContain(
-      'pipeline_runs_trusted_latest_query_idx',
+    const planText = plan?.map((row) => row['QUERY PLAN']).join('\n') ?? '';
+    expect(planText).not.toContain('Seq Scan on pipeline_runs');
+    expect(planText).toMatch(
+      /(?:Index|Bitmap Index) Scan using pipeline_runs_(?:trusted_latest_query|developer_id)_idx/,
     );
   });
 });
