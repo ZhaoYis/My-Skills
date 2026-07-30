@@ -109,8 +109,28 @@ function mergeConfigLanguage(existingContent: string, nextContent: string): stri
   return lines.join('\n');
 }
 
+function mergeConfigSchema(existingContent: string, nextContent: string): string {
+  const schemaLine = nextContent.match(/^schema:\s*(?:backend|frontend|fullstack)\s*$/m)?.[0];
+  if (!schemaLine) return existingContent;
+
+  const lines = existingContent.split('\n');
+  const existingSchemaIndex = lines.findIndex((line) => /^schema:\s*/.test(line));
+
+  if (existingSchemaIndex >= 0) {
+    lines[existingSchemaIndex] = schemaLine;
+  } else {
+    const languageIndex = lines.findIndex((line) => /^language:\s*/.test(line));
+    lines.splice(languageIndex >= 0 ? languageIndex + 1 : 0, 0, schemaLine);
+  }
+
+  return lines.join('\n');
+}
+
 function mergeConfigContent(existingContent: string, nextContent: string): string {
-  return appendConfigContext(mergeConfigLanguage(existingContent, nextContent), nextContent);
+  return appendConfigContext(
+    mergeConfigSchema(mergeConfigLanguage(existingContent, nextContent), nextContent),
+    nextContent,
+  );
 }
 
 function mergeManagedAssets(

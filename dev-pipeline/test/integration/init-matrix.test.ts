@@ -570,6 +570,34 @@ describe('tool matrix', () => {
     expect((await readManifest(dir)).language).toBe('en');
   });
 
+  it('updates the config schema during sync when the manifest stack changes', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-schema-sync-'));
+    createdDirs.push(dir);
+    await fs.writeJson(path.join(dir, MANIFEST_FILE), {
+      schemaVersion: 1,
+      projectName: 'legacy-demo',
+      tool: 'claude',
+      stack: 'backend',
+      language: 'zh',
+      features: ['schema'],
+      templateVersion: '0.2.1',
+      packageName: 'opsx-dev-pipeline',
+      managedAssets: [{ id: 'stack-config', destination: 'openspec/config.yaml' }],
+    });
+    await fs.outputFile(path.join(dir, 'openspec/config.yaml'), 'language: zh\nschema: backend\n');
+
+    const manifest = await fs.readJson(path.join(dir, MANIFEST_FILE));
+    await fs.writeJson(path.join(dir, MANIFEST_FILE), { ...manifest, stack: 'fullstack' });
+    vi.mocked(prompts).mockResolvedValueOnce({ resolution: 'append' });
+
+    await runSyncCommand({ dir, force: false, dryRun: false });
+
+    const config = await fs.readFile(path.join(dir, 'openspec/config.yaml'), 'utf8');
+    expect(config).toContain('schema: fullstack');
+    expect(config).not.toContain('schema: backend');
+    expect((await readManifest(dir)).stack).toBe('fullstack');
+  });
+
   it('preserves an existing root README during init without force', async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-readme-existing-'));
     createdDirs.push(dir);
