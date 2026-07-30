@@ -254,6 +254,7 @@ describe('tool matrix', () => {
   it.each([
     'frontend',
     'backend',
+    'fullstack',
   ] as const)('installs the %s OpenSpec schema only', async (stack) => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), `opsx-stack-${stack}-`));
     createdDirs.push(dir);
@@ -261,9 +262,12 @@ describe('tool matrix', () => {
     await runInit({ dir, tool: 'claude', stack, yes: true, force: false, dryRun: false });
 
     const selectedSchema = path.join(dir, 'openspec', 'schemas', stack, 'schema.yaml');
-    const otherStack = stack === 'frontend' ? 'backend' : 'frontend';
     expect(await fs.pathExists(selectedSchema)).toBe(true);
-    expect(await fs.pathExists(path.join(dir, 'openspec', 'schemas', otherStack))).toBe(false);
+    for (const otherStack of ['frontend', 'backend', 'fullstack'].filter(
+      (candidate) => candidate !== stack,
+    )) {
+      expect(await fs.pathExists(path.join(dir, 'openspec', 'schemas', otherStack))).toBe(false);
+    }
     expect(await fs.readFile(path.join(dir, 'openspec', 'config.yaml'), 'utf8')).toContain(
       `schema: ${stack}`,
     );

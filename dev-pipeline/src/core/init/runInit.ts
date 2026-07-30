@@ -1,7 +1,7 @@
-import fs from 'fs-extra';
-import path from 'node:path';
 import { execFile as execFileCallback } from 'node:child_process';
+import path from 'node:path';
 import { promisify } from 'node:util';
+import fs from 'fs-extra';
 import pc from 'picocolors';
 import { loadToolRegistry } from '../adapters/registry.js';
 import type { InitOptions } from '../prompts/types.js';
@@ -101,7 +101,7 @@ export async function runInit(options: InitOptions): Promise<void> {
     {
       ...options,
       tool: options.tool ?? validation.suggestedTool,
-      // Programmatic callers predating stack support keep the backend default;
+      // Programmatic callers without an explicit stack keep the backend default for compatibility;
       // the CLI command enforces an explicit --stack for --yes invocations.
       stack: options.stack ?? 'backend',
     },

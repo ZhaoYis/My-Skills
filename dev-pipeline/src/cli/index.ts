@@ -14,7 +14,7 @@ export async function runCli(argv: string[]): Promise<void> {
   cli
     .command('init', 'Initialize opsx-dev-pipeline templates in the current directory')
     .option('--tool <tool>', 'Target AI tool id')
-    .option('--stack <frontend|backend>', 'Target project stack')
+    .option('--stack <frontend|backend|fullstack>', 'Target project stack')
     .option('--lang <en|zh>', 'Document language for AI-generated artifacts (default: zh)')
     .option(
       '--yes',

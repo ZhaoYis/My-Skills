@@ -52,16 +52,19 @@ export async function collectInputs(
   if (
     requestedStack !== undefined &&
     requestedStack !== 'frontend' &&
-    requestedStack !== 'backend'
+    requestedStack !== 'backend' &&
+    requestedStack !== 'fullstack'
   ) {
-    throw new Error(`Invalid stack: ${String(requestedStack)}. Valid stacks: frontend, backend.`);
+    throw new Error(
+      `Invalid stack: ${String(requestedStack)}. Valid stacks: frontend, backend, fullstack.`,
+    );
   }
   const features = resolveFeatures(options.feature);
 
   if (options.yes) {
     if (!requestedStack) {
       throw new Error(
-        'Missing required --stack in non-interactive mode. Use --stack frontend or --stack backend.',
+        'Missing required --stack in non-interactive mode. Use --stack frontend, --stack backend, or --stack fullstack.',
       );
     }
 
@@ -102,8 +105,9 @@ export async function collectInputs(
         choices: [
           { title: 'Backend', value: 'backend' satisfies StackId },
           { title: 'Frontend', value: 'frontend' satisfies StackId },
+          { title: 'Fullstack', value: 'fullstack' satisfies StackId },
         ],
-        initial: requestedStack === 'frontend' ? 0 : 1,
+        initial: requestedStack === 'frontend' ? 1 : requestedStack === 'fullstack' ? 2 : 0,
       },
       {
         type: 'select',

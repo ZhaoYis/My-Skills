@@ -124,6 +124,39 @@ describe('buildInstallPlan', () => {
     ).toBe(true);
   });
 
+  it('selects the fullstack config template', async () => {
+    const plan = await buildInstallPlan({
+      ...createPlanInput(),
+      stack: 'fullstack',
+      language: 'en',
+    });
+
+    expect(
+      plan.files
+        .find((file) => file.assetId === 'stack-config')
+        ?.sourcePath.endsWith('config.fullstack.yaml.hbs'),
+    ).toBe(true);
+  });
+
+  it('includes only the fullstack schema bundle for the fullstack stack', async () => {
+    const plan = await buildInstallPlan({
+      ...createPlanInput(),
+      stack: 'fullstack',
+      language: 'en',
+    });
+    const schemaBundleFiles = plan.files.filter((file) => file.assetId.includes('-schema-bundle:'));
+
+    expect(schemaBundleFiles).toHaveLength(5);
+    expect(
+      schemaBundleFiles.every((file) => file.assetId.startsWith('fullstack-schema-bundle:')),
+    ).toBe(true);
+    expect(
+      schemaBundleFiles.every((file) =>
+        file.destinationPath.startsWith(path.join('/tmp/demo', 'openspec/schemas/fullstack')),
+      ),
+    ).toBe(true);
+  });
+
   it('selects one localized bundle template and removes its language suffix', async () => {
     const rootDir = await createTempTargetDir();
     // Create skill directories for all 'skills' feature bundles
@@ -212,8 +245,7 @@ describe('buildInstallPlan', () => {
     expect(
       plan.files.some(
         (file) =>
-          file.destinationPath ===
-          path.join('/tmp/demo', skillsDir, 'grill-me', 'SKILL.md'),
+          file.destinationPath === path.join('/tmp/demo', skillsDir, 'grill-me', 'SKILL.md'),
       ),
     ).toBe(true);
     expect(
@@ -226,8 +258,7 @@ describe('buildInstallPlan', () => {
     expect(
       plan.files.some(
         (file) =>
-          file.destinationPath ===
-          path.join('/tmp/demo', skillsDir, 'grilling', 'SKILL.md'),
+          file.destinationPath === path.join('/tmp/demo', skillsDir, 'grilling', 'SKILL.md'),
       ),
     ).toBe(true);
     expect(

@@ -5,7 +5,7 @@ import { runInit } from '../../src/core/init/runInit.js';
 describe('runInit', () => {
   it('requires stack for CLI non-interactive init', async () => {
     await expect(runInitCommand({ dir: '/tmp', tool: 'claude', yes: true })).rejects.toThrow(
-      'Missing required --stack',
+      'Missing required --stack in non-interactive mode. Use --stack frontend, --stack backend, or --stack fullstack.',
     );
   });
 

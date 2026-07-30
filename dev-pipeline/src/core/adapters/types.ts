@@ -8,7 +8,7 @@ export const ALL_FEATURE_IDS = [
   'schema',
 ] as const satisfies readonly FeatureId[];
 export type ToolId = 'claude' | 'cursor' | 'codex';
-export type StackId = 'frontend' | 'backend';
+export type StackId = 'frontend' | 'backend' | 'fullstack';
 export type DocLanguage = 'en' | 'zh';
 
 export interface ToolDestinations {

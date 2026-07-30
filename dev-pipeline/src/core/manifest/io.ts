@@ -1,5 +1,5 @@
-import fs from 'fs-extra';
 import path from 'node:path';
+import fs from 'fs-extra';
 import { z } from 'zod';
 import {
   LEGACY_MANIFEST_FILE,
@@ -15,7 +15,7 @@ const manifestSchema = z.object({
   schemaVersion: z.number().default(1),
   projectName: z.string(),
   tool: z.enum(['claude', 'cursor', 'codex']),
-  stack: z.enum(['frontend', 'backend']).optional(),
+  stack: z.enum(['frontend', 'backend', 'fullstack']).optional(),
   language: z.enum(['en', 'zh']).optional(),
   features: z.array(z.enum(['base', 'skills', 'commands', 'docs', 'schema'])),
   templateVersion: z.string().default(TEMPLATE_VERSION),
