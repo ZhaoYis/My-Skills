@@ -1,7 +1,8 @@
-import type { PipelineReport } from '../harness/types.js';
-import { PipelineReportSchema } from './ReportSchema.js';
+import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import fs from 'fs-extra';
+import type { PipelineReport } from '../harness/types.js';
+import { PipelineReportSchema } from './ReportSchema.js';
 
 /**
  * Generate a JSON report and write it to the reports directory.
@@ -29,11 +30,12 @@ export class JsonReporter {
 
     // Update latest symlink
     const latestDir = path.join(this.outputDir, 'latest');
-    try {
-      await fs.remove(latestDir);
-    } catch {
-      /* ignore */
-    }
+    await rm(latestDir, {
+      recursive: true,
+      force: true,
+      maxRetries: 10,
+      retryDelay: 100,
+    });
     try {
       await fs.symlink(path.relative(path.dirname(latestDir), reportDir), latestDir, 'dir');
     } catch {

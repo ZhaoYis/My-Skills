@@ -4,6 +4,8 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import fs from 'fs-extra';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { cleanupDirectories } from '../helpers/cleanup.js';
+import { isSameFileSystemEntry } from '../helpers/filesystem.js';
 import { PACKAGE_ROOT } from '../helpers/package-root.js';
 
 const libUrl = pathToFileURL(
@@ -22,7 +24,7 @@ interface ModuleResult {
 beforeEach(async () => {
   repo = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-pipeline-lib-'));
   createdDirs.push(repo);
-  bin = path.join(repo, 'mock-bin');
+  bin = path.join(repo, 'mock&bin');
   await fs.ensureDir(bin);
   await runCommand('git', ['init', '--quiet'], repo);
 
@@ -40,7 +42,7 @@ else if (mode === 'large') process.stdout.write('x'.repeat(11 * 1024 * 1024));
 });
 
 afterEach(async () => {
-  await Promise.all(createdDirs.splice(0).map((dir) => fs.remove(dir)));
+  await cleanupDirectories(createdDirs);
 });
 
 function runCommand(
@@ -85,14 +87,22 @@ describe('pipeline-lib', () => {
     const result = await runModule(`
       import { resolveCommandInvocation } from ${JSON.stringify(libUrl)};
       process.stdout.write(JSON.stringify(
-        resolveCommandInvocation('C:\\\\tools\\\\openspec.cmd', ['--version'], 'win32')
+        resolveCommandInvocation(
+          'C:\\\\tools & fixtures\\\\openspec.cmd',
+          ['--version', 'name&value'],
+          'win32'
+        )
       ));
     `);
 
-    expect(JSON.parse(result.stdout)).toEqual({
+    const invocation = JSON.parse(result.stdout);
+    expect(invocation).toMatchObject({
       command: process.env.ComSpec || 'cmd.exe',
-      args: ['/d', '/s', '/c', 'C:\\tools\\openspec.cmd', '--version'],
+      windowsVerbatimArguments: true,
     });
+    expect(invocation.args.slice(0, 3)).toEqual(['/d', '/s', '/c']);
+    expect(invocation.args[3]).toContain('tools^ ^&^ fixtures');
+    expect(invocation.args[3]).toContain('name^&value');
   });
 
   it('accepts valid change names and identifiers', async () => {
@@ -187,7 +197,7 @@ describe('pipeline-lib', () => {
     );
 
     expect(result.code).toBe(0);
-    expect(await fs.realpath(result.stdout)).toBe(await fs.realpath(repo));
+    expect(await isSameFileSystemEntry(result.stdout, repo)).toBe(true);
   });
 
   it('runs a command from the repository root and parses its JSON', async () => {
@@ -239,7 +249,7 @@ describe('pipeline-lib', () => {
     `);
 
     expect(result.code).toBe(0);
-    expect(await fs.realpath(result.stdout)).toBe(await fs.realpath(repo));
+    expect(await isSameFileSystemEntry(result.stdout, repo)).toBe(true);
   });
 
   it('finds the nearest openspec project root and falls back to git root', async () => {
@@ -249,7 +259,7 @@ describe('pipeline-lib', () => {
       process.stdout.write(findOpenSpecRoot());
     `);
     expect(noProject.code).toBe(0);
-    expect(await fs.realpath(noProject.stdout)).toBe(await fs.realpath(repo));
+    expect(await isSameFileSystemEntry(noProject.stdout, repo)).toBe(true);
 
     // Case 2: openspec/ with config.yaml exists in a subdirectory
     const projectDir = path.join(repo, 'packages/my-app');
@@ -270,7 +280,24 @@ describe('pipeline-lib', () => {
     );
 
     expect(result.code).toBe(0);
-    expect(await fs.realpath(result.stdout)).toBe(await fs.realpath(projectDir));
+    expect(await isSameFileSystemEntry(result.stdout, projectDir)).toBe(true);
+
+    // Keep the relative path shorter than the typical Windows 8.3-to-long-path difference.
+    const shallowProjectDir = path.join(repo, 'a');
+    await fs.ensureDir(path.join(shallowProjectDir, 'openspec', 'changes'));
+    const shallowResult = await runCommand(
+      process.execPath,
+      [
+        '--input-type=module',
+        '--eval',
+        `import { findOpenSpecRoot } from ${JSON.stringify(libUrl)}; process.stdout.write(findOpenSpecRoot());`,
+      ],
+      shallowProjectDir,
+      commandEnv(),
+    );
+
+    expect(shallowResult.code).toBe(0);
+    expect(await isSameFileSystemEntry(shallowResult.stdout, shallowProjectDir)).toBe(true);
 
     // Case 3: openspec/changes/ (without config.yaml) also counts as a valid project
     const changelessDir = path.join(repo, 'packages/other-app');
@@ -289,6 +316,6 @@ describe('pipeline-lib', () => {
     );
 
     expect(result2.code).toBe(0);
-    expect(await fs.realpath(result2.stdout)).toBe(await fs.realpath(changelessDir));
+    expect(await isSameFileSystemEntry(result2.stdout, changelessDir)).toBe(true);
   });
 });

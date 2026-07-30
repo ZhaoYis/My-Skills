@@ -31,7 +31,7 @@ describe('E2E recovery - OpenSpec dependency missing', () => {
       process.execPath,
       [path.join(env.skillRoot, 'scripts/preflight.mjs')],
       env.rootDir,
-      { ...process.env, PATH: '/usr/bin:/bin' },
+      { ...process.env, PATH: '' },
     );
 
     expect(result.code).toBe(1);

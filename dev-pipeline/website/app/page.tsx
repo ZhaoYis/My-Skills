@@ -152,7 +152,7 @@ export default function Home() {
               ))}
             </div>
           </div>
-          <div className="constraint-statement"><div className="container"><LockKeyhole aria-hidden="true" /><p>这不是 AI 的"建议"</p><Minus aria-hidden="true" /><strong>这是工程的"验证"</strong></div></div>
+          <div className="constraint-statement"><div className="container"><LockKeyhole aria-hidden="true" /><p>这不是 AI 的&quot;建议&quot;</p><Minus aria-hidden="true" /><strong>这是工程的&quot;验证&quot;</strong></div></div>
         </section>
 
         <section className="adversarial section section--dark" id="adversarial-review" aria-labelledby="adversarial-title">
@@ -198,7 +198,7 @@ export default function Home() {
                 </div>
                 <div className="dispute-result">
                   <p>两个子Agent 一致 → 按有问题处理，主Agent 不得推翻</p>
-                  <p>两个子Agent 不一致 → 标记为"需人工判断"</p>
+                  <p>两个子Agent 不一致 → 标记为&quot;需人工判断&quot;</p>
                 </div>
               </div>
             </div>
@@ -208,7 +208,7 @@ export default function Home() {
         <section className="spec-section section" id="spec-driven" aria-labelledby="spec-title">
           <div className="container">
             <div className="section-heading section-heading--split">
-              <div><p className="eyebrow">05 / SPEC-DRIVEN</p><h2 id="spec-title">先对齐"做什么"，<br />再让 AI 决定"怎么做"。</h2></div>
+              <div><p className="eyebrow">05 / SPEC-DRIVEN</p><h2 id="spec-title">先对齐&quot;做什么&quot;，<br />再让 AI 决定&quot;怎么做&quot;。</h2></div>
               <p>规范是 AI 与人类之间的合同。AI 按合同交付，你按合同验收，分歧在写代码前就被看见。</p>
             </div>
             <div className="comparison-table" role="table" aria-label="Prompt-Driven 与 Spec-Driven 对比">
@@ -249,7 +249,7 @@ export default function Home() {
             <div className="safety-copy">
               <p className="eyebrow">07 / SAFETY GATES</p>
               <h2 id="safety-title">交付之前，<br />安全检查不会沉默。</h2>
-              <p>高风险操作不会被揉成一个"确认"按钮。每一道防线都给出明确事实、独立决策和可审计记录。</p>
+              <p>高风险操作不会被揉成一个&quot;确认&quot;按钮。每一道防线都给出明确事实、独立决策和可审计记录。</p>
               <div className="safety-badge"><ShieldCheck aria-hidden="true" /><span><b>LOCAL ONLY</b>代码与状态不会上传</span></div>
             </div>
             <div className="safety-list">
@@ -314,7 +314,7 @@ export default function Home() {
           <div className="cta-grid" aria-hidden="true" />
           <div className="container">
             <p className="eyebrow">READY TO STANDARDIZE?</p>
-            <h2 id="cta-title">让团队的 AI 编码从"各凭本事"<br />变成<span>"统一标准"。</span></h2>
+            <h2 id="cta-title">让团队的 AI 编码从&quot;各凭本事&quot;<br />变成<span>&quot;统一标准&quot;。</span></h2>
             <div className="cta-command"><Terminal aria-hidden="true" /><code>{installCommand}</code><CopyCommand command={installCommand} compact /></div>
             <div className="cta-links"><a className="button button--light" href="https://github.com/ZhaoYis/My-Skills/tree/main/dev-pipeline" target="_blank" rel="noreferrer"><Github aria-hidden="true" />查看 GitHub<ArrowUpRight aria-hidden="true" /></a><span><Check aria-hidden="true" />开源 MIT</span><span><Check aria-hidden="true" />本地运行</span></div>
           </div>

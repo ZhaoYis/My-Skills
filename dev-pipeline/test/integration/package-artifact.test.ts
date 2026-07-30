@@ -4,6 +4,7 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import fs from 'fs-extra';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { cleanupDirectories } from '../helpers/cleanup.js';
 import { PACKAGE_ROOT } from '../helpers/package-root.js';
 
 const execFileAsync = promisify(execFile);
@@ -39,9 +40,7 @@ beforeAll(async () => {
 }, 30000);
 
 afterAll(async () => {
-  for (const dir of createdDirs.splice(0)) {
-    await fs.remove(dir);
-  }
+  await cleanupDirectories(createdDirs);
 }, 30000);
 
 describe('packaged artifact', () => {

@@ -2,6 +2,7 @@ import path from 'node:path';
 import fs from 'fs-extra';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { deterministicPipelineExecutor } from '../../src/harness/DeterministicPipelineExecutor.js';
+import { SAMPLES_ROOT } from '../../src/harness/EnvironmentFactory.js';
 import { PipelineAgentOrchestrator } from '../../src/harness/PipelineAgentOrchestrator.js';
 import type { PipelineReport, ScenarioConfig, TestEnvironment } from '../../src/harness/types.js';
 import { ALL_PHASES } from '../../src/harness/types.js';
@@ -83,6 +84,15 @@ describe('E2E - Full gated delivery', () => {
       verify: { attempts: 1, status: 'passed', command: 'npm run verify' },
       delivery: { sourcePushed: true, targetPushed: true },
     });
+  });
+
+  it('keeps the sample OpenSpec verify command cross-platform', async () => {
+    const sampleConfig = await fs.readFile(
+      path.join(SAMPLES_ROOT, 'fullstack-todo/openspec/config.yaml'),
+      'utf8',
+    );
+    expect(sampleConfig).toContain('verify: npm run verify');
+    expect(sampleConfig).not.toContain('verify: ./scripts/');
   });
 
   it('runs post-merge tests and leaves both remote refs available', async () => {

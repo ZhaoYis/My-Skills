@@ -3,6 +3,8 @@ import os from 'node:os';
 import path from 'node:path';
 import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
+import { cleanupDirectories } from '../helpers/cleanup.js';
+import { isSameFileSystemEntry } from '../helpers/filesystem.js';
 import { PACKAGE_ROOT } from '../helpers/package-root.js';
 
 const scriptsRoot = path.join(PACKAGE_ROOT, 'templates/common/skills/opsx-dev-pipeline/scripts');
@@ -15,7 +17,7 @@ interface ScriptResult {
 }
 
 afterEach(async () => {
-  await Promise.all(createdDirs.splice(0).map((dir) => fs.remove(dir)));
+  await cleanupDirectories(createdDirs);
 });
 
 async function createRepo(initialized: boolean): Promise<{ root: string; bin: string }> {
@@ -228,7 +230,7 @@ describe('opsx-dev-pipeline script contracts', () => {
     const result = await runScript('instructions.mjs', ['demo-change', 'proposal'], subdir, bin);
 
     expect(result.code).toBe(0);
-    expect(await fs.realpath(JSON.parse(result.stdout).cwd)).toBe(await fs.realpath(root));
+    expect(await isSameFileSystemEntry(JSON.parse(result.stdout).cwd, root)).toBe(true);
   });
 });
 

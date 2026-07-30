@@ -3,7 +3,11 @@ import path from 'node:path';
 import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ALL_FEATURE_IDS, type ToolAdapter, type ToolId } from '../../src/core/adapters/types.js';
-import { buildInstallPlan, buildTemplateContext } from '../../src/core/init/buildInstallPlan.js';
+import {
+  buildInstallPlan,
+  buildTemplateContext,
+  normalizeBundleEntry,
+} from '../../src/core/init/buildInstallPlan.js';
 import { renderTemplate } from '../../src/core/init/renderTemplates.js';
 import type { ManagedAssetRecord } from '../../src/core/manifest/types.js';
 import {
@@ -74,6 +78,12 @@ function createPlanInput(managedAssets?: ManagedAssetRecord[]) {
 }
 
 describe('buildInstallPlan', () => {
+  it('normalizes bundle entry separators for stable asset ids', () => {
+    expect(normalizeBundleEntry('templates\\api_design.md.hbs')).toBe(
+      'templates/api_design.md.hbs',
+    );
+  });
+
   it('builds shared package metadata and expands a custom skill root note', async () => {
     const context = buildTemplateContext({
       projectName: 'demo',

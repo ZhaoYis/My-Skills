@@ -39,6 +39,20 @@ export interface ManifestReadResult {
   storage: ManifestStorage;
 }
 
+function normalizeManifest(manifest: PipelineManifest): PipelineManifest {
+  return {
+    ...manifest,
+    managedAssets: manifest.managedAssets.map((asset) => ({
+      id: asset.id.replaceAll('\\', '/'),
+      destination: asset.destination.replaceAll('\\', '/'),
+    })),
+  };
+}
+
+function parseManifest(raw: unknown): PipelineManifest {
+  return normalizeManifest(manifestSchema.parse(raw));
+}
+
 export function getManifestCandidates(dir: string): string[] {
   return [path.join(dir, MANIFEST_FILE), path.join(dir, LEGACY_MANIFEST_FILE)];
 }
@@ -60,7 +74,7 @@ export async function readManifest(dir: string): Promise<ManifestReadResult | nu
     if (pkg[MANIFEST_PACKAGE_JSON_KEY]) {
       return {
         path: packageJsonPath,
-        manifest: manifestSchema.parse(pkg[MANIFEST_PACKAGE_JSON_KEY]),
+        manifest: parseManifest(pkg[MANIFEST_PACKAGE_JSON_KEY]),
         storage: 'package-json',
       };
     }
@@ -71,7 +85,7 @@ export async function readManifest(dir: string): Promise<ManifestReadResult | nu
       const raw = await fs.readJson(filePath);
       return {
         path: filePath,
-        manifest: manifestSchema.parse(raw),
+        manifest: parseManifest(raw),
         storage: 'standalone',
       };
     }
@@ -94,16 +108,17 @@ export async function removeManifest(dir: string, storage: ManifestStorage): Pro
 }
 
 export async function writeManifest(dir: string, manifest: PipelineManifest): Promise<string> {
+  const normalizedManifest = normalizeManifest(manifest);
   const packageJsonPath = path.join(dir, PACKAGE_JSON_FILE);
   if (await fs.pathExists(packageJsonPath)) {
     const pkg = (await fs.readJson(packageJsonPath)) as Record<string, unknown>;
-    pkg[MANIFEST_PACKAGE_JSON_KEY] = manifest;
+    pkg[MANIFEST_PACKAGE_JSON_KEY] = normalizedManifest;
     await fs.writeJson(packageJsonPath, pkg, { spaces: 2 });
     await removeStandaloneManifestFiles(dir);
     return packageJsonPath;
   }
 
   const filePath = path.join(dir, MANIFEST_FILE);
-  await fs.writeJson(filePath, manifest, { spaces: 2 });
+  await fs.writeJson(filePath, normalizedManifest, { spaces: 2 });
   return filePath;
 }

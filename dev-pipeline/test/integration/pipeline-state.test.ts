@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import fs from 'fs-extra';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { cleanupDirectories } from '../helpers/cleanup.js';
 import { PACKAGE_ROOT } from '../helpers/package-root.js';
 
 const stateScript = path.join(
@@ -50,7 +51,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await Promise.all(createdDirs.splice(0).map((dir) => fs.remove(dir)));
+  await cleanupDirectories(createdDirs);
 });
 
 function run(command: string, args: string[]): Promise<StateResult> {

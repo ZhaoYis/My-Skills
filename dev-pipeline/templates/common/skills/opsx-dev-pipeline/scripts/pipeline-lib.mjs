@@ -9,6 +9,8 @@ const EXIT_COMMAND_FAILED = 5;
 const EXIT_INVALID_OUTPUT = 6;
 const MAX_BUFFER = 10 * 1024 * 1024;
 const MAX_ERROR_DETAIL_LENGTH = 4096;
+const CMD_META_CHARS = /([()\][%!^"`<>&|;, *?])/g;
+const CMD_SHIM_PATH = /node_modules[\\/]\.bin[\\/][^\\/]+\.cmd$/i;
 
 function normalizePaths(value) {
   if (typeof value === 'string') return value.replaceAll('\\', '/');
@@ -56,21 +58,49 @@ function commandExists(name) {
   return Boolean(resolveCommand(name));
 }
 
+function escapeCmdCommand(value) {
+  return value.replace(CMD_META_CHARS, '^$1');
+}
+
+function escapeCmdArgument(value, doubleEscapeMetaChars) {
+  // cmd.exe reparses one command string, so quote backslashes before escaping shell metacharacters.
+  let escaped = String(value);
+  escaped = escaped.replace(/(?=(\\+?)?)\1"/g, '$1$1\\"');
+  escaped = escaped.replace(/(?=(\\+?)?)\1$/g, '$1$1');
+  escaped = `"${escaped}"`.replace(CMD_META_CHARS, '^$1');
+  return doubleEscapeMetaChars ? escaped.replace(CMD_META_CHARS, '^$1') : escaped;
+}
+
+function resolveWindowsScriptInvocation(command, args) {
+  const normalizedCommand = path.normalize(command);
+  const doubleEscapeMetaChars = CMD_SHIM_PATH.test(normalizedCommand);
+  const shellCommand = [
+    escapeCmdCommand(normalizedCommand),
+    ...args.map((arg) => escapeCmdArgument(arg, doubleEscapeMetaChars)),
+  ].join(' ');
+
+  return {
+    command: process.env.ComSpec || 'cmd.exe',
+    args: ['/d', '/s', '/c', `"${shellCommand}"`],
+    windowsVerbatimArguments: true,
+  };
+}
+
 export function resolveCommandInvocation(command, args, platform = process.platform) {
   const resolved = resolveCommand(command) || command;
   const extension = path.extname(resolved).toLowerCase();
   if (platform === 'win32' && (extension === '.cmd' || extension === '.bat')) {
-    return {
-      command: process.env.ComSpec || 'cmd.exe',
-      args: ['/d', '/s', '/c', resolved, ...args],
-    };
+    return resolveWindowsScriptInvocation(resolved, args);
   }
   return { command: resolved, args: [...args] };
 }
 
 export function execCommandSync(command, args, options) {
   const invocation = resolveCommandInvocation(command, args);
-  return execFileSync(invocation.command, invocation.args, options);
+  const invocationOptions = invocation.windowsVerbatimArguments
+    ? { ...options, windowsVerbatimArguments: true }
+    : options;
+  return execFileSync(invocation.command, invocation.args, invocationOptions);
 }
 
 function commandOutput(error) {
@@ -110,11 +140,25 @@ export function getRepoRoot() {
   }
 }
 
+function isSameDirectory(left, right) {
+  try {
+    const leftStat = statSync(left);
+    const rightStat = statSync(right);
+    return leftStat.dev === rightStat.dev && leftStat.ino === rightStat.ino;
+  } catch {
+    const normalize = (value) => {
+      const resolved = path.resolve(value);
+      return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+    };
+    return normalize(left) === normalize(right);
+  }
+}
+
 export function findOpenSpecRoot() {
   let current = process.cwd();
   const gitRoot = getRepoRoot();
 
-  while (current.length >= gitRoot.length) {
+  while (true) {
     const openspecDir = path.join(current, 'openspec');
     try {
       const dirStat = statSync(openspecDir);
@@ -129,6 +173,7 @@ export function findOpenSpecRoot() {
       // openspec/ doesn't exist at this level, walk up
     }
 
+    if (isSameDirectory(current, gitRoot)) break;
     const parent = path.dirname(current);
     if (parent === current) break;
     current = parent;

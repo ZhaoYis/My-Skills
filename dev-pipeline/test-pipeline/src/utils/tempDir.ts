@@ -1,6 +1,6 @@
 import fs from 'node:fs';
-import path from 'node:path';
 import os from 'node:os';
+import path from 'node:path';
 
 /**
  * Temporary directory manager for test isolation.
@@ -24,11 +24,12 @@ export async function createTempDir(prefix: string = 'opsx-test-'): Promise<stri
 export async function cleanupAllTempDirs(): Promise<void> {
   const dirs = createdDirs.splice(0);
   for (const dir of dirs) {
-    try {
-      await fs.promises.rm(dir, { recursive: true, force: true });
-    } catch {
-      // Best-effort cleanup — ignore errors for dirs already deleted
-    }
+    await fs.promises.rm(dir, {
+      recursive: true,
+      force: true,
+      maxRetries: 10,
+      retryDelay: 100,
+    });
   }
 }
 
