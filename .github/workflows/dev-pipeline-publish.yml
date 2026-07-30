@@ -1,0 +1,90 @@
+name: Publish dev-pipeline to npm
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'dev-pipeline/**'
+      - '.github/workflows/dev-pipeline-publish.yml'
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: dev-pipeline-npm-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: "${{ !contains(github.event.head_commit.message, 'chore(release): dev-pipeline') }}"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: dev-pipeline/package-lock.json
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        working-directory: dev-pipeline
+        run: npm ci
+
+      - name: Typecheck
+        working-directory: dev-pipeline
+        run: npm run typecheck
+
+      - name: Test
+        working-directory: dev-pipeline
+        run: npm test
+
+      - name: Verify npm credentials
+        working-directory: dev-pipeline
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm whoami
+
+      - name: Bump patch version
+        id: version
+        working-directory: dev-pipeline
+        run: |
+          npm version patch --no-git-tag-version
+          VERSION=$(node -p "require('./package.json').version")
+          npm pkg set "opsxDevPipeline.templateVersion=${VERSION}"
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build and inspect package
+        working-directory: dev-pipeline
+        run: |
+          npm run build
+          npm pack --dry-run
+
+      - name: Create release commit and tag
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dev-pipeline/package.json dev-pipeline/package-lock.json
+          git commit -m "chore(release): dev-pipeline v${RELEASE_VERSION}"
+          git tag "dev-pipeline-v${RELEASE_VERSION}"
+
+      - name: Publish package
+        working-directory: dev-pipeline
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public --provenance
+
+      - name: Push release commit and tag
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: git push origin HEAD:main "dev-pipeline-v${RELEASE_VERSION}"
