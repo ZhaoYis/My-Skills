@@ -92,7 +92,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await rm(repo, { recursive: true, force: true });
+  await rm(repo, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 });
 
 describe('dev-pipeline-state transition gates', () => {

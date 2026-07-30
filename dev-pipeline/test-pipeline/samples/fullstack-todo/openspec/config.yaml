@@ -10,7 +10,7 @@ context: |
   Frontend: React + Vite + TypeScript, SPA consuming backend API
 
 rules:
-  verify: ./scripts/validate.sh
+  verify: npm run verify
   test: npm test --workspaces --if-present
   build: |
     cd backend && npm install && npm run build
