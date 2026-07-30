@@ -4,6 +4,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import fs from 'fs-extra';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { cleanupDirectories } from '../helpers/cleanup.js';
 import { PACKAGE_ROOT } from '../helpers/package-root.js';
 
 const libUrl = pathToFileURL(
@@ -40,7 +41,7 @@ else if (mode === 'large') process.stdout.write('x'.repeat(11 * 1024 * 1024));
 });
 
 afterEach(async () => {
-  await Promise.all(createdDirs.splice(0).map((dir) => fs.remove(dir)));
+  await cleanupDirectories(createdDirs);
 });
 
 function runCommand(
