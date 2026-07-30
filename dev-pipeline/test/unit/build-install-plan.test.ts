@@ -157,6 +157,48 @@ describe('buildInstallPlan', () => {
     ).toBe(true);
   });
 
+  it('keeps fullstack artifacts backend-first', async () => {
+    const templateRoot = path.join(PACKAGE_ROOT, 'templates/common/schemas/fullstack/templates');
+    const [proposalTemplate, designTemplate, specTemplate, tasksTemplate] = await Promise.all([
+      fs.readFile(path.join(templateRoot, 'proposal.md.hbs'), 'utf8'),
+      fs.readFile(path.join(templateRoot, 'design.md.hbs'), 'utf8'),
+      fs.readFile(path.join(templateRoot, 'spec.md.hbs'), 'utf8'),
+      fs.readFile(path.join(templateRoot, 'tasks.md.hbs'), 'utf8'),
+    ]);
+
+    expect(proposalTemplate.indexOf('### Backend Changes')).toBeLessThan(
+      proposalTemplate.indexOf('### Frontend Changes'),
+    );
+    expect(proposalTemplate).toContain(
+      'Backend and frontend implementation must not run in parallel',
+    );
+    expect(designTemplate).toContain('## Backend Design');
+    expect(designTemplate).toContain('## Frontend Design');
+    expect(designTemplate.indexOf('## Backend Design')).toBeLessThan(
+      designTemplate.indexOf('## Frontend Design'),
+    );
+    expect(designTemplate).toContain(
+      'Backend and frontend implementation must not run in parallel',
+    );
+    expect(specTemplate.indexOf('### Requirement: <Backend API Requirement Name>')).toBeLessThan(
+      specTemplate.indexOf('### Requirement: <Frontend Requirement Name>'),
+    );
+    expect(specTemplate).toContain(
+      'Frontend behavior must be derived from the finalized backend contract',
+    );
+    expect(
+      specTemplate.indexOf('### Requirement: <Backend API Requirement Being Removed>'),
+    ).toBeLessThan(
+      specTemplate.indexOf('### Requirement: <Dependent Frontend Requirement Being Removed>'),
+    );
+    expect(tasksTemplate.indexOf('## 2. Backend Completion Gate')).toBeLessThan(
+      tasksTemplate.indexOf('## 3. Frontend Implementation'),
+    );
+    expect(tasksTemplate).toContain(
+      'Start this section only after every task in Section 2 is complete',
+    );
+  });
+
   it('selects one localized bundle template and removes its language suffix', async () => {
     const rootDir = await createTempTargetDir();
     // Create skill directories for all 'skills' feature bundles

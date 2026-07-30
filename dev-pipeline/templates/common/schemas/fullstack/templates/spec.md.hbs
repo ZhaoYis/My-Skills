@@ -1,39 +1,76 @@
 ## ADDED Requirements
 
-### Requirement: <Requirement Name>
-<Description using SHALL or MUST>
+<!-- Specify backend API behavior first. Frontend behavior must be derived from the finalized backend contract; this specification order does not permit parallel implementation. -->
 
-The system {MUST/SHALL/SHOULD} {do something specific}.
+### Requirement: <Backend API Requirement Name>
+<Describe the backend endpoint, request/response contract, validation, authorization, side effects, and error behavior using SHALL or MUST>
 
-#### Scenario: <Happy path scenario>
+The backend {MUST/SHALL} {provide specific API behavior}.
+
+#### Scenario: <Backend API happy path>
 - GIVEN <precondition>
-- WHEN <action>
-- THEN <expected outcome>
-- AND <additional outcome, if any>
+- WHEN <API request>
+- THEN <response status and body>
+- AND <side effect, if any>
 
-#### Scenario: <Edge case scenario>
+#### Scenario: <Backend API error path>
 - GIVEN <precondition>
-- WHEN <action>
-- THEN <expected outcome>
+- WHEN <invalid or unauthorized API request>
+- THEN <error status and error response contract>
+
+### Requirement: <Frontend Requirement Name>
+<Describe the user-visible behavior and identify the finalized backend endpoint, DTO, and error contract it consumes using SHALL or MUST>
+
+The frontend {MUST/SHALL} {provide specific user behavior through the finalized backend API}.
+
+#### Scenario: <Frontend success path>
+- GIVEN <backend API precondition>
+- WHEN <user action>
+- THEN <frontend state or feedback>
+- AND <expected backend API interaction>
+
+#### Scenario: <Frontend API error path>
+- GIVEN <backend API error response>
+- WHEN <user action triggers the request>
+- THEN <mapped frontend error state and recovery behavior>
 
 ## MODIFIED Requirements
 
-### Requirement: <Existing Requirement Name>
-<New description -- replaces the existing one>
-(Previously: <what it was before>)
+<!-- Include the complete updated backend requirement first, followed by each dependent frontend requirement. -->
 
-#### Scenario: <Updated scenario>
+### Requirement: <Existing Backend API Requirement Name>
+<Complete updated backend requirement -- replaces the existing one>
+(Previously: <previous backend behavior>)
+
+#### Scenario: <Updated backend scenario>
 - GIVEN <updated precondition>
-- WHEN <updated action>
-- THEN <updated outcome>
+- WHEN <updated API request>
+- THEN <updated API response and side effects>
+
+### Requirement: <Existing Frontend Requirement Name>
+<Complete updated frontend requirement mapped to the modified backend contract>
+(Previously: <previous frontend behavior>)
+
+#### Scenario: <Updated frontend scenario>
+- GIVEN <updated precondition>
+- WHEN <updated user action>
+- THEN <updated frontend behavior and API interaction>
 
 ## REMOVED Requirements
 
-### Requirement: <Requirement Being Removed>
-**Reason**: <why this requirement is being deprecated/removed>
-**Migration**: <how users should handle the removal>
+### Requirement: <Backend API Requirement Being Removed>
+**Reason**: <why this backend API requirement is being deprecated or removed>
+**Migration**: <how API consumers and data will migrate>
+
+### Requirement: <Dependent Frontend Requirement Being Removed>
+**Reason**: <why this frontend requirement is being deprecated or removed>
+**Migration**: <how the frontend will migrate from the removed backend contract>
 
 ## RENAMED Requirements
 
-- FROM: `### Requirement: <Old Name>`
-- TO: `### Requirement: <New Name>`
+<!-- List backend API renames before dependent frontend renames. -->
+
+- FROM: `### Requirement: <Old Backend API Requirement Name>`
+- TO: `### Requirement: <New Backend API Requirement Name>`
+- FROM: `### Requirement: <Old Frontend Requirement Name>`
+- TO: `### Requirement: <New Frontend Requirement Name>`

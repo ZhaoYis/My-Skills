@@ -123,12 +123,12 @@ rules:
 
 复制 frontend/backend schema 的模板结构，创建：
 - `schema.yaml.hbs` — `name: {{stack}}`（渲染为 `name: fullstack`），artifact instructions 可复用现有内容
-- `templates/proposal.md.hbs` — 与现有模板相同
-- `templates/design.md.hbs` — 与现有模板相同
-- `templates/spec.md.hbs` — 与现有模板相同
-- `templates/tasks.md.hbs` — 与现有模板相同
+- `templates/proposal.md.hbs` — 分别描述后端、前端改动及影响，明确 API 契约和后端优先交付顺序
+- `templates/design.md.hbs` — 分别编制后端与前端设计，明确后端 API 交付后再进入前端实现
+- `templates/spec.md.hbs` — 各变更段先编制后端 API requirement，再编制依赖定稿契约的前端 requirement
+- `templates/tasks.md.hbs` — 后端实现与验收在前，前端任务依赖后端完成门禁，禁止并行执行
 
-> 注：frontend 和 backend 的 proposal/design/spec/tasks 模板内容完全相同，fullstack 可直接复用。
+> 注：fullstack 的四类 artifact 模板均使用后端接口驱动前端开发的专用结构，同时保留 OpenSpec 要求的标题和场景格式。
 
 ### ✅ 8. 测试更新
 

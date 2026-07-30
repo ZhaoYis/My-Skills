@@ -4,13 +4,21 @@
 
 ## What Changes
 
-<!-- Describe what will change. Be specific about new capabilities, modifications, or removals. -->
+### Backend Changes
+<!-- Describe API, domain, persistence, migration, and integration changes. Define the backend contract that will drive frontend development. -->
+
+### Frontend Changes
+<!-- Describe routes, components, interactions, and state changes derived from the backend API contract. -->
+
+## API Contract and Delivery Sequence
+
+<!-- List changed endpoints, request/response DTOs, validation rules, and error codes. Deliver strictly in this order: finalize the contract -> implement and verify the backend -> hand off the API -> implement the frontend -> run integration/E2E verification. Backend and frontend implementation must not run in parallel. -->
 
 ## Capabilities
 
 ### New Capabilities
 <!-- Capabilities being introduced. Each creates specs/<name>/spec.md -->
-- `<name>`: <brief description of what this capability covers>
+- `<name>`: <brief description, including backend API scope and frontend consumption scope>
 
 ### Modified Capabilities
 <!-- Existing capabilities whose REQUIREMENTS are changing (not just implementation).
@@ -19,4 +27,11 @@
 
 ## Impact
 
-<!-- Affected code, APIs, dependencies, systems -->
+### Backend Impact
+<!-- Affected backend modules, APIs, data, dependencies, migrations, and operations -->
+
+### Frontend Impact
+<!-- Affected routes, components, state, API clients, dependencies, browsers, and devices -->
+
+### Integration Impact
+<!-- Contract compatibility, deployment order, rollback, observability, and end-to-end workflow impact -->

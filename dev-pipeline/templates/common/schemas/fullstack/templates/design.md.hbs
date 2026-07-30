@@ -9,6 +9,37 @@
 **Non-Goals:**
 <!-- What is explicitly out of scope -->
 
+## Backend Design
+
+### API Contract
+<!-- Define endpoints, methods, request/response DTOs, validation rules, error codes, and compatibility constraints. The contract must be finalized before frontend implementation begins. -->
+
+### Domain and Data Model
+<!-- Describe domain boundaries, persistence models, database changes, and migration strategy. -->
+
+### Backend Components
+<!-- Describe controllers, application/domain services, repositories, middleware/interceptors, and external integrations. -->
+
+### Backend Verification
+<!-- Define unit, integration, contract, and migration tests required before the API is handed off to the frontend. -->
+
+## Frontend Design
+
+### API Integration
+<!-- Base API clients, types, validation, and error handling on the finalized backend contract. Do not design against an assumed or unfinished API. -->
+
+### Routes and Components
+<!-- Describe routes, component hierarchy, page states, responsive behavior, and accessibility requirements. -->
+
+### State Management
+<!-- Describe server/client state ownership, caching, loading, empty, error, and retry behavior. -->
+
+### Frontend Verification
+<!-- Define component, interaction, integration, and end-to-end tests. -->
+
+## Delivery Sequence
+<!-- Implement strictly in this order: backend contract and design -> backend implementation and verification -> API handoff -> frontend implementation -> integration and E2E verification. Backend and frontend implementation must not run in parallel because the frontend is driven by the completed backend API contract. -->
+
 ## Decisions
 <!-- Key design decisions and rationale -->
 
