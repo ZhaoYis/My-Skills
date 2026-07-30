@@ -262,7 +262,16 @@ describe('tool matrix', () => {
     await runInit({ dir, tool: 'claude', stack, yes: true, force: false, dryRun: false });
 
     const selectedSchema = path.join(dir, 'openspec', 'schemas', stack, 'schema.yaml');
+    const apiDesignTemplate = path.join(
+      dir,
+      'openspec',
+      'schemas',
+      stack,
+      'templates',
+      'api_design.md',
+    );
     expect(await fs.pathExists(selectedSchema)).toBe(true);
+    expect(await fs.pathExists(apiDesignTemplate)).toBe(stack !== 'frontend');
     for (const otherStack of ['frontend', 'backend', 'fullstack'].filter(
       (candidate) => candidate !== stack,
     )) {

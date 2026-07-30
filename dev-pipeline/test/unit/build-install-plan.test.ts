@@ -146,7 +146,7 @@ describe('buildInstallPlan', () => {
     });
     const schemaBundleFiles = plan.files.filter((file) => file.assetId.includes('-schema-bundle:'));
 
-    expect(schemaBundleFiles).toHaveLength(5);
+    expect(schemaBundleFiles).toHaveLength(6);
     expect(
       schemaBundleFiles.every((file) => file.assetId.startsWith('fullstack-schema-bundle:')),
     ).toBe(true);
@@ -155,6 +155,31 @@ describe('buildInstallPlan', () => {
         file.destinationPath.startsWith(path.join('/tmp/demo', 'openspec/schemas/fullstack')),
       ),
     ).toBe(true);
+  });
+
+  it.each([
+    'backend',
+    'fullstack',
+  ] as const)('includes the API design artifact for the %s stack', async (stack) => {
+    const plan = await buildInstallPlan({
+      ...createPlanInput(),
+      stack,
+      language: 'en',
+    });
+    const assetId = `${stack}-schema-bundle:templates/api_design.md.hbs`;
+    const apiDesignFile = plan.files.find((file) => file.assetId === assetId);
+    const schemaTemplate = await fs.readFile(
+      path.join(PACKAGE_ROOT, 'templates/common/schemas', stack, 'schema.yaml.hbs'),
+      'utf8',
+    );
+
+    expect(apiDesignFile?.destinationPath).toBe(
+      path.join('/tmp/demo', 'openspec/schemas', stack, 'templates/api_design.md'),
+    );
+    expect(schemaTemplate).toContain('id: api-design');
+    expect(schemaTemplate).toContain('generates: api_design.md');
+    expect(schemaTemplate).toContain('template: api_design.md');
+    expect(schemaTemplate).toContain('- api-design');
   });
 
   it('keeps fullstack artifacts backend-first', async () => {

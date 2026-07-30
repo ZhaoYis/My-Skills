@@ -51,6 +51,7 @@ export const assetManifest: AssetDefinition[] = [
     templateFiles: [
       'schema.yaml.hbs',
       'proposal.md.hbs',
+      'api_design.md.hbs',
       'design.md.hbs',
       'spec.md.hbs',
       'tasks.md.hbs',
@@ -71,6 +72,7 @@ export const assetManifest: AssetDefinition[] = [
     templateFiles: [
       'schema.yaml.hbs',
       'proposal.md.hbs',
+      'api_design.md.hbs',
       'design.md.hbs',
       'spec.md.hbs',
       'tasks.md.hbs',

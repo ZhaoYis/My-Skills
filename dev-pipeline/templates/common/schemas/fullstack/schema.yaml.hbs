@@ -41,6 +41,39 @@ artifacts:
 
       This is the foundation - specs, design, and tasks all build on this.
     requires: []
+  - id: api-design
+    generates: api_design.md
+    description: Detailed API contract changes for the change
+    template: api_design.md
+    instruction: >
+      Create the API design document that records every added, modified, or
+      removed interface in this change.
+
+
+      For each added API, document the method and path, purpose, authentication
+      and authorization, request parameters/body, response statuses/body, error
+      contract, side effects, idempotency, and frontend consumer impact.
+
+
+      For each modified API, document the previous and new contracts, identify
+      breaking changes, and provide compatibility and frontend migration
+      guidance.
+
+
+      For each removed API, document the reason, deprecation/removal timing,
+      replacement API, and frontend migration steps.
+
+
+      Include shared DTO/schema changes and cross-cutting concerns such as
+      versioning, security, rate limits, observability, and rollback. The
+      finalized contract must drive the frontend design and implementation. Do
+      not invent interfaces that are outside the proposal and specs.
+
+
+      If the change has no API impact, state "No API changes" explicitly and
+      briefly explain why.
+    requires:
+      - proposal
   - id: specs
     generates: specs/**/*.md
     description: Detailed specifications for the change
@@ -140,6 +173,7 @@ artifacts:
       Specs should be testable - each scenario is a potential test case.
     requires:
       - proposal
+      - api-design
   - id: design
     generates: design.md
     description: Technical design document with implementation details
@@ -185,6 +219,7 @@ artifacts:
       Good design docs explain the "why" behind technical decisions.
     requires:
       - proposal
+      - api-design
   - id: tasks
     generates: tasks.md
     description: Implementation checklist with trackable tasks

@@ -1,0 +1,41 @@
+# API Design
+
+## Overview
+<!-- Summarize the API impact. If there are no API changes, state "No API changes" and explain why. -->
+
+## Added APIs
+
+### `<METHOD> <path>`
+- **Purpose**: <why this API is being added>
+- **Authentication / Authorization**: <required identity, roles, and permissions>
+- **Request**: <path/query/header parameters and body schema, including types, required fields, validation, and examples>
+- **Response**: <success status codes, headers, body schema, and examples>
+- **Errors**: <error status codes, error codes, response schema, and trigger conditions>
+- **Side Effects / Idempotency**: <state changes, events, retries, and idempotency behavior>
+- **Consumers**: <affected callers and generated clients>
+
+## Modified APIs
+
+### `<METHOD> <path>`
+- **Previous Contract**: <current request, response, and behavior>
+- **New Contract**: <new request, response, and behavior>
+- **Breaking Change**: <yes/no and why>
+- **Compatibility Strategy**: <versioning, rollout, fallback, and deprecation handling>
+- **Consumer Migration**: <required caller changes and migration steps>
+
+## Removed APIs
+
+### `<METHOD> <path>`
+- **Reason**: <why the API is being removed>
+- **Deprecation / Removal Timeline**: <dates or release milestones>
+- **Replacement**: <replacement API or workflow>
+- **Consumer Migration**: <steps required before removal>
+
+## Shared Models
+<!-- Added, modified, or removed DTOs/schemas/enums shared across APIs -->
+
+## Cross-Cutting Concerns
+<!-- Versioning, security, rate limits, observability, performance, compatibility, rollout, and rollback -->
+
+## Verification
+<!-- Contract tests, integration tests, compatibility checks, and acceptance evidence -->
