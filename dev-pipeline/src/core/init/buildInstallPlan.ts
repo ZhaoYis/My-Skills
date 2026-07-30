@@ -52,6 +52,10 @@ interface BundleEntry {
   relativeDestination: string;
 }
 
+export function normalizeBundleEntry(entry: string): string {
+  return entry.replaceAll('\\', '/');
+}
+
 export function buildTemplateContext(params: {
   projectName: string;
   toolId: ToolId;
@@ -214,6 +218,7 @@ async function expandBundle(
 
   const eligibleEntries = files
     .filter((entry): entry is string => typeof entry === 'string')
+    .map(normalizeBundleEntry)
     .filter((entry) => !asset.excludePatterns?.some((pattern) => entry.endsWith(pattern)))
     .filter((entry) => !isBundleFileGated(asset, entry, features))
     .filter((entry) => asset.includeExtensions?.includes(path.extname(entry)) ?? true);

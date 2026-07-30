@@ -1,15 +1,15 @@
-import fs from 'fs-extra';
 import os from 'node:os';
 import path from 'node:path';
+import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
+import { readManifest, writeManifest } from '../../src/core/manifest/io.js';
+import type { PipelineManifest } from '../../src/core/manifest/types.js';
 import {
   LEGACY_MANIFEST_FILE,
   MANIFEST_FILE,
   MANIFEST_PACKAGE_JSON_KEY,
   PACKAGE_JSON_FILE,
 } from '../../src/core/runtime/meta.js';
-import { readManifest, writeManifest } from '../../src/core/manifest/io.js';
-import type { PipelineManifest } from '../../src/core/manifest/types.js';
 
 const createdDirs: string[] = [];
 
@@ -29,6 +29,45 @@ afterEach(async () => {
 });
 
 describe('manifest io', () => {
+  it('normalizes Windows separators in managed asset records', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-manifest-'));
+    createdDirs.push(dir);
+
+    await writeManifest(dir, {
+      ...sampleManifest,
+      managedAssets: [
+        {
+          id: 'backend-schema-bundle:templates\\api_design.md.hbs',
+          destination: 'openspec\\schemas\\backend\\templates\\api_design.md',
+        },
+      ],
+    });
+
+    const raw = await fs.readJson(path.join(dir, MANIFEST_FILE));
+    expect(raw.managedAssets).toEqual([
+      {
+        id: 'backend-schema-bundle:templates/api_design.md.hbs',
+        destination: 'openspec/schemas/backend/templates/api_design.md',
+      },
+    ]);
+
+    await fs.writeJson(path.join(dir, MANIFEST_FILE), {
+      ...sampleManifest,
+      managedAssets: [
+        {
+          id: 'backend-schema-bundle:templates\\design.md.hbs',
+          destination: 'openspec\\schemas\\backend\\templates\\design.md',
+        },
+      ],
+    });
+    expect((await readManifest(dir))?.manifest.managedAssets).toEqual([
+      {
+        id: 'backend-schema-bundle:templates/design.md.hbs',
+        destination: 'openspec/schemas/backend/templates/design.md',
+      },
+    ]);
+  });
+
   it('writes and reads a standalone manifest file when package.json is absent', async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-manifest-'));
     createdDirs.push(dir);
