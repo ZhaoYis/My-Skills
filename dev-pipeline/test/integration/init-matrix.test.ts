@@ -4,6 +4,7 @@ import fs from 'fs-extra';
 import prompts from 'prompts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { runDoctorCommand } from '../../src/cli/commands/doctor.js';
+import { cleanupDirectories } from '../helpers/cleanup.js';
 
 vi.mock('prompts', () => ({
   default: vi.fn(),
@@ -31,7 +32,7 @@ async function runInit(options: Parameters<typeof runInitImpl>[0]): Promise<void
 }
 
 afterEach(async () => {
-  await Promise.all(createdDirs.splice(0).map((dir) => fs.remove(dir)));
+  await cleanupDirectories(createdDirs);
 });
 
 async function readManifest(dir: string): Promise<PipelineManifest> {
@@ -481,7 +482,10 @@ describe('tool matrix', () => {
       throw new Error(`SKILL.md expectation missing for ${tool}`);
     }
     const skillDir = path.dirname(path.join(dir, skillFile));
-    const skillContent = await fs.readFile(path.join(skillDir, 'SKILL.md'), 'utf8');
+    const skillContent = (await fs.readFile(path.join(skillDir, 'SKILL.md'), 'utf8')).replaceAll(
+      '\r\n',
+      '\n',
+    );
     const frontmatter = skillContent.match(/^---\n([\s\S]*?)\n---/)?.[1] ?? '';
 
     expect(frontmatter.match(/^name:/gm)).toHaveLength(1);

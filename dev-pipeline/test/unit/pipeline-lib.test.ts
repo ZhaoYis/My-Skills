@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url';
 import fs from 'fs-extra';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanupDirectories } from '../helpers/cleanup.js';
+import { isSameFileSystemEntry } from '../helpers/filesystem.js';
 import { PACKAGE_ROOT } from '../helpers/package-root.js';
 
 const libUrl = pathToFileURL(
@@ -188,7 +189,7 @@ describe('pipeline-lib', () => {
     );
 
     expect(result.code).toBe(0);
-    expect(await fs.realpath(result.stdout)).toBe(await fs.realpath(repo));
+    expect(await isSameFileSystemEntry(result.stdout, repo)).toBe(true);
   });
 
   it('runs a command from the repository root and parses its JSON', async () => {
@@ -240,7 +241,7 @@ describe('pipeline-lib', () => {
     `);
 
     expect(result.code).toBe(0);
-    expect(await fs.realpath(result.stdout)).toBe(await fs.realpath(repo));
+    expect(await isSameFileSystemEntry(result.stdout, repo)).toBe(true);
   });
 
   it('finds the nearest openspec project root and falls back to git root', async () => {
@@ -250,7 +251,7 @@ describe('pipeline-lib', () => {
       process.stdout.write(findOpenSpecRoot());
     `);
     expect(noProject.code).toBe(0);
-    expect(await fs.realpath(noProject.stdout)).toBe(await fs.realpath(repo));
+    expect(await isSameFileSystemEntry(noProject.stdout, repo)).toBe(true);
 
     // Case 2: openspec/ with config.yaml exists in a subdirectory
     const projectDir = path.join(repo, 'packages/my-app');
@@ -271,7 +272,7 @@ describe('pipeline-lib', () => {
     );
 
     expect(result.code).toBe(0);
-    expect(await fs.realpath(result.stdout)).toBe(await fs.realpath(projectDir));
+    expect(await isSameFileSystemEntry(result.stdout, projectDir)).toBe(true);
 
     // Case 3: openspec/changes/ (without config.yaml) also counts as a valid project
     const changelessDir = path.join(repo, 'packages/other-app');
@@ -290,6 +291,6 @@ describe('pipeline-lib', () => {
     );
 
     expect(result2.code).toBe(0);
-    expect(await fs.realpath(result2.stdout)).toBe(await fs.realpath(changelessDir));
+    expect(await isSameFileSystemEntry(result2.stdout, changelessDir)).toBe(true);
   });
 });
