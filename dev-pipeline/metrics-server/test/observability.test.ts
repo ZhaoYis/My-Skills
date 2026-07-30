@@ -1,8 +1,8 @@
 import { generateKeyPairSync } from 'node:crypto';
-import { writeFileSync, mkdtempSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import type { Server } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { Server } from 'node:http';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { parseEnv } from '../src/config/env.js';
 import { ObservabilityRegistry } from '../src/observability/metrics.js';

@@ -1,0 +1,128 @@
+name: Metrics Server CI
+
+on:
+  push:
+    paths:
+      - 'dev-pipeline/metrics-server/**'
+      - '.github/workflows/metrics-server-ci.yml'
+  pull_request:
+    paths:
+      - 'dev-pipeline/metrics-server/**'
+      - '.github/workflows/metrics-server-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Contract, lint, typecheck, build, and unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: dev-pipeline/metrics-server
+    env:
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: dev-pipeline/metrics-server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check API contract
+        run: npm run contract:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Unit and Git tests
+        run: npm test
+
+  database:
+    name: Database integration / ${{ matrix.provider }}
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - provider: postgresql
+            image: postgres:16-alpine
+            port: 5432
+            database_url: postgresql://postgres:postgres@localhost:5432/opsx_metrics
+            health_command: pg_isready -U postgres -d opsx_metrics
+          - provider: mysql
+            image: mysql:8.4
+            port: 3306
+            database_url: mysql://root:mysql@localhost:3306/opsx_metrics
+            health_command: mysqladmin ping -h 127.0.0.1 -uroot -pmysql
+    services:
+      database:
+        image: ${{ matrix.image }}
+        env:
+          POSTGRES_DB: opsx_metrics
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          MYSQL_DATABASE: opsx_metrics
+          MYSQL_ROOT_PASSWORD: mysql
+        ports:
+          - '${{ matrix.port }}:${{ matrix.port }}'
+        options: >-
+          --health-cmd "${{ matrix.health_command }}"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+    defaults:
+      run:
+        working-directory: dev-pipeline/metrics-server
+    env:
+      NODE_ENV: test
+      DB_PROVIDER: ${{ matrix.provider }}
+      DATABASE_URL: ${{ matrix.database_url }}
+      TEST_DATABASE_URL: ${{ matrix.database_url }}
+      JWT_SECRET: ci-only-jwt-secret-that-is-at-least-32-characters
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: dev-pipeline/metrics-server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate Prisma schema
+        run: npm run prisma:validate
+
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+
+      - name: Apply database migrations
+        run: npm run prisma:migrate
+
+      - name: Verify database shape
+        run: npm run prisma:verify-db
+
+      - name: Run database integration tests
+        run: npm run test:db
