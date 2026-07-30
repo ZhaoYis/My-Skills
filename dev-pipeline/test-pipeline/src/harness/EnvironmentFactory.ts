@@ -1,12 +1,12 @@
-import type { TestEnvironment, EnvironmentConfig } from './types.js';
-import { createTempDir, copyDir, cleanupAllTempDirs } from '../utils/tempDir.js';
-import { gitInit, gitCommit, gitIsWorkTree } from '../utils/gitHelpers.js';
+import { execFile } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import fs from 'fs-extra';
 import { runInit } from '../../../src/core/init/runInit.js';
+import { gitCommit, gitInit, gitIsWorkTree } from '../utils/gitHelpers.js';
+import { cleanupAllTempDirs, copyDir, createTempDir } from '../utils/tempDir.js';
+import type { EnvironmentConfig, TestEnvironment } from './types.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -97,56 +97,69 @@ export async function createTestEnvironment(
 
 async function installMockOpenspec(binDir: string): Promise<void> {
   await fs.ensureDir(binDir);
-  const executable = path.join(binDir, 'openspec');
-  await fs.writeFile(
-    executable,
-    `#!/usr/bin/env bash
-set -euo pipefail
+  const mock = `
+import fs from 'node:fs';
+import path from 'node:path';
 
-if [[ "\${1:-}" == "--version" ]]; then
-  printf '%s\\n' '1.6.0-e2e'
-  exit 0
-fi
+const command = process.argv[2];
+if (command === '--version') {
+  process.stdout.write('1.6.0-e2e\\n');
+  process.exit(0);
+}
 
-case "\${1:-}" in
-  list)
-    printf '{"changes":[],"root":{"path":"%s","source":"config"}}\\n' "$PWD"
-    ;;
-  new)
-    name="\${3:-}"
-    mkdir -p "openspec/changes/$name"
-    printf '{"status":"ok","change":"%s"}\\n' "$name"
-    ;;
-  status)
-    printf '%s\\n' '{"artifacts":[{"id":"proposal","status":"ready"},{"id":"design","status":"ready"},{"id":"tasks","status":"ready"},{"id":"specs","status":"ready"}]}'
-    ;;
-  instructions)
-    printf '%s\\n' '{"state":"ready","contextFiles":[],"instruction":"e2e fixture instruction"}'
-    ;;
-  validate)
-    printf '%s\\n' '{"valid":true,"issues":[]}'
-    ;;
-  archive)
-    name="\${2:-}"
-    tasks="openspec/changes/$name/tasks.md"
-    if [[ -f "$tasks" ]] && grep -q '\\[ \\]' "$tasks"; then
-      printf '%s\\n' '{"status":"error","reason":"pending-tasks"}'
-      exit 9
-    fi
-    archive_path="openspec/changes/archive/2099-01-01-$name"
-    mkdir -p "$(dirname "$archive_path")"
-    mv "openspec/changes/$name" "$archive_path"
-    printf '{"status":"ok","archivePath":"%s"}\\n' "$archive_path"
-    ;;
-  *)
-    printf '%s\\n' '{"status":"error","reason":"unsupported-e2e-command"}'
-    exit 8
-    ;;
-esac
-`,
-    'utf8',
-  );
-  await fs.chmod(executable, 0o755);
+switch (command) {
+  case 'list':
+    process.stdout.write(JSON.stringify({
+      changes: [], root: { path: process.cwd(), source: 'config' }
+    }) + '\\n');
+    break;
+  case 'new': {
+    const name = process.argv[4] || '';
+    fs.mkdirSync(path.join('openspec', 'changes', name), { recursive: true });
+    process.stdout.write(JSON.stringify({ status: 'ok', change: name }) + '\\n');
+    break;
+  }
+  case 'status':
+    process.stdout.write('{"artifacts":[{"id":"proposal","status":"ready"},{"id":"design","status":"ready"},{"id":"tasks","status":"ready"},{"id":"specs","status":"ready"}]}\\n');
+    break;
+  case 'instructions':
+    process.stdout.write('{"state":"ready","contextFiles":[],"instruction":"e2e fixture instruction"}\\n');
+    break;
+  case 'validate':
+    process.stdout.write('{"valid":true,"issues":[]}\\n');
+    break;
+  case 'archive': {
+    const name = process.argv[3] || '';
+    const source = path.join('openspec', 'changes', name);
+    const tasks = path.join(source, 'tasks.md');
+    if (fs.existsSync(tasks) && fs.readFileSync(tasks, 'utf8').includes('[ ]')) {
+      process.stdout.write('{"status":"error","reason":"pending-tasks"}\\n');
+      process.exit(9);
+    }
+    const archivePath = path.join('openspec', 'changes', 'archive', '2099-01-01-' + name);
+    fs.mkdirSync(path.dirname(archivePath), { recursive: true });
+    fs.renameSync(source, archivePath);
+    process.stdout.write(JSON.stringify({ status: 'ok', archivePath }) + '\\n');
+    break;
+  }
+  default:
+    process.stdout.write('{"status":"error","reason":"unsupported-e2e-command"}\\n');
+    process.exit(8);
+}
+`;
+  const script = path.join(binDir, 'openspec.mjs');
+  await fs.writeFile(script, mock, 'utf8');
+  if (process.platform === 'win32') {
+    await fs.writeFile(
+      path.join(binDir, 'openspec.cmd'),
+      `@echo off\r\n"${process.execPath}" "${script}" %*\r\n`,
+      'utf8',
+    );
+  } else {
+    const executable = path.join(binDir, 'openspec');
+    await fs.writeFile(executable, `#!/usr/bin/env node\n${mock}`, 'utf8');
+    await fs.chmod(executable, 0o755);
+  }
 }
 
 export { SAMPLES_ROOT };

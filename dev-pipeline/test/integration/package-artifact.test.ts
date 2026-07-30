@@ -1,8 +1,8 @@
-import fs from 'fs-extra';
+import { execFile } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
-import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import fs from 'fs-extra';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PACKAGE_ROOT } from '../helpers/package-root.js';
 
@@ -11,9 +11,30 @@ const rootDir = PACKAGE_ROOT;
 const createdDirs: string[] = [];
 let tarball = '';
 
+function execNpm(args: string[], options: { cwd: string; timeout?: number }) {
+  const command = process.platform === 'win32' ? process.env.ComSpec || 'cmd.exe' : 'npm';
+  const commandArgs = process.platform === 'win32' ? ['/d', '/s', '/c', 'npm.cmd', ...args] : args;
+  return execFileAsync(command, commandArgs, options);
+}
+
+function execPackageBin(
+  binPath: string,
+  args: string[],
+  options: { cwd: string; timeout?: number },
+) {
+  if (process.platform === 'win32') {
+    return execFileAsync(
+      process.env.ComSpec || 'cmd.exe',
+      ['/d', '/s', '/c', `${binPath}.cmd`, ...args],
+      options,
+    );
+  }
+  return execFileAsync(binPath, args, options);
+}
+
 beforeAll(async () => {
-  await execFileAsync('npm', ['run', 'build'], { cwd: rootDir });
-  const { stdout } = await execFileAsync('npm', ['pack'], { cwd: rootDir });
+  await execNpm(['run', 'build'], { cwd: rootDir });
+  const { stdout } = await execNpm(['pack'], { cwd: rootDir });
   tarball = stdout.trim().split('\n').pop() ?? '';
 }, 30000);
 
@@ -62,24 +83,27 @@ describe('packaged artifact', () => {
     const targetDir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-pack-target-'));
     createdDirs.push(installDir, targetDir);
 
-    await execFileAsync('npm', ['init', '-y'], { cwd: installDir });
-    await execFileAsync('npm', ['install', path.join(rootDir, tarball)], {
+    await execNpm(['init', '-y'], { cwd: installDir });
+    await execNpm(['install', path.join(rootDir, tarball)], {
       cwd: installDir,
       timeout: 30000,
     });
     const binPath = path.join(installDir, 'node_modules', '.bin', 'opsx-dev-pipeline');
     const createBinPath = path.join(installDir, 'node_modules', '.bin', 'create-opsx-dev-pipeline');
 
-    const help = await execFileAsync(binPath, ['--help'], { cwd: installDir, timeout: 30000 });
-    const createHelp = await execFileAsync(createBinPath, ['--help'], {
+    const help = await execPackageBin(binPath, ['--help'], {
+      cwd: installDir,
+      timeout: 30000,
+    });
+    const createHelp = await execPackageBin(createBinPath, ['--help'], {
       cwd: installDir,
       timeout: 30000,
     });
     expect(help.stdout).toContain('opsx-dev-pipeline');
     expect(createHelp.stdout).toContain('opsx-dev-pipeline');
 
-    await execFileAsync('npm', ['init', '-y'], { cwd: targetDir });
-    await execFileAsync(
+    await execNpm(['init', '-y'], { cwd: targetDir });
+    await execPackageBin(
       binPath,
       [
         'init',

@@ -37,7 +37,10 @@ const websiteBuildEnv = {
 function run(label, cwd, args, env = process.env) {
   return new Promise((resolve, reject) => {
     process.stdout.write(`\n[metrics acceptance] ${label}\n`);
-    const child = spawn('npm', args, { cwd, env, stdio: 'inherit' });
+    const command = process.platform === 'win32' ? process.env.ComSpec || 'cmd.exe' : 'npm';
+    const commandArgs =
+      process.platform === 'win32' ? ['/d', '/s', '/c', 'npm.cmd', ...args] : args;
+    const child = spawn(command, commandArgs, { cwd, env, stdio: 'inherit' });
     child.once('error', reject);
     child.once('exit', (code, signal) => {
       if (code === 0) resolve();

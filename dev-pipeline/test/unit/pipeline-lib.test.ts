@@ -26,19 +26,17 @@ beforeEach(async () => {
   await fs.ensureDir(bin);
   await runCommand('git', ['init', '--quiet'], repo);
 
-  await writeExecutable(
+  await writeNodeCommand(
     'fixture-command',
-    `#!/usr/bin/env bash
-case "\${1:-}" in
-  success) printf '%s\\n' '{"status":"ok","items":[1,2]}' ;;
-  failure) printf '%s\\n' 'fixture failed' >&2; exit 7 ;;
-  empty) exit 0 ;;
-  invalid) printf '%s\\n' 'not-json' ;;
-  large) node -e 'process.stdout.write("x".repeat(11 * 1024 * 1024))' ;;
-esac
+    `const mode = process.argv[2];
+if (mode === 'success') process.stdout.write('{"status":"ok","items":[1,2]}\\n');
+else if (mode === 'failure') { process.stderr.write('fixture failed\\n'); process.exit(7); }
+else if (mode === 'empty') process.exit(0);
+else if (mode === 'invalid') process.stdout.write('not-json\\n');
+else if (mode === 'large') process.stdout.write('x'.repeat(11 * 1024 * 1024));
 `,
   );
-  await writeExecutable('openspec', '#!/usr/bin/env bash\nexit 0\n');
+  await writeNodeCommand('openspec', 'process.exit(0);\n');
 });
 
 afterEach(async () => {
@@ -67,13 +65,36 @@ function commandEnv(): NodeJS.ProcessEnv {
   return { ...process.env, PATH: `${bin}${path.delimiter}${process.env.PATH ?? ''}` };
 }
 
-async function writeExecutable(name: string, content: string): Promise<void> {
-  const file = path.join(bin, name);
-  await fs.outputFile(file, content);
-  await fs.chmod(file, 0o755);
+async function writeNodeCommand(name: string, content: string): Promise<void> {
+  const script = path.join(bin, `${name}.mjs`);
+  await fs.outputFile(script, content);
+  if (process.platform === 'win32') {
+    await fs.outputFile(
+      path.join(bin, `${name}.cmd`),
+      `@echo off\r\n"${process.execPath}" "${script}" %*\r\n`,
+    );
+  } else {
+    const executable = path.join(bin, name);
+    await fs.outputFile(executable, `#!/usr/bin/env node\n${content}`);
+    await fs.chmod(executable, 0o755);
+  }
 }
 
 describe('pipeline-lib', () => {
+  it('wraps Windows command shims with cmd.exe', async () => {
+    const result = await runModule(`
+      import { resolveCommandInvocation } from ${JSON.stringify(libUrl)};
+      process.stdout.write(JSON.stringify(
+        resolveCommandInvocation('C:\\\\tools\\\\openspec.cmd', ['--version'], 'win32')
+      ));
+    `);
+
+    expect(JSON.parse(result.stdout)).toEqual({
+      command: process.env.ComSpec || 'cmd.exe',
+      args: ['/d', '/s', '/c', 'C:\\tools\\openspec.cmd', '--version'],
+    });
+  });
+
   it('accepts valid change names and identifiers', async () => {
     const result = await runModule(`
       import { validateChangeName, validateIdentifier } from ${JSON.stringify(libUrl)};
