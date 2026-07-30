@@ -1,6 +1,4 @@
-import { execFile as execFileCallback } from 'node:child_process';
 import path from 'node:path';
-import { promisify } from 'node:util';
 import fs from 'fs-extra';
 import pc from 'picocolors';
 import { loadToolRegistry } from '../adapters/registry.js';
@@ -10,10 +8,10 @@ import { resolvePackageRoot } from '../runtime/resolvePackageRoot.js';
 import { buildInstallPlan } from './buildInstallPlan.js';
 import { collectInputs } from './collectInputs.js';
 import { executeInstallPlan } from './executeInstallPlan.js';
+import { execOpenSpec } from './openSpecCli.js';
 import { resolveInstallConflicts } from './resolveInstallConflicts.js';
 import { validateTarget } from './validateTarget.js';
 
-const execFile = promisify(execFileCallback);
 const MIN_OPENSPEC_VERSION = [1, 6, 0] as const;
 
 function parseVersion(value: string): number[] | null {
@@ -33,7 +31,7 @@ function isVersionAtLeast(version: number[], minimum: readonly number[]): boolea
 export async function preflightOpenSpec(): Promise<void> {
   let stdout: string;
   try {
-    ({ stdout } = await execFile('openspec', ['--version']));
+    ({ stdout } = await execOpenSpec(['--version']));
   } catch (error) {
     const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
     if (code === 'ENOENT') {
@@ -60,7 +58,7 @@ async function initializeOpenSpec(targetDir: string, tool: InitOptions['tool']):
   const configPath = path.join(targetDir, 'openspec', 'config.yaml');
   const hadConfig = await fs.pathExists(configPath);
   try {
-    await execFile('openspec', ['init', '--tools', tool], { cwd: targetDir });
+    await execOpenSpec(['init', '--tools', tool], { cwd: targetDir });
   } catch (error) {
     throw new Error(
       `OpenSpec initialization failed: ${error instanceof Error ? error.message : String(error)}`,
