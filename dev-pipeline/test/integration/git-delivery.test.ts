@@ -46,6 +46,7 @@ async function createDeliveryRepo(): Promise<{ root: string; remote: string }> {
   const repo = path.join(root, 'work');
   await git(root, 'init', '--bare', remote);
   await git(root, 'clone', remote, repo);
+  await git(repo, 'config', 'core.autocrlf', 'false');
   await git(repo, 'config', 'user.name', 'Pipeline Test');
   await git(repo, 'config', 'user.email', 'pipeline@example.com');
   await commitFile(repo, 'base.txt', 'base\n', 'chore: initialize repository');
