@@ -8,7 +8,7 @@ import { resolvePackageRoot } from '../runtime/resolvePackageRoot.js';
 import { buildInstallPlan } from './buildInstallPlan.js';
 import { collectInputs } from './collectInputs.js';
 import { executeInstallPlan } from './executeInstallPlan.js';
-import { execOpenSpec } from './openSpecCli.js';
+import { execOpenSpec, isOpenSpecCliMissingError } from './openSpecCli.js';
 import { resolveInstallConflicts } from './resolveInstallConflicts.js';
 import { validateTarget } from './validateTarget.js';
 
@@ -33,9 +33,16 @@ export async function preflightOpenSpec(): Promise<void> {
   try {
     ({ stdout } = await execOpenSpec(['--version']));
   } catch (error) {
-    const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
-    if (code === 'ENOENT') {
-      throw new Error('openspec CLI not found. Install OpenSpec >= 1.6.0 before running init.');
+    if (isOpenSpecCliMissingError(error)) {
+      throw new Error(
+        [
+          'OpenSpec CLI is required but was not found.',
+          'Install OpenSpec >= 1.6.0 with:',
+          '  npm install --global @fission-ai/openspec@latest',
+          'Then verify the installation with:',
+          '  openspec --version',
+        ].join('\n'),
+      );
     }
     throw new Error(
       `Unable to run openspec --version: ${error instanceof Error ? error.message : String(error)}`,

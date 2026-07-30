@@ -8,6 +8,16 @@ interface OpenSpecInvocation {
   args: string[];
 }
 
+export function isOpenSpecCliMissingError(
+  error: unknown,
+  platform: NodeJS.Platform = process.platform,
+): boolean {
+  if (!error || typeof error !== 'object' || !('code' in error)) return false;
+
+  const code = error.code;
+  return code === 'ENOENT' || (platform === 'win32' && (code === 1 || code === '1'));
+}
+
 export function resolveOpenSpecInvocation(
   args: readonly string[],
   platform: NodeJS.Platform = process.platform,

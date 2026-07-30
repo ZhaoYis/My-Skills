@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { resolveOpenSpecInvocation } from '../../src/core/init/openSpecCli.js';
+import {
+  isOpenSpecCliMissingError,
+  resolveOpenSpecInvocation,
+} from '../../src/core/init/openSpecCli.js';
 
 describe('resolveOpenSpecInvocation', () => {
   it.each([
@@ -17,5 +20,17 @@ describe('resolveOpenSpecInvocation', () => {
       command: 'openspec',
       args: ['--version'],
     });
+  });
+
+  it('recognizes command-not-found errors on each platform', () => {
+    expect(isOpenSpecCliMissingError({ code: 'ENOENT' }, 'linux')).toBe(true);
+    expect(isOpenSpecCliMissingError({ code: 1 }, 'win32')).toBe(true);
+    expect(isOpenSpecCliMissingError({ code: '1' }, 'win32')).toBe(true);
+  });
+
+  it('does not treat other command failures as a missing CLI', () => {
+    expect(isOpenSpecCliMissingError({ code: 1 }, 'linux')).toBe(false);
+    expect(isOpenSpecCliMissingError({ code: 2 }, 'win32')).toBe(false);
+    expect(isOpenSpecCliMissingError(new Error('failed'), 'win32')).toBe(false);
   });
 });
