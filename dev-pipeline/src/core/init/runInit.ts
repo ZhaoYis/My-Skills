@@ -116,6 +116,7 @@ export async function runInit(options: InitOptions): Promise<void> {
     projectName: answers.projectName,
     tool: answers.tool,
     stack: answers.stack,
+    techStack: answers.techStack,
     language: answers.language,
     features: answers.features,
     dryRun: Boolean(options.dryRun),

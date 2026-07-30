@@ -52,6 +52,22 @@ function createPlan(overrides: Partial<InstallPlan> = {}): InstallPlan {
 }
 
 describe('executeInstallPlan', () => {
+  it('persists the selected tech stack in the manifest', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-exec-tech-stack-'));
+    createdDirs.push(dir);
+
+    await executeInstallPlan(
+      createPlan({
+        targetDir: dir,
+        stack: 'backend',
+        techStack: 'java-spring-boot',
+      }),
+    );
+
+    const manifest = await readManifest(dir);
+    expect(manifest?.manifest.techStack).toBe('java-spring-boot');
+  });
+
   it('preserves managed assets when sync skips existing conflicts', async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-exec-sync-'));
     createdDirs.push(dir);

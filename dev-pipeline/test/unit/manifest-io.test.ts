@@ -17,6 +17,7 @@ const sampleManifest: PipelineManifest = {
   schemaVersion: 1,
   projectName: 'demo',
   tool: 'claude',
+  techStack: 'java-spring-boot',
   features: ['base'],
   templateVersion: '0.2.1',
   packageName: 'opsx-dev-pipeline',
@@ -38,6 +39,7 @@ describe('manifest io', () => {
     expect(result?.path).toBe(path.join(dir, MANIFEST_FILE));
     expect(result?.storage).toBe('standalone');
     expect(result?.manifest.tool).toBe('claude');
+    expect(result?.manifest.techStack).toBe('java-spring-boot');
   });
 
   it('embeds manifest in package.json when package.json exists', async () => {
@@ -61,6 +63,7 @@ describe('manifest io', () => {
     expect(result?.path).toBe(path.join(dir, PACKAGE_JSON_FILE));
     expect(result?.storage).toBe('package-json');
     expect(result?.manifest.tool).toBe('claude');
+    expect(result?.manifest.techStack).toBe('java-spring-boot');
   });
 
   it('migrates standalone manifest into package.json and removes the standalone file', async () => {
@@ -103,6 +106,7 @@ describe('manifest io', () => {
     expect(result?.path).toBe(path.join(dir, LEGACY_MANIFEST_FILE));
     expect(result?.storage).toBe('standalone');
     expect(result?.manifest.projectName).toBe('legacy-demo');
+    expect(result?.manifest.techStack).toBeUndefined();
   });
 
   it.each([

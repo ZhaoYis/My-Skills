@@ -313,12 +313,28 @@ describe('tool matrix', () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-lifecycle-'));
     createdDirs.push(dir);
 
-    await runInit({ dir, tool: 'claude', yes: true, force: false, dryRun: false });
+    await runInit({
+      dir,
+      tool: 'claude',
+      techStack: 'java-spring-boot',
+      yes: true,
+      force: false,
+      dryRun: false,
+    });
+    expect(await fs.readFile(path.join(dir, 'openspec/config.yaml'), 'utf8')).toContain(
+      'Tech Stack: Java Spring Boot',
+    );
+    expect((await readManifest(dir)).techStack).toBe('java-spring-boot');
+
     await runDoctorCommand(dir);
     await runSyncCommand({ dir, force: true, dryRun: false });
     await runUpgradeCommand({ dir, force: true, dryRun: false });
 
     expect(await fs.pathExists(path.join(dir, MANIFEST_FILE))).toBe(true);
+    expect(await fs.readFile(path.join(dir, 'openspec/config.yaml'), 'utf8')).toContain(
+      'Tech Stack: Java Spring Boot',
+    );
+    expect((await readManifest(dir)).techStack).toBe('java-spring-boot');
   });
 
   it('doctor reports current manifest version after init', async () => {

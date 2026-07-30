@@ -1,0 +1,32 @@
+language: {{language}}
+schema: backend
+context: |
+  Project: {{projectName}}
+  Project Type: Backend Service
+  Tech Stack: {{techStackName}} - Java 17+, Spring Boot 3.x, Maven/Gradle
+  ORM: MyBatis-Plus / JPA / JOOQ
+  Testing: JUnit 5 + Mockito + Spring Boot Test + Testcontainers
+  Conventions: Layered architecture (Controller -> Service -> Repository), DTO pattern
+  Code Quality: Checkstyle / SpotBugs
+
+rules:
+  language:
+{{#if (isLanguage "zh")}}
+    - "所有文档、规格、提案、设计和任务必须使用简体中文编写"
+    - "所有代码注释必须使用简体中文编写"
+    - "所有 commit message 必须使用简体中文编写"
+    - "所有 PR 描述和代码审查评论必须使用简体中文编写"
+{{else}}
+    - "All documents, specs, proposals, designs, and tasks MUST be written in English"
+    - "All code comments MUST be written in English"
+    - "All commit messages MUST be written in English"
+    - "All PR descriptions and review comments MUST be written in English"
+{{/if}}
+  proposal:
+    - "Must include API contract changes (endpoints, request/response DTOs)"
+    - "Must specify database migration strategy (Flyway/Liquibase)"
+  specs:
+    - "Use Given/When/Then format for API behavior scenarios"
+  design:
+    - "Must include ERD or data model changes"
+    - "Must specify middleware/interceptor chain changes"

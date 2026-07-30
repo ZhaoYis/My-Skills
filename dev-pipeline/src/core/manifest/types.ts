@@ -10,6 +10,7 @@ export interface PipelineManifest {
   projectName: string;
   tool: ToolId;
   stack?: StackId;
+  techStack?: string;
   language?: DocLanguage;
   features: FeatureId[];
   templateVersion: string;

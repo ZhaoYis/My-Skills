@@ -85,6 +85,8 @@ describe('buildInstallPlan', () => {
       skillsDir: '.custom/skills',
       commandsDir: '.custom/commands',
       skillRootNote: '- Custom root: `{skillsDir}/opsx-dev-pipeline`',
+      techStack: 'java-spring-boot',
+      techStackName: 'Java Spring Boot',
     });
 
     expect(context).toMatchObject({
@@ -94,6 +96,8 @@ describe('buildInstallPlan', () => {
       packageRepoUrl: PACKAGE_REPO_URL,
       skillRootNote: '- Custom root: `.custom/skills/opsx-dev-pipeline`',
       askTool: 'AskUserQuestion',
+      techStack: 'java-spring-boot',
+      techStackName: 'Java Spring Boot',
     });
 
     const rendered = await renderTemplate(
@@ -102,6 +106,23 @@ describe('buildInstallPlan', () => {
     );
     expect(rendered).toContain('- Custom root: `.custom/skills/opsx-dev-pipeline`');
     expect(rendered).not.toContain('- 对于 Claude Code 安装：');
+  });
+
+  it.each([
+    ['backend', 'java-spring-boot', 'config.backend.java-spring-boot.yaml.hbs'],
+    ['frontend', 'react-vite', 'config.frontend.react-vite.yaml.hbs'],
+    ['fullstack', 'java-react', 'config.fullstack.java-react.yaml.hbs'],
+  ] as const)('selects the %s tech stack config template', async (stack, techStack, template) => {
+    const plan = await buildInstallPlan({
+      ...createPlanInput(),
+      stack,
+      techStack,
+    });
+
+    expect(plan.techStack).toBe(techStack);
+    expect(
+      plan.files.find((file) => file.assetId === 'stack-config')?.sourcePath.endsWith(template),
+    ).toBe(true);
   });
 
   it.each([

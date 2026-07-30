@@ -9,6 +9,25 @@ import {
   type ToolId,
 } from '../adapters/types.js';
 import type { InitAnswers, InitOptions } from '../prompts/types.js';
+import {
+  getTechStackById,
+  getTechStacksByParentStack,
+  resolveTechStackId,
+} from '../tech-stack/registry.js';
+import type { TechStackId } from '../tech-stack/types.js';
+
+function assertTechStackMatchesParent(techStack: TechStackId, parentStack: StackId): void {
+  const definition = getTechStackById(techStack);
+  if (definition?.parentStack !== parentStack) {
+    throw new Error(
+      `Tech stack ${techStack} is not valid for stack ${parentStack}. Valid: ${getTechStacksByParentStack(
+        parentStack,
+      )
+        .map(({ id }) => id)
+        .join(', ')}.`,
+    );
+  }
+}
 
 function resolveFeatures(option: InitOptions['feature']): FeatureId[] {
   const requested = option === undefined ? [] : Array.isArray(option) ? option : [option];
@@ -47,6 +66,8 @@ export async function collectInputs(
   const defaultProjectName = path.basename(targetDir);
   const defaultTool = options.tool ?? 'claude';
   const requestedStack = options.stack;
+  const requestedTechStack =
+    options.techStack === undefined ? undefined : resolveTechStackId(options.techStack);
   const requestedLanguage = resolveDocLanguage(options.language);
   const defaultLanguage = requestedLanguage ?? 'zh';
   if (
@@ -58,6 +79,9 @@ export async function collectInputs(
     throw new Error(
       `Invalid stack: ${String(requestedStack)}. Valid stacks: frontend, backend, fullstack.`,
     );
+  }
+  if (requestedStack && requestedTechStack) {
+    assertTechStackMatchesParent(requestedTechStack, requestedStack);
   }
   const features = resolveFeatures(options.feature);
 
@@ -72,6 +96,7 @@ export async function collectInputs(
       projectName: defaultProjectName,
       tool: defaultTool,
       stack: requestedStack,
+      techStack: requestedTechStack,
       language: defaultLanguage,
       features,
     };
@@ -110,6 +135,23 @@ export async function collectInputs(
         initial: requestedStack === 'frontend' ? 1 : requestedStack === 'fullstack' ? 2 : 0,
       },
       {
+        type: (_previous, values) =>
+          getTechStacksByParentStack(values.stack as StackId).length > 0 ? 'select' : null,
+        name: 'techStack',
+        message: 'Select your tech stack',
+        choices: (_previous, values) =>
+          getTechStacksByParentStack(values.stack as StackId).map((techStack) => ({
+            title: techStack.displayName,
+            description: techStack.description,
+            value: techStack.id,
+          })),
+        initial: (_previous, values) => {
+          const choices = getTechStacksByParentStack(values.stack as StackId);
+          const requestedIndex = choices.findIndex(({ id }) => id === requestedTechStack);
+          return requestedIndex >= 0 ? requestedIndex : 0;
+        },
+      },
+      {
         type: 'select',
         name: 'language',
         message: 'Select document language / 选择文档语言',
@@ -123,10 +165,17 @@ export async function collectInputs(
     { onCancel: () => process.exit(1) },
   );
 
+  const stack = (response.stack ?? requestedStack ?? 'backend') as StackId;
+  const techStack = (response.techStack ?? requestedTechStack) as TechStackId | undefined;
+  if (techStack) {
+    assertTechStackMatchesParent(techStack, stack);
+  }
+
   return {
     projectName: response.projectName ?? defaultProjectName,
     tool: response.tool ?? defaultTool,
-    stack: (response.stack ?? requestedStack ?? 'backend') as StackId,
+    stack,
+    techStack,
     language: (response.language ?? defaultLanguage) as DocLanguage,
     features,
   };

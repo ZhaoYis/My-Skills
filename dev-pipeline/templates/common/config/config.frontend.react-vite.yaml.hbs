@@ -1,0 +1,31 @@
+language: {{language}}
+schema: frontend
+context: |
+  Project: {{projectName}}
+  Project Type: Frontend Application
+  Tech Stack: {{techStackName}} - React 18+, TypeScript, Vite
+  Testing: Vitest + React Testing Library + Playwright (E2E)
+  Conventions: Functional components, hooks-first, CSS Modules or Tailwind
+  Code Quality: Biome for linting/formatting
+
+rules:
+  language:
+{{#if (isLanguage "zh")}}
+    - "所有文档、规格、提案、设计和任务必须使用简体中文编写"
+    - "所有代码注释必须使用简体中文编写"
+    - "所有 commit message 必须使用简体中文编写"
+    - "所有 PR 描述和代码审查评论必须使用简体中文编写"
+{{else}}
+    - "All documents, specs, proposals, designs, and tasks MUST be written in English"
+    - "All code comments MUST be written in English"
+    - "All commit messages MUST be written in English"
+    - "All PR descriptions and review comments MUST be written in English"
+{{/if}}
+  proposal:
+    - "Must include UI/UX impact analysis"
+    - "Must specify browser/device compatibility requirements"
+  specs:
+    - "Use Given/When/Then format for user interaction scenarios"
+  design:
+    - "Must include component tree diagram or description"
+    - "Must specify route design and state management strategy"

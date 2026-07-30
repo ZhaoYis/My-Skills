@@ -8,6 +8,7 @@ import { readManifest } from '../../core/manifest/io.js';
 import { checkManifestVersion } from '../../core/manifest/versionCheck.js';
 import type { InitOptions } from '../../core/prompts/types.js';
 import { resolvePackageRoot } from '../../core/runtime/resolvePackageRoot.js';
+import { resolveTechStackId } from '../../core/tech-stack/registry.js';
 import { refreshUpgradeFingerprints } from '../../core/upgrade/refreshFingerprints.js';
 import { ensureUpgradeVersionCheck } from '../../core/upgrade/versionPrompt.js';
 
@@ -33,6 +34,9 @@ export async function runUpgradeCommand(options: InitOptions): Promise<void> {
     projectName: result.manifest.projectName,
     tool: result.manifest.tool,
     stack: result.manifest.stack,
+    techStack: result.manifest.techStack
+      ? resolveTechStackId(result.manifest.techStack)
+      : undefined,
     language: languageSelection.language,
     features: result.manifest.features,
     dryRun: Boolean(options.dryRun),

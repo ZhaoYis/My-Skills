@@ -4,6 +4,7 @@ import pc from 'picocolors';
 import { readManifest, writeManifest } from '../manifest/io.js';
 import type { ManagedAssetRecord } from '../manifest/types.js';
 import { PACKAGE_NAME, TEMPLATE_VERSION } from '../runtime/meta.js';
+import { getTechStackById } from '../tech-stack/registry.js';
 import { buildTemplateContext } from './buildInstallPlan.js';
 import { renderTemplate } from './renderTemplates.js';
 import type { InstallPlan } from './types.js';
@@ -170,6 +171,8 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
       commandsDir: plan.adapter.getDestination('commands'),
       features: plan.features,
       skillRootNote: plan.adapter.getSkillRootNote(),
+      techStack: plan.techStack,
+      techStackName: plan.techStack ? getTechStackById(plan.techStack)?.displayName : undefined,
     }),
     managedAssets: [] as Array<{ id: string; destination: string }>,
   };
@@ -252,6 +255,7 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
     projectName: plan.projectName,
     tool: plan.tool,
     stack: plan.stack,
+    techStack: plan.techStack,
     language: plan.language,
     features: plan.features,
     templateVersion: TEMPLATE_VERSION,

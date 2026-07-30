@@ -30,7 +30,7 @@ npx opsx-dev-pipeline@latest init
 npx opsx-dev-pipeline init --tool claude --stack backend --yes
 ```
 
-使用 `--yes` 时，`--stack frontend|backend` 为必填参数。
+使用 `--yes` 时，`--stack frontend|backend|fullstack` 为必填参数。
 
 仅预览将要生成的文件：
 
@@ -51,10 +51,11 @@ npx opsx-dev-pipeline uninstall --yes
 ## Supported Stacks
 
 
-| Stack ID   | 默认技术栈                                 | OpenSpec Schema              | 主要规则                       |
-| ---------- | ------------------------------------- | ---------------------------- | -------------------------- |
-| `frontend` | React 18+、TypeScript、Vite             | `openspec/schemas/frontend/` | UI/UX 影响、浏览器兼容、组件树、路由与状态管理 |
-| `backend`  | Java 17+、Spring Boot 3.x、Maven/Gradle | `openspec/schemas/backend/`  | API 契约、数据库迁移、数据模型、中间件与拦截器  |
+| Stack ID    | 默认技术栈                                 | OpenSpec Schema               | 主要规则                       |
+| ----------- | ------------------------------------- | ----------------------------- | -------------------------- |
+| `frontend`  | React 18+、TypeScript、Vite             | `openspec/schemas/frontend/`  | UI/UX 影响、浏览器兼容、组件树、路由与状态管理 |
+| `backend`   | Java 17+、Spring Boot 3.x、Maven/Gradle | `openspec/schemas/backend/`   | API 契约、API 设计、数据库迁移、数据模型、中间件与拦截器  |
+| `fullstack` | React 18+（前端）+ Java Spring Boot（后端） | `openspec/schemas/fullstack/` | API 契约优先、前后端分离、Monorepo 约定（`frontend/` + `backend/`） |
 
 
 每次 `init` 只安装一套 stack schema。所选 stack 会记录在 pipeline manifest 中，后续 `sync` 和 `upgrade` 会继续使用同一套 schema 与 config 模板。
@@ -106,6 +107,7 @@ openspec/
     ├── schema.yaml
     └── templates/
         ├── proposal.md
+        ├── api_design.md
         ├── design.md
         ├── spec.md
         └── tasks.md
@@ -210,16 +212,17 @@ flowchart TD
 ### Init Options
 
 
-| Option               | Description                                                       |
-| -------------------- | ----------------------------------------------------------------- |
-| `--tool <tool>`      | AI 工具 ID：`claude`、`cursor` 或 `codex`                           |
-| `--stack <stack>`    | 项目类型：`frontend` 或 `backend`；`--yes` 模式必填                   |
-| `--lang <en\|zh>`     | 文档语言，影响所有 AI 产出物（提案、代码注释、commit message 等）；默认 `zh` |
-| `--feature <feature>` | 启用可选功能（可重复使用，如 `--feature structural-analysis-hint`）      |
-| `--yes`              | 非交互执行；已有冲突文件默认跳过，不等同于覆盖                             |
-| `--force`            | 覆盖冲突的托管文件                                                    |
-| `--dry-run`          | 预览完整安装计划，不调用 `openspec init`，不写入文件                      |
-| `--dir <dir>`        | 指定目标目录，默认当前目录                                              |
+| Option                  | Description                                                       |
+| ----------------------- | ----------------------------------------------------------------- |
+| `--tool <tool>`         | AI 工具 ID：`claude`、`cursor` 或 `codex`                           |
+| `--stack <stack>`       | 项目类型：`frontend`、`backend` 或 `fullstack`；`--yes` 模式必填       |
+| `--tech-stack <id>`     | 技术栈细分：`java-spring-boot`、`react-vite` 或 `java-react`；可选       |
+| `--lang <en\|zh>`        | 文档语言，影响所有 AI 产出物（提案、代码注释、commit message 等）；默认 `zh` |
+| `--feature <feature>`   | 启用可选功能（可重复使用，如 `--feature structural-analysis-hint`）      |
+| `--yes`                 | 非交互执行；已有冲突文件默认跳过，不等同于覆盖                             |
+| `--force`               | 覆盖冲突的托管文件                                                    |
+| `--dry-run`             | 预览完整安装计划，不调用 `openspec init`，不写入文件                      |
+| `--dir <dir>`           | 指定目标目录，默认当前目录                                              |
 
 
 

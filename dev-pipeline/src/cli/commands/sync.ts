@@ -7,6 +7,7 @@ import { executeInstallPlan } from '../../core/init/executeInstallPlan.js';
 import { resolveInstallConflicts } from '../../core/init/resolveInstallConflicts.js';
 import { collectExistingLanguage } from '../../core/init/resolveExistingLanguage.js';
 import type { InitOptions } from '../../core/prompts/types.js';
+import { resolveTechStackId } from '../../core/tech-stack/registry.js';
 
 export async function runSyncCommand(options: InitOptions): Promise<void> {
   const targetDir = path.resolve(options.dir ?? process.cwd());
@@ -30,6 +31,9 @@ export async function runSyncCommand(options: InitOptions): Promise<void> {
     projectName: result.manifest.projectName,
     tool: result.manifest.tool,
     stack: result.manifest.stack,
+    techStack: result.manifest.techStack
+      ? resolveTechStackId(result.manifest.techStack)
+      : undefined,
     language: languageSelection.language,
     features: result.manifest.features,
     dryRun: Boolean(options.dryRun),

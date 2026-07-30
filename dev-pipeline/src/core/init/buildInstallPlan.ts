@@ -12,6 +12,8 @@ import {
   PACKAGE_VERSION,
   TEMPLATE_VERSION,
 } from '../runtime/meta.js';
+import { getTechStackById } from '../tech-stack/registry.js';
+import type { TechStackId } from '../tech-stack/types.js';
 import { findAssetDefinition, resolveFileWritePolicy } from './fileWritePolicy.js';
 import { renderString } from './renderTemplates.js';
 import type { InstallPlan } from './types.js';
@@ -28,6 +30,7 @@ export interface BuildInstallPlanInput {
   projectName: string;
   tool: ToolId;
   stack?: StackId;
+  techStack?: TechStackId;
   language?: DocLanguage;
   features: FeatureId[];
   dryRun: boolean;
@@ -59,6 +62,8 @@ export function buildTemplateContext(params: {
   skillsDir: string;
   commandsDir: string;
   skillRootNote?: string;
+  techStack?: TechStackId;
+  techStackName?: string;
 }): Record<string, unknown> {
   return {
     projectName: params.projectName,
@@ -70,6 +75,8 @@ export function buildTemplateContext(params: {
     skillsDir: params.skillsDir,
     commandsDir: params.commandsDir,
     features: params.features,
+    techStack: params.techStack,
+    techStackName: params.techStackName,
     templateVersion: TEMPLATE_VERSION,
     packageVersion: PACKAGE_VERSION,
     packageLicense: PACKAGE_LICENSE,
@@ -231,6 +238,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
   const stack = input.stack ?? 'backend';
   const language = input.language ?? 'zh';
   const adapter = getToolAdapter(input.registry, input.tool);
+  const techStackDefinition = input.techStack ? getTechStackById(input.techStack) : undefined;
   const templateContext = buildTemplateContext({
     projectName: input.projectName,
     toolId: input.tool,
@@ -241,6 +249,8 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
     commandsDir: adapter.getDestination('commands'),
     features: input.features,
     skillRootNote: adapter.getSkillRootNote(),
+    techStack: input.techStack,
+    techStackName: techStackDefinition?.displayName,
   });
 
   const selectedAssets = assetManifest
@@ -274,7 +284,19 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
         );
       }
 
-      const renderedSource = path.join(input.rootDir, renderString(asset.source, templateContext));
+      let renderedSource = path.join(input.rootDir, renderString(asset.source, templateContext));
+      if (asset.id === 'stack-config' && input.techStack) {
+        const techStackSource = path.join(
+          input.rootDir,
+          renderString(
+            'templates/common/config/config.{{stack}}.{{techStack}}.yaml.hbs',
+            templateContext,
+          ),
+        );
+        if (await fs.pathExists(techStackSource)) {
+          renderedSource = techStackSource;
+        }
+      }
 
       return [
         {
@@ -323,6 +345,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
     projectName: input.projectName,
     tool: input.tool,
     stack,
+    techStack: input.techStack,
     language,
     features: input.features,
     adapter,
