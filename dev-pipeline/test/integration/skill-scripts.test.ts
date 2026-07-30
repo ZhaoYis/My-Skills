@@ -5,10 +5,7 @@ import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
 import { PACKAGE_ROOT } from '../helpers/package-root.js';
 
-const scriptsRoot = path.join(
-  PACKAGE_ROOT,
-  'templates/common/skills/opsx-dev-pipeline/scripts',
-);
+const scriptsRoot = path.join(PACKAGE_ROOT, 'templates/common/skills/opsx-dev-pipeline/scripts');
 const createdDirs: string[] = [];
 
 interface ScriptResult {
@@ -32,52 +29,53 @@ async function createRepo(initialized: boolean): Promise<{ root: string; bin: st
     await fs.outputFile(path.join(root, 'openspec/config.yaml'), 'schema: spec-driven\n');
   }
 
-  const mock = `#!/usr/bin/env bash
-set -euo pipefail
-if [[ "\${1:-}" == "--version" ]]; then
-  printf '%s\\n' '1.6.0'
-  exit 0
-fi
-case "\${1:-}" in
-  list)
-    if [[ -n "\${MOCK_LIST_JSON:-}" ]]; then
-      printf '%s\\n' "$MOCK_LIST_JSON"
-    else
-      printf '{"changes":[],"root":{"path":"%s","source":"config"}}\\n' "$PWD"
-    fi
-    ;;
-  status)
-    if [[ -n "\${MOCK_STATUS_JSON:-}" ]]; then
-      printf '%s\\n' "$MOCK_STATUS_JSON"
-    else
-      printf '%s\\n' '{"artifacts":[{"id":"proposal","status":"ready"}]}'
-    fi
-    ;;
-  instructions)
-    printf '{"status":"ok","cwd":"%s"}\\n' "$PWD"
-    ;;
-  archive)
-    if [[ -n "\${MOCK_ARCHIVE_EXIT:-}" ]]; then
-      printf '%s\\n' '{"status":"error","reason":"pending-tasks"}'
-      exit "$MOCK_ARCHIVE_EXIT"
-    elif [[ -n "\${MOCK_ARCHIVE_JSON:-}" ]]; then
-      printf '%s\\n' "$MOCK_ARCHIVE_JSON"
-    else
-      printf '%s\\n' '{"status":"ok"}'
-    fi
-    ;;
-  new|validate)
-    printf '{"status":"ok"}\\n'
-    ;;
-  *)
-    printf '%s\\n' '{"status":"error","reason":"unexpected-mock-command"}'
-    exit 9
-    ;;
-esac
+  const mock = `
+const command = process.argv[2];
+if (command === '--version') {
+  process.stdout.write('1.6.0\\n');
+  process.exit(0);
+}
+switch (command) {
+  case 'list':
+    process.stdout.write((process.env.MOCK_LIST_JSON || JSON.stringify({
+      changes: [], root: { path: process.cwd(), source: 'config' }
+    })) + '\\n');
+    break;
+  case 'status':
+    process.stdout.write((process.env.MOCK_STATUS_JSON ||
+      '{"artifacts":[{"id":"proposal","status":"ready"}]}') + '\\n');
+    break;
+  case 'instructions':
+    process.stdout.write(JSON.stringify({ status: 'ok', cwd: process.cwd() }) + '\\n');
+    break;
+  case 'archive':
+    if (process.env.MOCK_ARCHIVE_EXIT) {
+      process.stdout.write('{"status":"error","reason":"pending-tasks"}\\n');
+      process.exit(Number(process.env.MOCK_ARCHIVE_EXIT));
+    }
+    process.stdout.write((process.env.MOCK_ARCHIVE_JSON || '{"status":"ok"}') + '\\n');
+    break;
+  case 'new':
+  case 'validate':
+    process.stdout.write('{"status":"ok"}\\n');
+    break;
+  default:
+    process.stdout.write('{"status":"error","reason":"unexpected-mock-command"}\\n');
+    process.exit(9);
+}
 `;
-  const mockPath = path.join(bin, 'openspec');
-  await fs.outputFile(mockPath, mock);
-  await fs.chmod(mockPath, 0o755);
+  const mockScript = path.join(bin, 'openspec.mjs');
+  await fs.outputFile(mockScript, mock);
+  if (process.platform === 'win32') {
+    await fs.outputFile(
+      path.join(bin, 'openspec.cmd'),
+      `@echo off\r\n"${process.execPath}" "${mockScript}" %*\r\n`,
+    );
+  } else {
+    const mockPath = path.join(bin, 'openspec');
+    await fs.outputFile(mockPath, `#!/usr/bin/env node\n${mock}`);
+    await fs.chmod(mockPath, 0o755);
+  }
   return { root, bin };
 }
 
@@ -103,7 +101,11 @@ function runScript(
       [path.join(scriptsRoot, script), ...args],
       {
         cwd,
-        env: { ...process.env, PATH: `${bin}:${process.env.PATH ?? ''}`, ...extraEnv },
+        env: {
+          ...process.env,
+          PATH: `${bin}${path.delimiter}${process.env.PATH ?? ''}`,
+          ...extraEnv,
+        },
       },
       (error, stdout, stderr) => {
         const code = error && 'code' in error && typeof error.code === 'number' ? error.code : 0;
@@ -117,7 +119,7 @@ describe('opsx-dev-pipeline script contracts', () => {
   it('returns a stable dependency error when OpenSpec is not installed', async () => {
     const { root, bin } = await createRepo(false);
     const result = await runScript('preflight.mjs', [], root, bin, {
-      PATH: '/usr/bin:/bin',
+      PATH: '',
     });
 
     expect(result.code).toBe(1);
@@ -223,12 +225,7 @@ describe('opsx-dev-pipeline script contracts', () => {
     const { root, bin } = await createRepo(true);
     const subdir = path.join(root, 'packages/api');
     await fs.ensureDir(subdir);
-    const result = await runScript(
-      'instructions.mjs',
-      ['demo-change', 'proposal'],
-      subdir,
-      bin,
-    );
+    const result = await runScript('instructions.mjs', ['demo-change', 'proposal'], subdir, bin);
 
     expect(result.code).toBe(0);
     expect(await fs.realpath(JSON.parse(result.stdout).cwd)).toBe(await fs.realpath(root));
@@ -322,12 +319,7 @@ describe('list-changes.mjs', () => {
 describe('instructions.mjs success path', () => {
   it('returns instructions for a specific artifact', async () => {
     const { root, bin } = await createRepo(true);
-    const result = await runScript(
-      'instructions.mjs',
-      ['demo-change', 'proposal'],
-      root,
-      bin,
-    );
+    const result = await runScript('instructions.mjs', ['demo-change', 'proposal'], root, bin);
 
     expect(result.code).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({ status: 'ok' });

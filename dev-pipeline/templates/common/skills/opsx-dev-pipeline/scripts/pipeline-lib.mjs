@@ -37,15 +37,40 @@ function isExecutable(filePath) {
   }
 }
 
-function commandExists(name) {
+function resolveCommand(name) {
   if (name.includes('/') || name.includes('\\')) {
-    return commandCandidates(name).some(isExecutable);
+    return commandCandidates(name).find(isExecutable);
   }
 
   const directories = (process.env.PATH || '').split(path.delimiter).filter(Boolean);
-  return directories.some((directory) =>
-    commandCandidates(name).some((candidate) => isExecutable(path.join(directory, candidate))),
-  );
+  for (const directory of directories) {
+    for (const candidate of commandCandidates(name)) {
+      const resolved = path.join(directory, candidate);
+      if (isExecutable(resolved)) return resolved;
+    }
+  }
+  return undefined;
+}
+
+function commandExists(name) {
+  return Boolean(resolveCommand(name));
+}
+
+export function resolveCommandInvocation(command, args, platform = process.platform) {
+  const resolved = resolveCommand(command) || command;
+  const extension = path.extname(resolved).toLowerCase();
+  if (platform === 'win32' && (extension === '.cmd' || extension === '.bat')) {
+    return {
+      command: process.env.ComSpec || 'cmd.exe',
+      args: ['/d', '/s', '/c', resolved, ...args],
+    };
+  }
+  return { command: resolved, args: [...args] };
+}
+
+export function execCommandSync(command, args, options) {
+  const invocation = resolveCommandInvocation(command, args);
+  return execFileSync(invocation.command, invocation.args, options);
 }
 
 function commandOutput(error) {
@@ -73,7 +98,7 @@ export function requireCommand(name, reason, nextAction) {
 export function getRepoRoot() {
   requireCommand('git', 'git-cli-not-found', 'install-git');
   try {
-    const root = execFileSync('git', ['rev-parse', '--show-toplevel'], {
+    const root = execCommandSync('git', ['rev-parse', '--show-toplevel'], {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
       maxBuffer: MAX_BUFFER,
@@ -148,7 +173,7 @@ export function runJsonCommand(args, { failureReason, nextAction }) {
   const [command, ...commandArgs] = args;
   let output;
   try {
-    output = execFileSync(command, commandArgs, {
+    output = execCommandSync(command, commandArgs, {
       cwd: findOpenSpecRoot(),
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],

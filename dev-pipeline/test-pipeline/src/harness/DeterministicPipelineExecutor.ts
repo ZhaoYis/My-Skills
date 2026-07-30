@@ -462,5 +462,7 @@ function commandEnv(env: TestEnvironment): NodeJS.ProcessEnv {
 }
 
 async function runNpm(env: TestEnvironment, ...args: string[]) {
-  return execFileAsync('npm', args, { cwd: env.rootDir, env: commandEnv(env) });
+  const command = process.platform === 'win32' ? process.env.ComSpec || 'cmd.exe' : 'npm';
+  const commandArgs = process.platform === 'win32' ? ['/d', '/s', '/c', 'npm.cmd', ...args] : args;
+  return execFileAsync(command, commandArgs, { cwd: env.rootDir, env: commandEnv(env) });
 }

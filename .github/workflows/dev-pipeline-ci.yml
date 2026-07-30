@@ -12,10 +12,13 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    name: ${{ matrix.os }} / Node.js ${{ matrix.node-version }}
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        node-version: [20, 22]
+        os: [ubuntu-latest, windows-latest]
+        node-version: [20, 22, 24]
 
     steps:
       - uses: actions/checkout@v4
@@ -37,6 +40,11 @@ jobs:
       - name: Build
         working-directory: dev-pipeline
         run: npm run build
+
+      - name: Windows OpenSpec shim smoke test
+        if: runner.os == 'Windows'
+        working-directory: dev-pipeline
+        run: npm run init:smoke
 
       - name: Test
         working-directory: dev-pipeline
