@@ -1,9 +1,13 @@
-import { execSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { emitError, findOpenSpecRoot, validateChangeName } from './pipeline-lib.mjs';
+import {
+  emitError,
+  execCommandSync,
+  findOpenSpecRoot,
+  validateChangeName,
+} from './pipeline-lib.mjs';
 
 const EXIT_STATE_NOT_FOUND = 10;
 const EXIT_INVALID_TRANSITION = 11;
@@ -68,7 +72,7 @@ function rememberReadVersion(state) {
 
 function resolveCreatedBy() {
   try {
-    const name = execSync('git config user.name', {
+    const name = execCommandSync('git', ['config', 'user.name'], {
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe'],
     }).trim();
@@ -89,7 +93,7 @@ function resolveCreatedBy() {
 
 function resolveCreatedByEmail() {
   try {
-    const email = execSync('git config user.email', {
+    const email = execCommandSync('git', ['config', 'user.email'], {
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe'],
     }).trim();

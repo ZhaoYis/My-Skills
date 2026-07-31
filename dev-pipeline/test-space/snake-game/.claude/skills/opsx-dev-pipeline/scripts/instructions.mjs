@@ -1,6 +1,6 @@
-import { execFileSync } from 'node:child_process';
 import {
   emitError,
+  execCommandSync,
   prepareOpenSpecRepo,
   runJsonCommand,
   validateChangeName,
@@ -29,7 +29,7 @@ let artifact = requestedArtifact;
 if (!artifact) {
   let statusOutput;
   try {
-    statusOutput = execFileSync('openspec', ['status', '--change', change, '--json'], {
+    statusOutput = execCommandSync('openspec', ['status', '--change', change, '--json'], {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],

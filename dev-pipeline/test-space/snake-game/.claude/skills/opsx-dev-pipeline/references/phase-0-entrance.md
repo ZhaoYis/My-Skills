@@ -27,15 +27,15 @@ node <SKILL_ROOT>/scripts/preflight.mjs
 
 当目标 change 的状态不存在且即将执行 `init` 时，必须先完成以下步骤：
 
-1. 必须使用 **AskUserQuestion** 询问用户是否关联外部需求（如 JIRA issue）：`关联外部需求` / `跳过`，并等待用户显式选择。即使需求描述完整、未提及 issue 或用户要求直接继续，也不得推断为跳过。
-2. 用户选择关联时，收集 `featureId` 和可选的 `featureUrl`，根据是否提供 URL 只执行下面一条命令：
+1. 必须使用 **AskUserQuestion** 询问用户是否关联外部需求（如 JIRA issue）。选项：`跳过关联`，并等待用户显式选择或输入。即使需求描述完整、未提及 issue 或用户要求直接继续，也不得推断为跳过。
+2. 用户在对话框中输入需求信息（如 featureId、featureUrl 等），从用户输入中提取信息，根据是否提供 URL 只执行下面一条命令：
    ```bash
    # 未提供 URL
    node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --feature-id "<featureId>"
    # 提供了 URL
    node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --feature-id "<featureId>" --feature-url "<featureUrl>"
    ```
-3. 用户明确选择跳过时执行：
+3. 用户选择 `跳过关联` 时执行：
    ```bash
    node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --skip-feature-association
    ```

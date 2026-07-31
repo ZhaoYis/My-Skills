@@ -1,7 +1,6 @@
-import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { emitError, getRepoRoot, requireCommand } from './pipeline-lib.mjs';
+import { emitError, execCommandSync, getRepoRoot, requireCommand } from './pipeline-lib.mjs';
 
 const MAX_BUFFER = 10 * 1024 * 1024;
 
@@ -15,7 +14,7 @@ function failureOutput(error) {
 
 function commandSucceeds(command, args, cwd) {
   try {
-    execFileSync(command, args, { cwd, stdio: 'ignore' });
+    execCommandSync(command, args, { cwd, stdio: 'ignore' });
     return true;
   } catch {
     return false;
@@ -28,7 +27,7 @@ const repoRoot = getRepoRoot();
 
 let openspecVersion;
 try {
-  openspecVersion = execFileSync('openspec', ['--version'], {
+  openspecVersion = execCommandSync('openspec', ['--version'], {
     cwd: repoRoot,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -63,7 +62,7 @@ if (!commandSucceeds('git', ['config', 'user.email'], repoRoot)) {
 
 let listOutput;
 try {
-  listOutput = execFileSync('openspec', ['list', '--json'], {
+  listOutput = execCommandSync('openspec', ['list', '--json'], {
     cwd: repoRoot,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
