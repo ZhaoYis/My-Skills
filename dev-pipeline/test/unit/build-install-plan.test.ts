@@ -19,7 +19,15 @@ import {
 import { PACKAGE_ROOT } from '../helpers/package-root.js';
 
 const createdDirs: string[] = [];
-const standaloneCommands = ['propose', 'apply', 'archive', 'verify', 'sync', 'explore'] as const;
+const standaloneCommands = [
+  'propose',
+  'apply',
+  'archive',
+  'verify',
+  'sync',
+  'explore',
+  'dev-spec-design',
+] as const;
 
 afterEach(async () => {
   await Promise.all(createdDirs.splice(0).map((dir) => fs.remove(dir)));
@@ -258,7 +266,7 @@ describe('buildInstallPlan', () => {
   it('selects one localized bundle template and removes its language suffix', async () => {
     const rootDir = await createTempTargetDir();
     // Create skill directories for all 'skills' feature bundles
-    for (const skill of ['opsx-dev-pipeline', 'grill-me', 'grilling']) {
+    for (const skill of ['opsx-dev-pipeline', 'grill-me', 'grilling', 'dev-spec-design']) {
       await fs.ensureDir(path.join(rootDir, 'templates/common/skills', skill, 'agents'));
     }
     const sourceRoot = path.join(rootDir, 'templates/common/skills/opsx-dev-pipeline');
@@ -366,6 +374,19 @@ describe('buildInstallPlan', () => {
           path.join('/tmp/demo', skillsDir, 'grilling', 'agents', 'openai.yaml'),
       ),
     ).toBe(true);
+    for (const skillFile of [
+      'SKILL.md',
+      'references/system-analysis-design-template-lite.md',
+      'agents/openai.yaml',
+    ]) {
+      expect(
+        plan.files.some(
+          (file) =>
+            file.destinationPath ===
+            path.join('/tmp/demo', skillsDir, 'dev-spec-design', skillFile),
+        ),
+      ).toBe(true);
+    }
     expect(
       plan.files.some(
         (file) =>
@@ -471,6 +492,12 @@ describe('buildInstallPlan', () => {
       if (command === 'explore') {
         expect(rendered).toContain('featureInfo');
         expect(rendered).toContain('Do not collect or persist metadata in explore mode.');
+      } else if (command === 'dev-spec-design') {
+        expect(rendered).toContain('AskUserQuestion');
+        expect(rendered).toMatch(/^allowed-tools: .*AskUserQuestion$/m);
+        expect(rendered).toContain(`${skillsDir}/dev-spec-design/SKILL.md`);
+        expect(rendered).toContain('Never initialize, migrate, or modify pipeline state.');
+        expect(rendered).not.toContain(' --feature-id ');
       } else {
         expect(rendered).toContain('AskUserQuestion');
         expect(rendered).toMatch(/^allowed-tools: .*AskUserQuestion$/m);

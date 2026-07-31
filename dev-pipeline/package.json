@@ -128,8 +128,24 @@
         "destination": ".claude/skills/opsx-dev-pipeline/scripts/validate-change.mjs"
       },
       {
+        "id": "dev-spec-design-skill-bundle:SKILL.md.hbs",
+        "destination": ".claude/skills/dev-spec-design/SKILL.md"
+      },
+      {
+        "id": "dev-spec-design-skill-bundle:references/system-analysis-design-template-lite.md",
+        "destination": ".claude/skills/dev-spec-design/references/system-analysis-design-template-lite.md"
+      },
+      {
+        "id": "dev-spec-design-skill-bundle:agents/openai.yaml",
+        "destination": ".claude/skills/dev-spec-design/agents/openai.yaml"
+      },
+      {
         "id": "opsx-dev-pipeline-command",
         "destination": ".claude/commands/opsx-dev-pipeline.md"
+      },
+      {
+        "id": "opsx-dev-spec-design-command",
+        "destination": ".claude/commands/opsx/dev-spec-design.md"
       },
       {
         "id": "claude-docs",
