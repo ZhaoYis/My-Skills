@@ -45,7 +45,7 @@ afterAll(async () => {
 
 describe('packaged artifact', () => {
   it('contains runnable bins and excludes removed templates', async () => {
-    const { stdout } = await execFileAsync('tar', ['-tf', path.join(rootDir, tarball)]);
+    const { stdout } = await execFileAsync('tar', ['-tf', tarball], { cwd: rootDir });
     expect(stdout).toContain('package/dist/bin/opsx-dev-pipeline.js');
     expect(stdout).toContain('package/dist/bin/create-opsx-dev-pipeline.js');
     expect(stdout).not.toContain('package/dist/test/');
