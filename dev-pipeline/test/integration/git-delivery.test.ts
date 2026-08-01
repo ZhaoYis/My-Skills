@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process';
+import { rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import fs from 'fs-extra';
@@ -13,7 +14,11 @@ interface GitResult {
 }
 
 afterEach(async () => {
-  await Promise.all(createdDirs.splice(0).map((dir) => fs.remove(dir)));
+  // Use native fs.promises.rm instead of fs-extra's remove to avoid
+  // graceful-fs compat issues with Node.js ≥22 on Linux (ENOTEMPTY).
+  await Promise.all(
+    createdDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })),
+  );
 });
 
 function runGit(cwd: string, args: string[]): Promise<GitResult> {

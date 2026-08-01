@@ -1,11 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { runInitCommand } from '../../src/cli/commands/init.js';
+import { runCli } from '../../src/cli/index.js';
 import { runInit } from '../../src/core/init/runInit.js';
 
 describe('runInit', () => {
   it('requires stack for CLI non-interactive init', async () => {
     await expect(runInitCommand({ dir: '/tmp', tool: 'claude', yes: true })).rejects.toThrow(
       'Missing required --stack in non-interactive mode. Use --stack frontend, --stack backend, or --stack fullstack.',
+    );
+  });
+
+  it('propagates asynchronous command errors to the CLI entry point', async () => {
+    await expect(runCli(['node', 'opsx-dev-pipeline', 'init', '--yes'])).rejects.toThrow(
+      'Missing required --stack in non-interactive mode.',
     );
   });
 

@@ -88,11 +88,19 @@ const toolExpectations = {
     { path: '.claude/skills/grill-me/agents/openai.yaml', present: true },
     { path: '.claude/skills/grilling/SKILL.md', present: true },
     { path: '.claude/skills/grilling/agents/openai.yaml', present: true },
+    { path: '.claude/skills/dev-spec-design/SKILL.md', present: true },
+    {
+      path: '.claude/skills/dev-spec-design/references/system-analysis-design-template-lite.md',
+      present: true,
+    },
+    { path: '.claude/skills/dev-spec-design/agents/openai.yaml', present: true },
     { path: '.claude/commands/opsx-dev-pipeline.md', present: true },
-    ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore'].map((command) => ({
-      path: `.claude/commands/opsx/${command}.md`,
-      present: true as const,
-    })),
+    ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore', 'dev-spec-design'].map(
+      (command) => ({
+        path: `.claude/commands/opsx/${command}.md`,
+        present: true as const,
+      }),
+    ),
   ],
   cursor: [
     { path: '.cursor/rules/opsx-dev-pipeline.mdc', present: true },
@@ -106,11 +114,19 @@ const toolExpectations = {
     { path: '.cursor/rules/grill-me/agents/openai.yaml', present: true },
     { path: '.cursor/rules/grilling/SKILL.md', present: true },
     { path: '.cursor/rules/grilling/agents/openai.yaml', present: true },
+    { path: '.cursor/rules/dev-spec-design/SKILL.md', present: true },
+    {
+      path: '.cursor/rules/dev-spec-design/references/system-analysis-design-template-lite.md',
+      present: true,
+    },
+    { path: '.cursor/rules/dev-spec-design/agents/openai.yaml', present: true },
     { path: '.cursor/commands/opsx-dev-pipeline.md', present: true },
-    ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore'].map((command) => ({
-      path: `.cursor/commands/opsx/${command}.md`,
-      present: true as const,
-    })),
+    ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore', 'dev-spec-design'].map(
+      (command) => ({
+        path: `.cursor/commands/opsx/${command}.md`,
+        present: true as const,
+      }),
+    ),
     { path: '.cursor/commands/README.md', present: true },
   ],
   codex: [
@@ -125,11 +141,19 @@ const toolExpectations = {
     { path: '.codex/prompts/grill-me/agents/openai.yaml', present: true },
     { path: '.codex/prompts/grilling/SKILL.md', present: true },
     { path: '.codex/prompts/grilling/agents/openai.yaml', present: true },
+    { path: '.codex/prompts/dev-spec-design/SKILL.md', present: true },
+    {
+      path: '.codex/prompts/dev-spec-design/references/system-analysis-design-template-lite.md',
+      present: true,
+    },
+    { path: '.codex/prompts/dev-spec-design/agents/openai.yaml', present: true },
     { path: '.codex/commands/opsx-dev-pipeline.md', present: true },
-    ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore'].map((command) => ({
-      path: `.codex/commands/opsx/${command}.md`,
-      present: true as const,
-    })),
+    ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore', 'dev-spec-design'].map(
+      (command) => ({
+        path: `.codex/commands/opsx/${command}.md`,
+        present: true as const,
+      }),
+    ),
     { path: '.codex/commands/README.md', present: true },
   ],
 } as const;
@@ -187,11 +211,31 @@ describe('tool matrix', () => {
       'utf8',
     );
     const propose = await fs.readFile(path.join(dir, commandsRoot, 'propose.md'), 'utf8');
+    const devSpecSkillRoot = path.join(path.dirname(skillRoot), 'dev-spec-design');
+    const devSpecSkill = await fs.readFile(path.join(dir, devSpecSkillRoot, 'SKILL.md'), 'utf8');
+    const devSpecTemplate = await fs.readFile(
+      path.join(dir, devSpecSkillRoot, 'references/system-analysis-design-template-lite.md'),
+      'utf8',
+    );
+    const devSpecCommand = await fs.readFile(
+      path.join(dir, commandsRoot, 'dev-spec-design.md'),
+      'utf8',
+    );
     expect(skill).toContain(`决策点首选 **${askTool}** tool`);
     expect(entrance).toContain(`必须使用 **${askTool}** 询问用户是否关联外部需求`);
     expect(propose).toMatch(new RegExp(`^allowed-tools: Bash\\(openspec:\\*\\), ${askTool}$`, 'm'));
     expect(propose).toContain(`MUST call ${askTool} and wait for an explicit choice`);
-    expect([skill, entrance, propose].join('\n')).not.toMatch(/\{\{[^}]+\}\}/);
+    expect(devSpecSkill).toContain('openspec/docs/<yyyyMMdd>/<kebab-case-name>.md');
+    expect(devSpecSkill).toContain(`**${askTool}**`);
+    expect(devSpecTemplate).toContain('# {项目/需求名称} 系统分析与设计');
+    expect(devSpecCommand).toMatch(
+      new RegExp(`^allowed-tools: Bash\\(openspec:\\*\\), ${askTool}$`, 'm'),
+    );
+    expect(devSpecCommand).toContain(`${path.dirname(skillRoot)}/dev-spec-design/SKILL.md`);
+    expect(devSpecCommand).toContain('Never initialize, migrate, or modify pipeline state.');
+    expect([skill, entrance, propose, devSpecSkill, devSpecCommand].join('\n')).not.toMatch(
+      /\{\{[^}]+\}\}/,
+    );
     expect(devPipelineState).toContain('-----BEGIN PUBLIC KEY-----');
     expect(devPipelineState).not.toContain('PRIVATE KEY');
 

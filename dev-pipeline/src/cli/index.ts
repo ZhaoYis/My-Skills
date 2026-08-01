@@ -93,5 +93,6 @@ export async function runCli(argv: string[]): Promise<void> {
 
   cli.help();
   cli.version(PACKAGE_VERSION);
-  await cli.parse(argv);
+  cli.parse(argv, { run: false });
+  await cli.runMatchedCommand();
 }

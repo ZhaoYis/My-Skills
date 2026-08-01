@@ -11,7 +11,7 @@
     "docs",
     "schema"
   ],
-  "templateVersion": "0.2.5",
+  "templateVersion": "0.2.12",
   "packageName": "opsx-dev-pipeline",
   "managedAssets": [
     {
@@ -149,6 +149,30 @@
     {
       "id": "claude-docs",
       "destination": "CLAUDE.md"
+    },
+    {
+      "id": "grill-me-skill-bundle:SKILL.md",
+      "destination": ".claude/skills/grill-me/SKILL.md"
+    },
+    {
+      "id": "grill-me-skill-bundle:agents/openai.yaml",
+      "destination": ".claude/skills/grill-me/agents/openai.yaml"
+    },
+    {
+      "id": "grilling-skill-bundle:SKILL.md",
+      "destination": ".claude/skills/grilling/SKILL.md"
+    },
+    {
+      "id": "grilling-skill-bundle:agents/openai.yaml",
+      "destination": ".claude/skills/grilling/agents/openai.yaml"
+    },
+    {
+      "id": "opsx-grill-me-command",
+      "destination": ".claude/commands/opsx/grill-me.md"
+    },
+    {
+      "id": "opsx-grilling-command",
+      "destination": ".claude/commands/opsx/grilling.md"
     }
   ]
 }

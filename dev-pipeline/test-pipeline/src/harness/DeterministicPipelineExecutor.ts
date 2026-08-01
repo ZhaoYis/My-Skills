@@ -462,7 +462,17 @@ function commandEnv(env: TestEnvironment): NodeJS.ProcessEnv {
 }
 
 async function runNpm(env: TestEnvironment, ...args: string[]) {
-  const command = process.platform === 'win32' ? process.env.ComSpec || 'cmd.exe' : 'npm';
-  const commandArgs = process.platform === 'win32' ? ['/d', '/s', '/c', 'npm.cmd', ...args] : args;
-  return execFileAsync(command, commandArgs, { cwd: env.rootDir, env: commandEnv(env) });
+  if (process.platform === 'win32') {
+    // Invoke npm.cmd through cmd.exe with windowsVerbatimArguments so Node.js
+    // does not add its own quoting (which can break the /d /s /c hand-off in
+    // Node ≥22 — see CVE-2024-27980 / CVE-2024-36138).  This matches the
+    // resolveWindowsScriptInvocation pattern in pipeline-lib.mjs.
+    const shellCommand = ['npm.cmd', ...args].join(' ');
+    return execFileAsync(
+      process.env.ComSpec || 'cmd.exe',
+      ['/d', '/s', '/c', shellCommand],
+      { cwd: env.rootDir, env: commandEnv(env), windowsVerbatimArguments: true },
+    );
+  }
+  return execFileAsync('npm', args, { cwd: env.rootDir, env: commandEnv(env) });
 }
