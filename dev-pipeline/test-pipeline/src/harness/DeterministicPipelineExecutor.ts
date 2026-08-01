@@ -463,15 +463,16 @@ function commandEnv(env: TestEnvironment): NodeJS.ProcessEnv {
 
 async function runNpm(env: TestEnvironment, ...args: string[]) {
   if (process.platform === 'win32') {
-    // Use shell: true on Windows because .cmd files cannot be spawned directly
-    // without a shell since the CVE-2024-27980 / CVE-2024-36138 security fixes
-    // (Node.js ≥18.20.2 / ≥20.12.2 / ≥22.x). Letting Node.js handle the cmd.exe
-    // wrapper prevents argument-quoting regressions across Node versions.
-    return execFileAsync('npm', args, {
-      cwd: env.rootDir,
-      env: commandEnv(env),
-      shell: true,
-    });
+    // Invoke npm.cmd through cmd.exe with windowsVerbatimArguments so Node.js
+    // does not add its own quoting (which can break the /d /s /c hand-off in
+    // Node ≥22 — see CVE-2024-27980 / CVE-2024-36138).  This matches the
+    // resolveWindowsScriptInvocation pattern in pipeline-lib.mjs.
+    const shellCommand = ['npm.cmd', ...args].join(' ');
+    return execFileAsync(
+      process.env.ComSpec || 'cmd.exe',
+      ['/d', '/s', '/c', shellCommand],
+      { cwd: env.rootDir, env: commandEnv(env), windowsVerbatimArguments: true },
+    );
   }
   return execFileAsync('npm', args, { cwd: env.rootDir, env: commandEnv(env) });
 }
