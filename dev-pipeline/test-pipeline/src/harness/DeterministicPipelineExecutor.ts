@@ -462,7 +462,16 @@ function commandEnv(env: TestEnvironment): NodeJS.ProcessEnv {
 }
 
 async function runNpm(env: TestEnvironment, ...args: string[]) {
-  const command = process.platform === 'win32' ? process.env.ComSpec || 'cmd.exe' : 'npm';
-  const commandArgs = process.platform === 'win32' ? ['/d', '/s', '/c', 'npm.cmd', ...args] : args;
-  return execFileAsync(command, commandArgs, { cwd: env.rootDir, env: commandEnv(env) });
+  if (process.platform === 'win32') {
+    // Use shell: true on Windows because .cmd files cannot be spawned directly
+    // without a shell since the CVE-2024-27980 / CVE-2024-36138 security fixes
+    // (Node.js ≥18.20.2 / ≥20.12.2 / ≥22.x). Letting Node.js handle the cmd.exe
+    // wrapper prevents argument-quoting regressions across Node versions.
+    return execFileAsync('npm', args, {
+      cwd: env.rootDir,
+      env: commandEnv(env),
+      shell: true,
+    });
+  }
+  return execFileAsync('npm', args, { cwd: env.rootDir, env: commandEnv(env) });
 }
