@@ -1,4 +1,4 @@
-import type { DocLanguage, FeatureId, StackId, ToolId } from '../adapters/types.js';
+import type { DocLanguage, FeatureId, InstallScope, StackId, ToolId } from '../adapters/types.js';
 import type { TechStackId } from '../tech-stack/types.js';
 
 export interface InitOptions {
@@ -10,6 +10,8 @@ export interface InitOptions {
   techStack?: string;
   language?: DocLanguage;
   yes?: boolean;
+  /** Install scope: 'project' (default) or 'user'. */
+  scope?: InstallScope;
   /** Optional, non-default features to enable. Repeatable on the CLI via --feature. */
   feature?: string | string[];
 }
@@ -21,4 +23,5 @@ export interface InitAnswers {
   techStack?: TechStackId;
   language: DocLanguage;
   features: FeatureId[];
+  scope: InstallScope;
 }

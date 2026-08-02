@@ -124,6 +124,7 @@ export async function runInit(options: InitOptions): Promise<void> {
     techStack: answers.techStack,
     language: answers.language,
     features: answers.features,
+    scope: answers.scope,
     dryRun: Boolean(options.dryRun),
     force: Boolean(options.force),
     mode: 'init',

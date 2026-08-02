@@ -36,6 +36,7 @@ export async function runSyncCommand(options: InitOptions): Promise<void> {
       : undefined,
     language: languageSelection.language,
     features: result.manifest.features,
+    scope: result.manifest.scope ?? 'project',
     dryRun: Boolean(options.dryRun),
     force: Boolean(options.force),
     mode: 'sync',

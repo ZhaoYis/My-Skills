@@ -4,6 +4,7 @@ import {
   ALL_FEATURE_IDS,
   type DocLanguage,
   type FeatureId,
+  type InstallScope,
   type StackId,
   type ToolAdapter,
   type ToolId,
@@ -58,6 +59,18 @@ export function resolveDocLanguage(value: unknown): DocLanguage | undefined {
   return value;
 }
 
+function resolveScope(value: unknown): InstallScope | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value !== 'user' && value !== 'project') {
+    throw new Error(`Invalid scope: ${String(value)}. Valid scopes: user, project.`);
+  }
+
+  return value;
+}
+
 export async function collectInputs(
   targetDir: string,
   options: InitOptions,
@@ -70,6 +83,7 @@ export async function collectInputs(
     options.techStack === undefined ? undefined : resolveTechStackId(options.techStack);
   const requestedLanguage = resolveDocLanguage(options.language);
   const defaultLanguage = requestedLanguage ?? 'zh';
+  const requestedScope = resolveScope(options.scope);
   if (
     requestedStack !== undefined &&
     requestedStack !== 'frontend' &&
@@ -99,6 +113,7 @@ export async function collectInputs(
       techStack: requestedTechStack,
       language: defaultLanguage,
       features,
+      scope: requestedScope ?? 'project',
     };
   }
 
@@ -161,6 +176,16 @@ export async function collectInputs(
         ],
         initial: defaultLanguage === 'zh' ? 0 : 1,
       },
+      {
+        type: 'select',
+        name: 'scope',
+        message: 'Select install scope',
+        choices: [
+          { title: 'Project (./.claude/skills/)', value: 'project' satisfies InstallScope },
+          { title: 'User (~/.claude/skills/)', value: 'user' satisfies InstallScope },
+        ],
+        initial: 0,
+      },
     ],
     { onCancel: () => process.exit(1) },
   );
@@ -178,5 +203,6 @@ export async function collectInputs(
     techStack,
     language: (response.language ?? defaultLanguage) as DocLanguage,
     features,
+    scope: (response.scope ?? requestedScope ?? 'project') as InstallScope,
   };
 }

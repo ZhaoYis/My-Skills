@@ -1,7 +1,7 @@
 import path from 'node:path';
 import fs from 'fs-extra';
 import { getToolAdapter } from '../adapters/registry.js';
-import type { DocLanguage, FeatureId, StackId, ToolId } from '../adapters/types.js';
+import type { DocLanguage, FeatureId, InstallScope, StackId, ToolId } from '../adapters/types.js';
 import { assetManifest } from '../assets/manifest.js';
 import type { AssetDefinition, InstallFile } from '../assets/types.js';
 import type { ManagedAssetRecord } from '../manifest/types.js';
@@ -33,6 +33,7 @@ export interface BuildInstallPlanInput {
   techStack?: TechStackId;
   language?: DocLanguage;
   features: FeatureId[];
+  scope: InstallScope;
   dryRun: boolean;
   force: boolean;
   mode: 'init' | 'sync' | 'upgrade';
@@ -242,17 +243,31 @@ async function expandBundle(
 export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<InstallPlan> {
   const stack = input.stack ?? 'backend';
   const language = input.language ?? 'zh';
+  const scope = input.scope ?? 'project';
   const adapter = getToolAdapter(input.registry, input.tool);
   const techStackDefinition = input.techStack ? getTechStackById(input.techStack) : undefined;
+
+  // When installing at user scope, filter out features the adapter doesn't support at that scope
+  // (e.g. codex does not support user-level commands).
+  const effectiveFeatures =
+    scope === 'user'
+      ? input.features.filter((feature) => {
+          if (feature === 'skills' || feature === 'commands') {
+            return adapter.supportsUserDestination(feature);
+          }
+          return true;
+        })
+      : input.features;
+
   const templateContext = buildTemplateContext({
     projectName: input.projectName,
     toolId: input.tool,
     toolName: adapter.definition.displayName,
     stack,
     language,
-    skillsDir: adapter.getDestination('skills'),
-    commandsDir: adapter.getDestination('commands'),
-    features: input.features,
+    skillsDir: adapter.getDestination('skills', scope),
+    commandsDir: adapter.getDestination('commands', scope),
+    features: effectiveFeatures,
     skillRootNote: adapter.getSkillRootNote(),
     techStack: input.techStack,
     techStackName: techStackDefinition?.displayName,
@@ -261,7 +276,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
   const selectedAssets = assetManifest
     .filter(
       (asset) =>
-        input.features.includes(asset.feature) ||
+        effectiveFeatures.includes(asset.feature) ||
         (input.languageConfigUpdate && asset.id === 'stack-config'),
     )
     .filter((asset) => !asset.stacks || asset.stacks.includes(stack))
@@ -352,7 +367,8 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
     stack,
     techStack: input.techStack,
     language,
-    features: input.features,
+    features: effectiveFeatures,
+    scope,
     adapter,
     files,
     targetDir: input.targetDir,

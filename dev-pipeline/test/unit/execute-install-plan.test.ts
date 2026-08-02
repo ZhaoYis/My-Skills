@@ -29,6 +29,7 @@ function createAdapter(): ToolAdapter {
     supports: () => true,
     getDestination: (feature: 'skills' | 'commands') =>
       feature === 'skills' ? '.claude/skills' : '.claude/commands',
+    supportsUserDestination: () => true,
     getRoot: () => '.',
     getSkillRootNote: () => undefined,
     getPostInstallNotes: () => ['note-a', 'note-b'],
@@ -41,6 +42,7 @@ function createPlan(overrides: Partial<InstallPlan> = {}): InstallPlan {
     tool: 'claude',
     language: 'zh',
     features: ['base', 'skills', 'commands', 'docs'],
+    scope: 'project',
     adapter: createAdapter(),
     files: [],
     targetDir: '/tmp/unused',

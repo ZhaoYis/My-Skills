@@ -18,6 +18,7 @@ const manifestSchema = z.object({
   stack: z.enum(['frontend', 'backend', 'fullstack']).optional(),
   techStack: z.string().optional(),
   language: z.enum(['en', 'zh']).optional(),
+  scope: z.enum(['user', 'project']).optional(),
   features: z.array(z.enum(['base', 'skills', 'commands', 'docs', 'schema'])),
   templateVersion: z.string().default(TEMPLATE_VERSION),
   packageName: z.string().default(PACKAGE_NAME),
