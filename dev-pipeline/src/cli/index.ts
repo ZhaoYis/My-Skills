@@ -2,12 +2,18 @@ import { cac } from 'cac';
 import { PACKAGE_VERSION } from '../core/runtime/meta.js';
 import { runDoctorCommand } from './commands/doctor.js';
 import { runInitCommand } from './commands/init.js';
+import { runKbCommand } from './commands/kb.js';
 import { runListToolsCommand } from './commands/list-tools.js';
 import { runSyncCommand } from './commands/sync.js';
 import { runUninstallCommand } from './commands/uninstall.js';
 import { runUpgradeCommand } from './commands/upgrade.js';
 
 export async function runCli(argv: string[]): Promise<void> {
+  if (argv[2] === 'kb') {
+    await runKbCommand(argv.slice(3));
+    return;
+  }
+
   const cli = cac('opsx-dev-pipeline');
   const dirOption = ['--dir [dir]', 'Target directory', { default: process.cwd() }] as const;
 
@@ -91,6 +97,8 @@ export async function runCli(argv: string[]): Promise<void> {
         process.exitCode = 1;
       }
     });
+
+  cli.command('kb [...args]', 'Search and maintain OpenSpec project knowledge');
 
   cli.help();
   cli.version(PACKAGE_VERSION);

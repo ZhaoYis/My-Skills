@@ -268,7 +268,7 @@ describe('buildInstallPlan', () => {
   it('selects one localized bundle template and removes its language suffix', async () => {
     const rootDir = await createTempTargetDir();
     // Create skill directories for all 'skills' feature bundles
-    for (const skill of ['opsx-dev-pipeline', 'grill-me', 'grilling', 'dev-spec-design']) {
+    for (const skill of ['opsx-dev-pipeline', 'grill-me', 'grilling', 'dev-spec-design', 'kb']) {
       await fs.ensureDir(path.join(rootDir, 'templates/common/skills', skill, 'agents'));
     }
     const sourceRoot = path.join(rootDir, 'templates/common/skills/opsx-dev-pipeline');

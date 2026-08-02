@@ -50,6 +50,8 @@ Load and follow `{{skillsDir}}/openspec-archive-change/SKILL.md` completely, inc
 
 After a successful archive, resolve the actual archive path from the Skill result or filesystem. Ask the user to choose `merge` / `push-only` / `local-only`; this intent must never be inferred.
 
+Before the post-archive transition, run `node openspec/knowledge/scripts/kb.mjs link --from-proposal "<actual-archive-path>/proposal.md" --change "<name>" --write`. This links only `KB-*` IDs explicitly cited by the archived proposal and never changes pipeline state. If no knowledge base exists, warn and continue; if it exists and linking fails, stop and report the error.
+
 ### Post-flight: Record State
 
 Execute these commands **in order**, checking every exit code:

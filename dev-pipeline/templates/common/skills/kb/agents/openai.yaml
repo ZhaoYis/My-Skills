@@ -1,0 +1,4 @@
+interface:
+  display_name: "Knowledge Base"
+  short_description: "Capture, review, search, and link project knowledge"
+  default_prompt: "Use $kb to search or maintain the project knowledge base."

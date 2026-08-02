@@ -39,6 +39,12 @@ node <SKILL_ROOT>/scripts/archive.mjs "<name>" -y [--skip-specs]
 node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<name>" archivePath '"<actual-archive-path>"'
 ```
 
+随后从实际归档目录中的 `proposal.md` 提取已明确引用的 `KB-*`，并自动建立关联：
+```bash
+node openspec/knowledge/scripts/kb.mjs link --from-proposal "<actual-archive-path>/proposal.md" --change "<name>" --write
+```
+知识库不存在时明确警告后继续归档；知识库存在但 link 校验或写入失败时暂停并报告，不得修改 pipeline state 伪造关联。
+
 ## Step19：[决策点 5b] 归档后操作
 
 **{{askTool}}**：

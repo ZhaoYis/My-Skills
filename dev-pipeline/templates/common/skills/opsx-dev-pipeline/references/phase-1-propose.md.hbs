@@ -2,7 +2,7 @@
 
 ## Step3：[决策点 1a] 需求理解确认（制品生成前）
 
-在生成制品前先确认理解正确。用中性表述给出：影响范围、关键链路、待确认问题。
+在生成制品前先确认理解正确。若 `openspec/knowledge/index.json` 存在，只从该索引按 change、scope、tags、keyword 分层召回 confirmed entries；索引不可用时明确声明未使用知识库，不得扫描 entries 目录替代。用中性表述给出：影响范围、关键链路、待确认问题，以及 `Knowledge Coverage`（精确匹配、最多 10 条可能相关知识、当前方案缺少知识支持的假设）。只引用 `KB-*`，不复制全文。
 
 使用 **{{askTool}}**：
 - `确认需求理解，开始生成制品（推荐）` → 进入Step4
@@ -29,6 +29,8 @@ node <SKILL_ROOT>/scripts/new-change.mjs "<name>"
 node <SKILL_ROOT>/scripts/instructions.mjs "<name>" <artifact-id>
 ```
 读取指令后创建文件。优先使用当前 Agent 的任务工具；不可用时在回复中维护编号进度，并以 `tasks.md` 为完成事实。
+
+生成 proposal 时保留 `Knowledge Coverage` 段落和被采用的 `KB-*` 引用；不要在此阶段调用 `kb link`。
 
 （可选）在决策点 1 前运行 `node <SKILL_ROOT>/scripts/validate-change.mjs "<name>"` 做结构校验。
 

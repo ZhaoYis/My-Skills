@@ -1,0 +1,23 @@
+{
+  "staleAfterDays": 90,
+  "tags": {
+    "domain": ["auth", "payment", "ui", "data", "infra", "deployment", "testing"],
+    "feature": [
+      "api",
+      "jwt",
+      "oauth",
+      "wechat-pay",
+      "refund",
+      "checkout",
+      "cli",
+      "workflow",
+      "knowledge-base",
+      "openspec",
+      "proposal",
+      "archive",
+      "search",
+      "review",
+      "index"
+    ]
+  }
+}

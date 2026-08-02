@@ -53,6 +53,28 @@ State command exit codes:
 
 ### Execute
 
+Before the requirements-understanding confirmation, read `openspec/knowledge/index.json` when
+available. Filter confirmed entries by the change, exact scope, controlled tags, and keywords. Do
+not scan the entries directory for discovery. Add this section to the requirements summary and the
+generated proposal:
+
+```markdown
+## Knowledge Coverage
+
+### Matched Knowledge
+- [KB-NNNN] Title (confirmed, confidence)
+
+### Possibly Relevant Knowledge
+- [KB-NNNN] Title (confirmed)
+
+### Known Knowledge Gaps
+- State each proposal assumption that has no supporting entry.
+```
+
+First-tier exact matches are confirmed knowledge. Limit second-tier tag/keyword matches to ten.
+Reference `KB-*` IDs instead of copying full entries. If the index is unavailable, state that no
+knowledge-base context was used and still list the gaps.
+
 Load and follow the complete instructions in `{{skillsDir}}/openspec-propose/SKILL.md`. Keep that Skill as the source of truth for artifact creation, dependency order, store selection, clarification, and output paths.
 
 ### Post-flight: Record State

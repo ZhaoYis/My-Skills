@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "source.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "kind", "locator", "title", "capturedAt", "capturedBy", "reliability", "redaction"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^SRC-[0-9]{4,}$" },
+    "kind": { "enum": ["code", "doc", "conversation", "ticket", "url", "command", "test", "file"] },
+    "locator": { "type": "string", "minLength": 1 },
+    "publicLocator": { "type": ["string", "null"] },
+    "title": { "type": "string", "minLength": 1 },
+    "capturedAt": { "type": "string", "format": "date-time" },
+    "capturedBy": { "type": "string", "minLength": 1 },
+    "reliability": { "enum": ["low", "medium", "high"] },
+    "contentHash": { "type": ["string", "null"], "pattern": "^sha256:[a-f0-9]{64}$" },
+    "redaction": { "enum": ["none", "partial", "full"] }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "session.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "status", "goal", "participants", "startedAt", "updatedAt", "entries", "sources", "unresolvedQuestions"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^RS-[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]+$" },
+    "status": { "enum": ["open", "closed"] },
+    "goal": { "type": "string", "minLength": 1 },
+    "change": { "type": ["string", "null"], "pattern": "^[a-z0-9-]+$" },
+    "participants": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "entries": { "type": "array", "items": { "type": "string", "pattern": "^KB-[0-9]{4,}$" } },
+    "sources": { "type": "array", "items": { "type": "string", "pattern": "^SRC-[0-9]{4,}$" } },
+    "unresolvedQuestions": { "type": "array", "items": { "type": "string", "pattern": "^KB-[0-9]{4,}$" } },
+    "outcome": { "enum": [null, "promoted", "discarded", "needs-follow-up"] }
+  }
+}

@@ -1,7 +1,7 @@
 ---
 name: "OPSX: Explore"
 description: Explore ideas and code with read-only pipeline context
-allowed-tools: Bash(openspec:*), {{askTool}}
+allowed-tools: Bash(openspec:*), Bash(node:*), {{askTool}}
 category: Workflow
 tags: [workflow, explore, experimental, thinking]
 ---
@@ -32,7 +32,22 @@ Enter read-only explore mode with awareness of active pipeline context.
 
 ### Execute
 
-Load and follow `{{skillsDir}}/openspec-explore/SKILL.md` completely. Preserve its thinking-only stance, OpenSpec awareness, artifact capture boundaries, and prohibition on implementation.
+Before loading the explore Skill, check `openspec/knowledge/index.json`. If it exists, read that
+single index and select confirmed entries by change, scope, tags, then keyword. Do not scan
+`openspec/knowledge/entries/` for discovery. Present only a compact title summary:
+
+```markdown
+## Knowledge Base (N relevant)
+Confirmed: <titles>
+Assumptions: <titles>
+Conflicts: <entry IDs and topic>
+```
+
+Read a selected entry file only when the user asks for detail. If the index is missing, invalid, or
+unreadable, say `This exploration did not use the knowledge base` and continue. Never rebuild or
+write the knowledge base from explore mode.
+
+Load and follow `{{skillsDir}}/openspec-explore/SKILL.md` completely. Preserve its thinking-only stance, OpenSpec awareness, artifact capture boundaries, and prohibition on implementation. End exploration results with a numbered `Candidate Knowledge` section when atomic reusable claims were discovered. Suggest `/opsx:kb capture --from-explore <n>`; do not call it.
 
 ### Post-flight
 

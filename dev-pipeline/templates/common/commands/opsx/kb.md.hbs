@@ -1,0 +1,14 @@
+---
+name: "OPSX: Knowledge Base"
+description: Search, capture, review, and link reusable project knowledge
+allowed-tools: Bash(node:*), {{askTool}}
+category: Workflow
+tags: [workflow, knowledge, research]
+---
+
+Load and follow `{{skillsDir}}/kb/SKILL.md` completely.
+
+Pass the user's requested operation to the deterministic knowledge CLI at
+`openspec/knowledge/scripts/kb.mjs`. Mutating operations must be previewed first and require an
+explicit confirmation before rerunning with `--write`. Never modify pipeline state from this
+command.

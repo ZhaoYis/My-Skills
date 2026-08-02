@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": null,
+  "entries": {},
+  "index": {
+    "byScope": {},
+    "byTag": {},
+    "byChange": {},
+    "byType": {
+      "fact": [],
+      "constraint": [],
+      "assumption": [],
+      "question": [],
+      "decision": []
+    }
+  }
+}

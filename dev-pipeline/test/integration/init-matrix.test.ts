@@ -95,8 +95,10 @@ const toolExpectations = {
       present: true,
     },
     { path: '.claude/skills/dev-spec-design/agents/openai.yaml', present: true },
+    { path: '.claude/skills/kb/SKILL.md', present: true },
+    { path: '.claude/skills/kb/agents/openai.yaml', present: true },
     { path: '.claude/commands/opsx-dev-pipeline.md', present: true },
-    ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore', 'dev-spec-design'].map(
+    ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore', 'dev-spec-design', 'kb'].map(
       (command) => ({
         path: `.claude/commands/opsx/${command}.md`,
         present: true as const,
@@ -122,8 +124,10 @@ const toolExpectations = {
       present: true,
     },
     { path: '.cursor/rules/dev-spec-design/agents/openai.yaml', present: true },
+    { path: '.cursor/rules/kb/SKILL.md', present: true },
+    { path: '.cursor/rules/kb/agents/openai.yaml', present: true },
     { path: '.cursor/commands/opsx-dev-pipeline.md', present: true },
-    ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore', 'dev-spec-design'].map(
+    ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore', 'dev-spec-design', 'kb'].map(
       (command) => ({
         path: `.cursor/commands/opsx/${command}.md`,
         present: true as const,
@@ -150,8 +154,10 @@ const toolExpectations = {
       present: true,
     },
     { path: '.codex/prompts/dev-spec-design/agents/openai.yaml', present: true },
+    { path: '.codex/prompts/kb/SKILL.md', present: true },
+    { path: '.codex/prompts/kb/agents/openai.yaml', present: true },
     { path: '.codex/commands/opsx-dev-pipeline.md', present: true },
-    ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore', 'dev-spec-design'].map(
+    ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore', 'dev-spec-design', 'kb'].map(
       (command) => ({
         path: `.codex/commands/opsx/${command}.md`,
         present: true as const,
