@@ -1642,6 +1642,86 @@
                 transform: translateX(22px);
             }
         }
+        /* ── 挂机模式开关 ── */
+        .auto-play-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            margin-top: 8px;
+            gap: 10px;
+        }
+
+        .auto-play-toggle-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .auto-play-toggle-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .auto-play-toggle-info {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .auto-play-toggle-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .auto-play-toggle-desc {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .auto-play-select {
+            flex-shrink: 0;
+            padding: 6px 10px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.08);
+            color: var(--text);
+            cursor: pointer;
+            outline: none;
+            appearance: auto;
+            -webkit-appearance: auto;
+        }
+
+        .auto-play-select:focus {
+            border-color: var(--accent);
+        }
+
+        /* ── HUD 挂机指示器 ── */
+        .hud-auto-indicator {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent);
+            white-space: nowrap;
+            display: none;
+        }
+
+        .hud-auto-indicator.active {
+            display: inline;
+        }
+
+        /* 移动端隐藏挂机开关 */
+        @media (max-width: 600px) {
+            .auto-play-toggle {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1781,6 +1861,7 @@
         <div class="hud-score-panel">
             <span class="hud-score-item" id="hudScore">🍎 0</span>
             <span class="hud-score-item timer" id="hudTimer" style="display:none;">⏱ 60s</span>
+            <span class="hud-auto-indicator" id="hudAutoIndicator">🤖 挂机中</span>
         </div>
         <span class="hud-shield-indicator" id="hudShield">🛡️ 护盾</span>
     </div>
@@ -1816,6 +1897,20 @@
                         <div class="mode-card-desc">限时抢夺</div>
                         <div class="mode-card-best">最高分: <span id="timedBest">0</span></div>
                     </div>
+                </div>
+                <div class="auto-play-toggle" id="autoPlayToggle">
+                    <div class="auto-play-toggle-left">
+                        <span class="auto-play-toggle-icon">🤖</span>
+                        <div class="auto-play-toggle-info">
+                            <span class="auto-play-toggle-label">挂机模式</span>
+                            <span class="auto-play-toggle-desc">系统自动控制蛇移动和吃道具</span>
+                        </div>
+                    </div>
+                    <select class="auto-play-select" id="autoPlaySelect">
+                        <option value="off">关闭</option>
+                        <option value="classic">开启（经典模式）</option>
+                        <option value="timed">开启（计时模式）</option>
+                    </select>
                 </div>
                 <div class="overlay-subtitle">按下 <span style="color:#22d3ee;font-weight:700;">空格</span> 或点击按钮开始</div>
                 <div class="leaderboard-summary" id="lbSummary">
@@ -3235,6 +3330,10 @@
         let growAmount = 0;  // pending growth segments
         let lastRenderTime = 0;
 
+        // ─── Auto-Play State ──────────────────────
+        let autoPlayEnabled = false;
+        let autoPlayPausedFlag = false;  // 记录暂停前的挂机状态，用于暂停恢复
+
         // ─── Timed Mode State ──────────────────────
         let gameMode = 'classic';          // 'classic' | 'timed'
         let timeRemaining = INITIAL_TIME;  // seconds
@@ -3752,9 +3851,200 @@
             return true; // dead
         }
 
+        // ─── 挂机模式 AI 引擎 ─────────────────
+
+        // 简易洪水填充 — 评估从给定位置可到达的连通区域大小
+        function floodFillCount(startX, startY, maxSteps) {
+            var visited = {};
+            var queue = [{ x: startX, y: startY }];
+            var count = 0;
+            var head = 0;
+            var key = startX + ',' + startY;
+            visited[key] = true;
+            count++;
+
+            while (head < queue.length && count < maxSteps) {
+                var cur = queue[head++];
+                var dirs = [{ x: 0, y: -1 }, { x: 0, y: 1 }, { x: -1, y: 0 }, { x: 1, y: 0 }];
+                for (var di = 0; di < dirs.length; di++) {
+                    var nx = cur.x + dirs[di].x;
+                    var ny = cur.y + dirs[di].y;
+                    var nk = nx + ',' + ny;
+                    if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS && !visited[nk]) {
+                        // 排除蛇身（不含尾部即将脱离的格子）
+                        var blocked = false;
+                        var bodyCheck = growAmount > 0 ? snake : snake.slice(0, -1);
+                        for (var bi = 0; bi < bodyCheck.length; bi++) {
+                            if (bodyCheck[bi].x === nx && bodyCheck[bi].y === ny) { blocked = true; break; }
+                        }
+                        if (!blocked) {
+                            visited[nk] = true;
+                            queue.push({ x: nx, y: ny });
+                            count++;
+                            if (count >= maxSteps) break;
+                        }
+                    }
+                }
+            }
+            return count;
+        }
+
+        // 检查指定位置是否有不稳定炸弹
+        function isUnstableBombAt(x, y) {
+            for (var i = 0; i < bombs.length; i++) {
+                if (bombs[i].x === x && bombs[i].y === y && bombs[i].type === BOMB_TYPES.UNSTABLE) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // 检查指定位置是否在任意不稳定炸弹的爆炸半径内
+        function isInExplosionRadius(x, y) {
+            for (var i = 0; i < bombs.length; i++) {
+                if (bombs[i].type === BOMB_TYPES.UNSTABLE) {
+                    var dx = Math.abs(x - bombs[i].x);
+                    var dy = Math.abs(y - bombs[i].y);
+                    if (dx <= EXPLOSION_RADIUS && dy <= EXPLOSION_RADIUS) return true;
+                }
+            }
+            return false;
+        }
+
+        // AI 决策：返回最佳移动方向
+        function getAIDirection() {
+            var head = snake[0];
+            var candidates = [];
+
+            // Step 1: 收集安全方向
+            var dirs = [{ x: 0, y: -1 }, { x: 0, y: 1 }, { x: -1, y: 0 }, { x: 1, y: 0 }];
+            for (var i = 0; i < dirs.length; i++) {
+                var d = dirs[i];
+                // 禁止 180° 反转
+                if (d.x === -direction.x && d.y === -direction.y && snake.length > 1) continue;
+                var nx = head.x + d.x;
+                var ny = head.y + d.y;
+                // 禁止撞墙
+                if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+                // 禁止撞自身
+                var bodyCheck = growAmount > 0 ? snake : snake.slice(0, -1);
+                var hitsBody = false;
+                for (var bi = 0; bi < bodyCheck.length; bi++) {
+                    if (bodyCheck[bi].x === nx && bodyCheck[bi].y === ny) { hitsBody = true; break; }
+                }
+                if (hitsBody) continue;
+                candidates.push({ d: d, nx: nx, ny: ny });
+            }
+
+            if (candidates.length === 0) return direction; // 无路可走
+
+            // Step 2: 安全检查 — 排除炸弹威胁
+            var safe = [];
+            for (var j = 0; j < candidates.length; j++) {
+                var c = candidates[j];
+                if (!isUnstableBombAt(c.nx, c.ny) && !isInExplosionRadius(c.nx, c.ny)) {
+                    safe.push(c);
+                }
+            }
+            if (safe.length === 0) safe = candidates; // 全危险时选最不坏的
+
+            // Step 3: 评分
+            for (var k = 0; k < safe.length; k++) {
+                var sc = safe[k];
+                var score = 1;
+
+                // 食物引力
+                if (food) {
+                    var curDist = Math.abs(head.x - food.x) + Math.abs(head.y - food.y);
+                    var newDist = Math.abs(sc.nx - food.x) + Math.abs(sc.ny - food.y);
+                    if (newDist < curDist) score += 5;
+                }
+
+                // 墙壁安全
+                if (sc.nx > 2 && sc.nx < COLS - 3 && sc.ny > 2 && sc.ny < ROWS - 3) score += 3;
+
+                // 远离休眠炸弹
+                var nearDormant = false;
+                for (var bi = 0; bi < bombs.length; bi++) {
+                    if (bombs[bi].type === BOMB_TYPES.DORMANT) {
+                        var dbDist = Math.abs(sc.nx - bombs[bi].x) + Math.abs(sc.ny - bombs[bi].y);
+                        if (dbDist <= 2) nearDormant = true;
+                    }
+                }
+                if (!nearDormant) score += 4;
+
+                // 空间评估
+                var space = floodFillCount(sc.nx, sc.ny, 50);
+                if (space > 30) score += 2;
+                else if (space < 10) score -= 3;
+
+                // 道具吸引
+                if (foodItem === ITEM_TYPES.SHIELD || foodItem === ITEM_TYPES.LIGHTNING) {
+                    if (food) {
+                        var curDist2 = Math.abs(head.x - food.x) + Math.abs(head.y - food.y);
+                        var newDist2 = Math.abs(sc.nx - food.x) + Math.abs(sc.ny - food.y);
+                        if (newDist2 < curDist2) score += 3;
+                    }
+                }
+
+                sc.score = score;
+            }
+
+            // Step 4: 加权随机 — 80% 保持当前方向
+            if (Math.random() < 0.8) {
+                for (var m = 0; m < safe.length; m++) {
+                    if (safe[m].d.x === direction.x && safe[m].d.y === direction.y) {
+                        return safe[m].d;
+                    }
+                }
+            }
+
+            var totalScore = 0;
+            for (var n = 0; n < safe.length; n++) totalScore += safe[n].score;
+            var roll = Math.random() * totalScore;
+            var acc = 0;
+            for (var p = 0; p < safe.length; p++) {
+                acc += safe[p].score;
+                if (roll <= acc) return safe[p].d;
+            }
+            return safe[safe.length - 1].d;
+        }
+
+        // 挂机开关与 UI 刷新
+        function toggleAutoPlay() {
+            autoPlayEnabled = !autoPlayEnabled;
+            updateAutoPlayUI();
+        }
+
+        function updateAutoPlayUI() {
+            // HUD 指示器
+            var hudAutoEl = document.getElementById('hudAutoIndicator');
+            if (hudAutoEl) {
+                if (autoPlayEnabled && isRunning) {
+                    hudAutoEl.classList.add('active');
+                } else {
+                    hudAutoEl.classList.remove('active');
+                }
+            }
+            // 开始界面开关同步
+            var selectEl = document.getElementById('autoPlaySelect');
+            if (selectEl) {
+                if (!autoPlayEnabled) {
+                    selectEl.value = 'off';
+                } else {
+                    selectEl.value = gameMode;
+                }
+            }
+        }
+
         function update() {
-            // Apply the queued direction
-            direction = { ...nextDirection };
+            // 挂机模式：AI 决策替代用户方向输入
+            if (autoPlayEnabled) {
+                direction = getAIDirection();
+            } else {
+                // Apply the queued direction
+                direction = { ...nextDirection };
+            }
 
             // Calculate new head
             const head = snake[0];
@@ -3896,11 +4186,14 @@
             var rank = -1;
             var entryId = null;
             if (score > 0) {
+                // 挂机模式：result 字段追加 :auto 后缀
+                var resultValue = won ? 'win' : reason;
+                if (autoPlayEnabled) resultValue += ':auto';
                 rank = LeaderboardStore.addEntry({
                     score: score,
                     mode: gameMode,
                     snakeLength: snake.length,
-                    result: won ? 'win' : reason,
+                    result: resultValue,
                     skin: currentSkin ? currentSkin.id : 'classic',
                 });
                 if (rank > 0) {
@@ -4497,6 +4790,18 @@
                         ctx.arc(ex + eyeOffX * 0.8, ey + eyeOffY * 0.8, 1.3, 0, Math.PI * 2);
                         ctx.fill();
                     });
+
+                    // ── 挂机模式蛇头标记 ──
+                    if (autoPlayEnabled) {
+                        const autoAlpha = 0.6 + 0.1 * Math.sin(performance.now() / 800);
+                        ctx.fillStyle = `rgba(34, 211, 238, ${autoAlpha})`;
+                        ctx.font = Math.round(CELL_SIZE * 0.6) + 'px sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        ctx.fillText('🤖', hx, sy - CELL_SIZE * 0.15);
+                        ctx.textAlign = 'start';
+                        ctx.textBaseline = 'alphabetic';
+                    }
                 }
             }
 
@@ -4519,6 +4824,12 @@
                 ctx.font = '14px "Segoe UI", system-ui, sans-serif';
                 ctx.fillStyle = cs.pauseSubtext;
                 ctx.fillText('按空格键继续', w / 2, h / 2 + 22);
+                // 挂机模式暂停提示
+                if (autoPlayEnabled) {
+                    ctx.font = '12px "Segoe UI", system-ui, sans-serif';
+                    ctx.fillStyle = cs.pauseSubtext;
+                    ctx.fillText('🤖 挂机模式已激活', w / 2, h / 2 + 42);
+                }
                 ctx.textAlign = 'start';
             }
         }
@@ -4541,12 +4852,16 @@
         }
 
         function _resultIcon(result) {
-            switch (result) {
-                case 'win': return '🎉';
-                case 'timeUp': return '⏰';
-                case 'bomb': return '💥';
-                default: return '💀';
+            var isAuto = result && result.endsWith(':auto');
+            var baseResult = isAuto ? result.slice(0, -5) : result;
+            var icon;
+            switch (baseResult) {
+                case 'win': icon = '🎉'; break;
+                case 'timeUp': icon = '⏰'; break;
+                case 'bomb': icon = '💥'; break;
+                default: icon = '💀'; break;
             }
+            return isAuto ? icon + ' 🤖' : icon;
         }
 
         function _rankDisplay(rank) {
@@ -4640,6 +4955,11 @@
         // ─── Input Handling ─────────────────────────
         function changeDirection(dx, dy) {
             if (!isRunning || isPaused) return;
+            // 用户手动输入方向键 → 退出挂机模式
+            if (autoPlayEnabled) {
+                autoPlayEnabled = false;
+                updateAutoPlayUI();
+            }
             // Prevent reversing into yourself
             if (dx === -direction.x && dy === -direction.y && snake.length > 1) return;
             nextDirection = { x: dx, y: dy };
@@ -4668,6 +4988,9 @@
                 window._tutorial.hookDpad();
             }
 
+            // 挂机模式：刷新 UI 以在新游戏中显示指示器
+            updateAutoPlayUI();
+
             startGameLoop();
             resetHudFade();
         }
@@ -4678,6 +5001,8 @@
             isRunning = false;
             gameOverOverlay.classList.remove('active');
             startOverlay.classList.add('active');
+            // 保持挂机状态（跨局保留）
+            updateAutoPlayUI();
             initGame();
             draw();
         }
@@ -4690,6 +5015,12 @@
                     e.preventDefault();
                     const nextMode = gameMode === 'classic' ? 'timed' : 'classic';
                     selectMode(nextMode);
+                    return;
+                }
+                // H 键在开始界面切换挂机
+                if (e.key === 'h' || e.key === 'H') {
+                    e.preventDefault();
+                    toggleAutoPlay();
                     return;
                 }
             }
@@ -4722,6 +5053,12 @@
                 },
                 t: () => cycleSkin(),
                 T: () => cycleSkin(),
+                h: () => {
+                    if (isRunning) toggleAutoPlay();
+                },
+                H: () => {
+                    if (isRunning) toggleAutoPlay();
+                },
             };
 
             const action = keyMap[e.key];
@@ -4734,6 +5071,23 @@
         // Buttons
         document.getElementById('startBtn').addEventListener('click', startGame);
         document.getElementById('restartBtn').addEventListener('click', showStartOverlay);
+
+        // 挂机模式下拉开关
+        var autoPlaySelect = document.getElementById('autoPlaySelect');
+        if (autoPlaySelect) {
+            autoPlaySelect.addEventListener('change', function () {
+                var val = autoPlaySelect.value;
+                if (val === 'off') {
+                    autoPlayEnabled = false;
+                } else {
+                    autoPlayEnabled = true;
+                    if (val === 'classic' || val === 'timed') {
+                        selectMode(val);
+                    }
+                }
+                updateAutoPlayUI();
+            });
+        }
 
         // Mode card clicks
         modeCardClassic.addEventListener('click', () => selectMode('classic'));

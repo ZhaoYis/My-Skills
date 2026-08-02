@@ -5,6 +5,7 @@
   "stack": "frontend",
   "techStack": "react-vite",
   "language": "zh",
+  "scope": "project",
   "features": [
     "base",
     "skills",
