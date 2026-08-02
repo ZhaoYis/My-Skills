@@ -80,7 +80,7 @@
 | ----------- | ---------- | ---------------------------- |
 | `active`    | 流水线正在运行    | `init` 初始化、`transition` 阶段转换 |
 | `paused`    | 流水线已暂停，可恢复 | `pause` 命令、连续 3 次 attempt 失败 |
-| `completed` | 流水线已完成     | `complete` 命令（仅 Phase 6 可执行） |
+| `completed` | 流水线已完成     | `complete` 命令（Phase 6 或 Phase 7 可执行） |
 
 
 
@@ -227,9 +227,9 @@
 | `fixProposalGenerated`    | `boolean` | Phase 3 修复子流程  | `true`                                                  | 修复提案已生成                     |
 | `fixProposalApproved`     | `boolean` | Phase 3 修复子流程  | `true`                                                  | 修复提案已批准                     |
 | `fixApplied`              | `boolean` | Phase 3 修复子流程  | `true`                                                  | 修复已实施                       |
-| `targetPushApproved`      | `boolean` | Phase 6 Step24 | `true`                                                  | 目标分支推送已确认                   |
-| `mergeApproved`           | `boolean` | Phase 6 Step23 | `true`                                                  | 合并已确认                       |
-| `mergeStrategy`           | `string`  | Phase 6 Step23 | `"Standard merge"` / `"Squash merge"` / `"No-ff merge"` | 合并策略                        |
+| `targetPushApproved`      | `boolean` | Phase 7 Step24 | `true`                                                  | 目标分支推送已确认                   |
+| `mergeApproved`           | `boolean` | Phase 7 Step23 | `true`                                                  | 合并已确认                       |
+| `mergeStrategy`           | `string`  | Phase 7 Step23 | `"Standard merge"` / `"Squash merge"` / `"No-ff merge"` | 合并策略                        |
 
 
 > **注意**：`decisions` 是累积式的，新的 decision 不会清除已有键。在所有 `phaseHistory` 条目中也会保存当时的 decisions 快照。
@@ -471,7 +471,7 @@
 
 
 
-#### Phase 6 — 合并推送
+#### Phase 6 — 提交与源分支推送
 
 
 | Step | 名称            | 执行者                 |
@@ -479,10 +479,15 @@
 | 20   | 读取状态与预提交检查    | `pipeline`          |
 | 21   | 决策点 6：分步暂存与提交 | `pipeline`          |
 | 22   | 源分支推送门禁       | `pipeline`          |
+
+#### Phase 7 — 合并与交付
+
+| Step | 名称            | 执行者                 |
+| ---- | ------------- | ------------------- |
 | 23   | 决策点 7：目标分支与合并 | `pipeline`          |
 | 24   | 合并后验证与目标推送    | `pipeline`          |
-| 25   | 源分支清理与标签      | `pipeline`          |
-| 26   | 完成状态与摘要       | `opsx-dev-pipeline` |
+| 25   | 完成状态与摘要       | `opsx-dev-pipeline` |
+| 26   | 源分支清理与标签      | `pipeline`          |
 
 
 ---
@@ -502,12 +507,13 @@
 3 → 2, 3, 4
 4 → 2, 4, 5
 5 → 1, 2, 5, 6
-6 → 6
+6 → 6, 7
+7 → 7
 ```
 
 - 向前跳转（如 0→5）会逐 Phase 验证所有中间门禁
 - 向后回退（如 3→2）允许，用于修正决策后重试
-- Phase 6 不可回退
+- Phase 6 和 Phase 7 不可回退；Phase 6 仅在 merge 模式下进入 Phase 7
 
 
 
@@ -522,6 +528,7 @@
 | 验证门禁  | 进入 Phase 6 前 `verify.status ∈ {passed, skipped}`                            | `verify-gate-required`                 |
 | 归档门禁  | 进入 Phase 6 前 `archivePath` 不为空                                              | `archive-required`                     |
 | 归档后决策 | 进入 Phase 6 前 `decisions.postArchiveAction ∈ {merge, push-only, local-only}` | `post-archive-decision-required`       |
+| 合并交付门禁 | 进入 Phase 7 前为 merge 模式，且 commit SHA 已记录、源分支已推送 | `merge-gate-required` / `commit-required` / `source-push-required` |
 
 
 

@@ -1,0 +1,75 @@
+---
+name: "OPSX: Archive"
+description: Archive an OpenSpec change with pipeline gate and delivery state tracking
+allowed-tools: Bash(openspec:*), AskUserQuestion
+category: Workflow
+tags: [workflow, archive, experimental]
+---
+
+Archive a completed change and persist the final pipeline gates.
+
+## Pipeline Integration (v2)
+
+> **状态命令失败时，不得静默继续。** 任何 `dev-pipeline-state.mjs` 命令返回非零 exit code 时，必须暂停并报告用户。禁止跳过 pre-flight 或 post-flight。
+
+| exit code | reason | action |
+|-----------|--------|--------|
+| 0 | success | Read the returned state and continue. |
+| 10 | state missing | Run `init`, set standalone mode, and reconstruct only confirmed gate results. |
+| 11 | invalid transition or unmet gate | Stop and show the detail for user confirmation. |
+| 12 | I/O error or concurrent modification | Reload and retry once; if it fails again, stop and report it. |
+
+### Pre-flight: State Awareness
+
+1. Select an active change using the underlying Skill rules, then run `get "<name>"` with the pipeline state script.
+2. For Schema v1, run `migrate-schema "<name>"`; require explicit approval before adding `--confirm`.
+3. If state is missing, **MUST call AskUserQuestion and wait for an explicit choice**: `Associate external requirement` / `Skip association`. Never infer a skip from context. If the user chooses association, collect `featureId` and optional `featureUrl`. Run exactly one `init` branch, then set `executionMode` to `standalone`:
+   ```bash
+   CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+   # Associate external requirement without a URL
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>"
+   # Associate external requirement with a URL
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   # Explicitly skip association
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --skip-feature-association
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
+   ```
+   Run exactly one `init` command and never pass placeholder values.
+4. Compensate missing gates without guessing:
+   - If `tests.status` is pending, ask `passed` / `failed` / `skipped` / `rerun tests`. Persist a confirmed result with `set tests.status`; stop on failed.
+   - If `verify.status` is pending, ask `passed` / `failed` / `skipped` / `run /opsx:verify`. Persist `passed` or `failed` through `attempt verify`, and a confirmed skip through `set verify.status`; stop on failed.
+5. Check `phaseHistory` for an `in-progress` Phase 5 entry executed by `openspec-archive-change`. Reuse it when present; otherwise start the archive audit entry below. Starting it changes an existing strict `pipeline` state to `hybrid` before any standalone forward transition:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 15 openspec-archive-change --start
+   ```
+6. If `currentPhase<5`, transition to Phase 5 Step 15 only after the test gate and audit entry are durable.
+
+### Execute
+
+Load and follow `.claude/skills/openspec-archive-change/SKILL.md` completely, including artifact/task warnings, delta-spec assessment, store-aware paths, archive collision handling, and the final archive summary.
+
+After a successful archive, resolve the actual archive path from the Skill result or filesystem. Ask the user to choose `merge` / `push-only` / `local-only`; this intent must never be inferred.
+
+### Post-flight: Record State
+
+Execute these commands **in order**, checking every exit code:
+
+1. Persist the actual archive path:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" archivePath '"<actual-archive-path>"'
+   ```
+2. Complete `record-phase` before later transition logic reads the history:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 19 openspec-archive-change
+   ```
+3. Persist the explicit delivery decision:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs decision "<name>" postArchiveAction '"<merge|push-only|local-only>"'
+   ```
+4. Transition only after verify, archive path, and delivery decision are durable:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 6 20
+   ```
+5. Run `get "<name>"`. Verify `currentPhase=6`, `archivePath` is exact, `verify.status` is `passed` or `skipped`, the delivery choice matches, and the archive history entry is completed. Warn and stop on mismatch.
+
+Show `/opsx-dev-pipeline <name>` as the next action for commit, push, and optional merge delivery.

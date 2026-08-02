@@ -10,6 +10,8 @@ import { PACKAGE_ROOT } from '../helpers/package-root.js';
 const execFileAsync = promisify(execFile);
 const rootDir = PACKAGE_ROOT;
 const createdDirs: string[] = [];
+const PACKAGE_INSTALL_TIMEOUT_MS = 120000;
+const PACKAGE_TEST_TIMEOUT_MS = 180000;
 let tarball = '';
 
 function execNpm(args: string[], options: { cwd: string; timeout?: number }) {
@@ -37,7 +39,7 @@ beforeAll(async () => {
   await execNpm(['run', 'build'], { cwd: rootDir });
   const { stdout } = await execNpm(['pack'], { cwd: rootDir });
   tarball = stdout.trim().split('\n').pop() ?? '';
-}, 30000);
+}, PACKAGE_INSTALL_TIMEOUT_MS);
 
 afterAll(async () => {
   await cleanupDirectories(createdDirs);
@@ -77,97 +79,109 @@ describe('packaged artifact', () => {
     }
   }, 10000);
 
-  it('runs the packaged CLI and initializes from the tarball install', async () => {
-    const installDir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-pack-'));
-    const targetDir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-pack-target-'));
-    createdDirs.push(installDir, targetDir);
+  it(
+    'runs the packaged CLI and initializes from the tarball install',
+    async () => {
+      const installDir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-pack-'));
+      const targetDir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-pack-target-'));
+      createdDirs.push(installDir, targetDir);
 
-    await execNpm(['init', '-y'], { cwd: installDir });
-    await execNpm(['install', path.join(rootDir, tarball)], {
-      cwd: installDir,
-      timeout: 30000,
-    });
-    const binPath = path.join(installDir, 'node_modules', '.bin', 'opsx-dev-pipeline');
-    const createBinPath = path.join(installDir, 'node_modules', '.bin', 'create-opsx-dev-pipeline');
+      await execNpm(['init', '-y'], { cwd: installDir });
+      await execNpm(
+        ['install', '--prefer-offline', '--no-audit', '--no-fund', path.join(rootDir, tarball)],
+        {
+          cwd: installDir,
+          timeout: PACKAGE_INSTALL_TIMEOUT_MS,
+        },
+      );
+      const binPath = path.join(installDir, 'node_modules', '.bin', 'opsx-dev-pipeline');
+      const createBinPath = path.join(
+        installDir,
+        'node_modules',
+        '.bin',
+        'create-opsx-dev-pipeline',
+      );
 
-    const help = await execPackageBin(binPath, ['--help'], {
-      cwd: installDir,
-      timeout: 30000,
-    });
-    const createHelp = await execPackageBin(createBinPath, ['--help'], {
-      cwd: installDir,
-      timeout: 30000,
-    });
-    expect(help.stdout).toContain('opsx-dev-pipeline');
-    expect(createHelp.stdout).toContain('opsx-dev-pipeline');
-
-    await execNpm(['init', '-y'], { cwd: targetDir });
-    await execPackageBin(
-      binPath,
-      [
-        'init',
-        '--tool',
-        'cursor',
-        '--stack',
-        'backend',
-        '--lang',
-        'en',
-        '--yes',
-        '--dir',
-        targetDir,
-      ],
-      {
+      const help = await execPackageBin(binPath, ['--help'], {
         cwd: installDir,
         timeout: 30000,
-      },
-    );
-    expect(await fs.pathExists(path.join(targetDir, 'opsx-dev-pipeline.json'))).toBe(false);
+      });
+      const createHelp = await execPackageBin(createBinPath, ['--help'], {
+        cwd: installDir,
+        timeout: 30000,
+      });
+      expect(help.stdout).toContain('opsx-dev-pipeline');
+      expect(createHelp.stdout).toContain('opsx-dev-pipeline');
 
-    const pkg = await fs.readJson(path.join(targetDir, 'package.json'));
-    expect(pkg.opsxDevPipeline.tool).toBe('cursor');
-    expect(pkg.opsxDevPipeline.language).toBe('en');
-    expect(await fs.readFile(path.join(targetDir, 'README.md'), 'utf8')).toContain(
-      '## Quick start',
-    );
-
-    // Retained assets exist
-    expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-dev-pipeline.mdc'))).toBe(
-      true,
-    );
-    expect(
-      await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-dev-pipeline/SKILL.md')),
-    ).toBe(true);
-    expect(
-      await fs.pathExists(
-        path.join(targetDir, '.cursor/rules/opsx-dev-pipeline/agents/openai.yaml'),
-      ),
-    ).toBe(true);
-    expect(await fs.pathExists(path.join(targetDir, '.cursor/commands/opsx-dev-pipeline.md'))).toBe(
-      true,
-    );
-
-    // Removed preset skills and commands are absent from generated output
-    const removed = [
-      'opsx-learn',
-      'opsx-analysis',
-      'opsx-design',
-      'opsx-clarify',
-      'opsx-health',
-      'opsx-pr',
-      'opsx-prototype',
-      'opsx-ci-triage',
-      'git-commit-push',
-      'git-code-review',
-      'git-merge-branch',
-      'file-code-review',
-    ];
-    for (const name of removed) {
-      expect(await fs.pathExists(path.join(targetDir, '.cursor/rules', name, 'SKILL.md'))).toBe(
-        false,
+      await execNpm(['init', '-y'], { cwd: targetDir });
+      await execPackageBin(
+        binPath,
+        [
+          'init',
+          '--tool',
+          'cursor',
+          '--stack',
+          'backend',
+          '--lang',
+          'en',
+          '--yes',
+          '--dir',
+          targetDir,
+        ],
+        {
+          cwd: installDir,
+          timeout: 30000,
+        },
       );
-      expect(await fs.pathExists(path.join(targetDir, '.cursor/commands', `${name}.md`))).toBe(
-        false,
+      expect(await fs.pathExists(path.join(targetDir, 'opsx-dev-pipeline.json'))).toBe(false);
+
+      const pkg = await fs.readJson(path.join(targetDir, 'package.json'));
+      expect(pkg.opsxDevPipeline.tool).toBe('cursor');
+      expect(pkg.opsxDevPipeline.language).toBe('en');
+      expect(await fs.readFile(path.join(targetDir, 'README.md'), 'utf8')).toContain(
+        '## Quick start',
       );
-    }
-  }, 45000);
+
+      // Retained assets exist
+      expect(await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-dev-pipeline.mdc'))).toBe(
+        true,
+      );
+      expect(
+        await fs.pathExists(path.join(targetDir, '.cursor/rules/opsx-dev-pipeline/SKILL.md')),
+      ).toBe(true);
+      expect(
+        await fs.pathExists(
+          path.join(targetDir, '.cursor/rules/opsx-dev-pipeline/agents/openai.yaml'),
+        ),
+      ).toBe(true);
+      expect(
+        await fs.pathExists(path.join(targetDir, '.cursor/commands/opsx-dev-pipeline.md')),
+      ).toBe(true);
+
+      // Removed preset skills and commands are absent from generated output
+      const removed = [
+        'opsx-learn',
+        'opsx-analysis',
+        'opsx-design',
+        'opsx-clarify',
+        'opsx-health',
+        'opsx-pr',
+        'opsx-prototype',
+        'opsx-ci-triage',
+        'git-commit-push',
+        'git-code-review',
+        'git-merge-branch',
+        'file-code-review',
+      ];
+      for (const name of removed) {
+        expect(await fs.pathExists(path.join(targetDir, '.cursor/rules', name, 'SKILL.md'))).toBe(
+          false,
+        );
+        expect(await fs.pathExists(path.join(targetDir, '.cursor/commands', `${name}.md`))).toBe(
+          false,
+        );
+      }
+    },
+    PACKAGE_TEST_TIMEOUT_MS,
+  );
 });

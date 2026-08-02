@@ -1,7 +1,8 @@
+import os from 'node:os';
 import fs from 'fs-extra';
 import path from 'node:path';
 import { z } from 'zod';
-import type { FeatureId, ToolAdapter, ToolDefinition, ToolId } from './types.js';
+import type { FeatureId, InstallScope, ToolAdapter, ToolDefinition, ToolId } from './types.js';
 
 // Tool adapter schema. To add a new AI tool:
 // 1. Add its id to the id enum below
@@ -18,6 +19,12 @@ const toolSchema = z.object({
     skills: z.string(),
     commands: z.string(),
   }),
+  userDestinations: z
+    .object({
+      skills: z.string().optional(),
+      commands: z.string().optional(),
+    })
+    .optional(),
   supports: z.array(z.enum(['base', 'skills', 'commands', 'docs', 'schema'])),
   skillRootNote: z.string().optional(),
   postInstallNotes: z.array(z.string()).optional(),
@@ -38,8 +45,18 @@ class StaticToolAdapter implements ToolAdapter {
     return this.definition.supports.includes(feature);
   }
 
-  getDestination(feature: Extract<FeatureId, 'skills' | 'commands'>): string {
+  getDestination(
+    feature: Extract<FeatureId, 'skills' | 'commands'>,
+    scope: InstallScope = 'project',
+  ): string {
+    if (scope === 'user') {
+      return path.join(os.homedir(), this.definition.userDestinations?.[feature] ?? '');
+    }
     return this.definition.destinations[feature];
+  }
+
+  supportsUserDestination(feature: Extract<FeatureId, 'skills' | 'commands'>): boolean {
+    return this.definition.userDestinations?.[feature] !== undefined;
   }
 
   getRoot(): string {

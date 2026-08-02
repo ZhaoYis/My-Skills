@@ -51,8 +51,10 @@ async function executePhase(
       return executePhase4(env, scenario);
     case 'phase-5-archive':
       return executePhase5(env, scenario);
-    case 'phase-6-merge-push':
+    case 'phase-6-commit-push':
       return executePhase6(env, scenario);
+    case 'phase-7-merge-deliver':
+      return executePhase7(env, scenario);
   }
 }
 
@@ -298,13 +300,23 @@ async function executePhase6(
   await runState(env, 'set', scenario.changeName, 'delivery.sourcePushed', 'true');
 
   if (postArchiveAction === 'push-only') {
-    // Push-only: skip merge and target push
+    // Push-only: complete in Phase 6
     await runState(env, 'set', scenario.changeName, 'delivery.targetPushed', 'false');
     const stateCommitSha = await finalizePipelineState(env, scenario.changeName, postArchiveAction);
     return { commitSha, stateCommitSha, postArchiveAction };
   }
 
-  // Full merge flow
+  // merge: transition to Phase 7
+  await runState(env, 'transition', scenario.changeName, '7', '23');
+  return { commitSha, postArchiveAction, transitionToPhase7: true };
+}
+
+async function executePhase7(
+  env: TestEnvironment,
+  scenario: ScenarioConfig,
+): Promise<Record<string, unknown>> {
+  const postArchiveAction = scenario.postArchiveAction ?? 'merge';
+
   await runState(env, 'set', scenario.changeName, 'targetBranch', JSON.stringify(env.targetBranch));
   await runState(env, 'decision', scenario.changeName, 'mergeApproved', 'true');
   await git(env, 'checkout', env.targetBranch);
@@ -334,7 +346,7 @@ async function executePhase6(
   await runState(env, 'set', scenario.changeName, 'delivery.targetPushed', 'true');
   const stateCommitSha = await finalizePipelineState(env, scenario.changeName, postArchiveAction);
 
-  return { commitSha, mergeCommitSha, stateCommitSha, postArchiveAction };
+  return { mergeCommitSha, stateCommitSha, postArchiveAction };
 }
 
 async function stageFeatureChanges(env: TestEnvironment): Promise<void> {

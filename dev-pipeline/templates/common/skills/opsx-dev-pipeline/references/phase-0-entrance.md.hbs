@@ -93,9 +93,11 @@ node <SKILL_ROOT>/scripts/preflight.mjs
    - **options**：
      - `已有 change 名称` — 输入已有 change 名称，续接或重建流水线
      - `新的需求描述` — 描述新需求，创建 change 并走完整提案→实施→审查→归档→交付流程
+     - `系分设计文档` — 输入已有细分的系分设计文档名称，以其内容作为需求描述创建 change
      - `查看已有 change 列表` — 列出所有可用 change，再决定续接或新建
 
 2. 根据用户选择：
    - 选择 `已有 change 名称` → 发送文本消息请用户输入 change 名称，收到后走 **2.a** 路径
    - 选择 `新的需求描述` → 发送文本消息请用户描述需求，收到后走 **2.b** 路径
+   - 选择 `系分设计文档` → 发送文本消息请用户输入已生成的系分设计文档名称（如 `openspec/docs/<yyyyMMdd>/<kebab-case-name>.md`），读取该文档内容作为需求描述，走 **2.b** 路径（从描述推导 change 名称、初始化状态并迁移到 Phase1）
    - 选择 `查看已有 change 列表` → 运行 `node <SKILL_ROOT>/scripts/list-changes.mjs`（或 `openspec list --json`）展示可用 change，展示后重新回到步骤 1（再次使用 **{{askTool}}**，此时可额外追加当前已有的 change 名称作为附加选项供快速选择）

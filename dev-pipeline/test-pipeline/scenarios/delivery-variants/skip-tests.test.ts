@@ -16,7 +16,8 @@ const scenario: ScenarioConfig = {
     'phase-3-review',
     'phase-4-unit-tests',
     'phase-5-archive',
-    'phase-6-merge-push',
+    'phase-6-commit-push',
+    'phase-7-merge-deliver',
   ],
   toolId: 'claude',
   openspecMode: 'mock',
@@ -67,7 +68,7 @@ describe('E2E - Skip tests delivery', () => {
       path.join(env.rootDir, 'openspec', '.pipeline-state', `${scenario.changeName}.json`),
     );
 
-    expect(state.currentPhase).toBe(6);
+    expect(state.currentPhase).toBe(7);
     expect(state.status).toBe('completed');
     expect(state.tests.status).toBe('skipped');
     expect(state.tests.command).toBe('npm test');

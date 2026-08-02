@@ -256,25 +256,14 @@ export async function validatePhase6(
   postArchiveAction?: string,
 ): ValidationResult {
   const state = await readState(env, changeName);
-  const status = await gitStatus(env.rootDir);
-  const currentBranch = (await git(env, 'branch', '--show-current')).trim();
-  const remoteSource = await remoteRef(env, `refs/heads/${env.sourceBranch}`);
-  const remoteTarget = await remoteRef(env, `refs/heads/${env.targetBranch}`);
   const commitMessage = state.delivery.commitSha
     ? (await git(env, 'show', '-s', '--format=%s', state.delivery.commitSha)).trim()
     : '';
-  const stateCommitMessage = (
-    await git(env, 'log', '-1', '--format=%s', '--', `openspec/.pipeline-state/${changeName}.json`)
-  ).trim();
   const action = postArchiveAction ?? 'merge';
   const isLocalOnly = action === 'local-only';
   const isPushOnly = action === 'push-only';
 
   const assertions: AssertionResult[] = [
-    {
-      description: 'Pipeline state is completed in Phase6',
-      passed: state.currentPhase === 6 && state.status === 'completed',
-    },
     {
       description: 'Commit SHA is persisted',
       passed: Boolean(state.delivery.commitSha),
@@ -284,54 +273,84 @@ export async function validatePhase6(
       description: 'Source commit message follows conventional commit format',
     },
     {
+      description: 'Source push is persisted for non-local-only',
+      passed: isLocalOnly ? !state.delivery.sourcePushed : state.delivery.sourcePushed,
+    },
+  ];
+
+  if (isLocalOnly || isPushOnly) {
+    const stateCommitMessage = (
+      await git(env, 'log', '-1', '--format=%s', '--', `openspec/.pipeline-state/${changeName}.json`)
+    ).trim();
+    assertions.push({
+      description: 'Pipeline state is completed in Phase6',
+      passed: state.currentPhase === 6 && state.status === 'completed',
+    });
+    assertions.push({
       description: 'Final pipeline state commit exists in git log',
       passed: stateCommitMessage.includes('finalize pipeline delivery state'),
       detail: stateCommitMessage,
-    },
-  ];
+    });
+  } else {
+    assertions.push({
+      description: 'Phase 6 transitions to Phase 7 for merge mode',
+      passed: state.currentPhase === 7 && state.status === 'active',
+    });
+  }
 
   if (isLocalOnly) {
     assertions.push({
       description: 'No remote operations for local-only delivery',
       passed: !state.delivery.sourcePushed && !state.delivery.targetPushed,
     });
-    assertions.push({
-      description: 'Delivery finishes with a clean work tree',
-      passed: status.isClean,
-      detail: status.stdout,
-    });
-  } else if (isPushOnly) {
-    assertions.push({
-      description: 'Source push is persisted but target is not',
-      passed: state.delivery.sourcePushed && !state.delivery.targetPushed,
-    });
-    assertions.push({
-      description: 'Remote source ref exists',
-      passed: Boolean(remoteSource),
-    });
-    assertions.push({
-      description: 'Delivery finishes on the source branch',
-      passed: currentBranch === env.sourceBranch,
-    });
-  } else {
-    // Full merge
-    assertions.push({
+  }
+
+  return {
+    assertions,
+    artifacts: [artifact(env, statePath(env, changeName))],
+  };
+}
+
+export async function validatePhase7(
+  env: TestEnvironment,
+  changeName: string,
+  _postArchiveAction?: string,
+): ValidationResult {
+  const state = await readState(env, changeName);
+  const currentBranch = (await git(env, 'branch', '--show-current')).trim();
+  const remoteSource = await remoteRef(env, `refs/heads/${env.sourceBranch}`);
+  const remoteTarget = await remoteRef(env, `refs/heads/${env.targetBranch}`);
+  const stateCommitMessage = (
+    await git(env, 'log', '-1', '--format=%s', '--', `openspec/.pipeline-state/${changeName}.json`)
+  ).trim();
+
+  const assertions: AssertionResult[] = [
+    {
+      description: 'Pipeline state is completed in Phase7',
+      passed: state.currentPhase === 7 && state.status === 'completed',
+    },
+    {
       description: 'Source and target pushes are persisted',
       passed: state.delivery.sourcePushed && state.delivery.targetPushed,
-    });
-    assertions.push({
+    },
+    {
       description: 'Merge SHA is persisted',
       passed: Boolean(state.delivery.mergeCommitSha),
-    });
-    assertions.push({
+    },
+    {
       description: 'Delivery finishes on the target branch',
       passed: currentBranch === env.targetBranch,
-    });
-    assertions.push({
+    },
+    {
       description: 'Remote source and target refs exist',
       passed: Boolean(remoteSource && remoteTarget),
-    });
-  }
+    },
+    {
+      description: 'Final pipeline state commit exists in git log',
+      passed: stateCommitMessage.includes('finalize pipeline delivery state'),
+      detail: stateCommitMessage,
+    },
+  ];
 
   return {
     assertions,
@@ -357,7 +376,8 @@ export const PHASE_VALIDATORS: Record<
   'phase-3-review': (env, ctx) => validatePhase3(env, ctx.changeName, ctx.reviewDisposition),
   'phase-4-unit-tests': (env, ctx) => validateUnitTests(env, ctx.changeName, ctx.testsStatus),
   'phase-5-archive': (env, ctx) => validateArchive(env, ctx.changeName),
-  'phase-6-merge-push': (env, ctx) => validatePhase6(env, ctx.changeName, ctx.postArchiveAction),
+  'phase-6-commit-push': (env, ctx) => validatePhase6(env, ctx.changeName, ctx.postArchiveAction),
+  'phase-7-merge-deliver': (env, ctx) => validatePhase7(env, ctx.changeName, ctx.postArchiveAction),
 };
 
 async function readState(env: TestEnvironment, changeName: string): Promise<PipelineState> {

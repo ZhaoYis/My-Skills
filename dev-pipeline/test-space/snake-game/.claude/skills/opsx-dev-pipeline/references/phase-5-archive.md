@@ -1,0 +1,60 @@
+# Phase5: 提案归档 (Archive)
+
+## Step15：检查制品和任务完成状态
+
+```bash
+node <SKILL_ROOT>/scripts/change-status.mjs "<name>"
+```
+
+若存在未完成任务，**AskUserQuestion**：`继续归档` / `回到 Phase2 继续实施` / `终止流程`
+
+## Step16：archive 前 verify 门禁
+
+- 若 `executionMode=standalone|hybrid`，先读取 `verify.status` 和 Phase5 Step16 的 `phaseHistory`。只有持久化状态为 `passed` 或经用户确认的 `skipped` 才可复用；仅存在 verify 历史、报告文件或后续 Phase 记录时不得推断通过。
+- 独立 verify 留下 `in-progress` 记录时，提示使用 `/opsx:verify <name>` 续接，或由用户明确选择重新验证/跳过；不得静默开始 archive。
+- 若 `openspec/config.yaml` 或项目约定有 verify 命令，先执行并确保通过
+- verify 失败 → **AskUserQuestion**（决策点 5a）：`修复后重试 verify` / `回到 Phase2 修复代码` / `回到 Phase1 修改提案（需求或设计有误）` / `暂停流水线` / `终止流程`
+  - 每次执行后调用 `node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs attempt "<name>" verify passed` 或 `verify failed`
+  - **verify 重试最多 3 轮**；第三次 `failed` 会强制暂停并返回非零，必须提示人工介入
+- 无法确定 verify 命令 → 请求用户手动确认
+
+执行前记录 `verify.command`，执行结果通过 `attempt` 记录，并在需要时记录 `verify.detail`；无适用命令时必须由用户确认并记录 `verify.status=skipped`。未记录 `passed` 或 `skipped` 时，状态机禁止进入 Phase6。
+
+## Step17：Delta spec 同步检查
+
+检查 `openspec/changes/<name>/specs/` 下是否有 delta specs。若有，展示变更摘要，**AskUserQuestion**：
+- `同步到主 specs（推荐）` → Step18 使用 `-y`（无 `--skip-specs`）
+- `不同步，直接归档` → Step18 使用 `-y --skip-specs`
+
+## Step18：执行归档
+
+**禁止在未经用户显式确认的情况下使用 `-y` flag。** `archive.mjs -y` 只能在用户通过 AskUserQuestion 确认 verify 结果、Delta spec 同步选择和归档选项后执行；`-y` 仅用于把这些已确认选项传给非交互脚本，不代表可以代替用户确认。
+
+```bash
+node <SKILL_ROOT>/scripts/archive.mjs "<name>" -y [--skip-specs]
+```
+
+归档成功后从命令 JSON 或文件系统取得实际归档路径，并记录：
+```bash
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<name>" archivePath '"<actual-archive-path>"'
+```
+
+## Step19：[决策点 5b] 归档后操作
+
+**AskUserQuestion**：
+- `提交代码并合并到目标分支` → Phase6 + Phase7 完整流程（进入Phase7执行合并）
+- `仅提交并推送（不合并）` → Phase6 commit + push 后结束（不进入Phase7）
+- `终止流程` → 退出
+
+进入 Phase6 前记录选择并迁移：
+```bash
+# 选择合并
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" postArchiveAction '"merge"'
+# 或选择仅推送
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" postArchiveAction '"push-only"'
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 6 20
+```
+
+若 transition 失败，必须检查并补齐缺失的门禁（`verify.status`、`archivePath`、`postArchiveAction`），然后重新迁移；不得直接执行 Phase6 的提交、推送或合并命令。
+
+修复子 change 使用 `postArchiveAction=local-only`。终止或暂停时记录状态，不得删除状态文件。

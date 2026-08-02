@@ -7,7 +7,7 @@ import type { PipelineReport, ScenarioConfig, TestEnvironment } from '../../src/
 const scenario: ScenarioConfig = {
   name: 'push-only-delivery',
   sampleProject: 'fullstack-todo',
-  phases: ALL_PHASES,
+  phases: ALL_PHASES.filter((p) => p !== 'phase-7-merge-deliver'),
   toolId: 'claude',
   openspecMode: 'mock',
   changeName: 'add-todo-due-date',
@@ -61,7 +61,7 @@ describe('E2E - Push-only delivery (no merge)', () => {
     expect(sourceRef.stdout.trim()).toBeTruthy();
 
     // No merge commit on target (target wasn't pushed)
-    const phase6 = report.phases.find((p) => p.phaseId === 'phase-6-merge-push');
+    const phase6 = report.phases.find((p) => p.phaseId === 'phase-6-commit-push');
     expect(phase6?.assertions.every((a) => a.passed)).toBe(true);
   });
 });

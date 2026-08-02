@@ -49,10 +49,10 @@
 
 
 
-## 🔄 三、流水线状态机：7 阶段门禁式开发交付引擎
+## 🔄 三、流水线状态机：8 阶段门禁式开发交付引擎
 
 ```
-Phase0 预检 → Phase1 提案 → Phase2 实施 → Phase3 审查 → Phase4 单测 → Phase5 归档 → Phase6 交付
+Phase0 预检 → Phase1 提案 → Phase2 实施 → Phase3 审查 → Phase4 单测 → Phase5 归档 → Phase6 提交推送 → Phase7 合并交付
 ```
 
 
@@ -68,7 +68,7 @@ Phase0 预检 → Phase1 提案 → Phase2 实施 → Phase3 审查 → Phase4 �
 | **决策记录**   | 每个高风险决策写入状态（`proposalApproved`、`mergeStrategy`、`postArchiveAction` 等） |
 | **重试上限**   | 审查修复最多 3 轮、测试/verify 最多 3 次尝试，超限自动暂停                                  |
 | **暂停/恢复**  | 任意阶段可 `pause`，记录中断原因；恢复时自动检测状态与 Git 事实一致性                             |
-| **完成关闭**   | 仅 Phase6 可 `complete`，防止未完成流水线被误标记                                    |
+| **完成关闭**   | local-only/push-only 在 Phase6、merge 在 Phase7 执行 `complete`，防止未交付流水线被误标记 |
 
 
 
@@ -254,7 +254,7 @@ EnvironmentFactory → PipelineAgentOrchestrator → PhaseValidators → ReportG
 ### 🔥 十大核心竞争力
 
 1. **「一条命令搭建 AI 研发流水线」** — `npx opsx-dev-pipeline init` 从零到完整的 AI-Ready 工程基础设施，30 秒内完成
-2. **「流水线状态机」** — 业界首创的 AI 开发门禁引擎：7 阶段严格转换、多门禁校验、自动重试上限、中断恢复、决策审计
+2. **「流水线状态机」** — 业界首创的 AI 开发门禁引擎：8 阶段严格转换、多门禁校验、自动重试上限、中断恢复、决策审计
 3. **「三 AI 工具统一适配」** — Claude Code、Cursor、Codex 一套模板、一致体验、各自原生格式
 4. **「前后端技术栈一键安装」** — React/Vite 或 Spring Boot，Schema + Templates + Config + Rules 全部就绪
 5. **「规范驱动开发 (Spec-Driven)」** — Proposal → Specs → Design → Tasks 四阶段制品体系，Delta Specs 追踪需求变更
@@ -274,7 +274,7 @@ EnvironmentFactory → PipelineAgentOrchestrator → PhaseValidators → ReportG
 | 指标         | 数值                                                            |
 | ---------- | ------------------------------------------------------------- |
 | CLI 命令     | 6 个 (init/sync/upgrade/uninstall/list-tools/doctor)           |
-| 流水线 Phase  | 7 个 (Phase 0-6) + 多个决策点                                       |
+| 流水线 Phase  | 8 个 (Phase 0-7) + 多个决策点                                       |
 | AI 工具适配    | 3 个 (Claude Code/Cursor/Codex)                                |
 | 技术栈模板      | 2 套 (Frontend: React+Vite / Backend: Spring Boot)             |
 | 流水线脚本      | 10 个 (9 功能脚本 + 1 状态机) + 共享库                                   |
@@ -285,5 +285,3 @@ EnvironmentFactory → PipelineAgentOrchestrator → PhaseValidators → ReportG
 | Asset 定义   | 12 个 (覆盖 base/schema/skills/commands/docs)                    |
 | 状态机命令      | 8 个 (init/get/decision/set/attempt/transition/pause/complete) |
 | 安全检测       | 9 类敏感文件自动扫描                                                   |
-
-

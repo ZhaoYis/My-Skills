@@ -3,7 +3,9 @@
   "projectName": "snake-game",
   "tool": "claude",
   "stack": "frontend",
+  "techStack": "react-vite",
   "language": "zh",
+  "scope": "project",
   "features": [
     "base",
     "skills",
@@ -11,7 +13,7 @@
     "docs",
     "schema"
   ],
-  "templateVersion": "0.2.12",
+  "templateVersion": "0.2.13",
   "packageName": "opsx-dev-pipeline",
   "managedAssets": [
     {
@@ -71,8 +73,12 @@
       "destination": ".claude/skills/opsx-dev-pipeline/references/phase-5-archive.md"
     },
     {
-      "id": "opsx-dev-pipeline-skill-bundle:references/phase-6-merge-push.md.hbs",
-      "destination": ".claude/skills/opsx-dev-pipeline/references/phase-6-merge-push.md"
+      "id": "opsx-dev-pipeline-skill-bundle:references/phase-6-commit-push.md.hbs",
+      "destination": ".claude/skills/opsx-dev-pipeline/references/phase-6-commit-push.md"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:references/phase-7-merge-deliver.md.hbs",
+      "destination": ".claude/skills/opsx-dev-pipeline/references/phase-7-merge-deliver.md"
     },
     {
       "id": "opsx-dev-pipeline-skill-bundle:scripts/archive.mjs",
@@ -119,6 +125,34 @@
       "destination": ".claude/skills/opsx-dev-pipeline/scripts/validate-change.mjs"
     },
     {
+      "id": "grill-me-skill-bundle:SKILL.md",
+      "destination": ".claude/skills/grill-me/SKILL.md"
+    },
+    {
+      "id": "grill-me-skill-bundle:agents/openai.yaml",
+      "destination": ".claude/skills/grill-me/agents/openai.yaml"
+    },
+    {
+      "id": "grilling-skill-bundle:SKILL.md",
+      "destination": ".claude/skills/grilling/SKILL.md"
+    },
+    {
+      "id": "grilling-skill-bundle:agents/openai.yaml",
+      "destination": ".claude/skills/grilling/agents/openai.yaml"
+    },
+    {
+      "id": "dev-spec-design-skill-bundle:SKILL.md.hbs",
+      "destination": ".claude/skills/dev-spec-design/SKILL.md"
+    },
+    {
+      "id": "dev-spec-design-skill-bundle:agents/openai.yaml",
+      "destination": ".claude/skills/dev-spec-design/agents/openai.yaml"
+    },
+    {
+      "id": "dev-spec-design-skill-bundle:references/system-analysis-design-template-lite.md",
+      "destination": ".claude/skills/dev-spec-design/references/system-analysis-design-template-lite.md"
+    },
+    {
       "id": "opsx-dev-pipeline-command",
       "destination": ".claude/commands/opsx-dev-pipeline.md"
     },
@@ -147,32 +181,20 @@
       "destination": ".claude/commands/opsx/explore.md"
     },
     {
-      "id": "claude-docs",
-      "destination": "CLAUDE.md"
-    },
-    {
-      "id": "grill-me-skill-bundle:SKILL.md",
-      "destination": ".claude/skills/grill-me/SKILL.md"
-    },
-    {
-      "id": "grill-me-skill-bundle:agents/openai.yaml",
-      "destination": ".claude/skills/grill-me/agents/openai.yaml"
-    },
-    {
-      "id": "grilling-skill-bundle:SKILL.md",
-      "destination": ".claude/skills/grilling/SKILL.md"
-    },
-    {
-      "id": "grilling-skill-bundle:agents/openai.yaml",
-      "destination": ".claude/skills/grilling/agents/openai.yaml"
-    },
-    {
       "id": "opsx-grill-me-command",
       "destination": ".claude/commands/opsx/grill-me.md"
     },
     {
       "id": "opsx-grilling-command",
       "destination": ".claude/commands/opsx/grilling.md"
+    },
+    {
+      "id": "opsx-dev-spec-design-command",
+      "destination": ".claude/commands/opsx/dev-spec-design.md"
+    },
+    {
+      "id": "claude-docs",
+      "destination": "CLAUDE.md"
     }
   ]
 }

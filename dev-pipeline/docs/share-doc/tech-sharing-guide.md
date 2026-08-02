@@ -20,7 +20,7 @@ opsx-dev-pipeline 不试图让 AI 变慢——它要求 AI **先写提案、通�
 flowchart TB
     subgraph CLI["opsx-dev-pipeline CLI"]
         ADAPTER["多 AI 工具适配器<br/>Claude Code · Cursor · Codex"]
-        STATE_MACHINE["7 阶段流水线状态机<br/>Phase 0-6"]
+        STATE_MACHINE["8 阶段流水线状态机<br/>Phase 0-7"]
         TEMPLATES["Handlebars 模板引擎<br/>Skills · Commands · Schema"]
     end
 
@@ -160,9 +160,9 @@ Manifest 采用双存储策略：优先嵌入 `package.json`（`opsxDevPipeline`
 
 ---
 
-## 三、流水线状态机 — 7 阶段门禁引擎
+## 三、流水线状态机 — 8 阶段门禁引擎
 
-### 3.1 Phase 0-6 完整流程
+### 3.1 Phase 0-7 完整流程
 
 ```mermaid
 flowchart TD
@@ -191,7 +191,8 @@ flowchart TD
 
     P5 -->|"归档完成"| DP5{"决策点 5"}
     DP5 -->|"仅推送"| P6["Phase 6 · 交付<br/>Commit → Push"]
-    DP5 -->|"合并"| P6MERGE["Phase 6 · 交付<br/>Commit → Push → Merge"]
+    DP5 -->|"合并"| P6MERGE["Phase 6 · 提交推送<br/>Commit → Source Push"]
+    P6MERGE --> P7["Phase 7 · 合并交付<br/>Merge → Verify → Target Push"]
 
     P6 --> DONE(["交付完成"])
     P6MERGE --> DONE
@@ -227,7 +228,7 @@ flowchart TD
 | 决策键 | 位置 | 说明 |
 |---|---|---|
 | `proposalApproved` | Phase 1 | 提案是否已批准 |
-| `mergeStrategy` | Phase 6 | 合并策略（standard/squash/no-ff） |
+| `mergeStrategy` | Phase 7 | 合并策略（standard/squash/no-ff） |
 | `postArchiveAction` | Phase 5 | 归档后动作（push/merge） |
 | `skipReview` | Phase 2→4 | 是否跳过审查阶段 |
 | `skipTests` | Phase 4 | 是否跳过测试门禁 |
@@ -800,7 +801,7 @@ queued → running → completed
 | 指标 | 数值 |
 |---|---|
 | CLI 命令 | 6 个 (init / sync / upgrade / uninstall / list-tools / doctor) |
-| 流水线 Phase | 7 个 (Phase 0-6) |
+| 流水线 Phase | 8 个 (Phase 0-7) |
 | AI 工具适配 | 3 个 (Claude Code / Cursor / Codex) |
 | 技术栈模板 | 2 套 (Frontend: React+Vite / Backend: Spring Boot) |
 | 流水线脚本 | 10 个 (9 功能脚本 + 1 状态机) |

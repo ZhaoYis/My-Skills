@@ -34,8 +34,8 @@ describe('E2E - Skip review delivery', () => {
     expect(report.phases.map((p) => p.phaseId)).toEqual(scenario.phases);
     expect(report.phases.every((p) => p.status === 'pass')).toBe(true);
     expect(report.summary).toMatchObject({
-      totalPhases: 6,
-      passedPhases: 6,
+      totalPhases: 7,
+      passedPhases: 7,
       failedPhases: 0,
       skippedPhases: 0,
       failedAssertions: 0,
@@ -49,7 +49,7 @@ describe('E2E - Skip review delivery', () => {
     const { default: fs } = await import('fs-extra');
     const state = await fs.readJson(statePath);
 
-    expect(state.currentPhase).toBe(6);
+    expect(state.currentPhase).toBe(7);
     expect(state.status).toBe('completed');
     // Review was never executed (no review phase in the flow)
     expect(state.review.status).not.toBe('passed');
@@ -58,7 +58,7 @@ describe('E2E - Skip review delivery', () => {
   });
 
   it('delivers the change to the remote target', async () => {
-    const phase6 = report.phases.find((p) => p.phaseId === 'phase-6-merge-push');
+    const phase6 = report.phases.find((p) => p.phaseId === 'phase-6-commit-push');
     expect(phase6?.status).toBe('pass');
     expect(phase6?.assertions.every((a) => a.passed)).toBe(true);
   });

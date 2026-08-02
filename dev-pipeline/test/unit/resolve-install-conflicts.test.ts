@@ -13,6 +13,7 @@ function createPlan(files?: Partial<InstallPlan['files'][number]>[]): InstallPla
     tool: 'claude',
     language: 'zh',
     features: ['base', 'skills', 'commands', 'docs'],
+    scope: 'project',
     adapter: {
       definition: {
         id: 'claude',
@@ -25,6 +26,7 @@ function createPlan(files?: Partial<InstallPlan['files'][number]>[]): InstallPla
       detectFiles: () => ['.claude'],
       supports: () => true,
       getDestination: (feature) => (feature === 'skills' ? '.claude/skills' : '.claude/commands'),
+      supportsUserDestination: () => true,
       getRoot: () => '.',
       getSkillRootNote: () => undefined,
       getPostInstallNotes: () => [],

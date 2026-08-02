@@ -7,7 +7,7 @@ import type { PipelineReport, ScenarioConfig, TestEnvironment } from '../../src/
 const scenario: ScenarioConfig = {
   name: 'local-only-delivery',
   sampleProject: 'fullstack-todo',
-  phases: ALL_PHASES,
+  phases: ALL_PHASES.filter((p) => p !== 'phase-7-merge-deliver'),
   toolId: 'claude',
   openspecMode: 'mock',
   changeName: 'add-todo-due-date',
@@ -20,20 +20,17 @@ describe('E2E - Local-only delivery (no remote operations)', () => {
   let report: PipelineReport;
   let env: TestEnvironment;
 
-  beforeAll(
-    async () => {
-      orchestrator = new PipelineAgentOrchestrator(scenario, deterministicPipelineExecutor);
-      report = await orchestrator.runFullFlow();
-      env = orchestrator.getEnvironment();
-    },
-    120000,
-  );
+  beforeAll(async () => {
+    orchestrator = new PipelineAgentOrchestrator(scenario, deterministicPipelineExecutor);
+    report = await orchestrator.runFullFlow();
+    env = orchestrator.getEnvironment();
+  }, 120000);
 
   afterAll(async () => {
     if (env) await env.cleanup();
   });
 
-  it('executes all seven phases without failures', () => {
+  it('executes the seven applicable phases without failures', () => {
     expect(report.phases.every((p) => p.status === 'pass')).toBe(true);
     expect(report.summary.overallScore).toBe(100);
     expect(report.meta.overallStatus).toBe('pass');
@@ -61,7 +58,11 @@ describe('E2E - Local-only delivery (no remote operations)', () => {
     expect(log.stdout.trim()).toBeTruthy();
 
     // Source ref does NOT exist on remote (never pushed)
-    const sourceRef = await execFileAsync('git', ['ls-remote', env.remotePath, `refs/heads/${env.sourceBranch}`]);
+    const sourceRef = await execFileAsync('git', [
+      'ls-remote',
+      env.remotePath,
+      `refs/heads/${env.sourceBranch}`,
+    ]);
     expect(sourceRef.stdout.trim()).toBe('');
   });
 });

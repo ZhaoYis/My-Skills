@@ -35,10 +35,9 @@
             background: var(--bg);
             /* ambient glow gradients are set dynamically by JS skin system */
             color: var(--text);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
             overflow: hidden;
             user-select: none;
             -webkit-user-select: none;
@@ -46,89 +45,143 @@
         }
 
         .container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            padding: 20px;
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        /* ── Header ── */
-        .header {
+        /* ── Floating HUD Top Bar ── */
+        .hud-top {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            width: 100%;
-            max-width: 500px;
+            padding: 0 16px;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 100;
+            transition: opacity 0.5s ease;
         }
 
-        .title {
-            font-size: 2rem;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            background: linear-gradient(135deg, var(--snake-head), var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .hud-top.hud-fade {
+            opacity: 0.4;
         }
 
-        .score-panel {
+        .hud-bottom {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 48px;
             display: flex;
-            gap: 16px;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 0 16px;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 100;
+            transition: opacity 0.5s ease;
         }
 
-        .score-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 10px 18px;
-            text-align: center;
-            min-width: 80px;
+        .hud-bottom.hud-fade {
+            opacity: 0.4;
         }
 
-        .score-label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--text-secondary);
-            margin-bottom: 2px;
+        .hud-score-panel {
+            display: flex;
+            gap: 12px;
+            align-items: center;
         }
 
-        .score-value {
-            font-size: 1.4rem;
+        .hud-score-item {
+            font-size: 0.9rem;
             font-weight: 700;
+            color: var(--text);
             font-variant-numeric: tabular-nums;
+            white-space: nowrap;
         }
 
-        .score-value.current {
+        .hud-score-item.timer {
             color: var(--accent);
         }
 
-        .score-value.best {
+        .hud-score-item.timer.warning {
             color: #fbbf24;
+        }
+
+        .hud-score-item.timer.danger {
+            color: var(--danger);
+            animation: pulse 0.5s ease-in-out infinite alternate;
+        }
+
+        .hud-shield-indicator {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #a78bfa;
+            display: none;
+        }
+
+        .hud-shield-indicator.active {
+            display: inline;
+        }
+
+        .hud-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: var(--text);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .hud-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        @keyframes pulse {
+            from { opacity: 1; }
+            to { opacity: 0.5; }
         }
 
         /* ── Game Canvas ── */
         .canvas-wrapper {
-            position: relative;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: var(--surface);
-            border: 2px solid var(--border);
-            border-radius: 16px;
             overflow: hidden;
-            box-shadow:
-                0 0 0 1px rgba(51, 65, 85, 0.5),
-                0 20px 60px rgba(0, 0, 0, 0.5),
-                0 0 80px rgba(34, 211, 238, 0.05);
         }
 
         canvas {
             display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
         }
 
         /* ── Overlay ── */
         .overlay {
-            position: absolute;
-            inset: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -136,6 +189,7 @@
             background: var(--overlay);
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
+            z-index: 200;
             gap: 16px;
             transition: opacity 0.3s ease;
             pointer-events: none;
@@ -205,12 +259,9 @@
             background: #334155;
         }
 
-        /* ── Controls Info ── */
+        /* ── Controls Info (hidden in fullscreen) ── */
         .controls-info {
-            display: flex;
-            gap: 24px;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
+            display: none;
         }
 
         .key-hint {
@@ -239,12 +290,21 @@
             gap: 3px;
         }
 
-        /* ── Mobile D-Pad ── */
+        /* ── Mobile D-Pad (floating) ── */
         .dpad {
             display: none;
-            position: relative;
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
             width: 160px;
             height: 160px;
+            z-index: 101;
+            opacity: 0.5;
+            transition: opacity 0.2s ease;
+        }
+
+        .dpad.active-touch {
+            opacity: 0.9;
         }
 
         .dpad-btn {
@@ -460,58 +520,14 @@
             transform: scale(1);
         }
 
-        /* ── Timer Card ── */
-        .score-value.timer {
-            color: var(--accent);
-            transition: color 0.4s ease;
-        }
-
-        .score-value.timer.warning {
-            color: #fbbf24;
-        }
-
-        .score-value.timer.danger {
-            color: var(--danger);
-            animation: timerPulse 0.6s ease-in-out infinite;
-        }
-
-        @keyframes timerPulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.12); opacity: 0.7; }
-        }
-
-        .score-card.timer-hidden {
-            display: none;
-        }
-
-        /* ── Shield Indicator ── */
-        .shield-indicator {
-            display: none;
-            align-items: center;
-            gap: 4px;
-            font-size: 0.85rem;
-            color: #c084fc;
-            font-weight: 600;
-            animation: shieldGlow 1.2s ease-in-out infinite;
-        }
-
-        .shield-indicator.active {
-            display: flex;
-        }
-
-        @keyframes shieldGlow {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
         /* ── Screen Flash ── */
         .canvas-wrapper.flash {
             animation: screenFlash 0.3s ease-out;
         }
 
         @keyframes screenFlash {
-            0% { box-shadow: 0 0 0 0 rgba(192, 132, 252, 0.6), 0 0 0 1px rgba(51, 65, 85, 0.5), 0 20px 60px rgba(0, 0, 0, 0.5); }
-            100% { box-shadow: 0 0 0 20px rgba(192, 132, 252, 0), 0 0 0 1px rgba(51, 65, 85, 0.5), 0 20px 60px rgba(0, 0, 0, 0.5); }
+            0% { box-shadow: 0 0 0 0 rgba(192, 132, 252, 0.6); }
+            100% { box-shadow: 0 0 0 20px rgba(192, 132, 252, 0); }
         }
 
         /* ── Leaderboard Panel ── */
@@ -880,15 +896,14 @@
 
         /* ── Responsive ── */
         @media (max-width: 600px) {
-            .title { font-size: 1.5rem; }
-            .score-card { min-width: 60px; padding: 8px 12px; }
-            .score-value { font-size: 1.1rem; }
+            .hud-top { height: 56px; padding: 0 12px; }
+            .hud-bottom { height: 56px; padding: 0 12px; }
+            .hud-btn { width: 44px; height: 44px; font-size: 1.2rem; }
+            .hud-score-item { font-size: 0.8rem; }
+            .canvas-wrapper { border-radius: 0; }
             .dpad { display: block; }
             .controls-info { display: none; }
-            .canvas-wrapper { border-radius: 12px; }
-            .skin-swatch { width: 44px; height: 44px; }
-            .skin-swatch::before { width: 24px; height: 24px; }
-            .btn-icon { width: 44px; height: 44px; font-size: 1.3rem; }
+            .overlay-title { font-size: 1.5rem; }
         }
 
         @media (min-width: 601px) {
@@ -898,6 +913,9 @@
         @media (hover: none) and (pointer: coarse) {
             .dpad { display: block; }
             .controls-info { display: none; }
+            .hud-top { height: 56px; }
+            .hud-bottom { height: 56px; }
+            .hud-btn { width: 44px; height: 44px; }
         }
 
         /* ═══════════════════════════════════════════
@@ -1624,6 +1642,86 @@
                 transform: translateX(22px);
             }
         }
+        /* ── 挂机模式开关 ── */
+        .auto-play-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            margin-top: 8px;
+            gap: 10px;
+        }
+
+        .auto-play-toggle-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .auto-play-toggle-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .auto-play-toggle-info {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .auto-play-toggle-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .auto-play-toggle-desc {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .auto-play-select {
+            flex-shrink: 0;
+            padding: 6px 10px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.08);
+            color: var(--text);
+            cursor: pointer;
+            outline: none;
+            appearance: auto;
+            -webkit-appearance: auto;
+        }
+
+        .auto-play-select:focus {
+            border-color: var(--accent);
+        }
+
+        /* ── HUD 挂机指示器 ── */
+        .hud-auto-indicator {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent);
+            white-space: nowrap;
+            display: none;
+        }
+
+        .hud-auto-indicator.active {
+            display: inline;
+        }
+
+        /* 移动端隐藏挂机开关 */
+        @media (max-width: 600px) {
+            .auto-play-toggle {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1758,27 +1856,24 @@
     <!-- Toast container -->
     <div class="tutorial-toast" id="tutorialToast"></div>
 
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1 class="title">🐍 贪吃蛇</h1>
-            <div class="score-panel">
-                <div class="score-card timer-hidden" id="timerCard">
-                    <div class="score-label">剩余时间</div>
-                    <div class="score-value timer" id="timerValue">60s</div>
-                </div>
-                <div class="score-card">
-                    <div class="score-label">得分</div>
-                    <div class="score-value current" id="currentScore">0</div>
-                </div>
-                <div class="score-card">
-                    <div class="score-label">最高分</div>
-                    <div class="score-value best" id="bestScore">0</div>
-                </div>
-                <div class="shield-indicator" id="shieldIndicator">🛡️ 护盾</div>
-            </div>
+    <!-- Floating HUD Top Bar -->
+    <div class="hud-top" id="hudTop">
+        <div class="hud-score-panel">
+            <span class="hud-score-item" id="hudScore">🍎 0</span>
+            <span class="hud-score-item timer" id="hudTimer" style="display:none;">⏱ 60s</span>
+            <span class="hud-auto-indicator" id="hudAutoIndicator">🤖 挂机中</span>
         </div>
+        <span class="hud-shield-indicator" id="hudShield">🛡️ 护盾</span>
+    </div>
 
+    <!-- Floating HUD Bottom Bar -->
+    <div class="hud-bottom" id="hudBottom">
+        <button class="hud-btn" id="hudHelpBtn" aria-label="玩法说明" title="玩法说明">?</button>
+        <button class="hud-btn" id="hudMuteBtn" aria-label="切换静音" title="切换静音">🔊</button>
+        <button class="hud-btn" id="hudSettingsBtn" aria-label="设置" title="设置">⚙️</button>
+    </div>
+
+    <div class="container">
         <!-- Game Canvas -->
         <div class="canvas-wrapper" id="canvasWrapper">
             <canvas id="gameCanvas"></canvas>
@@ -1802,6 +1897,20 @@
                         <div class="mode-card-desc">限时抢夺</div>
                         <div class="mode-card-best">最高分: <span id="timedBest">0</span></div>
                     </div>
+                </div>
+                <div class="auto-play-toggle" id="autoPlayToggle">
+                    <div class="auto-play-toggle-left">
+                        <span class="auto-play-toggle-icon">🤖</span>
+                        <div class="auto-play-toggle-info">
+                            <span class="auto-play-toggle-label">挂机模式</span>
+                            <span class="auto-play-toggle-desc">系统自动控制蛇移动和吃道具</span>
+                        </div>
+                    </div>
+                    <select class="auto-play-select" id="autoPlaySelect">
+                        <option value="off">关闭</option>
+                        <option value="classic">开启（经典模式）</option>
+                        <option value="timed">开启（计时模式）</option>
+                    </select>
                 </div>
                 <div class="overlay-subtitle">按下 <span style="color:#22d3ee;font-weight:700;">空格</span> 或点击按钮开始</div>
                 <div class="leaderboard-summary" id="lbSummary">
@@ -1871,43 +1980,14 @@
             </div>
         </div>
 
-        <!-- Bottom Toolbar -->
-        <div class="skin-selector" id="bottomToolbar">
-            <button class="help-btn-global" id="helpBtnGlobal" aria-label="玩法说明" title="玩法说明">?</button>
-            <button class="btn-icon" id="muteBtn" aria-label="切换静音" title="切换静音">🔊</button>
-            <button class="btn-icon" id="settingsBtn" aria-label="设置" title="设置">⚙️</button>
-        </div>
+    </div>
 
-        <!-- Desktop Controls -->
-        <div class="controls-info">
-            <span class="key-hint">
-                移动:
-                <span class="key-group">
-                    <span class="key-badge">↑</span>
-                    <span class="key-badge">↓</span>
-                    <span class="key-badge">←</span>
-                    <span class="key-badge">→</span>
-                </span>
-                或
-                <span class="key-group">
-                    <span class="key-badge">W</span>
-                    <span class="key-badge">A</span>
-                    <span class="key-badge">S</span>
-                    <span class="key-badge">D</span>
-                </span>
-            </span>
-            <span class="key-hint">
-                暂停: <span class="key-badge">空格</span>
-            </span>
-        </div>
-
-        <!-- Mobile D-Pad -->
-        <div class="dpad" id="dpad">
-            <button class="dpad-btn dpad-up"    data-dir="up">▲</button>
-            <button class="dpad-btn dpad-down"  data-dir="down">▼</button>
-            <button class="dpad-btn dpad-left"  data-dir="left">◀</button>
-            <button class="dpad-btn dpad-right" data-dir="right">▶</button>
-        </div>
+    <!-- Mobile D-Pad (floating, outside container) -->
+    <div class="dpad" id="dpad">
+        <button class="dpad-btn dpad-up"    data-dir="up">▲</button>
+        <button class="dpad-btn dpad-down"  data-dir="down">▼</button>
+        <button class="dpad-btn dpad-left"  data-dir="left">◀</button>
+        <button class="dpad-btn dpad-right" data-dir="right">▶</button>
     </div>
 
     <script>
@@ -2457,7 +2537,7 @@
             // ─── Wire up Help Buttons ────────────────
             function initHelpButtons() {
                 var helpBtnStart = document.getElementById('helpBtnStart');
-                var helpBtnGlobal = document.getElementById('helpBtnGlobal');
+                var helpBtnGlobal = document.getElementById('hudHelpBtn');
                 var helpModalClose = document.getElementById('helpModalClose');
                 var helpModalGotIt = document.getElementById('helpModalGotIt');
                 var helpModal = document.getElementById('helpModal');
@@ -2591,7 +2671,7 @@
             function toggleMute() {
                 _muted = !_muted;
                 // 更新 DOM 按钮图标
-                const btn = document.getElementById('muteBtn');
+                const btn = document.getElementById('hudMuteBtn');
                 if (btn) {
                     btn.textContent = _muted ? '🔇' : '🔊';
                 }
@@ -2606,11 +2686,14 @@
         })();
 
         // ─── Constants ──────────────────────────────
-        const GRID_SIZE = 20;
-        const CELL_SIZE = 20;  // px per cell — scales with canvas
-        const COLS = 25;
-        const ROWS = 25;
+        const CELL_SIZE = 20;  // px per cell — grid cell visual size
+        const MIN_COLS = 15;
+        const MAX_COLS = 120;
+        const MIN_ROWS = 20;
+        const MAX_ROWS = 80;
         const BASE_SPEED = 110;  // ms per tick (lower = faster)
+        let COLS = 25;   // dynamic grid columns (recalculated per game)
+        let ROWS = 25;   // dynamic grid rows (recalculated per game)
         const SKIN_KEYS = Object.freeze(['classic', 'retro', 'midnight', 'sunset']);
         const INITIAL_TIME = 60;        // seconds
         const MAX_TIME = 90;            // seconds cap
@@ -3210,16 +3293,16 @@
         const canvasWrapper = document.getElementById('canvasWrapper');
         const startOverlay = document.getElementById('startOverlay');
         const gameOverOverlay = document.getElementById('gameOverOverlay');
-        const currentScoreEl = document.getElementById('currentScore');
-        const bestScoreEl = document.getElementById('bestScore');
+        const hudScoreEl = document.getElementById('hudScore');
+        const hudTimerEl = document.getElementById('hudTimer');
+        const hudShieldEl = document.getElementById('hudShield');
+        const hudTop = document.getElementById('hudTop');
+        const hudBottom = document.getElementById('hudBottom');
         const finalScoreEl = document.getElementById('finalScore');
-        const timerCard = document.getElementById('timerCard');
-        const timerValueEl = document.getElementById('timerValue');
         const classicBestEl = document.getElementById('classicBest');
         const timedBestEl = document.getElementById('timedBest');
         const modeCardClassic = document.getElementById('modeCardClassic');
         const modeCardTimed = document.getElementById('modeCardTimed');
-        const shieldIndicator = document.getElementById('shieldIndicator');
         const leaderboardOverlay = document.getElementById('leaderboardOverlay');
         const lbTbody = document.getElementById('lbTbody');
         const lbEmpty = document.getElementById('lbEmpty');
@@ -3246,6 +3329,10 @@
         let particles = [];
         let growAmount = 0;  // pending growth segments
         let lastRenderTime = 0;
+
+        // ─── Auto-Play State ──────────────────────
+        let autoPlayEnabled = false;
+        let autoPlayPausedFlag = false;  // 记录暂停前的挂机状态，用于暂停恢复
 
         // ─── Timed Mode State ──────────────────────
         let gameMode = 'classic';          // 'classic' | 'timed'
@@ -3278,8 +3365,9 @@
                 // Update bomb spawn delay for new difficulty
                 nextBombSpawnDelay = currentDifficulty.bombSpawnMin
                     + Math.random() * (currentDifficulty.bombSpawnMax - currentDifficulty.bombSpawnMin);
-                // Cap existing bombs to new max
-                while (bombs.length > currentDifficulty.maxBombs) {
+                // Cap existing bombs to dynamic max
+                var maxB = calcMaxBombs();
+                while (bombs.length > maxB) {
                     bombs.pop();
                 }
             }
@@ -3292,16 +3380,91 @@
         let nextBombSpawnDelay = currentDifficulty.bombSpawnMin
             + Math.random() * (currentDifficulty.bombSpawnMax - currentDifficulty.bombSpawnMin);
 
-        // ─── Canvas Setup ──────────────────────────
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        const canvasWidth = COLS * CELL_SIZE;
-        const canvasHeight = ROWS * CELL_SIZE;
+        // ─── Grid & Canvas Setup ────────────────────
+        let canvasWidth = COLS * CELL_SIZE;
+        let canvasHeight = ROWS * CELL_SIZE;
+        let gridLocked = false;  // true when game is running and grid is locked
 
-        canvas.width = canvasWidth * dpr;
-        canvas.height = canvasHeight * dpr;
-        canvas.style.width = canvasWidth + 'px';
-        canvas.style.height = canvasHeight + 'px';
-        ctx.scale(dpr, dpr);
+        function calcGrid() {
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            COLS = Math.max(MIN_COLS, Math.min(MAX_COLS, Math.floor(vw / CELL_SIZE)));
+            ROWS = Math.max(MIN_ROWS, Math.min(MAX_ROWS, Math.floor(vh / CELL_SIZE)));
+            canvasWidth = COLS * CELL_SIZE;
+            canvasHeight = ROWS * CELL_SIZE;
+        }
+
+        function setCanvasSize() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            canvas.width = canvasWidth * dpr;
+            canvas.height = canvasHeight * dpr;
+            canvas.style.width = canvasWidth + 'px';
+            canvas.style.height = canvasHeight + 'px';
+            ctx.setTransform(1, 0, 0, 1, 0, 0); // reset transform
+            ctx.scale(dpr, dpr);
+        }
+
+        function applyLetterbox() {
+            // Center the canvas CSS within the viewport
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const offsetX = Math.max(0, Math.floor((vw - canvasWidth) / 2));
+            const offsetY = Math.max(0, Math.floor((vh - canvasHeight) / 2));
+            canvas.style.position = 'absolute';
+            canvas.style.left = offsetX + 'px';
+            canvas.style.top = offsetY + 'px';
+        }
+
+        function applyFullscreenCanvas() {
+            canvas.style.position = 'absolute';
+            canvas.style.left = '0px';
+            canvas.style.top = '0px';
+            canvas.style.width = canvasWidth + 'px';
+            canvas.style.height = canvasHeight + 'px';
+        }
+
+        // Resize handler with debounce
+        let resizeTimer = null;
+        function handleResize() {
+            if (resizeTimer) clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function () {
+                if (isRunning) {
+                    // Lock grid, apply letterbox
+                    gridLocked = true;
+                    applyLetterbox();
+                } else if (!gridLocked) {
+                    // Recalculate grid when not running
+                    calcGrid();
+                    setCanvasSize();
+                    applyFullscreenCanvas();
+                }
+            }, 200);
+        }
+
+        // ResizeObserver for viewport changes
+        if (window.ResizeObserver) {
+            new ResizeObserver(function () {
+                handleResize();
+            }).observe(document.documentElement);
+        } else {
+            window.addEventListener('resize', handleResize);
+        }
+
+        // Initial canvas setup
+        calcGrid();
+        setCanvasSize();
+        applyFullscreenCanvas();
+
+        // ─── Dynamic Balance ──────────────────────────
+        function calcFoodCount() {
+            return Math.max(1, Math.floor((COLS * ROWS) / 400));
+        }
+
+        function calcMaxBombs() {
+            if (!currentDifficulty.bombsEnabled) return 0;
+            var scale = Math.sqrt((COLS * ROWS) / 625);
+            return Math.floor(currentDifficulty.maxBombs * scale);
+        }
 
         // ─── Load Best Scores ───────────────────────
         let bestScoreClassic = 0;
@@ -3323,7 +3486,6 @@
 
         function updateBestDisplay() {
             bestScore = gameMode === 'classic' ? bestScoreClassic : bestScoreTimed;
-            bestScoreEl.textContent = bestScore;
             classicBestEl.textContent = bestScoreClassic;
             timedBestEl.textContent = bestScoreTimed;
         }
@@ -3338,8 +3500,8 @@
             modeCardClassic.setAttribute('aria-checked', mode === 'classic');
             modeCardTimed.setAttribute('aria-checked', mode === 'timed');
 
-            // Show/hide timer card
-            timerCard.classList.toggle('timer-hidden', mode !== 'timed');
+            // Show/hide timer in HUD
+            hudTimerEl.style.display = (mode === 'timed') ? 'inline' : 'none';
 
             // Update best score display for selected mode
             updateBestDisplay();
@@ -3464,7 +3626,7 @@
         function spawnBomb() {
             // Check if bombs are disabled by difficulty
             if (!currentDifficulty.bombsEnabled) return;
-            if (bombs.length >= currentDifficulty.maxBombs) return;
+            if (bombs.length >= BOMB_CONFIG.maxBombs) return;
 
             // Find a random empty cell (not snake, not food, not bomb)
             let pos = null;
@@ -3514,7 +3676,7 @@
                 if (shieldActive) {
                     // Shield saves from death, direction reverses
                     shieldActive = false;
-                    shieldIndicator.classList.remove('active');
+                    hudShieldEl.classList.remove('active');
                     direction = { x: -direction.x, y: -direction.y };
                     nextDirection = { ...direction };
                     // Flash screen
@@ -3544,7 +3706,7 @@
                 snake = snake.slice(0, minBodyIdx);
                 // Score for severed segments with chain multiplier
                 score += severed * BOMB_CONFIG.chainBaseScore * chainLevel;
-                currentScoreEl.textContent = score;
+                hudScoreEl.textContent = "🍎 " + score;
             }
 
             // Destroy food if in blast
@@ -3613,6 +3775,17 @@
         }
 
         function initGame() {
+            // Recalculate grid for new game if not locked
+            if (!gridLocked) {
+                calcGrid();
+                setCanvasSize();
+                applyFullscreenCanvas();
+            }
+            gridLocked = false;
+
+            // Update dynamic balance
+            BOMB_CONFIG.maxBombs = calcMaxBombs();
+
             // Snake starts in the middle, going right
             const startX = Math.floor(COLS / 2);
             const startY = Math.floor(ROWS / 2);
@@ -3628,7 +3801,7 @@
             growAmount = 0;
             particles = [];
             food = spawnFood();
-            currentScoreEl.textContent = '0';
+            hudScoreEl.textContent = "🍎 0";
 
             // Timed mode init
             if (gameMode === 'timed') {
@@ -3637,18 +3810,17 @@
                 shieldActive = false;
                 boostActive = false;
                 boostEndTime = 0;
-                timerValueEl.textContent = timeRemaining + 's';
-                timerValueEl.classList.remove('warning', 'danger');
-                timerValueEl.classList.add('timer');
-                timerCard.classList.remove('timer-hidden');
-                shieldIndicator.classList.remove('active');
+                hudTimerEl.textContent = '⏱ ' + timeRemaining + 's';
+                hudTimerEl.classList.remove('warning', 'danger');
+                hudTimerEl.style.display = 'inline';
+                hudShieldEl.classList.remove('active');
             } else {
-                timerCard.classList.add('timer-hidden');
+                hudTimerEl.style.display = 'none';
                 // Classic mode: items possible, but no shield/boost carryover
                 shieldActive = false;
                 boostActive = false;
                 boostEndTime = 0;
-                shieldIndicator.classList.remove('active');
+                hudShieldEl.classList.remove('active');
             }
 
             // Reset bomb state using difficulty config
@@ -3666,7 +3838,7 @@
             // Shield protection: reverse direction instead of dying
             if (shieldActive) {
                 shieldActive = false;
-                shieldIndicator.classList.remove('active');
+                hudShieldEl.classList.remove('active');
                 // Reverse direction
                 direction = { x: -direction.x, y: -direction.y };
                 nextDirection = { ...direction };
@@ -3679,9 +3851,217 @@
             return true; // dead
         }
 
+        // ─── 挂机模式 AI 引擎 ─────────────────
+
+        // 简易洪水填充 — 评估从给定位置可到达的连通区域大小
+        function floodFillCount(startX, startY, maxSteps) {
+            var visited = {};
+            var queue = [{ x: startX, y: startY }];
+            var count = 0;
+            var head = 0;
+            var key = startX + ',' + startY;
+            visited[key] = true;
+            count++;
+
+            while (head < queue.length && count < maxSteps) {
+                var cur = queue[head++];
+                var dirs = [{ x: 0, y: -1 }, { x: 0, y: 1 }, { x: -1, y: 0 }, { x: 1, y: 0 }];
+                for (var di = 0; di < dirs.length; di++) {
+                    var nx = cur.x + dirs[di].x;
+                    var ny = cur.y + dirs[di].y;
+                    var nk = nx + ',' + ny;
+                    if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS && !visited[nk]) {
+                        // 排除蛇身（不含尾部即将脱离的格子）
+                        var blocked = false;
+                        var bodyCheck = growAmount > 0 ? snake : snake.slice(0, -1);
+                        for (var bi = 0; bi < bodyCheck.length; bi++) {
+                            if (bodyCheck[bi].x === nx && bodyCheck[bi].y === ny) { blocked = true; break; }
+                        }
+                        if (!blocked) {
+                            visited[nk] = true;
+                            queue.push({ x: nx, y: ny });
+                            count++;
+                            if (count >= maxSteps) break;
+                        }
+                    }
+                }
+            }
+            return count;
+        }
+
+        // 检查指定位置是否有不稳定炸弹
+        function isUnstableBombAt(x, y) {
+            for (var i = 0; i < bombs.length; i++) {
+                if (bombs[i].x === x && bombs[i].y === y && bombs[i].type === BOMB_TYPES.UNSTABLE) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // 检查指定位置是否在任意不稳定炸弹的爆炸半径内
+        function isInExplosionRadius(x, y) {
+            for (var i = 0; i < bombs.length; i++) {
+                if (bombs[i].type === BOMB_TYPES.UNSTABLE) {
+                    var dx = Math.abs(x - bombs[i].x);
+                    var dy = Math.abs(y - bombs[i].y);
+                    if (dx <= EXPLOSION_RADIUS && dy <= EXPLOSION_RADIUS) return true;
+                }
+            }
+            return false;
+        }
+
+        // AI 决策：返回最佳移动方向
+        function getAIDirection() {
+            var head = snake[0];
+            var candidates = [];
+
+            // Step 1: 收集安全方向
+            var dirs = [{ x: 0, y: -1 }, { x: 0, y: 1 }, { x: -1, y: 0 }, { x: 1, y: 0 }];
+            for (var i = 0; i < dirs.length; i++) {
+                var d = dirs[i];
+                // 禁止 180° 反转（安全保护：复用 changeDirection 的校验逻辑）
+                if (d.x === -direction.x && d.y === -direction.y && snake.length > 1) continue;
+                var nx = head.x + d.x;
+                var ny = head.y + d.y;
+                // 禁止撞墙
+                if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+                // 禁止撞自身
+                var bodyCheck = growAmount > 0 ? snake : snake.slice(0, -1);
+                var hitsBody = false;
+                for (var bi = 0; bi < bodyCheck.length; bi++) {
+                    if (bodyCheck[bi].x === nx && bodyCheck[bi].y === ny) { hitsBody = true; break; }
+                }
+                if (hitsBody) continue;
+                candidates.push({ d: d, nx: nx, ny: ny });
+            }
+
+            if (candidates.length === 0) return direction; // 无路可走
+
+            // Step 2: 安全检查 — 排除炸弹威胁
+            var safe = [];
+            for (var j = 0; j < candidates.length; j++) {
+                var c = candidates[j];
+                if (!isUnstableBombAt(c.nx, c.ny) && !isInExplosionRadius(c.nx, c.ny)) {
+                    safe.push(c);
+                }
+            }
+            if (safe.length === 0) safe = candidates; // 全危险时选最不坏的
+
+            // Step 3: 渐进评分（食物引力按距离加权，而非二元判断）
+            for (var k = 0; k < safe.length; k++) {
+                var sc = safe[k];
+                var score = 1;
+
+                // 食物引力 —— 渐进评分：曼哈顿距离每缩短 1 格 +4 分，最多 +20
+                if (food) {
+                    var curDist = Math.abs(head.x - food.x) + Math.abs(head.y - food.y);
+                    var newDist = Math.abs(sc.nx - food.x) + Math.abs(sc.ny - food.y);
+                    var distImprovement = curDist - newDist;
+                    if (distImprovement > 0) {
+                        score += Math.min(distImprovement * 4, 20);
+                    } else if (distImprovement === 0) {
+                        score += 1; // 不远离也不靠近，给基础分
+                    }
+                    // distImprovement < 0 不加分（方向远离食物）
+                }
+
+                // 墙壁安全
+                if (sc.nx > 2 && sc.nx < COLS - 3 && sc.ny > 2 && sc.ny < ROWS - 3) score += 3;
+
+                // 远离休眠炸弹
+                var nearDormant = false;
+                for (var bi = 0; bi < bombs.length; bi++) {
+                    if (bombs[bi].type === BOMB_TYPES.DORMANT) {
+                        var dbDist = Math.abs(sc.nx - bombs[bi].x) + Math.abs(sc.ny - bombs[bi].y);
+                        if (dbDist <= 2) nearDormant = true;
+                    }
+                }
+                if (!nearDormant) score += 4;
+
+                // 空间评估
+                var space = floodFillCount(sc.nx, sc.ny, 50);
+                if (space > 30) score += 2;
+                else if (space < 10) score -= 3;
+
+                // 道具吸引
+                if (foodItem === ITEM_TYPES.SHIELD || foodItem === ITEM_TYPES.LIGHTNING) {
+                    if (food) {
+                        var curDistP = Math.abs(head.x - food.x) + Math.abs(head.y - food.y);
+                        var newDistP = Math.abs(sc.nx - food.x) + Math.abs(sc.ny - food.y);
+                        if (newDistP < curDistP) score += 3;
+                    }
+                }
+
+                sc.score = score;
+            }
+
+            // Step 4: 智能方向保持 —— 仅当当前方向确实朝向食物时才保持
+            // 概率降至 30%，避免蛇一直直行撞击
+            if (Math.random() < 0.3) {
+                for (var m = 0; m < safe.length; m++) {
+                    if (safe[m].d.x === direction.x && safe[m].d.y === direction.y) {
+                        // 额外检查：当前方向是否也在靠近食物（避免朝错误方向保持）
+                        if (food) {
+                            var keepDist = Math.abs(head.x + direction.x - food.x) + Math.abs(head.y + direction.y - food.y);
+                            var curDistKeep = Math.abs(head.x - food.x) + Math.abs(head.y - food.y);
+                            if (keepDist <= curDistKeep) {
+                                return safe[m].d;
+                            }
+                        } else {
+                            return safe[m].d;
+                        }
+                    }
+                }
+            }
+
+            // 按评分加权随机选取
+            var totalScore = 0;
+            for (var n = 0; n < safe.length; n++) totalScore += safe[n].score;
+            var roll = Math.random() * totalScore;
+            var acc = 0;
+            for (var p = 0; p < safe.length; p++) {
+                acc += safe[p].score;
+                if (roll <= acc) return safe[p].d;
+            }
+            return safe[safe.length - 1].d;
+        }
+
+        // 挂机开关与 UI 刷新
+        function toggleAutoPlay() {
+            autoPlayEnabled = !autoPlayEnabled;
+            updateAutoPlayUI();
+        }
+
+        function updateAutoPlayUI() {
+            // HUD 指示器
+            var hudAutoEl = document.getElementById('hudAutoIndicator');
+            if (hudAutoEl) {
+                if (autoPlayEnabled && isRunning) {
+                    hudAutoEl.classList.add('active');
+                } else {
+                    hudAutoEl.classList.remove('active');
+                }
+            }
+            // 开始界面开关同步
+            var selectEl = document.getElementById('autoPlaySelect');
+            if (selectEl) {
+                if (!autoPlayEnabled) {
+                    selectEl.value = 'off';
+                } else {
+                    selectEl.value = gameMode;
+                }
+            }
+        }
+
         function update() {
-            // Apply the queued direction
-            direction = { ...nextDirection };
+            // 挂机模式：AI 决策替代用户方向输入
+            if (autoPlayEnabled) {
+                direction = getAIDirection();
+            } else {
+                // Apply the queued direction
+                direction = { ...nextDirection };
+            }
 
             // Calculate new head
             const head = snake[0];
@@ -3737,12 +4117,12 @@
                 speed = Math.max(currentDifficulty.minSpeed,
                     currentDifficulty.baseSpeed - Math.floor(score / 100) * currentDifficulty.speedDecrement);
                 spawnParticles(food);
-                currentScoreEl.textContent = score;
+                hudScoreEl.textContent = "🍎 " + score;
 
                 // Timed mode: add time
                 if (gameMode === 'timed') {
                     timeRemaining = Math.min(MAX_TIME, timeRemaining + effect.time);
-                    timerValueEl.textContent = timeRemaining + 's';
+                    hudTimerEl.textContent = "⏱ " + timeRemaining + 's';
                 }
 
                 // Lightning effect
@@ -3755,7 +4135,7 @@
                 // Shield effect
                 if (itemType === ITEM_TYPES.SHIELD) {
                     shieldActive = true;
-                    shieldIndicator.classList.add('active');
+                    hudShieldEl.classList.add('active');
                     if (window._tutorial) window._tutorial.hookItem('shield');
                 }
 
@@ -3823,11 +4203,14 @@
             var rank = -1;
             var entryId = null;
             if (score > 0) {
+                // 挂机模式：result 字段追加 :auto 后缀
+                var resultValue = won ? 'win' : reason;
+                if (autoPlayEnabled) resultValue += ':auto';
                 rank = LeaderboardStore.addEntry({
                     score: score,
                     mode: gameMode,
                     snakeLength: snake.length,
-                    result: won ? 'win' : reason,
+                    result: resultValue,
                     skin: currentSkin ? currentSkin.id : 'classic',
                 });
                 if (rank > 0) {
@@ -3894,14 +4277,14 @@
                     while (timerAccumulator >= 1000) {
                         timerAccumulator -= 1000;
                         timeRemaining--;
-                        timerValueEl.textContent = timeRemaining + 's';
+                        hudTimerEl.textContent = "⏱ " + timeRemaining + 's';
 
                         // Update timer color classes
-                        timerValueEl.classList.remove('warning', 'danger');
+                        hudTimerEl.classList.remove('warning', 'danger');
                         if (timeRemaining <= 10) {
-                            timerValueEl.classList.add('danger');
+                            hudTimerEl.classList.add('danger');
                         } else if (timeRemaining <= 30) {
-                            timerValueEl.classList.add('warning');
+                            hudTimerEl.classList.add('warning');
                         }
 
                         if (timeRemaining <= 0) {
@@ -4424,6 +4807,18 @@
                         ctx.arc(ex + eyeOffX * 0.8, ey + eyeOffY * 0.8, 1.3, 0, Math.PI * 2);
                         ctx.fill();
                     });
+
+                    // ── 挂机模式蛇头标记 ──
+                    if (autoPlayEnabled) {
+                        const autoAlpha = 0.6 + 0.1 * Math.sin(performance.now() / 800);
+                        ctx.fillStyle = `rgba(34, 211, 238, ${autoAlpha})`;
+                        ctx.font = Math.round(CELL_SIZE * 0.6) + 'px sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        ctx.fillText('🤖', hx, sy - CELL_SIZE * 0.15);
+                        ctx.textAlign = 'start';
+                        ctx.textBaseline = 'alphabetic';
+                    }
                 }
             }
 
@@ -4446,6 +4841,12 @@
                 ctx.font = '14px "Segoe UI", system-ui, sans-serif';
                 ctx.fillStyle = cs.pauseSubtext;
                 ctx.fillText('按空格键继续', w / 2, h / 2 + 22);
+                // 挂机模式暂停提示
+                if (autoPlayEnabled) {
+                    ctx.font = '12px "Segoe UI", system-ui, sans-serif';
+                    ctx.fillStyle = cs.pauseSubtext;
+                    ctx.fillText('🤖 挂机模式已激活', w / 2, h / 2 + 42);
+                }
                 ctx.textAlign = 'start';
             }
         }
@@ -4468,12 +4869,16 @@
         }
 
         function _resultIcon(result) {
-            switch (result) {
-                case 'win': return '🎉';
-                case 'timeUp': return '⏰';
-                case 'bomb': return '💥';
-                default: return '💀';
+            var isAuto = result && result.endsWith(':auto');
+            var baseResult = isAuto ? result.slice(0, -5) : result;
+            var icon;
+            switch (baseResult) {
+                case 'win': icon = '🎉'; break;
+                case 'timeUp': icon = '⏰'; break;
+                case 'bomb': icon = '💥'; break;
+                default: icon = '💀'; break;
             }
+            return isAuto ? icon + ' 🤖' : icon;
         }
 
         function _rankDisplay(rank) {
@@ -4567,6 +4972,11 @@
         // ─── Input Handling ─────────────────────────
         function changeDirection(dx, dy) {
             if (!isRunning || isPaused) return;
+            // 用户手动输入方向键 → 退出挂机模式
+            if (autoPlayEnabled) {
+                autoPlayEnabled = false;
+                updateAutoPlayUI();
+            }
             // Prevent reversing into yourself
             if (dx === -direction.x && dy === -direction.y && snake.length > 1) return;
             nextDirection = { x: dx, y: dy };
@@ -4595,7 +5005,11 @@
                 window._tutorial.hookDpad();
             }
 
+            // 挂机模式：刷新 UI 以在新游戏中显示指示器
+            updateAutoPlayUI();
+
             startGameLoop();
+            resetHudFade();
         }
 
         function showStartOverlay() {
@@ -4604,6 +5018,8 @@
             isRunning = false;
             gameOverOverlay.classList.remove('active');
             startOverlay.classList.add('active');
+            // 保持挂机状态（跨局保留）
+            updateAutoPlayUI();
             initGame();
             draw();
         }
@@ -4616,6 +5032,12 @@
                     e.preventDefault();
                     const nextMode = gameMode === 'classic' ? 'timed' : 'classic';
                     selectMode(nextMode);
+                    return;
+                }
+                // H 键在开始界面切换挂机
+                if (e.key === 'h' || e.key === 'H') {
+                    e.preventDefault();
+                    toggleAutoPlay();
                     return;
                 }
             }
@@ -4648,6 +5070,12 @@
                 },
                 t: () => cycleSkin(),
                 T: () => cycleSkin(),
+                h: () => {
+                    if (isRunning) toggleAutoPlay();
+                },
+                H: () => {
+                    if (isRunning) toggleAutoPlay();
+                },
             };
 
             const action = keyMap[e.key];
@@ -4661,12 +5089,29 @@
         document.getElementById('startBtn').addEventListener('click', startGame);
         document.getElementById('restartBtn').addEventListener('click', showStartOverlay);
 
+        // 挂机模式下拉开关
+        var autoPlaySelect = document.getElementById('autoPlaySelect');
+        if (autoPlaySelect) {
+            autoPlaySelect.addEventListener('change', function () {
+                var val = autoPlaySelect.value;
+                if (val === 'off') {
+                    autoPlayEnabled = false;
+                } else {
+                    autoPlayEnabled = true;
+                    if (val === 'classic' || val === 'timed') {
+                        selectMode(val);
+                    }
+                }
+                updateAutoPlayUI();
+            });
+        }
+
         // Mode card clicks
         modeCardClassic.addEventListener('click', () => selectMode('classic'));
         modeCardTimed.addEventListener('click', () => selectMode('timed'));
 
         // Mute button — sync with SettingsStore
-        const muteBtn2 = document.getElementById('muteBtn');
+        const muteBtn2 = document.getElementById('hudMuteBtn');
         if (muteBtn2) {
             muteBtn2.addEventListener('click', () => {
                 AudioManager.toggleMute();
@@ -4681,10 +5126,13 @@
         // Skin swatches (removed from DOM — skin selection now in settings panel)
         // T keyboard shortcut still works for cycling skins
 
-        // D-Pad for mobile
+        // D-Pad for mobile (floating, with touch feedback)
+        const dpadEl = document.getElementById('dpad');
         document.querySelectorAll('.dpad-btn').forEach(btn => {
             btn.addEventListener('pointerdown', (e) => {
                 e.preventDefault();
+                e.stopPropagation(); // 防止触发 Canvas 滑动手势
+                if (dpadEl) dpadEl.classList.add('active-touch');
                 const dir = btn.dataset.dir;
                 const dirMap = {
                     up:    { x: 0, y: -1 },
@@ -4695,7 +5143,30 @@
                 const d = dirMap[dir];
                 if (d) changeDirection(d.x, d.y);
             });
+            btn.addEventListener('pointerup', () => {
+                if (dpadEl) dpadEl.classList.remove('active-touch');
+            });
+            btn.addEventListener('pointerleave', () => {
+                if (dpadEl) dpadEl.classList.remove('active-touch');
+            });
         });
+
+        // ─── HUD Auto-Fade ──────────────────────────
+        let hudFadeTimer = null;
+        function resetHudFade() {
+            hudTop.classList.remove('hud-fade');
+            hudBottom.classList.remove('hud-fade');
+            if (hudFadeTimer) clearTimeout(hudFadeTimer);
+            if (isRunning) {
+                hudFadeTimer = setTimeout(function () {
+                    hudTop.classList.add('hud-fade');
+                    hudBottom.classList.add('hud-fade');
+                }, 5000);
+            }
+        }
+        document.addEventListener('mousemove', resetHudFade);
+        document.addEventListener('touchstart', resetHudFade, { passive: true });
+        document.addEventListener('keydown', resetHudFade);
 
         // Touch swipe on canvas
         let touchStartX = 0, touchStartY = 0;
@@ -4795,7 +5266,7 @@
         // ─── Settings Panel Logic ──────────────────
         (function () {
             var settingsModal = document.getElementById('settingsModal');
-            var settingsBtn = document.getElementById('settingsBtn');
+            var settingsBtn = document.getElementById('hudSettingsBtn');
             var settingsCloseBtn = document.getElementById('settingsModalClose');
             var toggleGrid = document.getElementById('toggleGridLines');
             var toggleSound = document.getElementById('toggleSound');
@@ -4961,7 +5432,7 @@
                         AudioManager.toggleMute();
                     }
                     // Update mute button icon
-                    var mb = document.getElementById('muteBtn');
+                    var mb = document.getElementById('hudMuteBtn');
                     if (mb) {
                         mb.textContent = currentSettings.soundEnabled ? '🔊' : '🔇';
                     }
@@ -4998,7 +5469,7 @@
                     if (AudioManager.muted === currentSettings.soundEnabled) {
                         AudioManager.toggleMute();
                     }
-                    var mb = document.getElementById('muteBtn');
+                    var mb = document.getElementById('hudMuteBtn');
                     if (mb) {
                         mb.textContent = currentSettings.soundEnabled ? '🔊' : '🔇';
                     }
@@ -5023,7 +5494,7 @@
             if (AudioManager.muted === savedSound) {
                 AudioManager.toggleMute();
             }
-            var muteBtnEl = document.getElementById('muteBtn');
+            var muteBtnEl = document.getElementById('hudMuteBtn');
             if (muteBtnEl) {
                 muteBtnEl.textContent = savedSound ? '🔊' : '🔇';
             }

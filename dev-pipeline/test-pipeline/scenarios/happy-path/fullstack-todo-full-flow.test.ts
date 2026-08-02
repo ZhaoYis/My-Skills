@@ -39,8 +39,8 @@ describe('E2E - Full gated delivery', () => {
     expect(report.phases.map((phase) => phase.phaseId)).toEqual(ALL_PHASES);
     expect(report.phases.every((phase) => phase.status === 'pass')).toBe(true);
     expect(report.summary).toMatchObject({
-      totalPhases: 7,
-      passedPhases: 7,
+      totalPhases: 8,
+      passedPhases: 8,
       failedPhases: 0,
       skippedPhases: 0,
       failedAssertions: 0,
@@ -60,7 +60,7 @@ describe('E2E - Full gated delivery', () => {
       path.join(env.rootDir, 'openspec/.pipeline-state/add-todo-due-date.json'),
     );
     expect(state).toMatchObject({
-      currentPhase: 6,
+      currentPhase: 7,
       status: 'completed',
       sourceBranch: env.sourceBranch,
       targetBranch: env.targetBranch,
@@ -96,10 +96,15 @@ describe('E2E - Full gated delivery', () => {
   });
 
   it('runs post-merge tests and leaves both remote refs available', async () => {
-    const phase6 = report.phases.find((phase) => phase.phaseId === 'phase-6-merge-push');
+    const phase6 = report.phases.find((phase) => phase.phaseId === 'phase-6-commit-push');
     expect(phase6?.assertions.every((assertion) => assertion.passed)).toBe(true);
     expect(phase6?.phaseData).toMatchObject({
       commitSha: expect.stringMatching(/^[0-9a-f]{40}$/),
+    });
+
+    const phase7 = report.phases.find((phase) => phase.phaseId === 'phase-7-merge-deliver');
+    expect(phase7?.assertions.every((assertion) => assertion.passed)).toBe(true);
+    expect(phase7?.phaseData).toMatchObject({
       mergeCommitSha: expect.stringMatching(/^[0-9a-f]{40}$/),
     });
   });
@@ -110,7 +115,7 @@ describe('E2E - Full gated delivery', () => {
     const json = await fs.readJson(generated.jsonPath);
     expect(() => PipelineReportSchema.parse(json)).not.toThrow();
     const markdown = await fs.readFile(generated.markdownPath, 'utf8');
-    expect(markdown).toContain('| Total Phases | 7 |');
+    expect(markdown).toContain('| Total Phases | 8 |');
     expect(markdown).toContain('**100/100**');
     expect(json.summary.overallScore).toBe(100);
   });

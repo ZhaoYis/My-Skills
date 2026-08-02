@@ -40,7 +40,7 @@ v1 的核心命题是"约束"——告诉 AI 什么不能做。v2 的命题升�
 | 指标 | v1 | v2 |
 |---|---|---|
 | 初始化耗时 | < 30 秒 | < 30 秒（不变） |
-| 流水线覆盖阶段 | 7 个 (Phase 0-6) | 7 个 + 多决策点 + Hermes 编排 |
+| 流水线覆盖阶段 | 8 个 (Phase 0-7) | 8 个 + 多决策点 + Hermes 编排 |
 | 支持 AI 工具 | 3 个 (Claude Code/Cursor/Codex) | 3 个 + Claude Code 专享子Agent 对抗验证 |
 | 内置技术栈模板 | 2 套 | 2 套（不变） |
 | 自动化脚本 | 10 个 | 10 个 |
@@ -88,7 +88,7 @@ v1 的核心命题是"约束"——告诉 AI 什么不能做。v2 的命题升�
 
 ### 替代短版（v2）
 
-> 给团队的 AI 编程助手装上规范、门禁和智能编排。30 秒初始化，7 阶段护航，独立 Agent 对抗验证。
+> 给团队的 AI 编程助手装上规范、门禁和智能编排。30 秒初始化，8 阶段护航，独立 Agent 对抗验证。
 
 ### 竞品定位：AI Agent 失控的对立面（v2 更新）
 
@@ -136,7 +136,8 @@ Hermes 编排引擎接管流程：
              → 主Agent 补充该测试用例  ✅
              → 子Agent 复审通过  ✅
   Phase 5  归档：delta spec 合并到主规范，变更永不失忆
-  Phase 6  交付：敏感文件扫描 → 提交 → 推送 → 合并 → 打标签
+  Phase 6  提交推送：敏感文件扫描 → 提交 → 源分支推送
+  Phase 7  合并交付：合并 → 验证 → 目标分支推送 → 打标签
   ↓
 变更上线。Who → When → Where → Why → What → How → Review → Test
 完整链路永久可追溯。2 次被拦住，2 次修复，0 次侥幸通过。
@@ -151,7 +152,7 @@ Hermes 编排引擎接管流程：
 ```
 Section 1  Hero              — 5 秒讲清你是谁
 Section 2  Problem           — 没有你时有多痛
-Section 3  How It Works      — 7 阶段流水线可视化（Hermes 编排）
+Section 3  How It Works      — 8 阶段流水线可视化（Hermes 编排）
 Section 4  Core Power        — 流水线状态机 + 元数据追溯
 Section 5  Adversarial Review — 子Agent 对抗验证（v2 核心差异化）
 Section 6  Spec-Driven       — 规范驱动 vs 提示词驱动
@@ -172,11 +173,11 @@ Section 13 CTA               — 立即开始
 
 ### Section 3 — How It Works（更新：Hermes 编排可视化）
 
-**标题：7 个阶段，一条流水线，Hermes 智能编排。**
+**标题：8 个阶段，一条流水线，Hermes 智能编排。**
 
 **形式：CSS 动画 / 交互式时间线**
 
-与 v1 相同的 7 阶段流程，但顶部增加 **Hermes 编排层** 的可视化：
+与 v1 相同的 8 阶段流程，但顶部增加 **Hermes 编排层** 的可视化：
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -338,7 +339,7 @@ opsx-dev-pipeline v2 支持三种执行模式，适应不同的团队习惯：
 | 指标 | 数值 |
 |---|---|
 | 初始化耗时 | **< 30 秒** |
-| 流水线覆盖阶段 | **7 个 (Phase 0-6) + Hermes 智能编排** |
+| 流水线覆盖阶段 | **8 个 (Phase 0-7) + Hermes 智能编排** |
 | 支持 AI 工具 | **3 个** (Claude Code/Cursor/Codex) |
 | 子Agent 对抗验证 | **Claude Code 原生支持**（Cursor/Codex 直接审查模式） |
 | 内置技术栈模板 | **2 套** (React+Vite / Spring Boot) |

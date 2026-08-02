@@ -30,6 +30,7 @@ function createMockAdapter(markers: string[]): ToolAdapter {
     detectFiles: () => markers,
     supports: () => true,
     getDestination: () => '',
+    supportsUserDestination: () => true,
     getRoot: () => '.claude',
     getSkillRootNote: () => undefined,
     getPostInstallNotes: () => [],

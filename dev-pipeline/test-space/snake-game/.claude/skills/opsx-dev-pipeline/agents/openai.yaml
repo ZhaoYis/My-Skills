@@ -1,0 +1,4 @@
+interface:
+  display_name: "OpenSpec Dev Pipeline"
+  short_description: "Run a gated OpenSpec and Git delivery workflow"
+  default_prompt: "Use $opsx-dev-pipeline to implement and deliver this change through the gated workflow."

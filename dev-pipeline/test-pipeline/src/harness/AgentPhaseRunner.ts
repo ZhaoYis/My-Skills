@@ -240,16 +240,27 @@ export function getPhaseSpecificInstructions(
 4. Run: \`node ${context.skillRoot}/scripts/archive.mjs "${changeName}" -y\`
 5. Persist verify status, actual archive path, and postArchiveAction before Phase6`;
 
-    case 'phase-6-merge-push':
+    case 'phase-6-commit-push':
       return `\
-## Specific Tasks for Phase6 — Merge & Push
+## Specific Tasks for Phase6 — Commit & Push
 
-1. Confirm commit and source push independently
-2. Record target branch before checkout
-3. Merge using the selected strategy without force operations
-4. Re-run tests and verify after merge
-5. Confirm target push independently
-6. Record delivery SHAs and complete the state`;
+1. Run pre-commit checks and scan for sensitive files
+2. Stage changes file-by-file and confirm conventional commit
+3. Push source branch (for push-only and merge modes)
+4. For local-only: finalize state and complete
+5. For push-only: finalize state, push, and complete
+6. For merge: transition to Phase7`;
+
+    case 'phase-7-merge-deliver':
+      return `\
+## Specific Tasks for Phase7 — Merge & Deliver
+
+1. Select and validate target branch before checkout
+2. Execute merge using the chosen strategy without force operations
+3. Re-run tests and verify after merge
+4. Confirm and push target branch independently
+5. Complete pipeline state, finalize commit, and push
+6. Clean up source branch and optionally create a tag`;
 
     default:
       return '';
