@@ -1,6 +1,9 @@
 import path from 'node:path';
 import { AgentRuntime } from '../../agent/runtime/agent-runtime.js';
+import { ContextBuilder } from '../../agent/runtime/context-builder.js';
 import { PhaseAwarePlanner } from '../../agent/runtime/deterministic-planner.js';
+import { HttpModelClient } from '../../agent/runtime/http-model-client.js';
+import { ModelPlanner } from '../../agent/runtime/model-planner.js';
 import { PipelineController } from '../../agent/runtime/pipeline-controller.js';
 import { JsonFileStateStore } from '../../agent/runtime/state-store.js';
 import { RegistryToolExecutor } from '../../agent/runtime/tool-executor.js';
@@ -16,6 +19,11 @@ export interface AgentCommandOptions {
   phase?: string;
   step?: string;
   maxSteps?: string;
+  planner?: string;
+  endpoint?: string;
+  model?: string;
+  timeoutMs?: string;
+  maxRetries?: string;
 }
 
 function createController(dir: string): PipelineController {
@@ -48,11 +56,13 @@ export async function runAgentCommand(
   if (action === 'run') {
     const rootDir = path.resolve(dir);
     const stateStore = new JsonFileStateStore(rootDir);
+    const registry = createLocalToolRegistry(rootDir);
+    const planner = createPlanner(options, registry.list());
     const runtime = new AgentRuntime({
       stateStore,
-      planner: new PhaseAwarePlanner(),
+      planner,
       observer: { observe: async () => ({}) },
-      executor: new RegistryToolExecutor(createLocalToolRegistry(rootDir)),
+      executor: new RegistryToolExecutor(registry),
     });
     const result = await runtime.run(change, Number(options.maxSteps ?? 10));
     if (options.json) {
@@ -93,4 +103,40 @@ export async function runAgentCommand(
   }
 
   printState(state, Boolean(options.json));
+}
+
+function createPlanner(options: AgentCommandOptions, availableTools: string[]) {
+  if (!options.planner || options.planner === 'deterministic') return new PhaseAwarePlanner();
+  if (options.planner !== 'model')
+    throw new Error('agent-run --planner must be deterministic or model');
+  const endpoint = options.endpoint ?? process.env.OPSX_AGENT_ENDPOINT;
+  const model = options.model ?? process.env.OPSX_AGENT_MODEL;
+  if (!endpoint) throw new Error('model planner requires --endpoint or OPSX_AGENT_ENDPOINT');
+  if (!model) throw new Error('model planner requires --model or OPSX_AGENT_MODEL');
+  const timeoutMs = parseOptionalInteger(options.timeoutMs, 'timeout-ms', false);
+  const maxRetries = parseOptionalInteger(options.maxRetries, 'max-retries');
+  return new ModelPlanner(
+    new HttpModelClient({
+      endpoint,
+      model,
+      apiKey: process.env.OPSX_AGENT_API_KEY,
+      timeoutMs,
+      maxRetries,
+    }),
+    new ContextBuilder(availableTools),
+    new Set(availableTools),
+  );
+}
+
+function parseOptionalInteger(
+  value: string | undefined,
+  option: string,
+  allowZero = true,
+): number | undefined {
+  if (value === undefined) return undefined;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0 || (!allowZero && parsed === 0)) {
+    throw new Error(`--${option} requires a ${allowZero ? 'non-negative' : 'positive'} integer`);
+  }
+  return parsed;
 }

@@ -358,6 +358,13 @@ start -> propose -> ask approval -> apply -> review -> test -> archive
 实现保留在 `StdioToolServer`，用于兼容已有本地集成和协议单元测试；它不是业务逻辑
 的第二份实现。
 
+模型 Planner 通过 `HttpModelClient` 接入 OpenAI-compatible Chat Completions HTTP
+接口。`agent-run` 默认仍使用确定性 Planner；只有显式指定
+`--planner model` 才会访问模型。endpoint 和 model 可通过 CLI 或
+`OPSX_AGENT_ENDPOINT`、`OPSX_AGENT_MODEL` 配置，密钥只从
+`OPSX_AGENT_API_KEY` 读取，不写入状态文件或日志。客户端内置请求超时、有限次
+指数退避（仅针对 408/429/5xx 和网络错误）以及响应结构校验。
+
 ### 阶段四：接入事件流和指标
 
 每个动作记录：

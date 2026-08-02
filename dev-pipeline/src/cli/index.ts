@@ -145,6 +145,11 @@ export async function runCli(argv: string[]): Promise<void> {
   cli
     .command('agent-run <change>', 'Run safe Agent actions until the next checkpoint')
     .option('--max-steps <steps>', 'Maximum number of actions to execute (default: 10)')
+    .option('--planner <deterministic|model>', 'Planner implementation (default: deterministic)')
+    .option('--endpoint <url>', 'OpenAI-compatible model endpoint (model planner only)')
+    .option('--model <model>', 'Model name (model planner only)')
+    .option('--timeout-ms <ms>', 'Model request timeout in milliseconds')
+    .option('--max-retries <count>', 'Maximum model request retries')
     .option('--json', 'Print the final Runtime result as JSON')
     .option(...dirOption)
     .action(async (change, options) => {

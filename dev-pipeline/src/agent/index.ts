@@ -6,6 +6,7 @@ export * from './host/stdio-tool-server.js';
 export * from './runtime/agent-runtime.js';
 export * from './runtime/context-builder.js';
 export * from './runtime/deterministic-planner.js';
+export * from './runtime/http-model-client.js';
 export * from './runtime/model-planner.js';
 export * from './runtime/pipeline-controller.js';
 export * from './runtime/policy.js';

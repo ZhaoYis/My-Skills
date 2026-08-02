@@ -105,4 +105,13 @@ describe('agent CLI command', () => {
       'agent approve requires --action-id',
     );
   });
+
+  it('requires explicit and complete model planner configuration', async () => {
+    await expect(
+      runAgentCommand('run', 'demo-change', { dir: '/tmp', planner: 'unknown' }),
+    ).rejects.toThrow('agent-run --planner must be deterministic or model');
+    await expect(
+      runAgentCommand('run', 'demo-change', { dir: '/tmp', planner: 'model', model: 'planner-1' }),
+    ).rejects.toThrow('model planner requires --endpoint or OPSX_AGENT_ENDPOINT');
+  });
 });
