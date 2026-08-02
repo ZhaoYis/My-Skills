@@ -1,6 +1,7 @@
 import { cac } from 'cac';
 import { PACKAGE_VERSION } from '../core/runtime/meta.js';
 import { runDoctorCommand } from './commands/doctor.js';
+import { runAgentCommand } from './commands/agent.js';
 import { runInitCommand } from './commands/init.js';
 import { runListToolsCommand } from './commands/list-tools.js';
 import { runSyncCommand } from './commands/sync.js';
@@ -90,6 +91,53 @@ export async function runCli(argv: string[]): Promise<void> {
       if (status === 'fail') {
         process.exitCode = 1;
       }
+    });
+
+  cli
+    .command('agent-status <change>', 'Show the persisted Agent pipeline state')
+    .option('--json', 'Print state as JSON')
+    .option(...dirOption)
+    .action(async (change, options) => {
+      await runAgentCommand('status', change, options);
+    });
+
+  cli
+    .command('agent-approve <change>', 'Approve a pending Agent action')
+    .option('--action-id <action-id>', 'Pending action id')
+    .option('--json', 'Print state as JSON')
+    .option(...dirOption)
+    .action(async (change, options) => {
+      await runAgentCommand('approve', change, options);
+    });
+
+  cli
+    .command('agent-pause <change>', 'Pause an Agent pipeline run')
+    .option('--reason <reason>', 'Pause reason')
+    .option('--json', 'Print state as JSON')
+    .option(...dirOption)
+    .action(async (change, options) => {
+      await runAgentCommand('pause', change, options);
+    });
+
+  cli
+    .command('agent-resume <change>', 'Resume a paused Agent pipeline run')
+    .option('--json', 'Print state as JSON')
+    .option(...dirOption)
+    .action(async (change, options) => {
+      await runAgentCommand('resume', change, options);
+    });
+
+  cli
+    .command(
+      'agent-transition <change>',
+      'Move an Agent pipeline run through a validated gate',
+    )
+    .option('--phase <phase>', 'Target phase')
+    .option('--step <step>', 'Target step')
+    .option('--json', 'Print state as JSON')
+    .option(...dirOption)
+    .action(async (change, options) => {
+      await runAgentCommand('transition', change, options);
     });
 
   cli.help();

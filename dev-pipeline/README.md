@@ -202,6 +202,11 @@ flowchart TD
 | `init`       | `npx opsx-dev-pipeline init --tool claude --stack backend --yes` | 运行 OpenSpec 预检与初始化，并安装所选 stack 的 schema、config 和 pipeline 模板；非交互模式必须指定 `--stack`   |
 | `list-tools` | `npx opsx-dev-pipeline list-tools --json`                        | 查看当前内置支持的 AI 工具适配器；`--json` 输出结构化工具清单（含 destinations / markers / supports）         |
 | `doctor`     | `npx opsx-dev-pipeline doctor --json`                            | 检查 manifest，对比 manifest `templateVersion` 与当前 CLI 版本并给出 upgrade 建议                 |
+| `agent-status` | `npx opsx-dev-pipeline agent-status <change> --json`          | 读取 Agent 流水线状态、当前 Phase/Step 和待审批动作                                                |
+| `agent-approve` | `npx opsx-dev-pipeline agent-approve <change> --action-id <id>` | 批准状态中记录的高风险 Agent 动作                                                                  |
+| `agent-pause` | `npx opsx-dev-pipeline agent-pause <change> --reason "..."`   | 暂停流水线并持久化原因                                                                            |
+| `agent-resume` | `npx opsx-dev-pipeline agent-resume <change>`                 | 恢复已暂停的 Agent 流水线                                                                         |
+| `agent-transition` | `npx opsx-dev-pipeline agent-transition <change> --phase 2 --step 6` | 按现有门禁规则执行阶段迁移                                                            |
 | `sync`       | `npx opsx-dev-pipeline sync --dry-run`                           | 根据 manifest **仅**重新渲染已托管文件；若某 bundle 有部分成员已托管，会同步该 bundle 的全部成员                    |
 | `upgrade`    | `npx opsx-dev-pipeline upgrade --dry-run`                        | 在 sync 基础上额外采纳包内**新增**模板；执行前会对比 manifest 与 CLI 版本，manifest 偏新或无法解析时需确认（`--yes` 跳过） |
 | `uninstall`  | `npx opsx-dev-pipeline uninstall --dry-run`                      | 按 manifest 删除托管文件并清理空目录；部分删除时会更新 manifest                                          |
