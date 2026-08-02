@@ -26,8 +26,12 @@ describe('scope selection (user vs project)', () => {
       for (const toolId of ['claude', 'cursor', 'codex'] as const) {
         const adapter = registry.get(toolId);
         expect(adapter).toBeDefined();
-        expect(adapter!.getDestination('skills', 'project')).toBe(adapter!.definition.destinations.skills);
-        expect(adapter!.getDestination('commands', 'project')).toBe(adapter!.definition.destinations.commands);
+        expect(adapter!.getDestination('skills', 'project')).toBe(
+          adapter!.definition.destinations.skills,
+        );
+        expect(adapter!.getDestination('commands', 'project')).toBe(
+          adapter!.definition.destinations.commands,
+        );
       }
     });
 
@@ -94,7 +98,10 @@ describe('scope selection (user vs project)', () => {
             supports: () => true,
             getDestination: (feature, scope) =>
               scope === 'user'
-                ? path.join(os.homedir(), feature === 'skills' ? '.claude/skills' : '.claude/commands')
+                ? path.join(
+                    os.homedir(),
+                    feature === 'skills' ? '.claude/skills' : '.claude/commands',
+                  )
                 : feature === 'skills'
                   ? '.claude/skills'
                   : '.claude/commands',
@@ -205,7 +212,9 @@ describe('scope selection (user vs project)', () => {
         (file) => file.assetId === 'opsx-dev-pipeline-skill-bundle:SKILL.md.hbs',
       );
       expect(skillFile).toBeDefined();
-      expect(skillFile!.destinationPath).toContain('.claude/skills/opsx-dev-pipeline');
+      expect(skillFile!.destinationPath).toContain(
+        path.join('.claude', 'skills', 'opsx-dev-pipeline'),
+      );
       expect(path.isAbsolute('.claude/skills')).toBe(false);
     });
 
@@ -230,7 +239,9 @@ describe('scope selection (user vs project)', () => {
         (file) => file.assetId === 'opsx-dev-pipeline-skill-bundle:SKILL.md.hbs',
       );
       expect(skillFile).toBeDefined();
-      expect(skillFile!.destinationPath).toContain(path.join(os.homedir(), '.claude/skills/opsx-dev-pipeline'));
+      expect(skillFile!.destinationPath).toContain(
+        path.join(os.homedir(), '.claude/skills/opsx-dev-pipeline'),
+      );
     });
 
     it('filters out commands feature for codex at user scope', async () => {
