@@ -3920,7 +3920,7 @@
             var dirs = [{ x: 0, y: -1 }, { x: 0, y: 1 }, { x: -1, y: 0 }, { x: 1, y: 0 }];
             for (var i = 0; i < dirs.length; i++) {
                 var d = dirs[i];
-                // 禁止 180° 反转
+                // 禁止 180° 反转（安全保护：复用 changeDirection 的校验逻辑）
                 if (d.x === -direction.x && d.y === -direction.y && snake.length > 1) continue;
                 var nx = head.x + d.x;
                 var ny = head.y + d.y;
@@ -3948,16 +3948,22 @@
             }
             if (safe.length === 0) safe = candidates; // 全危险时选最不坏的
 
-            // Step 3: 评分
+            // Step 3: 渐进评分（食物引力按距离加权，而非二元判断）
             for (var k = 0; k < safe.length; k++) {
                 var sc = safe[k];
                 var score = 1;
 
-                // 食物引力
+                // 食物引力 —— 渐进评分：曼哈顿距离每缩短 1 格 +4 分，最多 +20
                 if (food) {
                     var curDist = Math.abs(head.x - food.x) + Math.abs(head.y - food.y);
                     var newDist = Math.abs(sc.nx - food.x) + Math.abs(sc.ny - food.y);
-                    if (newDist < curDist) score += 5;
+                    var distImprovement = curDist - newDist;
+                    if (distImprovement > 0) {
+                        score += Math.min(distImprovement * 4, 20);
+                    } else if (distImprovement === 0) {
+                        score += 1; // 不远离也不靠近，给基础分
+                    }
+                    // distImprovement < 0 不加分（方向远离食物）
                 }
 
                 // 墙壁安全
@@ -3981,24 +3987,35 @@
                 // 道具吸引
                 if (foodItem === ITEM_TYPES.SHIELD || foodItem === ITEM_TYPES.LIGHTNING) {
                     if (food) {
-                        var curDist2 = Math.abs(head.x - food.x) + Math.abs(head.y - food.y);
-                        var newDist2 = Math.abs(sc.nx - food.x) + Math.abs(sc.ny - food.y);
-                        if (newDist2 < curDist2) score += 3;
+                        var curDistP = Math.abs(head.x - food.x) + Math.abs(head.y - food.y);
+                        var newDistP = Math.abs(sc.nx - food.x) + Math.abs(sc.ny - food.y);
+                        if (newDistP < curDistP) score += 3;
                     }
                 }
 
                 sc.score = score;
             }
 
-            // Step 4: 加权随机 — 80% 保持当前方向
-            if (Math.random() < 0.8) {
+            // Step 4: 智能方向保持 —— 仅当当前方向确实朝向食物时才保持
+            // 概率降至 30%，避免蛇一直直行撞击
+            if (Math.random() < 0.3) {
                 for (var m = 0; m < safe.length; m++) {
                     if (safe[m].d.x === direction.x && safe[m].d.y === direction.y) {
-                        return safe[m].d;
+                        // 额外检查：当前方向是否也在靠近食物（避免朝错误方向保持）
+                        if (food) {
+                            var keepDist = Math.abs(head.x + direction.x - food.x) + Math.abs(head.y + direction.y - food.y);
+                            var curDistKeep = Math.abs(head.x - food.x) + Math.abs(head.y - food.y);
+                            if (keepDist <= curDistKeep) {
+                                return safe[m].d;
+                            }
+                        } else {
+                            return safe[m].d;
+                        }
                     }
                 }
             }
 
+            // 按评分加权随机选取
             var totalScore = 0;
             for (var n = 0; n < safe.length; n++) totalScore += safe[n].score;
             var roll = Math.random() * totalScore;
