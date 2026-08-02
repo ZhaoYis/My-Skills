@@ -305,4 +305,24 @@ describe('agent runtime', () => {
     expect(result.status).toBe('failed');
     if (result.status === 'failed') expect(result.error).toBe('missing artifact');
   });
+
+  it('pauses when a planner returns an invalid or unavailable action', async () => {
+    const store = new InMemoryStateStore([makeRun()]);
+    const runtime = new AgentRuntime({
+      stateStore: store,
+      observer: { observe: async () => ({}) },
+      planner: {
+        nextAction: async () => {
+          throw new Error('model-action-not-allowed-in-phase');
+        },
+      },
+      executor: { execute: async () => ({ status: 'succeeded', summary: 'unexpected' }) },
+      now: () => '2026-01-01T03:00:00.000Z',
+    });
+    const result = await runtime.step('add-login');
+    expect(result).toMatchObject({
+      status: 'paused',
+      reason: 'planner-error: model-action-not-allowed-in-phase',
+    });
+  });
 });

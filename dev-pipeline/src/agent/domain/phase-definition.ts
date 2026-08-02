@@ -52,6 +52,7 @@ export const DEFAULT_PHASE_DEFINITIONS: PhaseDefinition[] = [
     name: 'propose',
     objective: '生成并确认 OpenSpec 提案制品',
     allowedActions: [
+      'openspec.status',
       'openspec.createChange',
       'openspec.instructions',
       'openspec.validate',
@@ -71,6 +72,7 @@ export const DEFAULT_PHASE_DEFINITIONS: PhaseDefinition[] = [
     allowedActions: [
       'openspec.status',
       'openspec.instructions',
+      'openspec.apply',
       'artifact.write',
       'state.recordAttempt',
     ],

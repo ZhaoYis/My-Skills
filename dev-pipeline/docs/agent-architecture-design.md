@@ -352,6 +352,12 @@ start -> propose -> ask approval -> apply -> review -> test -> archive
 
 让 Claude、Codex、Cursor 和 CLI 都调用同一套工具协议和状态服务。
 
+当前实现：`agent-stdio` 使用官方 `@modelcontextprotocol/sdk` 暴露 MCP
+`tools/list` 和 `tools/call`，所有工具调用仍由本地 `ToolRegistry` 执行，并要求
+`runId` 后从 `StateStore` 解析当前流水线状态。旧的 newline-delimited JSON-RPC
+实现保留在 `StdioToolServer`，用于兼容已有本地集成和协议单元测试；它不是业务逻辑
+的第二份实现。
+
 ### 阶段四：接入事件流和指标
 
 每个动作记录：

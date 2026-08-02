@@ -207,6 +207,9 @@ flowchart TD
 | `agent-pause` | `npx opsx-dev-pipeline agent-pause <change> --reason "..."`   | 暂停流水线并持久化原因                                                                            |
 | `agent-resume` | `npx opsx-dev-pipeline agent-resume <change>`                 | 恢复已暂停的 Agent 流水线                                                                         |
 | `agent-transition` | `npx opsx-dev-pipeline agent-transition <change> --phase 2 --step 6` | 按现有门禁规则执行阶段迁移                                                            |
+| `agent-run` | `npx opsx-dev-pipeline agent-run <change> --json`                | 使用确定性 Planner 执行当前 Phase 的低风险动作，遇到 checkpoint 后停止                         |
+| `agent-stdio` | `npx opsx-dev-pipeline agent-stdio --dir <repo>`               | 通过官方 MCP stdio 协议暴露受限的流水线工具和 `pipeline.status`                   |
+| `agent-jsonrpc` | `npx opsx-dev-pipeline agent-jsonrpc --dir <repo>`           | 兼容旧版 newline-delimited JSON-RPC 工具入口                                       |
 | `sync`       | `npx opsx-dev-pipeline sync --dry-run`                           | 根据 manifest **仅**重新渲染已托管文件；若某 bundle 有部分成员已托管，会同步该 bundle 的全部成员                    |
 | `upgrade`    | `npx opsx-dev-pipeline upgrade --dry-run`                        | 在 sync 基础上额外采纳包内**新增**模板；执行前会对比 manifest 与 CLI 版本，manifest 偏新或无法解析时需确认（`--yes` 跳过） |
 | `uninstall`  | `npx opsx-dev-pipeline uninstall --dry-run`                      | 按 manifest 删除托管文件并清理空目录；部分删除时会更新 manifest                                          |

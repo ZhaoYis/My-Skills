@@ -94,7 +94,15 @@ export class AgentRuntime {
       return { status: 'paused', reason: facts.divergence, state: saved };
     }
 
-    const action = await planner.nextAction({ state, facts });
+    let action: ActionProposal | null;
+    try {
+      action = await planner.nextAction({ state, facts });
+    } catch (error) {
+      const reason = `planner-error: ${error instanceof Error ? error.message : String(error)}`;
+      const paused = pauseRun(state, reason, this.dependencies.now?.() ?? new Date().toISOString());
+      const saved = await stateStore.save(paused, state._version);
+      return { status: 'paused', reason, state: saved };
+    }
     if (!action) return { status: 'completed', action: null, state };
     const normalized = { ...action, risk: action.risk ?? actionRisk(action.kind) };
     const alreadyApproved = state.approvedActions?.includes(normalized.actionId) ?? false;

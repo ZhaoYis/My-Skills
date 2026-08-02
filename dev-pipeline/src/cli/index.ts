@@ -1,7 +1,12 @@
+import path from 'node:path';
 import { cac } from 'cac';
+import { McpToolServer } from '../agent/host/mcp-tool-server.js';
+import { StdioToolServer } from '../agent/host/stdio-tool-server.js';
+import { JsonFileStateStore } from '../agent/runtime/state-store.js';
+import { createLocalToolRegistry } from '../agent/tools/registry.js';
 import { PACKAGE_VERSION } from '../core/runtime/meta.js';
-import { runDoctorCommand } from './commands/doctor.js';
 import { runAgentCommand } from './commands/agent.js';
+import { runDoctorCommand } from './commands/doctor.js';
 import { runInitCommand } from './commands/init.js';
 import { runListToolsCommand } from './commands/list-tools.js';
 import { runSyncCommand } from './commands/sync.js';
@@ -128,16 +133,44 @@ export async function runCli(argv: string[]): Promise<void> {
     });
 
   cli
-    .command(
-      'agent-transition <change>',
-      'Move an Agent pipeline run through a validated gate',
-    )
+    .command('agent-transition <change>', 'Move an Agent pipeline run through a validated gate')
     .option('--phase <phase>', 'Target phase')
     .option('--step <step>', 'Target step')
     .option('--json', 'Print state as JSON')
     .option(...dirOption)
     .action(async (change, options) => {
       await runAgentCommand('transition', change, options);
+    });
+
+  cli
+    .command('agent-run <change>', 'Run safe Agent actions until the next checkpoint')
+    .option('--max-steps <steps>', 'Maximum number of actions to execute (default: 10)')
+    .option('--json', 'Print the final Runtime result as JSON')
+    .option(...dirOption)
+    .action(async (change, options) => {
+      await runAgentCommand('run', change, options);
+    });
+
+  cli
+    .command('agent-stdio', 'Serve Agent tools through the standard MCP protocol over stdio')
+    .option(...dirOption)
+    .action(async (options) => {
+      const rootDir = path.resolve(options.dir ?? process.cwd());
+      await new McpToolServer(
+        createLocalToolRegistry(rootDir),
+        new JsonFileStateStore(rootDir),
+      ).serve();
+    });
+
+  cli
+    .command('agent-jsonrpc', 'Serve the legacy newline-delimited Agent protocol over stdio')
+    .option(...dirOption)
+    .action(async (options) => {
+      const rootDir = path.resolve(options.dir ?? process.cwd());
+      await new StdioToolServer(
+        createLocalToolRegistry(rootDir),
+        new JsonFileStateStore(rootDir),
+      ).serve();
     });
 
   cli.help();
