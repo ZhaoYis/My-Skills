@@ -753,6 +753,40 @@ describe('pipeline state machine', () => {
     expect(currentState.status).toBe('completed');
   });
 
+  it('enforces Phase 7 merge delivery gates and completion', async () => {
+    const changeName = 'phase-seven-gates';
+    await state('init', changeName, 'feature/phase-seven-gates');
+    await state('decision', changeName, 'proposalApproved', 'true');
+    await state('decision', changeName, 'implementationConfirmed', 'true');
+    await state('set', changeName, 'tests.status', 'passed');
+    await state('transition', changeName, '5', '15');
+    await state('set', changeName, 'verify.status', 'passed');
+    await state('set', changeName, 'archivePath', 'openspec/changes/archive/phase-seven-gates');
+    await state('decision', changeName, 'postArchiveAction', 'push-only');
+    await state('transition', changeName, '6', '20');
+
+    const nonMergeDelivery = await state('transition', changeName, '7', '23');
+    expect(nonMergeDelivery.code).toBe(11);
+    expect(nonMergeDelivery.payload.reason).toBe('merge-gate-required');
+
+    await state('decision', changeName, 'postArchiveAction', 'merge');
+    const missingCommit = await state('transition', changeName, '7', '23');
+    expect(missingCommit.code).toBe(11);
+    expect(missingCommit.payload.reason).toBe('commit-required');
+
+    await state('set', changeName, 'delivery.commitSha', 'abc123');
+    const sourceNotPushed = await state('transition', changeName, '7', '23');
+    expect(sourceNotPushed.code).toBe(11);
+    expect(sourceNotPushed.payload.reason).toBe('source-push-required');
+
+    await state('set', changeName, 'delivery.sourcePushed', 'true');
+    expect((await state('transition', changeName, '7', '23')).code).toBe(0);
+    expect((await state('complete', changeName)).code).toBe(0);
+
+    const current = await state('get', changeName);
+    expect(current.payload.state).toMatchObject({ currentPhase: 7, status: 'completed' });
+  });
+
   it('rejects unsupported jumps and writes state atomically', async () => {
     await state('init', 'resume-change', 'feature/resume');
     const repeatedInit = await state('init', 'resume-change', 'feature/overwrite-attempt');

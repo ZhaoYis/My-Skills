@@ -142,10 +142,11 @@ Pipeline Skill bundle 同时包含 `agents/openai.yaml`，用于提供 OpenAI/Co
 | 3     | 代码审查 (Review)         |
 | 4     | 单元测试门禁                |
 | 5     | 提案归档 (Archive)        |
-| 6     | 提交合并推送 (Merge & Push) |
+| 6     | 提交与源分支推送 (Commit & Push) |
+| 7     | 合并与交付 (Merge & Deliver) |
 
 
-Phase6 是流水线的最终阶段，支持 commit + push，并按决策点 5 的选择决定是否执行本地 merge。
+Phase6 负责 commit 和源分支 push；仅 `merge` 交付模式会进入 Phase7，执行目标分支 merge、验证、push、清理和标签。
 
 ## 研发流程
 
@@ -179,13 +180,14 @@ flowchart TD
   VFIX --> P2
   P5 -->|归档完成| DP5{"决策点 5"}
   DP5 -->|仅推送| P6["Phase6 提交 / 推送"]
-  DP5 -->|合并| P6MERGE["Phase6 提交 / 推送 / 合并"]
+  DP5 -->|合并| P6MERGE["Phase6 提交 / 推送"]
 
-  P6 --> DONE(["交付完成"])
+  P6 -->|local-only / push-only| DONE(["交付完成"])
 
-  P6MERGE --> DP7{"决策点 7"}
+  P6MERGE --> P7["Phase7 合并 / 交付"]
+  P7 --> DP7{"决策点 7"}
   DP7 -->|确认合并| MERGE["本地 merge"]
-  MERGE --> DONE
+  MERGE -->|推送 / 标签| DONE
 ```
 
 

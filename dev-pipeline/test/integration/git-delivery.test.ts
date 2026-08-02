@@ -66,7 +66,7 @@ async function createDeliveryRepo(): Promise<{ root: string; remote: string }> {
   return { root: repo, remote };
 }
 
-describe('Phase6 isolated Git delivery commands', () => {
+describe('Phase6 and Phase7 isolated Git delivery commands', () => {
   for (const strategy of ['standard', 'squash', 'no-ff'] as const) {
     it(`delivers with ${strategy} merge without a real remote`, async () => {
       const { root } = await createDeliveryRepo();

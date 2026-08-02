@@ -5,7 +5,7 @@
 Phase 3 代码审查完成后，用户选择 "继续后续流程 (Recommended)"，系统直接跑完了：
 - ❌ Phase 4（单测门禁）— 被跳过
 - ❌ Phase 5（归档确认）— `archive.mjs -y` 自动执行
-- ❌ Phase 6（提交/推送/合并决策点）— 全部自动执行
+- ❌ Phase 6/7（提交、推送、合并与交付决策点）— 全部自动执行
 
 **没有任何门禁和用户确认点**，代码未经单测、归档未经确认、提交未经审查就直接推送。
 
@@ -244,7 +244,7 @@ function allowedTransition(from, to, state) {
 
 1. 先执行 `transition "<name>" 4 14` 进入 Phase 4 决策点 4
 2. 等待用户在 Phase 4 决策点 4 的显式选择
-3. 按 Phase 4 → Phase 5 → Phase 6 顺序逐阶段推进，每阶段必经其决策点
+3. 按 Phase 4 → Phase 5 → Phase 6 → Phase 7 顺序逐阶段推进，每阶段必经其决策点
 4. **禁止**跳过任何后续决策点直接执行归档、提交或推送命令
 ```
 
@@ -359,5 +359,5 @@ npx vitest run test/integration/dev-pipeline-state.test.mjs
 4. **验证**：模型必须展示 Phase 4 决策点 4（是否需要单测），使用 AskUserQuestion
 5. **验证**：选择 "跳过单测" 后，模型必须执行 `transition "<name>" 5 15`
 6. **验证**：归档前模型必须展示 verify 和 delta spec sync 确认
-7. **验证**：归档后模型必须展示 Phase 6 提交/推送/合并决策点
+7. **验证**：归档后模型必须展示 Phase 6 提交/推送决策点；merge 模式还必须进入 Phase 7 的合并与交付决策点
 8. **验证**：直接执行 `archive.mjs -y` 而不先 transition 时，transition 命令应拒绝跨 Phase 跳转

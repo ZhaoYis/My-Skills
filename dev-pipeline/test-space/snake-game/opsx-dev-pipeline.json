@@ -72,8 +72,12 @@
       "destination": ".claude/skills/opsx-dev-pipeline/references/phase-5-archive.md"
     },
     {
-      "id": "opsx-dev-pipeline-skill-bundle:references/phase-6-merge-push.md.hbs",
-      "destination": ".claude/skills/opsx-dev-pipeline/references/phase-6-merge-push.md"
+      "id": "opsx-dev-pipeline-skill-bundle:references/phase-6-commit-push.md.hbs",
+      "destination": ".claude/skills/opsx-dev-pipeline/references/phase-6-commit-push.md"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:references/phase-7-merge-deliver.md.hbs",
+      "destination": ".claude/skills/opsx-dev-pipeline/references/phase-7-merge-deliver.md"
     },
     {
       "id": "opsx-dev-pipeline-skill-bundle:scripts/archive.mjs",

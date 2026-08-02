@@ -88,7 +88,7 @@ my-project/
 
 | 命令                   | 用途      | 说明                                   |
 | -------------------- | ------- | ------------------------------------ |
-| `/opsx-dev-pipeline` | 启动完整流水线 | 基于探索结论，从 Phase 0 到 Phase 6 全流程       |
+| `/opsx-dev-pipeline` | 启动完整流水线 | 基于探索结论，从 Phase 0 到 Phase 7 全流程       |
 | `/opsx:explore`      | 需求探索    | 在正式创建变更前，深入理解需求、分析现有代码、评估技术方案        |
 | `/opsx:grill-me`     | 思路拷问    | 对需求方案进行深度拷问，逐一排查决策分支、发现盲区，验证思路是否完备  |
 | `/opsx:propose`      | 创建变更提案  | 生成 proposal + specs + design + tasks |
@@ -141,7 +141,7 @@ my-project/
 
 #### 模式一：完整流水线模式（一键式）
 
-适合需求明确、变更范围清晰的场景，一条命令走完 Phase 0-6 全流程。
+适合需求明确、变更范围清晰的场景，一条命令走完 Phase 0-7 全流程。
 
 ```mermaid
 flowchart LR
@@ -153,7 +153,8 @@ flowchart LR
     F --> G["Phase 3<br/>审查"]
     G --> H["Phase 4<br/>单测"]
     H --> I["Phase 5<br/>归档"]
-    I --> J["Phase 6<br/>交付"]
+    I --> J["Phase 6<br/>提交与推送"]
+    J --> K["Phase 7<br/>合并与交付（merge 模式）"]
 ```
 
 
@@ -193,7 +194,8 @@ flowchart LR
 # Phase 4: 运行单元测试
 #          失败则自动修复重试（最多 3 次）
 # Phase 5: 归档变更，Delta Specs 合并到主规范
-# Phase 6: commit → push → merge（可选）
+# Phase 6: commit → source push
+# Phase 7: merge → verify → target push（仅 merge 模式）
 ```
 
 流水线在每个决策点暂停等待你确认。
@@ -391,7 +393,7 @@ opsx-dev-pipeline 给 AI 装了一套工程框架：它知道要先写 proposal 
 
 #### 流水线工作流
 
-**Q: 7 个 Phase 是强制的吗？我能跳过某个阶段吗？**
+**Q: 8 个 Phase 是强制的吗？我能跳过某个阶段吗？**
 
 部分可以。Phase 3（审查）和 Phase 4（单测）都有"跳过"选项，但每次跳过都是一次显式决策，会被记录在状态文件里。Phase 1（提案）和 Phase 5（归档）不可跳过——前者是"为什么做"的根基，后者是"做完了别失忆"的保障。
 
@@ -449,7 +451,7 @@ opsx-dev-pipeline 给 AI 装了一套工程框架：它知道要先写 proposal 
 
 **Q: 如果我确实需要 force push 怎么办？**
 
-在流水线之外手动操作。opsx-dev-pipeline 的 Phase 6 不会替你执行这些操作，但也不会阻止你在终端里自己执行。它只是确保 AI Agent 不会在自动化流程中执行破坏性命令。
+在流水线之外手动操作。opsx-dev-pipeline 的 Phase 6 和 Phase 7 不会替你执行这些操作，但也不会阻止你在终端里自己执行。它只是确保 AI Agent 不会在自动化流程中执行破坏性命令。
 
 ---
 
@@ -467,7 +469,7 @@ opsx-dev-pipeline 给 AI 装了一套工程框架：它知道要先写 proposal 
 
 OpenSpec 提供了核心的 spec 管理和 CLI 工具。opsx-dev-pipeline 在它之上构建了：
 
-- **完整的 7 阶段门禁流程**（OpenSpec 本身不强制 Phase 顺序和决策点）
+- **完整的 8 阶段门禁流程**（OpenSpec 本身不强制 Phase 顺序和决策点）
 - **持久化状态机**（OpenSpec 不记录"流水线跑到哪了"）
 - **AI Tool 适配**（OpenSpec 需要你手动配置 skills/commands，pipeline 一条命令完成）
 - **安全交付门禁**（敏感文件检测、Git 操作约束是 pipeline 独有的）
@@ -534,7 +536,7 @@ flowchart LR
 | -------------------- | ------------------ |
 | `/opsx:explore`      | 需求探索（先探索，再开发）      |
 | `/opsx:grill-me`     | 思路拷问（探索后可选，推敲方案完备性） |
-| `/opsx-dev-pipeline` | 启动完整流水线（Phase 0-6） |
+| `/opsx-dev-pipeline` | 启动完整流水线（Phase 0-7） |
 | `/opsx:propose`      | 创建变更提案             |
 | `/opsx:apply`        | 按任务实施              |
 | `/opsx:verify`       | 校验一致性              |
@@ -572,5 +574,3 @@ flowchart LR
 | `npx opsx-dev-pipeline doctor`                                   | 诊断安装状态      |
 | `npx opsx-dev-pipeline uninstall`                                | 卸载          |
 | `npx opsx-dev-pipeline list-tools`                               | 列出 AI 工具适配器 |
-
-

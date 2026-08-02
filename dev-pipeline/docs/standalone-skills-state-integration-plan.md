@@ -8,7 +8,7 @@
 
 ### 现状
 
-当前 `opsx-dev-pipeline` 通过 `openspec/.pipeline-state/<change>.json` 管理 Phase 0-6 的状态迁移，完整追踪决策、门禁和交付信息。
+当前 `opsx-dev-pipeline` 通过 `openspec/.pipeline-state/<change>.json` 管理 Phase 0-7 的状态迁移，完整追踪决策、门禁和交付信息。
 
 但用户直接使用独立命令时：
 
@@ -247,6 +247,14 @@ function validateGates(state, from, to) {
     // postArchiveAction 任何模式下都必须用户显式选择，不做推断
     if (!['merge', 'push-only', 'local-only'].includes(state.decisions.postArchiveAction))
       return ['post-archive-decision-required', '进入 Phase6 前必须记录归档后交付方式'];
+  }
+  if (to === 7) {
+    if (state.decisions.postArchiveAction !== 'merge')
+      return ['merge-gate-required', '进入 Phase7 前必须记录 postArchiveAction=merge'];
+    if (!state.delivery.commitSha)
+      return ['commit-required', '进入 Phase7 前必须记录 delivery.commitSha'];
+    if (!state.delivery.sourcePushed)
+      return ['source-push-required', '进入 Phase7 前必须推送源分支'];
   }
   return null;
 }

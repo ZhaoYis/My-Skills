@@ -2,7 +2,7 @@
 name: opsx-dev-pipeline
 description: 执行基于 OpenSpec 和 Git 的门禁式需求开发与交付流程，覆盖预检、提案确认、实现、代码审查、测试、验证归档、提交、推送与合并，并支持中断恢复。用户要求实现或继续一个 OpenSpec change、按阶段推进完整开发流水线、审查并交付变更，或处理 opsx-dev-pipeline 时使用。
 allowed-tools: Bash(openspec:*), AskUserQuestion
-version: "0.2.13"
+version: "0.2.10"
 license: "MIT"
 repository: "git+https://github.com/ZhaoYis/My-Skills.git"
 ---
@@ -64,7 +64,8 @@ Schema v3 使用 `_version` 做乐观锁，并以 `review.currentRound` / `revie
 | 3 | 代码审查 (Review) | `references/phase-3-review.md` | 决策点 3 |
 | 4 | 单元测试门禁 | `references/phase-4-unit-tests.md` | 决策点 4 |
 | 5 | 提案归档 (Archive) | `references/phase-5-archive.md` | 决策点 5a（verify 失败回路可到 Phase1 或 Phase2）、决策点 5b（merge vs 仅推送） |
-| 6 | 提交合并推送 | `references/phase-6-merge-push.md` | 决策点 6、决策点 7、标签创建（可选） |
+| 6 | 提交与推送 | `references/phase-6-commit-push.md` | 决策点 6、交付分支（local-only / push-only / merge） |
+| 7 | 合并与交付 | `references/phase-7-merge-deliver.md` | 决策点 7、标签创建（可选） |
 
 ## 流程概览
 
@@ -98,13 +99,14 @@ flowchart TD
   VFIX --> P2
   P5 -->|归档完成| DP5{"决策点 5"}
   DP5 -->|仅推送| P6["Phase6 提交 / 推送"]
-  DP5 -->|合并| P6MERGE["Phase6 提交 / 推送 / 合并"]
+  DP5 -->|合并| P6MERGE["Phase6 提交 / 推送"]
 
-  P6 --> DONE(["交付完成"])
+  P6 -->|local-only / push-only| DONE(["交付完成"])
+  P6MERGE -->|merge| P7["Phase7 合并 / 交付"]
 
-  P6MERGE --> DP7{"决策点 7"}
+  P7 --> DP7{"决策点 7"}
   DP7 -->|确认合并| MERGE["本地 merge"]
-  MERGE --> DONE
+  MERGE -->|推送 / 标签| DONE
 ```
 
 ## 错误处理速查

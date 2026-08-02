@@ -80,7 +80,8 @@ const toolExpectations = {
     { path: 'CLAUDE.md', present: true },
     { path: '.claude/skills/opsx-dev-pipeline/SKILL.md', present: true },
     { path: '.claude/skills/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
-    { path: '.claude/skills/opsx-dev-pipeline/references/phase-6-merge-push.md', present: true },
+    { path: '.claude/skills/opsx-dev-pipeline/references/phase-6-commit-push.md', present: true },
+    { path: '.claude/skills/opsx-dev-pipeline/references/phase-7-merge-deliver.md', present: true },
     { path: '.claude/skills/opsx-dev-pipeline/scripts/preflight.mjs', present: true },
     { path: '.claude/skills/opsx-dev-pipeline/scripts/archive.mjs', present: true },
     { path: '.claude/skills/opsx-dev-pipeline/agents/openai.yaml', present: true },
@@ -106,7 +107,8 @@ const toolExpectations = {
     { path: '.cursor/rules/opsx-dev-pipeline.mdc', present: true },
     { path: '.cursor/rules/opsx-dev-pipeline/SKILL.md', present: true },
     { path: '.cursor/rules/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
-    { path: '.cursor/rules/opsx-dev-pipeline/references/phase-6-merge-push.md', present: true },
+    { path: '.cursor/rules/opsx-dev-pipeline/references/phase-6-commit-push.md', present: true },
+    { path: '.cursor/rules/opsx-dev-pipeline/references/phase-7-merge-deliver.md', present: true },
     { path: '.cursor/rules/opsx-dev-pipeline/scripts/preflight.mjs', present: true },
     { path: '.cursor/rules/opsx-dev-pipeline/scripts/archive.mjs', present: true },
     { path: '.cursor/rules/opsx-dev-pipeline/agents/openai.yaml', present: true },
@@ -133,7 +135,8 @@ const toolExpectations = {
     { path: '.codex/prompts/opsx-dev-pipeline.md', present: true },
     { path: '.codex/prompts/opsx-dev-pipeline/SKILL.md', present: true },
     { path: '.codex/prompts/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
-    { path: '.codex/prompts/opsx-dev-pipeline/references/phase-6-merge-push.md', present: true },
+    { path: '.codex/prompts/opsx-dev-pipeline/references/phase-6-commit-push.md', present: true },
+    { path: '.codex/prompts/opsx-dev-pipeline/references/phase-7-merge-deliver.md', present: true },
     { path: '.codex/prompts/opsx-dev-pipeline/scripts/preflight.mjs', present: true },
     { path: '.codex/prompts/opsx-dev-pipeline/scripts/archive.mjs', present: true },
     { path: '.codex/prompts/opsx-dev-pipeline/agents/openai.yaml', present: true },
@@ -422,7 +425,7 @@ describe('tool matrix', () => {
     expect(skillContent).toContain('必须先执行 `transition` 命令并通过门禁验证');
 
     // Verify all phase reference files exist
-    for (const phase of [0, 1, 2, 3, 4, 5, 6]) {
+    for (const phase of [0, 1, 2, 3, 4, 5, 6, 7]) {
       expect(
         await fs.pathExists(path.join(skillRoot, `references/phase-${phase}-entrance.md`)),
       ).toBe(phase === 0);
@@ -433,8 +436,10 @@ describe('tool matrix', () => {
             : phase === 5
               ? 'archive'
               : phase === 6
-                ? 'merge-push'
-                : ['propose', 'apply', 'review'][phase - 1];
+                ? 'commit-push'
+                : phase === 7
+                  ? 'merge-deliver'
+                  : ['propose', 'apply', 'review'][phase - 1];
         expect(
           await fs.pathExists(path.join(skillRoot, `references/phase-${phase}-${phaseName}.md`)),
         ).toBe(true);

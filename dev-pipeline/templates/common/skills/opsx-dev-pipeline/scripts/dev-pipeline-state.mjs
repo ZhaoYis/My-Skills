@@ -408,7 +408,8 @@ function allowedTransition(from, to, state) {
     3: [2, 3, 4],
     4: [2, 4, 5],
     5: [1, 2, 5, 6],
-    6: [6],
+    6: [6, 7],
+    7: [7],
   };
 
   if (allowed[from]?.includes(to)) return true;
@@ -442,6 +443,17 @@ function validateGates(state, from, to) {
     }
     if (!['merge', 'push-only', 'local-only'].includes(state.decisions.postArchiveAction)) {
       return ['post-archive-decision-required', '进入 Phase6 前必须记录归档后交付方式'];
+    }
+  }
+  if (to === 7) {
+    if (state.decisions.postArchiveAction !== 'merge') {
+      return ['merge-gate-required', '进入 Phase7 前必须记录 postArchiveAction=merge'];
+    }
+    if (!state.delivery.commitSha) {
+      return ['commit-required', '进入 Phase7 前必须记录 delivery.commitSha'];
+    }
+    if (!state.delivery.sourcePushed) {
+      return ['source-push-required', '进入 Phase7 前必须推送源分支'];
     }
   }
   return null;
@@ -757,13 +769,13 @@ if (!command) {
             if (
               !Number.isInteger(phase) ||
               phase < 0 ||
-              phase > 6 ||
+              phase > 7 ||
               !Number.isInteger(step) ||
               !executedBy
             ) {
               emitError(
                 'invalid-phase-record',
-                'record-phase 需要 Phase 0-6、整数 Step 和 executed-by',
+                'record-phase 需要 Phase 0-7、整数 Step 和 executed-by',
                 'provide-valid-phase-record',
                 EXIT_INVALID_TRANSITION,
               );
@@ -937,12 +949,12 @@ if (!command) {
           if (
             !Number.isInteger(toPhase) ||
             toPhase < 0 ||
-            toPhase > 6 ||
+            toPhase > 7 ||
             !Number.isInteger(toStep)
           ) {
             emitError(
               'invalid-transition-target',
-              '目标 Phase 必须为 0-6，Step 必须为整数',
+              '目标 Phase 必须为 0-7，Step 必须为整数',
               'choose-valid-transition',
               EXIT_INVALID_TRANSITION,
             );
@@ -991,10 +1003,10 @@ if (!command) {
           state.pauseReason = args.join(' ') || 'user-requested';
           if (await saveState(root, state)) output({ status: 'ok', state });
         } else if (command === 'complete') {
-          if (state.currentPhase !== 6) {
+          if (state.currentPhase !== 6 && state.currentPhase !== 7) {
             emitError(
               'pipeline-not-delivered',
-              '只有 Phase6 可以标记流水线完成',
+              '只有 Phase6 或 Phase7 可以标记流水线完成',
               'finish-delivery-phase',
               EXIT_INVALID_TRANSITION,
             );

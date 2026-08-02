@@ -200,7 +200,8 @@ flowchart TD
   ARCHIVE --> DP5b{"checkpoint: 决策点 5b<br/>交付决策"}
 
   DP5b -->|"option: push-only"| P6_EXEC["execute: Phase 6<br/>提交 + 推送"]
-  DP5b -->|"option: merge"| P6_MERGE["execute: Phase 6<br/>提交 + 推送 + merge main"]
+  DP5b -->|"option: merge"| P6_MERGE["execute: Phase 6<br/>提交 + 源分支推送"]
+  P6_MERGE --> P7_MERGE["execute: Phase 7<br/>merge + 验证 + 目标推送"]
 
   P6_EXEC --> DP6{"checkpoint: 决策点 6<br/>最终确认"}
   P6_MERGE --> DP7{"checkpoint: 决策点 7<br/>合并确认"}
@@ -219,9 +220,9 @@ flowchart TD
 | 决策点 3 | Phase 3 结束 | `pass` (3a) → P4 / `fix` (3b) → P3 / `redo` (3c) → P2 |
 | 决策点 4 | Phase 4 第 14 步 | `run-tests` → 写单测 → P5 / `skip-tests` → P5 |
 | 决策点 5a | Phase 5 第 15 步 | `confirm` → 执行归档 / `reject` → 失败回路 |
-| 决策点 5b | Phase 5 第 19 步 | `push-only` → P6 / `merge` → P6+merge |
+| 决策点 5b | Phase 5 第 19 步 | `push-only` → P6 完成 / `merge` → P6 后进入 P7 |
 | 决策点 6 | Phase 6 第 20 步 | `confirm` → complete |
-| 决策点 7 | Phase 6 merge 路径 | `confirm` → 执行 merge → complete |
+| 决策点 7 | Phase 7 merge 路径 | `confirm` → 执行 merge → complete |
 
 ### 分支机制：`decide` 写入 → `getNextState` 读取
 

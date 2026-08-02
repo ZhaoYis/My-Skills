@@ -42,8 +42,8 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<name>" archivePath '"<act
 ## Step19：[决策点 5b] 归档后操作
 
 **AskUserQuestion**：
-- `提交代码并合并到目标分支` → Phase6 完整流程（执行Step23 合并）
-- `仅提交并推送（不合并）` → Phase6 commit + push 后结束（跳过Step23）
+- `提交代码并合并到目标分支` → Phase6 + Phase7 完整流程（进入Phase7执行合并）
+- `仅提交并推送（不合并）` → Phase6 commit + push 后结束（不进入Phase7）
 - `终止流程` → 退出
 
 进入 Phase6 前记录选择并迁移：

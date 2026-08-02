@@ -6,7 +6,7 @@
 
 ## 问题描述
 
-在 Phase 6 流水线中，Step 21 执行 `git add openspec/` + `git commit`，此时 `.pipeline-state/<change>.json` 被提交到仓库。但此后 Steps 22-26 的所有状态更新仅写入磁盘，**永远不会被提交到 git**。
+在原 Phase 6 流水线中，Step 21 执行 `git add openspec/` + `git commit`，此时 `.pipeline-state/<change>.json` 被提交到仓库。但此后 Steps 22-26 的所有状态更新仅写入磁盘，**永远不会被提交到 git**。当前流程已拆为 Phase 6（Step 20-22）和 Phase 7（Step 23-26）。
 
 ### 问题追溯
 
@@ -61,7 +61,7 @@
 
 ## 具体修改
 
-### ✅ 文件 1：`templates/common/skills/opsx-dev-pipeline/references/phase-6-merge-push.md.hbs`
+### ✅ 文件 1：`templates/common/skills/opsx-dev-pipeline/references/phase-6-commit-push.md.hbs` 与 `phase-7-merge-deliver.md.hbs`
 
 #### Step 21 变更
 
@@ -209,7 +209,7 @@ if (postArchiveAction === 'push-only') {
 
 ### ✅ 文件 3：`test-pipeline/src/validators/PhaseValidators.ts`
 
-更新 `validatePhase6` 断言：
+更新 `validatePhase6` 和 `validatePhase7` 断言：
 
 1. **新增**：验证状态提交存在：
 

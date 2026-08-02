@@ -35,7 +35,7 @@
 
 ### 替代短版
 
-> 给团队的 AI 编程助手装上规范、门禁和交付流程。30 秒初始化，7 个阶段护航。
+> 给团队的 AI 编程助手装上规范、门禁和交付流程。30 秒初始化，8 个阶段护航。
 
 ### 竞品定位：vibe coding 的对立面
 
@@ -77,7 +77,8 @@ Phase 2  实施：AI 按 tasks.md 逐条实现，勾选完成
 Phase 3  审查：AI 自查 5 个维度 + 修复循环（上限 3 轮）
 Phase 4  单测：自动运行测试，失败则修复重试
 Phase 5  归档：delta spec 合并到主规范，变更永不失忆
-Phase 6  交付：提交 → 推送 → 合并 → 打标签，敏感文件自动扫描
+Phase 6  提交推送：敏感文件扫描 → 提交 → 源分支推送
+Phase 7  合并交付：合并 → 验证 → 目标分支推送 → 打标签
   ↓
 变更上线。Why → What → How → Test → Review 链路永久可追溯。
 团队里每个人、每次变更，都走同一套标准。
@@ -104,7 +105,7 @@ Phase 6  交付：提交 → 推送 → 合并 → 打标签，敏感文件自�
 ```
 Section 1  Hero          — 5 秒讲清你是谁
 Section 2  Problem       — 没有你时有多痛
-Section 3  How It Works  — 7 阶段流水线可视化（真实场景）
+Section 3  How It Works  — 8 阶段流水线可视化（真实场景）
 Section 4  Core Power    — 流水线状态机（核心差异化）
 Section 5  Spec-Driven   — 规范驱动 vs 提示词驱动
 Section 6  AI Tools      — 三工具统一适配
@@ -136,13 +137,13 @@ Section 11 CTA           — 立即开始
 
 ### Section 3 — How It Works（可视化工作流）
 
-**标题：7 个阶段，一条流水线，从需求到上线**
+**标题：8 个阶段，一条流水线，从需求到上线**
 
 **形式：CSS 动画 / Lottie / 渐进式时间线**（暂用动画模拟，后续替换为真实录屏）
 
 以真实场景为例："给 Todo 应用添加 dueDate 字段"（前后端全栈变更）。
 
-**动画设计建议：** 7 个阶段做成一个横向或纵向滚动的进度条，自动从 Phase 0 推进到 Phase 6，每个卡片在激活时高亮、展示关键动作、然后进入下一阶段。终端风格的命令行动画穿插在卡片之间，模拟 `npx`、`git`、`npm test` 等命令的执行。顶部放一个计时器显示 "< 2 分钟完成全流程"。
+**动画设计建议：** 8 个阶段做成一个横向或纵向滚动的进度条，自动从 Phase 0 推进到 Phase 7，每个卡片在激活时高亮、展示关键动作、然后进入下一阶段。终端风格的命令行动画穿插在卡片之间，模拟 `npx`、`git`、`npm test` 等命令的执行。顶部放一个计时器显示 "< 2 分钟完成全流程"。
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -177,8 +178,10 @@ Section 11 CTA           — 立即开始
 │  ✓ 敏感文件扫描 → 无风险                                 │
 │  决策点: 选择交付方式 (仅推送 / 合并到主分支)             │
 ├─────────────────────────────────────────────────────────┤
-│  Phase 6  交付 (Merge & Push)                            │
-│  git commit → push source → merge to main → push main    │
+│  Phase 6  提交与推送 (Commit & Push)                     │
+│  git commit → push source                                │
+│  Phase 7  合并与交付 (Merge & Deliver)                   │
+│  merge to main → verify → push main                      │
 │  → 可选: 打标签、清理源分支                              │
 │  流水线完成 ✓                                            │
 └─────────────────────────────────────────────────────────┘
@@ -308,7 +311,7 @@ npx opsx-dev-pipeline@latest init --tool claude --stack backend --yes
 | 指标 | 数值 |
 |---|---|
 | 初始化耗时 | **< 30 秒** |
-| 流水线覆盖阶段 | **7 个 (Phase 0-6)** |
+| 流水线覆盖阶段 | **8 个 (Phase 0-7)** |
 | 支持 AI 工具 | **3 个** (Claude Code / Cursor / Codex) |
 | 内置技术栈模板 | **2 套** (React+Vite / Spring Boot) |
 | 自动化脚本 | **10 个** (含持久化状态机) |
@@ -407,7 +410,7 @@ opsx-dev-pipeline 给 AI 装了一套工程框架：它知道要先写 proposal 
 
 #### 流水线工作流
 
-**Q: 7 个 Phase 是强制的吗？我能跳过某个阶段吗？**
+**Q: 8 个 Phase 是强制的吗？我能跳过某个阶段吗？**
 
 部分可以。Phase 3（审查）和 Phase 4（单测）都有"跳过"选项，但每次跳过都是一次显式决策，会被记录在状态文件里。Phase 1（提案）和 Phase 5（归档）不可跳过——前者是"为什么做"的根基，后者是"做完了别失忆"的保障。
 
@@ -465,7 +468,7 @@ opsx-dev-pipeline 给 AI 装了一套工程框架：它知道要先写 proposal 
 
 **Q: 如果我确实需要 force push 怎么办？**
 
-在流水线之外手动操作。opsx-dev-pipeline 的 Phase 6 不会替你执行这些操作，但也不会阻止你在终端里自己执行。它只是确保 AI Agent 不会在自动化流程中执行破坏性命令。
+在流水线之外手动操作。opsx-dev-pipeline 的 Phase 6 和 Phase 7 不会替你执行这些操作，但也不会阻止你在终端里自己执行。它只是确保 AI Agent 不会在自动化流程中执行破坏性命令。
 
 ---
 
@@ -481,7 +484,7 @@ opsx-dev-pipeline 给 AI 装了一套工程框架：它知道要先写 proposal 
 
 OpenSpec 提供了核心的 spec 管理和 CLI 工具。opsx-dev-pipeline 在它之上构建了：
 
-- **完整的 7 阶段门禁流程**（OpenSpec 本身不强制 Phase 顺序和决策点）
+- **完整的 8 阶段门禁流程**（OpenSpec 本身不强制 Phase 顺序和决策点）
 - **持久化状态机**（OpenSpec 不记录"流水线跑到哪了"）
 - **AI Tool 适配**（OpenSpec 需要你手动配置 skills/commands，pipeline 一条命令完成）
 - **安全交付门禁**（敏感文件检测、Git 操作约束是 pipeline 独有的）
@@ -494,7 +497,7 @@ OpenSpec 提供了核心的 spec 管理和 CLI 工具。opsx-dev-pipeline 在它
 
 CI 运行在 push 之后（事后检查）。opsx-dev-pipeline 运行在 AI 编码的过程中（事中约束）。
 
-两者互补：用 pipeline 约束 AI 的开发过程，用 CI 做最后的自动化验证。Phase 6 交付阶段的 commit 和 push 可以触发你的 CI 流水线。
+两者互补：用 pipeline 约束 AI 的开发过程，用 CI 做最后的自动化验证。Phase 6 的 source push 和 Phase 7 的 target push 都可以触发你的 CI 流水线。
 
 ---
 
@@ -580,7 +583,7 @@ MIT 协议。商业使用、私有部署、二次开发均无限制。
 / (首页)
 ├── Hero               # 主标题 + 副标题 + CTA 按钮
 ├── Problem            # 痛点网格 (6 个常见问题)
-├── How It Works       # 7 阶段动画/交互式时间线
+├── How It Works       # 8 阶段动画/交互式时间线
 ├── State Machine      # 核心差异化大板块
 ├── Spec-Driven        # 规范驱动 vs 提示词驱动对比
 ├── AI Tools           # 三工具卡片
@@ -604,7 +607,7 @@ MIT 协议。商业使用、私有部署、二次开发均无限制。
 
 - ✅ 任务 1：搭建 `website/` Next.js App Router 工程与基础设计令牌
 - ✅ 任务 2：实现导航、Hero 与 Problem 核心叙事
-- ✅ 任务 3：实现 7 阶段交互流水线与状态机板块
+- ✅ 任务 3：实现 8 阶段交互流水线与状态机板块
 - ✅ 任务 4：实现 Spec-Driven、AI Tools、安全与 Quick Start 板块
 - ✅ 任务 5：实现 Numbers、FAQ、CTA 与页脚
 - ✅ 任务 6：完成响应式、可访问性、动效降级与 SEO

@@ -6,7 +6,8 @@ export type PhaseId =
   | 'phase-3-review'
   | 'phase-4-unit-tests'
   | 'phase-5-archive'
-  | 'phase-6-merge-push';
+  | 'phase-6-commit-push'
+  | 'phase-7-merge-deliver';
 
 /**
  * All phases in pipeline order.
@@ -18,7 +19,8 @@ export const ALL_PHASES: PhaseId[] = [
   'phase-3-review',
   'phase-4-unit-tests',
   'phase-5-archive',
-  'phase-6-merge-push',
+  'phase-6-commit-push',
+  'phase-7-merge-deliver',
 ];
 
 /** Phase metadata. */
@@ -78,10 +80,17 @@ export const PHASE_META: Record<PhaseId, PhaseMeta> = {
     skillPath: 'opsx-dev-pipeline/SKILL.md',
     skillName: 'opsx-dev-pipeline',
   },
-  'phase-6-merge-push': {
-    id: 'phase-6-merge-push',
-    label: 'Phase6 — Merge & Push',
-    description: 'commit + source push + merge + post-merge verify + target push',
+  'phase-6-commit-push': {
+    id: 'phase-6-commit-push',
+    label: 'Phase6 — Commit & Push',
+    description: 'pre-commit checks + staged commit + source branch push',
+    skillPath: 'opsx-dev-pipeline/SKILL.md',
+    skillName: 'opsx-dev-pipeline',
+  },
+  'phase-7-merge-deliver': {
+    id: 'phase-7-merge-deliver',
+    label: 'Phase7 — Merge & Deliver',
+    description: 'target branch merge + post-merge verify + target push + cleanup + tag',
     skillPath: 'opsx-dev-pipeline/SKILL.md',
     skillName: 'opsx-dev-pipeline',
   },
@@ -161,7 +170,7 @@ export interface ScenarioConfig {
   reviewDisposition?: 'review' | 'skip-review' | 'fix-and-rereview';
   /**
    * Override post-archive delivery action.
-   * - `'merge'` (default): full Phase 6 with merge + target push
+   * - `'merge'` (default): Phase 6 source push followed by Phase 7 merge + target push
    * - `'push-only'`: push source branch only, skip merge
    * - `'local-only'`: no remote operations
    */

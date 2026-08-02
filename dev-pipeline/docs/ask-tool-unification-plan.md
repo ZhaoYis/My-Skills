@@ -136,7 +136,8 @@ return {
 | `references/phase-3-review.md` | `references/phase-3-review.md.hbs` | 3 |
 | `references/phase-4-unit-tests.md` | `references/phase-4-unit-tests.md.hbs` | 3 |
 | `references/phase-5-archive.md` | `references/phase-5-archive.md.hbs` | 4 |
-| `references/phase-6-merge-push.md` | `references/phase-6-merge-push.md.hbs` | 0 |
+| `references/phase-6-commit-push.md` | `references/phase-6-commit-push.md.hbs` | 0 |
+| `references/phase-7-merge-deliver.md` | `references/phase-7-merge-deliver.md.hbs` | 0 |
 
 对每个文件，将所有 `AskQuestion` → `{{askTool}}`。示例（`phase-0-entrance.md.hbs`）：
 ```diff
@@ -159,7 +160,8 @@ templateFiles: [
   'phase-3-review.md.hbs',
   'phase-4-unit-tests.md.hbs',
   'phase-5-archive.md.hbs',
-  'phase-6-merge-push.md.hbs',
+  'phase-6-commit-push.md.hbs',
+  'phase-7-merge-deliver.md.hbs',
 ],
 ```
 
@@ -220,7 +222,8 @@ templateFiles: [
   templates/common/skills/opsx-dev-pipeline/references/phase-3-review.md
   templates/common/skills/opsx-dev-pipeline/references/phase-4-unit-tests.md
   templates/common/skills/opsx-dev-pipeline/references/phase-5-archive.md
-  templates/common/skills/opsx-dev-pipeline/references/phase-6-merge-push.md
+  templates/common/skills/opsx-dev-pipeline/references/phase-6-commit-push.md
+  templates/common/skills/opsx-dev-pipeline/references/phase-7-merge-deliver.md
 
 修改 (tests):
   test/unit/build-install-plan.test.ts       # 增加 askTool 到渲染上下文

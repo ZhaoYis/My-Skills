@@ -149,7 +149,7 @@ opsx-dev-pipeline 由三个组件组成：
 
 ```mermaid
 flowchart LR
-    DEV["开发者 + AI Agent"] --> CLI["opsx-dev-pipeline CLI<br/>初始化 · 7 阶段流水线 · 状态机"]
+    DEV["开发者 + AI Agent"] --> CLI["opsx-dev-pipeline CLI<br/>初始化 · 8 阶段流水线 · 状态机"]
     CLI --> GIT["Git 仓库<br/>Specs · Code · Pipeline State"]
     GIT -->|定时采集状态| SERVER["metrics-server<br/>校验 · 存储 · 指标 API"]
     SERVER --> WEBSITE["metrics-website<br/>个人与团队仪表盘"]
@@ -160,7 +160,7 @@ flowchart LR
 
 | 组件              | 职责                      | 解决的问题           |
 | --------------- | ----------------------- | --------------- |
-| CLI             | 初始化项目、安装模板、执行 Phase 0-6 | 把最佳实践变成可重复流程    |
+| CLI             | 初始化项目、安装模板、执行 Phase 0-7 | 把最佳实践变成可重复流程    |
 | metrics-server  | 从 Git 采集状态、校验并计算指标      | 把流程执行情况转化为可分析数据 |
 | metrics-website | 展示个人和团队效能               | 发现瓶颈并持续改进流程     |
 
@@ -225,7 +225,7 @@ Phase 1 会生成四类互相约束的制品：
 
 ##### 阶段四：归档规范，再安全交付
 
-归档不是整理文档，而是把本次 Delta Specs 合并到主规范，使仓库中的规范重新代表系统现状。Phase 6 再执行 Git 交付，并通过敏感文件扫描和安全操作约束避免把自动化速度变成破坏力。
+归档不是整理文档，而是把本次 Delta Specs 合并到主规范，使仓库中的规范重新代表系统现状。Phase 6 执行提交与源分支推送；merge 模式再由 Phase 7 执行合并与目标分支交付，并通过敏感文件扫描和安全操作约束避免把自动化速度变成破坏力。
 
 #### 2.4 两种研发模式怎么选
 
@@ -324,7 +324,7 @@ my-project/
 
 | 命令                   | 用途      | 说明                                   |
 | -------------------- | ------- | ------------------------------------ |
-| `/opsx-dev-pipeline` | 启动完整流水线 | 基于探索结论，从 Phase 0 到 Phase 6 全流程       |
+| `/opsx-dev-pipeline` | 启动完整流水线 | 基于探索结论，从 Phase 0 到 Phase 7 全流程       |
 | `/opsx:explore`      | 需求探索    | 在正式创建变更前，深入理解需求、分析现有代码、评估技术方案        |
 | `/opsx:grill-me`     | 思路拷问    | 对需求方案进行深度拷问，逐一排查决策分支、发现盲区，验证思路是否完备   |
 | `/opsx:propose`      | 创建变更提案  | 生成 proposal + specs + design + tasks |
@@ -366,7 +366,8 @@ my-project/
 # Phase 4: 运行单元测试
 #          失败则自动修复重试（最多 3 次）
 # Phase 5: 归档变更，Delta Specs 合并到主规范
-# Phase 6: commit → push → merge（可选）
+# Phase 6: commit → source push
+# Phase 7: merge → verify → target push（仅 merge 模式）
 ```
 
 流水线在每个决策点暂停等待你确认（**详细决策点参考：附录 C**）。
@@ -385,7 +386,7 @@ opsx-dev-pipeline 在 OpenSpec 之上增加了完整的工程编排：
 | 能力             | OpenSpec   | opsx-dev-pipeline |
 | -------------- | ---------- | ----------------- |
 | 规范创建、校验、归档     | 核心能力       | 复用并编排             |
-| Phase 顺序和人工决策点 | 不强制固定门禁    | Phase 0-6 状态机     |
+| Phase 顺序和人工决策点 | 不强制固定门禁    | Phase 0-7 状态机     |
 | 中断恢复           | 不记录完整流水线进度 | 持久化状态并交叉校验事实      |
 | 多 AI 工具安装      | 依赖各工具配置    | CLI 统一生成原生适配产物    |
 | 审查、测试与重试上限     | 由使用者组织     | 固化为流程门禁           |
@@ -395,9 +396,9 @@ opsx-dev-pipeline 在 OpenSpec 之上增加了完整的工程编排：
 
 一个形象的比喻是：**OpenSpec 提供引擎，opsx-dev-pipeline 补齐方向盘、仪表盘、刹车和安全带。**
 
-#### 3.2 七阶段状态机：可恢复比“一次跑完”更重要
+#### 3.2 八阶段状态机：可恢复比“一次跑完”更重要
 
-流水线将过程拆成 Phase 0-6，每个阶段都有明确输入、动作、输出和决策点。状态持久化在：
+流水线将过程拆成 Phase 0-7，每个阶段都有明确输入、动作、输出和决策点。状态持久化在：
 
 ```text
 openspec/.pipeline-state/<changeName>.json
@@ -558,7 +559,7 @@ openspec/schemas/<name>/
 
 同一个 change 不建议由多人在不同分支同时推进。确需协作时，应明确唯一负责人，或按可独立交付单元拆成多个 change。
 
-##### Q：简单需求也必须走 Phase 0-6 吗？
+##### Q：简单需求也必须走 Phase 0-7 吗？
 
 不必。流程应与风险成比例。改文案、改注释、低风险配置等影响范围明确的变更，可以使用团队定义的轻量路径。以下任一条件成立时，建议使用完整流水线：
 
@@ -588,7 +589,7 @@ openspec/schemas/<name>/
 | ------------------------------- | ------------------------------ |
 | `/opsx:explore`                 | 需求探索、代码分析、影响评估                 |
 | `/opsx:grill-me`                | 挑战方案、暴露盲区，不创建 change           |
-| `/opsx-dev-pipeline`            | 启动或恢复 Phase 0-6 完整流水线          |
+| `/opsx-dev-pipeline`            | 启动或恢复 Phase 0-7 完整流水线          |
 | `/opsx:propose`                 | 创建 proposal、specs、design、tasks |
 | `/opsx:apply`                   | 按 tasks 实施并更新状态                |
 | `/opsx:verify`                  | 验证实现与规范的一致性                    |
@@ -614,14 +615,15 @@ openspec/schemas/<name>/
 | Phase 3 审查 | 从正确性、安全性、性能、可维护性、规范符合度审查并修复    | 判断问题是否真实，最多 3 轮后介入 | 审查报告和修复记录         |
 | Phase 4 测试 | 运行项目测试，失败后修复重试                 | 不以“AI 说通过”代替真实输出   | 测试结果，最多 3 次尝试     |
 | Phase 5 归档 | 校验实现与 Spec，合并 Delta Specs      | 确认规范反映最终实现         | 主规范更新和归档记录        |
-| Phase 6 交付 | commit、push、可选 merge，执行安全检查    | 确认提交范围和合并策略        | 可追溯的 Git 交付结果     |
+| Phase 6 提交推送 | commit、源分支 push，执行安全检查 | 确认提交范围和源分支推送 | 可追溯的源分支交付结果 |
+| Phase 7 合并交付 | merge、验证、目标分支 push、清理和标签 | 确认合并策略与目标推送 | 可追溯的目标分支交付结果 |
 
 
 
 
 ### 附录 C：流水线各阶段任务概览
 
-> 覆盖 Phase 0-6 全部需要人工确认的决策点。每个决策点都会被记录在状态文件中，形成完整的决策审计链。
+> 覆盖 Phase 0-7 全部需要人工确认的决策点。每个决策点都会被记录在状态文件中，形成完整的决策审计链。
 
 
 
@@ -706,7 +708,7 @@ openspec/schemas/<name>/
 
 
 
-#### Phase 6 · 提交、推送与合并
+#### Phase 6 · 提交与源分支推送 / Phase 7 · 合并与交付
 
 
 | 编号        | 决策点           | 触发条件                        | 可选操作                                              | 记录字段                                                    |
@@ -726,4 +728,3 @@ openspec/schemas/<name>/
 ---
 
 > **最终目标不是让 AI 写更多代码，而是让团队更快地产出可以长期维护、可信任、可追溯的软件。**
-
