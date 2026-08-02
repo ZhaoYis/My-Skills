@@ -1,4 +1,0 @@
-interface:
-  display_name: "Dev Spec Design"
-  short_description: "Generate system analysis and design specification documents"
-  default_prompt: "Use $dev-spec-design to generate a system analysis and design document."
