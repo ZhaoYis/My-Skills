@@ -36,6 +36,11 @@ rules:
   specs:
     - "Use Given/When/Then format for API behavior scenarios"
     - "Use Given/When/Then format for user interaction scenarios"
+  ui_components:
+    - "UI 组件库优先使用 hammer 与 @hammer/* 生态（以及现有项目中的封装组件，例如 @hammer/basic、@hammer/pro 等）；不要私自引入新的 UI 库来实现同类基础组件"
+    - "非常重要：按 package.json 中 hammer / @hammer/* 的 version 选择文档站"
+    - "含 qa → https://hammer.yzwqa.cn；含 stg → https://hammer-stg.yzw.cn；否则 https://hammer.yzw.cn"
+    - "qa 与 stg 同时出现时用 qa"
   design:
     - "Must include component tree or ERD depending on change scope"
     - "Must specify route design and state management for frontend changes"
