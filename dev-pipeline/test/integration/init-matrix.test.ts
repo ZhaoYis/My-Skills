@@ -667,6 +667,45 @@ describe('tool matrix', () => {
     expect((await readManifest(dir)).stack).toBe('fullstack');
   });
 
+  it('updates the config schema during init even when config.yaml is skipped', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-schema-skip-'));
+    createdDirs.push(dir);
+
+    // Pre-create config.yaml with a different schema value
+    await fs.outputFile(
+      path.join(dir, 'openspec/config.yaml'),
+      'schema: frontend\ncontext: |\n  Existing context\nrules:\n  proposal:\n    - "Existing rule"\n',
+    );
+
+    // Run init with --yes (auto-skip conflicts) selecting backend stack
+    await runInit({ dir, tool: 'claude', stack: 'backend', yes: true, force: false, dryRun: false });
+
+    const config = await fs.readFile(path.join(dir, 'openspec/config.yaml'), 'utf8');
+    // Schema should be updated to backend despite skip
+    expect(config).toContain('schema: backend');
+    expect(config).not.toContain('schema: frontend');
+    // Existing content should be preserved
+    expect(config).toContain('Existing context');
+    expect(config).toContain('Existing rule');
+  });
+
+  it('inserts the schema line during init when config.yaml exists without one', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-schema-insert-'));
+    createdDirs.push(dir);
+
+    // Pre-create config.yaml without a schema line
+    await fs.outputFile(
+      path.join(dir, 'openspec/config.yaml'),
+      'language: zh\ncontext: |\n  Existing context\n',
+    );
+
+    await runInit({ dir, tool: 'claude', stack: 'fullstack', yes: true, force: false, dryRun: false });
+
+    const config = await fs.readFile(path.join(dir, 'openspec/config.yaml'), 'utf8');
+    expect(config).toContain('schema: fullstack');
+    expect(config).toContain('Existing context');
+  });
+
   it('preserves an existing root README during init without force', async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-readme-existing-'));
     createdDirs.push(dir);
