@@ -250,6 +250,32 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
     );
   }
 
+  // Always ensure the schema line in config.yaml matches the selected stack,
+  // even when the file was skipped during conflict resolution.
+  if (plan.stack) {
+    const configPath = path.join(plan.targetDir, 'openspec', 'config.yaml');
+    if (await fs.pathExists(configPath)) {
+      const existingContent = await fs.readFile(configPath, 'utf8');
+      const schemaLine = `schema: ${plan.stack}`;
+      const lines = existingContent.split('\n');
+      const existingSchemaIndex = lines.findIndex((line) => /^schema:\s*/.test(line));
+      let updatedContent: string;
+      if (existingSchemaIndex >= 0) {
+        if (lines[existingSchemaIndex] !== schemaLine) {
+          lines[existingSchemaIndex] = schemaLine;
+        }
+        updatedContent = lines.join('\n');
+      } else {
+        const languageIndex = lines.findIndex((line) => /^language:\s*/.test(line));
+        lines.splice(languageIndex >= 0 ? languageIndex + 1 : 0, 0, schemaLine);
+        updatedContent = lines.join('\n');
+      }
+      if (updatedContent !== existingContent) {
+        await fs.outputFile(configPath, updatedContent);
+      }
+    }
+  }
+
   await writeManifest(plan.targetDir, {
     schemaVersion: 1,
     projectName: plan.projectName,

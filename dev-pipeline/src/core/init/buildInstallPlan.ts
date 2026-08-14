@@ -16,6 +16,7 @@ import { getTechStackById } from '../tech-stack/registry.js';
 import type { TechStackId } from '../tech-stack/types.js';
 import { findAssetDefinition, resolveFileWritePolicy } from './fileWritePolicy.js';
 import { renderString } from './renderTemplates.js';
+import { assertPathWithinBase, sanitizeProjectName } from './sanitizeInput.js';
 import type { InstallPlan } from './types.js';
 
 const ASK_TOOL_MAP: Record<ToolId, string> = {
@@ -71,7 +72,7 @@ export function buildTemplateContext(params: {
   techStackName?: string;
 }): Record<string, unknown> {
   return {
-    projectName: params.projectName,
+    projectName: sanitizeProjectName(params.projectName),
     toolId: params.toolId,
     toolName: params.toolName,
     stack: params.stack,
@@ -343,6 +344,8 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
       .flat()
       .filter((file) => shouldIncludeInstallFile(file, input.mode, managed, upgradeAssetIds))
       .map(async (file) => {
+        // Validate that the destination stays within the target directory (path traversal guard)
+        assertPathWithinBase(input.targetDir, path.relative(input.targetDir, file.destinationPath));
         const exists = await fs.pathExists(file.destinationPath);
         const policy = resolveFileWritePolicy(findAssetDefinition(file.assetId), file, input.mode);
 
