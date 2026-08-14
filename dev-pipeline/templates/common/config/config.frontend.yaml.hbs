@@ -21,6 +21,20 @@ rules:
     - "All commit messages MUST be written in English"
     - "All PR descriptions and review comments MUST be written in English"
 {{/if}}
+  coding:
+{{#if (isLanguage "zh")}}
+    - "所有新编写的函数/组件必须包含完整的 JSDoc 注释，包括：功能描述、@param（每个参数的类型和含义）、@returns（返回值类型和含义）"
+    - "所有新编写的类（class）必须包含完整的 JSDoc 类注释，包括：类的职责说明、使用场景"
+    - "所有新编写的 TypeScript 接口（interface）和类型（type）必须包含注释，说明其用途和每个字段的含义"
+    - "React 组件必须使用 JSDoc 或 TSDoc 注释说明组件的功能、Props 含义和使用示例"
+    - "禁止提交没有注释的导出（export）函数、类和组件"
+{{else}}
+    - "Every newly written function/component MUST include complete JSDoc comments covering: purpose, @param (type and meaning of each parameter), @returns (return type and meaning)"
+    - "Every newly written class MUST include complete JSDoc class comments covering: class responsibility and usage scenarios"
+    - "Every newly written TypeScript interface and type MUST include comments explaining its purpose and the meaning of each field"
+    - "React components MUST use JSDoc or TSDoc comments describing the component purpose, Props meaning, and usage examples"
+    - "Exported functions, classes, and components without comments MUST NOT be committed"
+{{/if}}
   proposal:
     - "Must include UI/UX impact analysis"
     - "Must specify browser/device compatibility requirements"
