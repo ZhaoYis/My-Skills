@@ -1,53 +1,12 @@
 language: zh
 schema: frontend
 context: |
-  Project: snake-game (贪吃蛇网页游戏)
-  Project Type: 单文件前端应用 (Single-file Frontend Application)
-
-  ## 技术栈
-  - 运行时: 浏览器原生环境，无构建工具，零外部依赖
-  - 语言: HTML5 + CSS3 + Vanilla JavaScript (ES5/ES6)
-  - 架构: 单文件巨石应用 (Monolithic SPA)，index.html (~5000 行) 包含全部样式与逻辑
-  - 渲染引擎: Canvas 2D API + CSS Animations/Transitions
-  - 游戏循环: requestAnimationFrame 驱动的固定时间步长循环
-  - 持久化: localStorage (游戏设置、排行榜数据、教程提示状态)
-  - 音效: Web Audio API (振荡器合成 + 噪声生成，无外部音频文件)
-  - 字体: Google Fonts - Press Start 2P (像素风格，preload 加载)
-  - 兼容性: 桌面端 (键盘 ↑↓←→ / WASD / 空格) + 移动端 (触摸方向键 + 响应式布局)
-
-  ## 代码组织
-  - JavaScript 采用 IIFE 模块模式，各模块挂载到 window 全局命名空间:
-    - `_welcomeScreen`: CRT 像素风欢迎界面 (Game Boy 绿色调色板)
-    - `_tutorial`: 新手引导系统 (Toast 通知队列 + 帮助弹窗 + 提示轮播)
-    - `AudioManager`: Web Audio 音效管理 (爆炸音效合成、静音切换)
-    - `SettingsStore`: 游戏设置持久化 (难度、皮肤、音效、网格线、玩家昵称)
-    - `LeaderboardStore`: 排行榜数据管理 (Top 20、按模式筛选、旧数据迁移)
-    - `SkinRegistry`: 皮肤注册表 (4 套完整配色方案)
-    - GameEngine: 核心游戏逻辑 (蛇移动、碰撞检测、食物生成、粒子效果、炸弹系统)
-  - CSS 使用自定义属性 (CSS Custom Properties) 实现主题切换与皮肤系统
-  - CSS 变量命名: `--bg`, `--surface`, `--border`, `--text`, `--text-secondary`, `--accent`, `--food`, `--snake-head`, `--snake-body-*`, `--danger`, `--overlay`
-
-  ## 现有能力模块 (openspec/specs/)
-  - pixel-welcome-screen: CRT 像素风欢迎界面，Game Boy 绿色调色板，AI 自动演示蛇，扫描线效果，CRT 关机过渡动画
-  - beginner-tutorial: 新手引导系统，含提示轮播、Toast 通知队列、帮助弹窗 (操作说明/游戏模式/炸弹/道具)
-  - skin-system: 4 套完整皮肤 (Classic/Retro/Midnight/Sunset)，每套包含 CSS 变量 + Canvas 颜色调色板
-  - timed-mode: 计时模式 (60 秒限时，上限 90 秒)，金苹果 (+10 秒)、闪电 (加速 5 秒)、护盾 (抵挡一次伤害)
-  - bomb-system: 休眠炸弹 (缩短蛇身 2-3 节) + 不稳定炸弹 (3×3 范围爆炸) + 连锁引爆机制
-  - explosion-sound: Web Audio API 合成爆炸音效 (噪声发生器 + 振荡器，带 ADSR 包络)
-  - leaderboard: 本地排行榜 (Top 20、按模式筛选、昵称编辑、清空/迁移、高亮动画)
-  - game-settings: 设置面板 (难度预设/皮肤选择/音效开关/网格线开关/玩家昵称/数据导出/重置)
-  - difficulty-presets: 三级难度 (简单: 纯经典无炸弹 / 普通: 标准挑战 / 困难: 高速多炸弹)
-
-  ## 测试现状
-  - 无自动化测试基础设施 (单文件 HTML 项目，无 package.json，无测试框架)
-  - 验证方式: 手动浏览器测试 + Playwright MCP 辅助功能验证
-  - 测试截图位于项目根目录 (*.png)，覆盖各功能场景
-  - 物理约束: 新增功能无法添加单元测试或集成测试，仅能通过手动验证和 Playwright E2E 截图确认
-
-  ## 代码质量
-  - 无 Linter/Formatter (无 Node.js 工具链)
-  - 代码风格: 函数式优先，IIFE 模块隔离，避免全局变量污染
-  - 变量命名: camelCase，常量使用 UPPER_SNAKE_CASE
+  Project: snake-game
+  Project Type: Frontend Application
+  Tech Stack: React + Vite - React 18+, TypeScript, Vite
+  Testing: Vitest + React Testing Library + Playwright (E2E)
+  Conventions: Functional components, hooks-first, CSS Modules or Tailwind
+  Code Quality: Biome for linting/formatting
 
 rules:
   language:
@@ -56,32 +15,10 @@ rules:
     - "所有 commit message 必须使用简体中文编写"
     - "所有 PR 描述和代码审查评论必须使用简体中文编写"
   proposal:
-    - "必须包含变更动机与问题描述，说明为什么需要此变更以及为什么现在做"
-    - "必须明确列出新增/修改的能力模块 (New/Modified Capabilities)，并检查 openspec/specs/ 中的已有能力名称"
-    - "必须包含变更范围与影响分析: 涉及哪些代码模块、CSS 变量、localStorage 数据结构"
-    - "必须包含 UI/UX 影响分析: 界面布局变化、交互流程变化、视觉风格影响"
-    - "必须说明浏览器/设备兼容性影响: 桌面端 (≥601px) 和移动端 (≤600px) 的行为差异"
-    - "必须评估对现有游戏平衡性的影响 (如涉及游戏机制变更: 速度、得分、难度)"
-    - "必须标注是否为破坏性变更 (BREAKING)，如 localStorage 数据结构不兼容、CSS 变量重命名"
+    - "Must include UI/UX impact analysis"
+    - "Must specify browser/device compatibility requirements"
   specs:
-    - "使用 Given/When/Then 格式描述用户交互场景，每个需求至少包含一个场景"
-    - "游戏机制类需求必须覆盖: 正常流程、边界条件 (如蛇在边界时的行为)、异常/错误场景"
-    - "UI 类需求必须说明响应式行为: 桌面端 (键盘操作 + 控件提示) 和移动端 (D-Pad + 触摸)"
-    - "数据持久化需求必须明确 localStorage 键名、数据结构、默认值和迁移兼容策略"
-    - "Canvas 渲染需求必须明确绘制顺序 (z-order)、颜色来源 (CSS 变量或硬编码) 和性能考虑"
-    - "音效需求必须说明触发条件、合成参数 (波形类型/频率/持续时间) 和静音状态下的行为"
+    - "Use Given/When/Then format for user interaction scenarios"
   design:
-    - "必须包含模块/组件树形结构图或文字描述，标注新增/修改的 IIFE 模块及其依赖关系"
-    - "必须说明 Canvas 渲染层的变更: 新增绘制元素、绘制顺序变化、性能影响 (如粒子数量上限)"
-    - "必须说明 CSS 变量或样式系统的变更: 新增/修改/删除的 CSS 自定义属性及其回退值"
-    - "必须说明 localStorage 数据结构的兼容与迁移策略: 版本号机制、旧数据读取、默认值回填"
-    - "必须评估对游戏性能的影响: 帧率 (目标 60fps)、内存占用、事件监听器数量"
-    - "必须说明键盘/触摸事件处理变更: 新增快捷键、手势冲突、事件优先级"
-    - "如涉及游戏循环 (game loop) 变更，必须说明对固定时间步长逻辑的影响"
-  tasks:
-    - "每个任务必须可独立验证，附带明确的完成标准 (Definition of Done)"
-    - "任务按依赖关系排序，优先基础设施变更 (如 CSS 变量定义、localStorage 结构)"
-    - "游戏逻辑变更必须包含手动测试步骤: 操作序列、期望画面、期望数据状态"
-    - "UI 变更必须覆盖桌面端和移动端两种验证场景"
-    - "localStorage 变更必须包含数据迁移验证: 旧数据能否正确读取和升级"
-    - "禁止包含无明确完成标准的任务，如'优化代码'、'改进体验'等模糊描述"
+    - "Must include component tree diagram or description"
+    - "Must specify route design and state management strategy"

@@ -13,9 +13,17 @@
     "docs",
     "schema"
   ],
-  "templateVersion": "0.2.13",
+  "templateVersion": "0.2.14",
   "packageName": "opsx-dev-pipeline",
   "managedAssets": [
+    {
+      "id": "common-readme",
+      "destination": "README.md"
+    },
+    {
+      "id": "common-gitignore",
+      "destination": ".gitignore"
+    },
     {
       "id": "frontend-schema-bundle:schema.yaml.hbs",
       "destination": "openspec/schemas/frontend/schema.yaml"
