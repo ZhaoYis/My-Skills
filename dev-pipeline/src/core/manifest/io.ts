@@ -121,5 +121,13 @@ export async function writeManifest(dir: string, manifest: PipelineManifest): Pr
 
   const filePath = path.join(dir, MANIFEST_FILE);
   await fs.writeJson(filePath, normalizedManifest, { spaces: 2 });
+  // Set restrictive permissions: owner read/write only (0o600)
+  // This prevents other users on shared systems from modifying the manifest
+  // which could lead to path traversal or other attacks during uninstall/sync
+  try {
+    await fs.chmod(filePath, 0o600);
+  } catch {
+    // Ignore permission errors (e.g., on Windows or read-only filesystems)
+  }
   return filePath;
 }

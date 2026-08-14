@@ -16,6 +16,7 @@ import {
   resolveTechStackId,
 } from '../tech-stack/registry.js';
 import type { TechStackId } from '../tech-stack/types.js';
+import { sanitizeProjectName } from './sanitizeInput.js';
 
 function assertTechStackMatchesParent(techStack: TechStackId, parentStack: StackId): void {
   const definition = getTechStackById(techStack);
@@ -107,7 +108,7 @@ export async function collectInputs(
     }
 
     return {
-      projectName: defaultProjectName,
+      projectName: sanitizeProjectName(defaultProjectName),
       tool: defaultTool,
       stack: requestedStack,
       techStack: requestedTechStack,
@@ -197,7 +198,7 @@ export async function collectInputs(
   }
 
   return {
-    projectName: response.projectName ?? defaultProjectName,
+    projectName: sanitizeProjectName(response.projectName ?? defaultProjectName),
     tool: response.tool ?? defaultTool,
     stack,
     techStack,
