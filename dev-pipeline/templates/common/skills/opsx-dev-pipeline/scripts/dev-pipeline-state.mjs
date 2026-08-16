@@ -27,6 +27,7 @@ const mutablePaths = new Set([
   'sourceBranch',
   'targetBranch',
   'executionMode',
+  'route',
   'featureInfo',
   'featureInfo.featureId',
   'featureInfo.featureUrl',
@@ -46,6 +47,16 @@ const mutablePaths = new Set([
 ]);
 
 const executionModes = new Set(['pipeline', 'standalone', 'hybrid']);
+
+// Route 分级：trivial（简单变更）、standard（标准变更）、full（复杂变更）
+const routeTypes = new Set(['trivial', 'standard', 'full']);
+
+// 各 Route 对应的 Phase 路径
+const routePhasePaths = {
+  trivial: [0, 2, 6], // entrance -> apply -> commit/push
+  standard: [0, 1, 2, 3, 4, 5, 6, 7], // 完整流程
+  full: [0, 1, 2, 3, 4, 5, 6, 7], // 完整流程，但增加更多验证
+};
 
 function output(payload, exitCode = 0) {
   process.stdout.write(`${JSON.stringify(payload)}\n`);
@@ -401,6 +412,31 @@ function setNested(target, dottedPath, value) {
 }
 
 function allowedTransition(from, to, state) {
+  const route = state.route || 'standard';
+  const routePath = routePhasePaths[route] || routePhasePaths.standard;
+  
+  // Route-based transition: allow skipping phases not in the route path
+  if (route !== 'standard' && route !== 'full') {
+    const fromIndex = routePath.indexOf(from);
+    const toIndex = routePath.indexOf(to);
+    
+    // Both phases must be in the route path
+    if (fromIndex !== -1 && toIndex !== -1) {
+      // Allow forward jump along the route path
+      if (toIndex === fromIndex + 1) return true;
+      // Allow skipping phases not in route (e.g., trivial: 0->2, 2->6)
+      if (toIndex > fromIndex) {
+        // Check gates only for phases being entered
+        for (let i = fromIndex + 1; i <= toIndex; i += 1) {
+          const targetPhase = routePath[i];
+          const prevPhase = i > 0 ? routePath[i - 1] : from;
+          if (validateGates(state, prevPhase, targetPhase)) return false;
+        }
+        return true;
+      }
+    }
+  }
+  
   const allowed = {
     0: [0, 1],
     1: [1, 2],
@@ -425,6 +461,36 @@ function allowedTransition(from, to, state) {
 }
 
 function validateGates(state, from, to) {
+  const route = state.route || 'standard';
+  const routePath = routePhasePaths[route] || routePhasePaths.standard;
+  
+  // Helper: check if a phase is in the current route
+  const isPhaseInRoute = (phase) => routePath.includes(phase);
+  
+  // For non-standard routes, skip gates for phases not in the route
+  if (route === 'trivial') {
+    // Trivial route: 0 -> 2 -> 6, skip review(3), tests(4), archive(5), merge(7) gates
+    if (to === 2 && state.decisions.proposalApproved !== true) {
+      return ['proposal-approval-required', '进入 Phase2 前必须记录 proposalApproved=true'];
+    }
+    if (from === 2 && to === 6) {
+      // Direct to Phase 6, only need basic checks
+      if (!state.archivePath) {
+        return ['archive-required', '进入 Phase6 前必须记录归档路径'];
+      }
+      if (!['merge', 'push-only', 'local-only'].includes(state.decisions.postArchiveAction)) {
+        return ['post-archive-decision-required', '进入 Phase6 前必须记录归档后交付方式'];
+      }
+    }
+    if (to === 6) {
+      if (!['merge', 'push-only', 'local-only'].includes(state.decisions.postArchiveAction)) {
+        return ['post-archive-decision-required', '进入 Phase6 前必须记录归档后交付方式'];
+      }
+    }
+    return null;
+  }
+  
+  // Standard and full routes use full gate validation
   if (to === 2 && state.decisions.proposalApproved !== true) {
     return ['proposal-approval-required', '进入 Phase2 前必须记录 proposalApproved=true'];
   }
@@ -503,6 +569,7 @@ function migrateReviewToV3(state) {
 function migrateToLatestSchema(state) {
   state._version = diskVersion(state);
   state.executionMode = state.executionMode || 'pipeline';
+  state.route = state.route || 'standard';
   state.phaseHistory = Array.isArray(state.phaseHistory) ? state.phaseHistory : [];
   state.gatesBypassed = Array.isArray(state.gatesBypassed) ? state.gatesBypassed : [];
   return migrateReviewToV3(ensureMetaFields(state));
@@ -526,6 +593,23 @@ function parseInitArgs(args) {
   }
 
   return { sourceBranch, namedArgs };
+}
+
+// 根据 Route 验证 Phase 转移是否合法
+function isRoutePhaseAllowed(route, fromPhase, toPhase) {
+  const routePath = routePhasePaths[route] || routePhasePaths.standard;
+  const fromIndex = routePath.indexOf(fromPhase);
+  const toIndex = routePath.indexOf(toPhase);
+
+  // 如果目标 Phase 不在 Route 路径中，不允许
+  if (toIndex === -1) return false;
+
+  // 如果当前 Phase 不在 Route 路径中，允许（可能是从旧状态迁移）
+  if (fromIndex === -1) return true;
+
+  // 允许向前跳转（跨多个 Phase）或向后跳转（用于返工）
+  // Gate 验证会确保中间步骤的条件得到满足
+  return true;
 }
 
 function recordPipelineTransition(state, fromPhase, fromStep, toPhase, toStep, now) {
@@ -664,6 +748,15 @@ if (!command) {
           const now = formatLocalTime();
           const nonce = crypto.randomBytes(4).toString('hex');
           const machineInfo = collectMachineInfo();
+          const route = namedArgs['--route'] || 'standard';
+          if (!routeTypes.has(route)) {
+            emitError(
+              'invalid-route',
+              `无效的 Route 类型：${route}，允许值：trivial, standard, full`,
+              'provide-valid-route',
+              EXIT_INVALID_TRANSITION,
+            );
+          } else {
           const state = {
             schemaVersion: SCHEMA_VERSION,
             _version: 0,
@@ -674,6 +767,7 @@ if (!command) {
             currentStep: 1,
             status: 'active',
             executionMode: 'pipeline',
+            route,
             createdBy,
             createdByEmail,
             machineInfo,
@@ -723,6 +817,7 @@ if (!command) {
             updatedAt: now,
           };
           if (await saveState(root, state)) output({ status: 'ok', state });
+          }
         }
       }
     } else {
@@ -946,6 +1041,7 @@ if (!command) {
           const toStep = Number(args[1]);
           const fromPhase = state.currentPhase;
           const fromStep = state.currentStep;
+          const route = state.route || 'standard';
           if (
             !Number.isInteger(toPhase) ||
             toPhase < 0 ||
@@ -956,6 +1052,13 @@ if (!command) {
               'invalid-transition-target',
               '目标 Phase 必须为 0-7，Step 必须为整数',
               'choose-valid-transition',
+              EXIT_INVALID_TRANSITION,
+            );
+          } else if (!isRoutePhaseAllowed(route, fromPhase, toPhase)) {
+            emitError(
+              'route-phase-not-allowed',
+              `Route ${route} 不允许从 Phase${fromPhase} 跳转到 Phase${toPhase}。允许的路径：${routePhasePaths[route].join(' -> ')}`,
+              'follow-route-phase-path',
               EXIT_INVALID_TRANSITION,
             );
           } else {

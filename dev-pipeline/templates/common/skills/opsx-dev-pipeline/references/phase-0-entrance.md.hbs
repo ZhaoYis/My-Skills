@@ -1,4 +1,4 @@
-# Phase0: 入口判断
+# Phase0: 入口判断 + Route 分级
 
 **`<SKILL_ROOT>`**：本技能安装根目录（内含 `scripts/`），命令在目标 git 仓库根目录执行。
 
@@ -21,7 +21,25 @@ node <SKILL_ROOT>/scripts/preflight.mjs
 
 - `warnings` 字段非空 → 展示警告清单，确认后继续
 
-## Step2：判断入口类型
+## Step2：Route 分级决策
+
+在初始化状态前，必须根据变更复杂度确定 Route 类型：
+
+| Route | 适用场景 | Phase 路径 | 跳过阶段 |
+|-------|---------|-----------|---------|
+| `trivial` | typo 修复、配置调整、单文件改动、文档更新 | 0 → 2 → 6 | 1, 3, 4, 5, 7 |
+| `standard` | 常规功能开发、Bug 修复、小范围重构 | 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 | 无 |
+| `full` | 跨模块重构、架构变更、高风险变更 | 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 | 无（增强验证） |
+
+使用 **{{askTool}}** 询问用户选择 Route：
+- **header**：`Route 分级`
+- **question**：`根据变更复杂度选择合适的 Route。Route 决定了流水线经过的 Phase 路径。`
+- **options**：
+  - `trivial — 简单变更` — typo 修复、配置调整、单文件改动。路径：Phase0 → Phase2 → Phase6
+  - `standard — 标准变更（推荐）` — 常规功能开发、Bug 修复。路径：完整 7 Phase 流程
+  - `full — 复杂变更` — 跨模块重构、架构变更。路径：完整 7 Phase 流程，增加更多验证
+
+## Step3：判断入口类型
 
 ### 首次创建状态的统一规则
 
@@ -31,17 +49,18 @@ node <SKILL_ROOT>/scripts/preflight.mjs
 2. 用户在对话框中输入需求信息（如 featureId、featureUrl 等），从用户输入中提取信息，根据是否提供 URL 只执行下面一条命令：
    ```bash
    # 未提供 URL
-   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --feature-id "<featureId>"
+   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --feature-id "<featureId>" --route "<route>"
    # 提供了 URL
-   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --feature-id "<featureId>" --feature-url "<featureUrl>" --route "<route>"
    ```
+   其中 `<route>` 为 Step2 中用户选择的 Route 类型（`trivial` / `standard` / `full`）。
 3. 用户选择 `跳过关联` 时执行：
    ```bash
-   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --skip-feature-association
+   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --skip-feature-association --route "<route>"
    ```
 4. 上述 `init` 命令只能执行一个，不得传入 `<featureId>`、`<featureUrl>` 等占位值。后续每条状态命令都必须检查 exit code。
 
-### 2.a 用户提供了已有 change 名称
+### 3.a 用户提供了已有 change 名称
 
 1. 读取持久化状态：
    ```bash
@@ -53,7 +72,7 @@ node <SKILL_ROOT>/scripts/preflight.mjs
 5. 状态与事实不一致时，列出差异并执行 `pause`；禁止按文件是否存在自动跳阶段。
 6. 状态一致且 `executionMode=pipeline` 时，使用 **{{askTool}}** 确认：`从记录的 Phase/Step 继续` / `从头开始（新建 change）` / `终止流程`。
 
-### 2.b 用户提供了需求描述
+### 3.b 用户提供了需求描述
 
 - 从描述推导 kebab-case 的 change 名称
 - 获取当前分支，按“首次创建状态的统一规则”询问外部需求关联并初始化状态，然后迁移到 Phase1：
@@ -62,7 +81,7 @@ node <SKILL_ROOT>/scripts/preflight.mjs
   ```
 - 进入 **Phase1 Step3（决策点 1a）**
 
-### 2.c 检测到非 pipeline 执行模式
+### 3.c 检测到非 pipeline 执行模式
 
 当状态中 `executionMode` 为 `standalone` 或 `hybrid` 时：
 
@@ -85,7 +104,7 @@ node <SKILL_ROOT>/scripts/preflight.mjs
    - `终止流程`：退出，不修改状态。
 5. 所有状态写入后执行 `get "<name>"` 自检；对比 Phase、gate 结果和 delivery 决策。不一致时警告并暂停。
 
-### 2.d 用户未提供任何输入
+### 3.d 用户未提供任何输入
 
 1. 使用 **{{askTool}}** 询问用户意图：
    - **header**：`入口选择`
@@ -97,7 +116,7 @@ node <SKILL_ROOT>/scripts/preflight.mjs
      - `查看已有 change 列表` — 列出所有可用 change，再决定续接或新建
 
 2. 根据用户选择：
-   - 选择 `已有 change 名称` → 发送文本消息请用户输入 change 名称，收到后走 **2.a** 路径
-   - 选择 `新的需求描述` → 发送文本消息请用户描述需求，收到后走 **2.b** 路径
-   - 选择 `系分设计文档` → 发送文本消息请用户输入已生成的系分设计文档名称（如 `openspec/docs/<yyyyMMdd>/<kebab-case-name>.md`），读取该文档内容作为需求描述，走 **2.b** 路径（从描述推导 change 名称、初始化状态并迁移到 Phase1）
+   - 选择 `已有 change 名称` → 发送文本消息请用户输入 change 名称，收到后走 **3.a** 路径
+   - 选择 `新的需求描述` → 发送文本消息请用户描述需求，收到后走 **3.b** 路径
+   - 选择 `系分设计文档` → 发送文本消息请用户输入已生成的系分设计文档名称（如 `openspec/docs/<yyyyMMdd>/<kebab-case-name>.md`），读取该文档内容作为需求描述，走 **3.b** 路径（从描述推导 change 名称、初始化状态并迁移到 Phase1）
    - 选择 `查看已有 change 列表` → 运行 `node <SKILL_ROOT>/scripts/list-changes.mjs`（或 `openspec list --json`）展示可用 change，展示后重新回到步骤 1（再次使用 **{{askTool}}**，此时可额外追加当前已有的 change 名称作为附加选项供快速选择）

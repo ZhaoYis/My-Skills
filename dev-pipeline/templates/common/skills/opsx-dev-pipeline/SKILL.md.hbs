@@ -44,6 +44,10 @@ repository: "{{~packageRepoUrl~}}"
 ## 状态协议
 
 - 新 change：先按 Phase0 获取用户明确的需求关联决定，再运行 `init "<change>" "<source-branch>" --feature-id "<featureId>"`（有 URL 时追加 `--feature-url "<featureUrl>"`）或 `init "<change>" "<source-branch>" --skip-feature-association`
+- Route 分级：在 Phase0 入口判断时，必须确定 Route 类型并传入 `--route <trivial|standard|full>`
+  - `trivial`：简单变更（typo 修复、配置调整、单文件改动），路径：Phase0 → Phase2 → Phase6
+  - `standard`：标准变更（常规功能开发），路径：完整 7 Phase 流程
+  - `full`：复杂变更（跨模块重构、架构变更），路径：完整 7 Phase 流程，增加更多验证
 - 读取状态：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<change>"`
 - 确认迁移旧版 Schema：先运行 `migrate-schema "<change>"` 获取确认提示，用户同意后运行 `migrate-schema "<change>" --confirm`
 - 阶段审计开始：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs record-phase "<change>" <phase> <step> <executed-by> --start`
@@ -60,30 +64,56 @@ Schema v3 使用 `_version` 做乐观锁，并以 `review.currentRound` / `revie
 
 ## Phase引用表
 
-| Phase| 说明 | 引用文件 | 关键决策点 |
-| ----- | ---- | -------- | ---------- |
-| 0 | 入口判断 | `references/phase-0-entrance.md` | 续接确认 |
-| 1 | 提案编写 (Propose) | `references/phase-1-propose.md` | 决策点 1a、决策点 1 |
-| 2 | 提案应用 (Apply) | `references/phase-2-apply.md` | 决策点 2 |
-| 3 | 代码审查 (Review) | `references/phase-3-review.md` | 决策点 3 |
-| 4 | 单元测试门禁 | `references/phase-4-unit-tests.md` | 决策点 4 |
-| 5 | 提案归档 (Archive) | `references/phase-5-archive.md` | 决策点 5a（verify 失败回路可到 Phase1 或 Phase2）、决策点 5b（merge vs 仅推送） |
-| 6 | 提交与推送 | `references/phase-6-commit-push.md` | 决策点 6、交付分支（local-only / push-only / merge） |
-| 7 | 合并与交付 | `references/phase-7-merge-deliver.md` | 决策点 7、标签创建（可选） |
+| Phase| 说明 | 引用文件 | 关键决策点 | 包含 Route |
+| ----- | ---- | -------- | ---------- | ---------- |
+| 0 | 入口判断 + Route 选择 | `references/phase-0-entrance.md` | 续接确认、Route 分级 | trivial, standard, full |
+| 1 | 提案编写 (Propose) | `references/phase-1-propose.md` | 决策点 1a、决策点 1 | standard, full |
+| 2 | 提案应用 (Apply) | `references/phase-2-apply.md` | 决策点 2 | trivial, standard, full |
+| 3 | 代码审查 (Review) | `references/phase-3-review.md` | 决策点 3 | standard, full |
+| 4 | 单元测试门禁 | `references/phase-4-unit-tests.md` | 决策点 4 | standard, full |
+| 5 | 提案归档 (Archive) | `references/phase-5-archive.md` | 决策点 5a、5b | standard, full |
+| 6 | 提交与推送 | `references/phase-6-commit-push.md` | 决策点 6 | trivial, standard, full |
+| 7 | 合并与交付 | `references/phase-7-merge-deliver.md` | 决策点 7 | standard, full |
+
+## Route 路径图
+
+```mermaid
+flowchart LR
+  subgraph trivial["trivial Route"]
+    T0[Phase0] --> T2[Phase2] --> T6[Phase6]
+  end
+  
+  subgraph standard["standard Route"]
+    S0[Phase0] --> S1[Phase1] --> S2[Phase2] --> S3[Phase3] --> S4[Phase4] --> S5[Phase5] --> S6[Phase6] --> S7[Phase7]
+  end
+  
+  subgraph full["full Route"]
+    F0[Phase0] --> F1[Phase1] --> F2[Phase2] --> F3[Phase3] --> F4[Phase4] --> F5[Phase5] --> F6[Phase6] --> F7[Phase7]
+    F3 -.->|增强验证| F3
+    F4 -.->|增强验证| F4
+  end
+```
 
 ## 流程概览
 
 ```mermaid
 flowchart TD
   START(["新需求 / 变更"]) --> P0["Phase0 预检与入口"]
+  
+  P0 --> ROUTE{"Route 分级"}
+  ROUTE -->|"trivial<br/>(简单变更)"| TRIVIAL_PATH["Phase0 → Phase2 → Phase6"]
+  ROUTE -->|"standard<br/>(标准变更)"| P1
+  ROUTE -->|"full<br/>(复杂变更)"| P1
 
-  P0 --> P1["Phase1 提案 Propose"]
+  TRIVIAL_PATH --> P2["Phase2 应用 Apply"]
+  P2 --> P6["Phase6 提交 / 推送"]
+  P6 --> DONE_TRIVIAL(["交付完成"])
 
   P1 --> DP1{"决策点 1a / 1"}
-  DP1 -->|确认提案| P2["Phase2 应用 Apply"]
+  DP1 -->|确认提案| P2_STD["Phase2 应用 Apply"]
   DP1 -->|补充修改| P1
 
-  P2 --> DP2{"决策点 2"}
+  P2_STD --> DP2{"决策点 2"}
   DP2 -->|进入审查| P3["Phase3 审查 Review"]
   DP2 -->|跳过审查| P4["Phase4 单测门禁"]
   DP2 -->|需求有误，回退| P1
@@ -100,12 +130,12 @@ flowchart TD
 
   P5 -->|验证未过| VFIX["失败回路 → Phase1 或 Phase2"]
   VFIX --> P1
-  VFIX --> P2
+  VFIX --> P2_STD
   P5 -->|归档完成| DP5{"决策点 5"}
-  DP5 -->|仅推送| P6["Phase6 提交 / 推送"]
+  DP5 -->|仅推送| P6_STD["Phase6 提交 / 推送"]
   DP5 -->|合并| P6MERGE["Phase6 提交 / 推送"]
 
-  P6 -->|local-only / push-only| DONE(["交付完成"])
+  P6_STD -->|local-only / push-only| DONE(["交付完成"])
   P6MERGE -->|merge| P7["Phase7 合并 / 交付"]
 
   P7 --> DP7{"决策点 7"}
