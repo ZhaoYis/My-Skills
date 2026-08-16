@@ -392,78 +392,88 @@ export async function knowledgeSelect(options: {
 
 ---
 
-### 方案 4：分离机器态与项目事实
+### 方案 4：明确流水线状态的项目事实语义
 
 #### 问题描述
-当前 `.pipeline-state/` 目录在项目内（`openspec/.pipeline-state/`），需要 gitignore，团队成员之间无法共享流水线状态。
+当前流水线状态保存在 `openspec/.pipeline-state/`，但设计文档没有明确它是临时机器态还是可共享的项目事实，容易导致实现、提交策略和恢复逻辑不一致。
 
-#### 借鉴点
-AI Harness 的 `.harness/coding/state/**` 设计：机器态可重建，不入 Git。
+#### 设计决策
+
+流水线状态继续保存在 `openspec/.pipeline-state/`，不迁移到 `.opsx-dev-pipeline/`：
+
+- 状态文件是变更流程的可恢复快照，也是交付审计记录的一部分。
+- 团队成员可以通过 Git 获取最终状态，理解变更经过的 Phase、关键决策和交付结果。
+- 流程进行中的频繁状态更新不混入普通业务提交；Phase 6/7 完成后单独提交最终状态。
+- 状态中不得保存密钥、令牌、个人信息、绝对路径等仅适合本机保存的敏感或环境相关数据。
 
 #### 具体实现
 
-**4.1 将状态移到机器态目录**
+**4.1 保持现有状态目录**
 
 ```
 项目根
-├── openspec/
-│   ├── config.yaml              # 项目事实（提交）
-│   ├── changes/                 # 变更产物（提交）
-│   └── .pipeline-state/         # ❌ 当前位置
-│
-└── .opsx-dev-pipeline/          # ✅ 新位置（机器态，gitignore）
-    └── state/
+└── openspec/
+    ├── config.yaml              # 项目配置事实（提交）
+    ├── changes/                 # 变更产物（提交）
+    └── .pipeline-state/         # 流水线状态与审计快照（最终状态提交）
         └── <change>.json
 ```
 
-**4.2 修改 .gitignore**
-
-```gitignore
-# opsx-dev-pipeline 机器态
-.opsx-dev-pipeline/
-```
-
-**4.3 修改状态脚本的路径解析**
+**4.2 统一状态路径解析**
 
 ```javascript
 // dev-pipeline-state.mjs
 function statePath(root, changeName) {
-  // 旧路径（兼容）
-  const legacyPath = path.join(root, 'openspec', '.pipeline-state', `${changeName}.json`);
-  
-  // 新路径
-  const newStateRoot = path.join(root, '.opsx-dev-pipeline', 'state');
-  const newPath = path.join(newStateRoot, `${changeName}.json`);
-  
-  // 如果新路径存在，使用新路径
-  if (existsSync(newPath)) return newPath;
-  
-  // 如果旧路径存在，返回旧路径（兼容）
-  if (existsSync(legacyPath)) return legacyPath;
-  
-  // 否则返回新路径（创建时使用）
-  return newPath;
+  return path.join(
+    root,
+    'openspec',
+    '.pipeline-state',
+    `${changeName}.json`
+  );
 }
 ```
 
-**4.4 增加状态迁移命令**
+所有状态读写、扫描、恢复和清理逻辑必须使用统一的 `statePath`/`stateRoot` 方法，不再引入 `.opsx-dev-pipeline/state/` 或双路径兼容逻辑。
+
+**4.3 明确 Git 提交策略**
 
 ```bash
-# 迁移旧状态到新位置
-opsx-dev-pipeline migrate-state
+# 普通变更制品提交不包含频繁变化的流水线状态
+git reset -- openspec/.pipeline-state/<change>.json
 
-# 输出：
-# 迁移状态：
-#   openspec/.pipeline-state/add-user-status.json → .opsx-dev-pipeline/state/add-user-status.json
-#   openspec/.pipeline-state/fix-login-bug.json → .opsx-dev-pipeline/state/fix-login-bug.json
-# 
-# 已迁移 2 个状态文件，旧文件已删除。
+# Phase 6/7 完成后单独提交最终审计状态
+git add -f openspec/.pipeline-state/<change>.json
+git commit -m "chore(pipeline): record final state for <change>"
 ```
 
+状态提交规则：
+
+1. 活跃流程中的状态用于断点续接，不要求每次迁移都提交。
+2. Phase 6/7 完成后提交最终状态，作为团队可共享的恢复和审计依据。
+3. 状态文件与对应 change 一一关联，不保存与该变更无关的全局机器信息。
+4. 状态 schema 升级由现有 `migrate-schema` 能力负责，不新增目录迁移命令。
+
+**4.4 增加状态内容边界**
+
+状态文件可以记录：
+
+- 当前 Phase、步骤和 Route
+- 门禁结果与关键用户决策
+- proposal、archive、commit、PR 等可共享引用
+- 完成时间和流程版本
+
+状态文件不得记录：
+
+- 密钥、访问令牌或认证信息
+- 用户个人信息
+- 本机绝对路径、临时目录等不可移植数据
+- 可从仓库稳定推导且体积较大的内容副本
+
 #### 收益
-- **Git 历史干净**：机器态不污染 Git 历史
-- **可重建**：状态文件可以随时从 OpenSpec 产物重建
-- **团队隔离**：每个开发者的机器态独立，不会互相干扰
+- **团队可恢复**：切换设备或协作者接手后，可以从已提交状态继续理解流程。
+- **交付可审计**：最终状态保留 Route、门禁、归档与交付结果。
+- **路径保持稳定**：无需迁移既有状态文件，也不会引入双路径兼容成本。
+- **提交噪声可控**：过程状态不混入普通业务提交，仅单独提交最终快照。
 
 ---
 
@@ -591,7 +601,7 @@ export async function loadPhase(options: {
 | 方案 | 优先级 | 工作量 | 收益 |
 |------|-------|-------|------|
 | Route 分级 | **P0** | 中 | 直接解决小变更仪式成本高的问题 |
-| 分离机器态 | **P0** | 低 | 改善 Git 历史，工作量小 |
+| 明确状态语义 | **P0** | 低 | 保持现有路径，统一共享恢复、审计与提交策略 |
 | 有效配置合成 | P1 | 高 | 提升可追溯性，但需要重构配置系统 |
 | Knowledge 两阶段 | P1 | 中 | 减少噪声，提升 AI 效率 |
 | 动态 Bundle | P2 | 高 | 需要重构 SKILL.md 和 CLI，工作量大 |
@@ -605,7 +615,7 @@ export async function loadPhase(options: {
 1. **Route 分级**：让 typo 修复等小变更快速完成，降低仪式成本
 2. **有效配置合成**：让配置可追溯、可升级、可调试
 3. **Knowledge 两阶段**：让 AI 只看到当前需要的知识，减少噪声
-4. **分离机器态**：让 Git 历史干净，状态可重建
+4. **状态项目事实化**：保留 `openspec/.pipeline-state/`，让最终状态可共享、可恢复、可审计
 5. **动态 Bundle**：让 Phase 逻辑可以动态更新，不需要重新生成
 
 这些优化可以让 Dev-Pipeline 在保持"简单直接"优势的同时，获得更好的灵活性和可维护性。
