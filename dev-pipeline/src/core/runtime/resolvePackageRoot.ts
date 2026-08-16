@@ -2,7 +2,7 @@ import fs from 'fs-extra';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const MARKERS = ['package.json', 'config/tools.json', 'templates/common/base/gitignore'];
+const MARKERS = ['package.json', 'src/config/tools.json', 'src/templates/common/base/gitignore'];
 
 export async function resolvePackageRoot(fromFileUrl: string): Promise<string> {
   let current = path.dirname(fileURLToPath(fromFileUrl));

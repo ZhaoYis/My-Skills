@@ -77,7 +77,7 @@ class StaticToolAdapter implements ToolAdapter {
 }
 
 export async function loadToolRegistry(rootDir: string): Promise<Map<ToolId, ToolAdapter>> {
-  const filePath = path.join(rootDir, 'config', 'tools.json');
+  const filePath = path.join(rootDir, 'src', 'config', 'tools.json');
   const raw = await fs.readJson(filePath);
   const parsed = toolsSchema.parse(raw);
 

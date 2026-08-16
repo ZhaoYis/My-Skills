@@ -9,7 +9,7 @@ import { isSameFileSystemEntry } from '../helpers/filesystem.js';
 import { PACKAGE_ROOT } from '../helpers/package-root.js';
 
 const libUrl = pathToFileURL(
-  path.join(PACKAGE_ROOT, 'templates/common/skills/opsx-dev-pipeline/scripts/pipeline-lib.mjs'),
+  path.join(PACKAGE_ROOT, 'src/templates/common/skills/opsx-dev-pipeline/scripts/pipeline-lib.mjs'),
 ).href;
 const createdDirs: string[] = [];
 let repo = '';

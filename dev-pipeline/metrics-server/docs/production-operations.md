@@ -71,8 +71,8 @@ verify if recollected; preserve the incident evidence and use an approved histor
 3. Rotate affected credentials and increment affected users' token versions when authorization may
    have been exposed.
 4. Validate configuration offline, deploy one instance, then require liveness and readiness to pass.
-5. Run `npm run metrics:acceptance` against a restored or isolated database before resuming all
-   collectors. Follow `database-operations.md` for provider-native backup restoration.
+5. Validate configuration offline, deploy one instance, then require liveness and readiness to pass.
+   Follow `database-operations.md` for provider-native backup restoration.
 6. Reconcile collection checkpoints and retry durable jobs from the last trusted checkpoint. Investigate
    any increase in `opsx_fingerprint_rejections_total` before accepting new metrics.
 

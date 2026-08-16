@@ -433,7 +433,7 @@ opsx-dev-pipeline 给 AI 装了一套工程框架：它知道要先写 proposal 
 
 **Q: 我同时有前端和后端，选哪个？**
 
-`init` 时只能选一个主栈，但 `openspec/config.yaml` 支持多栈配置。初始化后再手动添加第二个栈的 schema 和 config，`doctor --stack` 可以校验多服务配置的完整性。test-pipeline 目录中的 `fullstack-todo` 样例就是一个同时包含 Express 后端和 React 前端的项目。
+`init` 时只能选一个主栈，但 `openspec/config.yaml` 支持多栈配置。初始化后再手动添加第二个栈的 schema 和 config，`doctor --stack` 可以校验多服务配置的完整性。
 
 ---
 

@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const script = fileURLToPath(
   new URL(
-    '../../templates/common/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs',
+    '../../src/templates/common/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs',
     import.meta.url,
   ),
 );

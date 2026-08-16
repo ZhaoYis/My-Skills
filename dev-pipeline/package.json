@@ -1,6 +1,6 @@
 {
   "name": "opsx-dev-pipeline",
-  "version": "0.2.10",
+  "version": "0.2.15",
   "description": "One-stop dev pipeline initializer with AI tool adapters for skills and commands templates.",
   "author": "ZhaoYis",
   "type": "module",
@@ -10,8 +10,8 @@
   },
   "files": [
     "dist",
-    "config",
-    "templates",
+    "src/config",
+    "src/templates",
     "README.md"
   ],
   "license": "MIT",
@@ -34,14 +34,12 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --dir test",
     "test:watch": "vitest",
-    "metrics:acceptance": "node scripts/metrics-acceptance.mjs",
     "prepublishOnly": "npm run build",
     "pack:check": "npm pack --dry-run",
     "init:smoke": "tsx src/bin/opsx-dev-pipeline.ts init --tool claude --stack backend --yes --dry-run",
     "format": "biome format --write .",
     "format:check": "biome format .",
-    "lint": "biome lint src test test-pipeline/src test-pipeline/scenarios",
-    "test:pipeline": "npm --prefix test-pipeline test",
+    "lint": "biome lint src test",
     "lint:fix": "biome check --write ."
   },
   "engines": {
@@ -76,7 +74,7 @@
       "commands",
       "docs"
     ],
-    "templateVersion": "0.2.10",
+    "templateVersion": "0.2.15",
     "packageName": "opsx-dev-pipeline",
     "managedAssets": [
       {

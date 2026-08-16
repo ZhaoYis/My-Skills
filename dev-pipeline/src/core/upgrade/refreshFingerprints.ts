@@ -58,6 +58,7 @@ export async function refreshUpgradeFingerprints(input: {
 }): Promise<FingerprintRefreshResult> {
   const script = path.join(
     input.rootDir,
+    'src',
     'templates',
     'common',
     'skills',

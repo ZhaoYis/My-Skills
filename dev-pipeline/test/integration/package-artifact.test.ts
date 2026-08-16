@@ -53,9 +53,9 @@ describe('packaged artifact', () => {
     expect(stdout).not.toContain('package/dist/test/');
 
     // Retained templates are present
-    expect(stdout).toContain('package/templates/common/skills/opsx-dev-pipeline/');
+    expect(stdout).toContain('package/src/templates/common/skills/opsx-dev-pipeline/');
     expect(stdout).toContain(
-      'package/templates/common/skills/opsx-dev-pipeline/agents/openai.yaml',
+      'package/src/templates/common/skills/opsx-dev-pipeline/agents/openai.yaml',
     );
 
     // Removed preset skills are absent from tarball
