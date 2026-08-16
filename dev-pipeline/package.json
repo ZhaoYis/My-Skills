@@ -40,8 +40,7 @@
     "init:smoke": "tsx src/bin/opsx-dev-pipeline.ts init --tool claude --stack backend --yes --dry-run",
     "format": "biome format --write .",
     "format:check": "biome format .",
-    "lint": "biome lint src test test-pipeline/src test-pipeline/scenarios",
-    "test:pipeline": "npm --prefix test-pipeline test",
+    "lint": "biome lint src test",
     "lint:fix": "biome check --write ."
   },
   "engines": {
