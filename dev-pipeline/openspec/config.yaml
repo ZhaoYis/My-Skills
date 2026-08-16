@@ -1,0 +1,55 @@
+schema: spec-driven
+
+context: |
+  Tech stack: TypeScript, Node.js 20+, Vitest, Biome
+  Project type: CLI tool for initializing AI development workflow templates
+  Domain: Developer tools, AI workflow automation, OpenSpec integration
+  Conventions:
+    - Use ES modules (type: "module")
+    - Follow conventional commits
+    - Source code in src/, compiled output in dist/
+    - Use biome for linting and formatting
+    - Use vitest for testing
+  Key components:
+    - CLI commands in src/cli/
+    - Configuration templates in src/config/
+    - Artifact templates in src/templates/
+    - Core logic in src/core/
+  Supported AI tools: Claude, Cursor, and other AI assistants
+  Supported stacks: frontend, backend, fullstack
+
+rules:
+  proposal:
+    - Keep proposals focused on specific features or changes
+    - Include impact analysis on existing templates and CLI commands
+    - Consider backward compatibility when modifying CLI interface
+    - Document changes to supported AI tools or stacks
+  design:
+    - Prefer composition over inheritance for template generation
+    - Keep template logic separate from CLI parsing
+    - Ensure templates are easily extensible for new AI tools
+    - Consider template validation and error handling
+  tasks:
+    - Break tasks into chunks of max 2 hours
+    - Prioritize backward compatibility when modifying CLI
+    - Include test coverage for new template features
+    - Update documentation when adding new AI tools or stacks
+  specs:
+    - Use TypeScript for all new code
+    - Follow existing naming conventions (kebab-case for files, camelCase for variables)
+    - Include JSDoc comments for public APIs
+    - Validate all template inputs and outputs
+
+operations:
+  apply:
+    guidance:
+      - Run `npm run build` after code changes to update dist/
+      - Run `npm test` to verify no regressions
+      - Test CLI commands with `--dry-run` flag when possible
+      - Verify templates work with both interactive and non-interactive modes
+  archive:
+    guidance:
+      - Summarize changes to templates and CLI commands
+      - Note any breaking changes to the CLI interface
+      - Document new AI tools or stacks added
+      - Update version number following semver conventions
