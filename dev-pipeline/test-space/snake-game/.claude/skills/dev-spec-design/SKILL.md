@@ -1,0 +1,72 @@
+---
+name: dev-spec-design
+description: Generate a lightweight system analysis and design specification from requirements and optional OpenSpec change context. Use when the user asks for a system analysis document, technical design, 系统分析与设计说明书, 系分文档, or a concise design specification for a feature or module.
+---
+
+# Dev Spec Design
+
+Generate a focused system analysis and design document from the bundled lite template. Work from the target repository root unless the user specifies another project.
+
+Resolve `<SKILL_ROOT>` to the directory containing this `SKILL.md`. Resolve `<OPSX_PIPELINE_SKILL_ROOT>` to the sibling `opsx-dev-pipeline` skill directory when installed; if the host provides another installed path, use that path instead.
+
+## Inputs
+
+Collect or derive these inputs before writing:
+
+- Requirement or project name and optional identifier
+- Target system or module
+- Background, goals, and scope
+- Functional requirements and acceptance criteria
+- Constraints, dependencies, and known risks
+- Author or reviewer information when required
+
+Inspect available repository and OpenSpec artifacts before asking for facts that can be discovered locally. For missing decisions or business context, use **AskUserQuestion**. Ask only for information needed to produce a useful document; do not invent requirements.
+
+## Workflow
+
+### 1. Gather requirements
+
+1. Parse the user's request and inspect relevant project files.
+2. Identify missing required inputs.
+3. Use **AskUserQuestion** to ask concise follow-up questions for the missing information.
+4. Summarize the understood scope and resolve material ambiguities before writing.
+
+### 2. Read optional pipeline context
+
+Treat pipeline awareness as read-only. Never initialize, migrate, transition, or otherwise modify pipeline state.
+
+1. Run `openspec list --json` when OpenSpec is available.
+2. Select a change only when the user names it or exactly one active change is clearly relevant. If several changes could apply, use **AskUserQuestion** to ask the user to choose.
+3. When the `opsx-dev-pipeline` skill and its state script are installed, run:
+
+   ```bash
+   node <OPSX_PIPELINE_SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<change-name>"
+   ```
+
+4. Use returned change metadata, current phase, feature information, decisions, and artifact paths only as supporting context. Read relevant change artifacts when they improve the design.
+5. If no active change or state exists, continue in standalone mode. Report unexpected command, input, or I/O failures instead of silently ignoring them.
+
+### 3. Generate the document
+
+1. Read `<SKILL_ROOT>/references/system-analysis-design-template-lite.md` completely before drafting.
+2. Preserve the template's section order and tailor every section to the current change.
+3. Keep only relevant detail. Write `不涉及` for an irrelevant section or remove optional content only when doing so does not make the document ambiguous.
+4. Replace example Mermaid diagrams with diagrams that reflect the actual business flow, system relationships, sequence, and data model. Remove a diagram when the subject is genuinely not involved.
+5. Make requirements and acceptance criteria testable. Keep interface, data, compatibility, release, rollback, risk, and observability decisions internally consistent.
+6. Do not leave `{填写}`, example endpoints, sample field names, or placeholder diagrams in the final document. Mark unresolved decisions as `待确认` and list them in the risk and open-items section.
+
+### 4. Save and report
+
+1. Derive a short lowercase kebab-case filename from the requirement name. Use **AskUserQuestion** to ask for a filename when a stable ASCII name cannot be derived confidently.
+2. Use the repository's local date in `yyyyMMdd` format.
+3. Save to `openspec/docs/<yyyyMMdd>/<kebab-case-name>.md`, creating the date directory when needed.
+4. If the destination exists, use **AskUserQuestion** to ask before overwriting it unless the user explicitly requested replacement.
+5. Verify that the saved file follows the template structure and contains no accidental placeholders.
+6. Return the document path, a concise summary of its scope and key design decisions, and any remaining `待确认` items.
+
+## Guardrails
+
+- Keep pipeline access read-only; generating the document must not change pipeline state.
+- Base technical claims on repository evidence or clearly identified user input.
+- Do not expand the design beyond the stated change merely to fill the template.
+- Never hide missing information behind invented implementation details.

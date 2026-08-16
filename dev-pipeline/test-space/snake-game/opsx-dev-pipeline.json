@@ -17,10 +17,6 @@
   "packageName": "opsx-dev-pipeline",
   "managedAssets": [
     {
-      "id": "common-gitignore",
-      "destination": ".gitignore"
-    },
-    {
       "id": "frontend-schema-bundle:schema.yaml.hbs",
       "destination": "openspec/schemas/frontend/schema.yaml"
     },
@@ -97,6 +93,10 @@
       "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs"
     },
     {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/gate-check.mjs",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/gate-check.mjs"
+    },
+    {
       "id": "opsx-dev-pipeline-skill-bundle:scripts/instructions-apply.mjs",
       "destination": ".claude/skills/opsx-dev-pipeline/scripts/instructions-apply.mjs"
     },
@@ -107,6 +107,10 @@
     {
       "id": "opsx-dev-pipeline-skill-bundle:scripts/list-changes.mjs",
       "destination": ".claude/skills/opsx-dev-pipeline/scripts/list-changes.mjs"
+    },
+    {
+      "id": "opsx-dev-pipeline-skill-bundle:scripts/load-phase.mjs",
+      "destination": ".claude/skills/opsx-dev-pipeline/scripts/load-phase.mjs"
     },
     {
       "id": "opsx-dev-pipeline-skill-bundle:scripts/new-change.mjs",

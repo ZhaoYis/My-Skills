@@ -1,0 +1,140 @@
+---
+name: opsx-dev-pipeline
+description: 执行基于 OpenSpec 和 Git 的门禁式需求开发与交付流程，覆盖预检、提案确认、实现、代码审查、测试、验证归档、提交、推送与合并，并支持中断恢复。用户要求实现或继续一个 OpenSpec change、按阶段推进完整开发流水线、审查并交付变更，或处理 opsx-dev-pipeline 时使用。
+allowed-tools: Bash(openspec:*), AskUserQuestion
+version: "0.2.15"
+license: "MIT"
+repository: "git+https://github.com/ZhaoYis/My-Skills.git"
+---
+
+# 需求开发全流程流水线
+
+## Input
+
+用户的需求描述，或一个已有的 change 名称。
+
+## 入口决策树
+
+```text
+IF 用户提供了 change 名称:
+  1. 读取状态: node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<change>"
+  2. 根据 currentPhase 加载对应 Phase 指引:
+     node <SKILL_ROOT>/scripts/load-phase.mjs --phase <N> --route <route> --format markdown
+  3. 按加载的指引继续执行
+ELSE IF 用户提供了需求描述:
+  1. 进入 Phase 0 入口判断
+  2. 执行环境预检: node <SKILL_ROOT>/scripts/preflight.mjs
+  3. 确定 Route 类型 (trivial/standard/full)
+  4. 初始化状态并进入 Phase 1
+ELSE:
+  询问用户意图: 继续已有 change / 创建新 change / 查看 change 列表
+```
+
+## Route 分级
+
+| Route | 适用场景 | Phase 路径 |
+|-------|---------|-----------|
+| `trivial` | typo 修复、配置调整、单文件改动 | 0 → 2 → 6 |
+| `standard` | 常规功能开发、Bug 修复 | 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 |
+| `full` | 跨模块重构、架构变更 | 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 |
+
+## 动态加载 Phase 指引
+
+**进入任何 Phase 前，必须先加载该 Phase 的执行指引：**
+
+```bash
+node <SKILL_ROOT>/scripts/load-phase.mjs --phase <N> --route <route> --format markdown
+```
+
+这会返回：
+- Phase 标题和说明
+- 当前 Route 是否跳过此 Phase
+- 详细的执行指引和决策点
+
+## 执行约束
+
+- 开始执行前读取 `openspec/config.yaml` 的 `language` 与 `rules.language`。所有 AI 产出物必须遵循该语言约束。
+- 用户补充需求、提案修改或实施说明后，必须在同一回复中同步当前 **Phase/ change / 下一动作**。
+- 除用户明确选择「终止流程」或「暂停流水线」外，不得单方结束全流程。
+- 高风险决策必须显式确认；推荐项不等于自动代选。
+- 决策点首选 **AskUserQuestion** tool；不可用时改用编号选项列表并等待用户回复。
+- 代码审查修复循环最多 3 轮，超过后强制暂停。
+- 以 `openspec/.pipeline-state/<change>.json` 为恢复权威，不一致时暂停，不得猜测。
+
+**`<SKILL_ROOT>`**：本技能安装根目录（内含 `scripts/`）。命令在目标 git 仓库根目录执行。
+- 对于 Claude Code 安装：`<SKILL_ROOT>` = `.claude/skills/opsx-dev-pipeline`
+- 若宿主将 Skill 安装到其他位置，`<SKILL_ROOT>` = 当前 `SKILL.md` 所在目录。
+- 脚本路径示例：`node <SKILL_ROOT>/scripts/preflight.mjs`
+- 引用前先确认目录存在：`test -d "<SKILL_ROOT>/scripts" || echo "scripts not found"`
+
+## 状态协议
+
+- 新 change：先按 Phase0 获取用户明确的需求关联决定，再运行 `init "<change>" "<source-branch>" --feature-id "<featureId>" --route "<route>"`（有 URL 时追加 `--feature-url "<featureUrl>"`）或 `init "<change>" "<source-branch>" --skip-feature-association --route "<route>"`
+- 读取状态：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<change>"`
+- 确认迁移旧版 Schema：先运行 `migrate-schema "<change>"` 获取确认提示，用户同意后运行 `migrate-schema "<change>" --confirm`
+- 阶段迁移：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<change>" <phase> <step>`
+- 记录决策：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<change>" <key> <json-value>`
+- 记录决策（带用户确认）：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<change>" <key> <json-value> --user-confirmed --summary "<确认摘要>"`
+- 记录结果：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<change>" <field> <json-value>`
+- 记录尝试：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs attempt "<change>" <review|tests|verify> <status>`
+- 暂停流程：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs pause "<change>" "<reason>"`
+- 完成交付：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs complete "<change>"`
+
+## 门禁检查
+
+**关键 Phase 转换前必须运行门禁检查：**
+
+```bash
+node <SKILL_ROOT>/scripts/gate-check.mjs <subcommand> "<change>"
+```
+
+### 门禁检查命令
+
+| 子命令 | 触发时机 | 检查内容 |
+|--------|---------|---------|
+| `pre-apply` | Phase 1 → Phase 2 | 制品完整性、proposalApproved 用户确认 |
+| `pre-review` | Phase 2 → Phase 3 | implementationConfirmed 用户确认 |
+| `pre-merge` | Phase 6 → Phase 7 | merge 操作用户确认 |
+| `pre-test-skip` | 测试失败后跳过 | 跳过确认 |
+
+### 门禁检查流程
+
+1. **运行门禁检查**：`node <SKILL_ROOT>/scripts/gate-check.mjs pre-apply "<change>"`
+2. **解读结果**：
+   - `status: passed` → 可以继续 transition
+   - `status: confirmation-required` → 必须使用 AskUserQuestion 向用户确认
+   - `status: blocked` → 存在错误，必须先解决
+3. **用户确认后记录**：`decision "<change>" <key> <value> --user-confirmed --summary "<摘要>"`
+
+### 强制确认点
+
+以下决策**必须**先使用 AskUserQuestion 获得用户明确确认，再记录：
+
+| 决策 | 触发时机 | 必须展示的信息 |
+|------|---------|--------------|
+| `proposalApproved` | 进入 Phase 2 前 | proposal/design/specs/tasks 摘要 |
+| `implementationConfirmed` | 进入 Phase 3 前 | 实施完成摘要、变更文件列表 |
+| `mergeConfirmed` | 进入 Phase 7 前 | 合并目标和分支信息 |
+| `testSkipConfirmed` | 测试失败后跳过 | 失败详情、建议处理方式 |
+
+**违反确认点 = 流水线违规，必须暂停。**
+
+Schema v3 使用 `_version` 做乐观锁，并以 `review.currentRound` / `review.rounds` 保存审查历史。任何状态命令返回 exit code 10/11/12 时，按"状态不存在 / 非法迁移或 gate / I/O 或并发冲突"处理；并发冲突只重载重试一次，仍失败则暂停。
+
+## 配置与知识
+
+- 查看有效配置：`opsx-dev-pipeline config effective --explain`
+- 选择知识：`opsx-dev-pipeline knowledge select --phase <N> --routes <route> --paths <files>`
+
+## 错误处理速查
+
+| 场景 | 处理 |
+|------|------|
+| openspec CLI 不可用 / 非 git 仓库 | 提示安装/初始化并退出 |
+| openspec 未初始化 | 提示执行 `openspec init` 并退出 |
+| change 不存在 | 列出可用 change 让用户选择 |
+| apply 返回 `blocked` | 回到 Phase1 补充制品 |
+| 修复循环达 3 轮上限 | 强制暂停，提示人工介入 |
+| 单元测试失败 | 修复后重试 / 跳过并记录技术债务 / 终止 |
+| 合并冲突 | 列出冲突文件；中止或逐文件手动解决 |
+| 推送失败 | 保留本地状态，修复权限/网络后重试或终止 |
