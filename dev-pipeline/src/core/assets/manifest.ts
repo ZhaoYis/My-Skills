@@ -110,7 +110,7 @@ export const assetManifest: AssetDefinition[] = [
       'phase-7-merge-deliver.md.hbs',
     ],
     excludePatterns: ['.gitkeep'],
-    writePolicy: { appendStrategy: 'simple', appendExtensions: ['.md'] },
+    writePolicy: { appendStrategy: 'simple', appendExtensions: ['.md'], onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
     id: 'grill-me-skill-bundle',
@@ -153,7 +153,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'src/templates/common/commands/opsx-dev-pipeline.md.hbs',
     destination: '{{commandsDir}}/opsx-dev-pipeline.md',
-    writePolicy: { appendStrategy: 'simple' },
+    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
     id: 'opsx-propose-command',
@@ -162,7 +162,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'src/templates/common/commands/opsx/propose.md.hbs',
     destination: '{{commandsDir}}/opsx/propose.md',
-    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite' } },
+    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
     id: 'opsx-apply-command',
@@ -171,7 +171,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'src/templates/common/commands/opsx/apply.md.hbs',
     destination: '{{commandsDir}}/opsx/apply.md',
-    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite' } },
+    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
     id: 'opsx-archive-command',
@@ -180,7 +180,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'src/templates/common/commands/opsx/archive.md.hbs',
     destination: '{{commandsDir}}/opsx/archive.md',
-    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite' } },
+    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
     id: 'opsx-verify-command',
@@ -189,7 +189,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'src/templates/common/commands/opsx/verify.md.hbs',
     destination: '{{commandsDir}}/opsx/verify.md',
-    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite' } },
+    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
     id: 'opsx-sync-command',
@@ -198,7 +198,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'src/templates/common/commands/opsx/sync.md.hbs',
     destination: '{{commandsDir}}/opsx/sync.md',
-    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite' } },
+    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
     id: 'opsx-explore-command',
@@ -207,7 +207,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'src/templates/common/commands/opsx/explore.md.hbs',
     destination: '{{commandsDir}}/opsx/explore.md',
-    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite' } },
+    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
     id: 'opsx-grill-me-command',
@@ -216,7 +216,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'src/templates/common/commands/opsx/grill-me.md.hbs',
     destination: '{{commandsDir}}/opsx/grill-me.md',
-    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite' } },
+    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
     id: 'opsx-grilling-command',
@@ -225,7 +225,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'src/templates/common/commands/opsx/grilling.md.hbs',
     destination: '{{commandsDir}}/opsx/grilling.md',
-    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite' } },
+    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
     id: 'opsx-dev-spec-design-command',
@@ -234,7 +234,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'src/templates/common/commands/opsx/dev-spec-design.md.hbs',
     destination: '{{commandsDir}}/opsx/dev-spec-design.md',
-    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite' } },
+    writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
     id: 'claude-docs',

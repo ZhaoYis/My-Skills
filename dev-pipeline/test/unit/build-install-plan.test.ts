@@ -448,7 +448,7 @@ describe('buildInstallPlan', () => {
     expect(readmeFile?.resolution).toBe('overwrite');
   });
 
-  it('replaces OpenSpec-generated command entries only during init', async () => {
+  it('replaces OpenSpec-generated command entries in all modes', async () => {
     const targetDir = await createTempTargetDir();
     const commandPath = path.join(targetDir, '.claude/commands/opsx/propose.md');
     await fs.ensureDir(path.dirname(commandPath));
@@ -473,7 +473,7 @@ describe('buildInstallPlan', () => {
     expect(syncPlan.files).toHaveLength(1);
     expect(syncPlan.files[0]).toMatchObject({
       assetId: 'opsx-propose-command',
-      resolution: 'unresolved',
+      resolution: 'overwrite',
     });
   });
 
