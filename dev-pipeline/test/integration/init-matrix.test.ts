@@ -413,16 +413,16 @@ describe('tool matrix', () => {
 
     const skillRoot = path.join(dir, '.claude/skills/opsx-dev-pipeline');
 
-    // Verify SKILL.md navigation hub
+    // Verify SKILL.md thin entry design
     const skillContent = await fs.readFile(path.join(skillRoot, 'SKILL.md'), 'utf8');
-    expect(skillContent).toContain('Phase引用表');
+    expect(skillContent).toContain('入口决策树');
+    expect(skillContent).toContain('Route 分级');
+    expect(skillContent).toContain('动态加载 Phase 指引');
+    expect(skillContent).toContain('opsx-dev-pipeline load --phase');
     expect(skillContent).toContain('执行约束');
     expect(skillContent).toContain('错误处理速查');
+    expect(skillContent).toContain('状态协议');
     expect(skillContent).toContain('migrate-schema');
-    expect(skillContent).toContain('record-phase');
-    expect(skillContent).toContain('executionMode');
-    expect(skillContent).toContain('「继续后续流程」选项仅跳过当前 Phase');
-    expect(skillContent).toContain('必须先执行 `transition` 命令并通过门禁验证');
 
     // Verify all phase reference files exist
     for (const phase of [0, 1, 2, 3, 4, 5, 6, 7]) {

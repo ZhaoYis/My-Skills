@@ -5,6 +5,7 @@ import { runDoctorCommand } from './commands/doctor.js';
 import { runInitCommand } from './commands/init.js';
 import { runKnowledgeSelectCommand } from './commands/knowledge.js';
 import { runListToolsCommand } from './commands/list-tools.js';
+import { runLoadCommand } from './commands/load.js';
 import { runSyncCommand } from './commands/sync.js';
 import { runUninstallCommand } from './commands/uninstall.js';
 import { runUpgradeCommand } from './commands/upgrade.js';
@@ -122,6 +123,28 @@ export async function runCli(argv: string[]): Promise<void> {
       await runKnowledgeSelectCommand({
         phase: Number(options.phase),
         routes: options.routes ? options.routes.split(',').map((s: string) => s.trim()) : undefined,
+        paths: options.paths ? options.paths.split(',').map((s: string) => s.trim()) : undefined,
+        format: options.format,
+      });
+    });
+
+  cli
+    .command('load', 'Load phase execution bundle dynamically')
+    .option('--phase <phase>', 'Phase number (required)')
+    .option('--route <route>', 'Route type (trivial|standard|full)', { default: 'standard' })
+    .option('--paths <paths>', 'Comma-separated file paths for knowledge matching')
+    .option('--format <markdown|json>', 'Output format', { default: 'markdown' })
+    .option(...dirOption)
+    .action(async (options) => {
+      if (options.phase === undefined) {
+        console.error('Error: --phase is required');
+        process.exit(1);
+      }
+
+      await runLoadCommand({
+        phase: Number(options.phase),
+        dir: options.dir,
+        route: options.route,
         paths: options.paths ? options.paths.split(',').map((s: string) => s.trim()) : undefined,
         format: options.format,
       });
