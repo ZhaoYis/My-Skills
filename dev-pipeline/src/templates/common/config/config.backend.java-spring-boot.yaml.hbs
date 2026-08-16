@@ -42,6 +42,11 @@ rules:
   proposal:
     - "Must include API contract changes (endpoints, request/response DTOs)"
     - "Must specify database migration strategy (Flyway/Liquibase)"
+  api-design:
+    - "Must document all request/response DTOs with field types and constraints"
+    - "Must specify authentication and authorization requirements for each endpoint"
+    - "Must include error response contracts and status codes"
+    - "Must document idempotency and side effects for state-changing operations"
   specs:
     - "Use Given/When/Then format for API behavior scenarios"
   design:

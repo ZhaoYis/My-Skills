@@ -63,6 +63,12 @@ rules:
     - "Must include API contract changes (endpoints, request/response DTOs)"
     - "Must include UI/UX impact analysis for frontend changes"
     - "Must specify database migration strategy (Flyway/Liquibase) for backend changes"
+  api-design:
+    - "Must document all request/response DTOs with field types and constraints"
+    - "Must specify authentication and authorization requirements for each endpoint"
+    - "Must include error response contracts and status codes"
+    - "Must document idempotency and side effects for state-changing operations"
+    - "Must specify frontend consumer impact and migration guidance"
   specs:
     - "Use Given/When/Then format for API behavior scenarios"
     - "Use Given/When/Then format for user interaction scenarios"
