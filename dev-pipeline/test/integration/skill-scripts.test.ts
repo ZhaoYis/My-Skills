@@ -299,7 +299,9 @@ describe('load-phase.mjs compatibility wrapper', () => {
   it('fails when the opsx-dev-pipeline CLI is unavailable', async () => {
     const { root } = await createRepo(true);
 
-    const result = await runScript('load-phase.mjs', ['--phase', '0'], root, '');
+    const result = await runScript('load-phase.mjs', ['--phase', '0'], root, '', {
+      PATH: '/nonexistent',
+    });
 
     expect(result.code).not.toBe(0);
     expect(result.stdout).toBe('');

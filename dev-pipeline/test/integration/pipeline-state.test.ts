@@ -66,8 +66,11 @@ function run(command: string, args: string[]): Promise<StateResult> {
 function state(...args: string[]): Promise<StateResult> {
   const hasFeatureDecision =
     args.includes('--feature-id') || args.includes('--skip-feature-association');
-  const normalizedArgs =
+  let normalizedArgs =
     args[0] === 'init' && !hasFeatureDecision ? [...args, '--skip-feature-association'] : args;
+  if (normalizedArgs[0] === 'init' && !normalizedArgs.includes('--route')) {
+    normalizedArgs = [...normalizedArgs, '--route', 'full'];
+  }
   return run(process.execPath, [stateScript, ...normalizedArgs]);
 }
 

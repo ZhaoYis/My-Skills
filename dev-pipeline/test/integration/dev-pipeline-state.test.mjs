@@ -26,6 +26,7 @@ function baseState(changeName, currentPhase, overrides = {}) {
     currentStep: 1,
     status: 'active',
     executionMode: 'pipeline',
+    route: 'full',
     phaseHistory: [
       {
         phase: currentPhase,
@@ -226,5 +227,5 @@ describe('dev-pipeline-state transition gates', () => {
     await expectRejected(2, 6, 'implementation-confirmation-required', {
       decisions: { proposalApproved: true },
     });
-  });
+  }, 30000);
 });

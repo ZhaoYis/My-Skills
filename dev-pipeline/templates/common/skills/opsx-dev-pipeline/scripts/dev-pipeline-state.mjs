@@ -531,7 +531,10 @@ function migrateToLatestSchema(state) {
   state.route = state.route || 'standard';
   state.phaseHistory = Array.isArray(state.phaseHistory) ? state.phaseHistory : [];
   state.gatesBypassed = Array.isArray(state.gatesBypassed) ? state.gatesBypassed : [];
-  return migrateReviewToV3(ensureMetaFields(state));
+  const migrated = migrateReviewToV3(ensureMetaFields(state));
+  for (const key of PRIVATE_STATE_FIELDS) delete state[key];
+  Object.assign(state, migrated);
+  return state;
 }
 
 function parseInitArgs(args) {
