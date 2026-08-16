@@ -52,16 +52,19 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<name>" archivePath '"<act
 ## Step19：[决策点 5b] 归档后操作
 
 **{{askTool}}**：
-- `提交代码并合并到目标分支` → Phase6 + Phase7 完整流程（进入Phase7执行合并）
-- `仅提交并推送（不合并）` → Phase6 commit + push 后结束（不进入Phase7）
+- `standard`：`提交并推送` → Phase6（不进入 Phase7）
+- `full`：`提交代码并合并到目标分支` → Phase6 + Phase7 完整流程（进入Phase7执行合并）
+- `full`：`仅提交并推送（不合并）` → Phase6 commit + push 后结束（不进入Phase7）
 - `终止流程` → 退出
 
 进入 Phase6 前记录选择并迁移：
 ```bash
-# 选择合并
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" postArchiveAction '"merge"'
-# 或选择仅推送
+# standard / full (push-only)
 node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" postArchiveAction '"push-only"'
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 6 20
+
+# full (merge)
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" postArchiveAction '"merge"'
 node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 6 20
 ```
 

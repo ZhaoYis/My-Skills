@@ -6,7 +6,7 @@ import type { KnowledgeSummary, LoadPhaseOptions, PhaseBundle } from './types.js
 
 const FALLBACK_ROUTES: Record<PipelineRoute, number[]> = {
   trivial: [0, 2, 6],
-  standard: [0, 1, 2, 3, 6],
+  standard: [0, 1, 2, 5, 6],
   full: [0, 1, 2, 3, 4, 5, 6, 7],
 };
 
@@ -20,6 +20,14 @@ const PHASE_TITLES: Record<number, string> = {
   6: '提交与推送',
   7: '合并与交付',
 };
+
+/**
+ * 将 Phase 数字数组转换为用户友好的中文路径字符串
+ * 例如：[0, 1, 2, 3, 6] → "入口判断 → 提案编写 → 提案应用 → 代码审查 → 提交与推送"
+ */
+export function formatPhasePath(phases: number[]): string {
+  return phases.map((phase) => PHASE_TITLES[phase] ?? `Phase ${phase}`).join(' → ');
+}
 
 const PHASE_BASENAMES: Record<number, string> = {
   0: 'phase-0-entrance',
@@ -112,7 +120,7 @@ export async function loadPhaseBundle(options: LoadPhaseOptions): Promise<PhaseB
       knowledge: [],
       route,
       skipped: true,
-      skipReason: `Route "${route}" 跳过此 Phase。当前 Route 路径：${getRoutePhasePath(route, effectiveConfig).join(' → ')}`,
+      skipReason: `Route "${route}" 跳过此 Phase。当前 Route 路径：${formatPhasePath(getRoutePhasePath(route, effectiveConfig))}`,
     };
   }
 

@@ -423,7 +423,7 @@ describe('tool matrix', () => {
     );
     expect(skillContent).toContain('| `trivial` |');
     expect(skillContent).toContain('| 0 → 2 → 6 |');
-    expect(skillContent).toContain('| 0 → 1 → 2 → 3 → 6 |');
+    expect(skillContent).toContain('| 0 → 1 → 2 → 5 → 6 |');
     expect(skillContent).toContain('| 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 |');
     expect(skillContent).not.toContain('load-phase.mjs --phase <N> --route');
     expect(skillContent).toContain('执行约束');
@@ -481,13 +481,12 @@ describe('tool matrix', () => {
     expect(entrance).toContain('--skip-feature-association');
     expect(entrance).toContain('不得推断为跳过');
     expect(entrance).toContain('0 → 2 → 6');
-    expect(entrance).toContain('0 → 1 → 2 → 3 → 6');
+    expect(entrance).toContain('0 → 1 → 2 → 5 → 6');
     expect(entrance).toContain('0 → 1 → 2 → 3 → 4 → 5 → 6 → 7');
     expect(entrance).toContain('trivial：跳过 Phase1，直接实施');
 
     const review = await fs.readFile(path.join(skillRoot, 'references/phase-3-review.md'), 'utf8');
     expect(review).toContain('「继续后续流程」仅跳过修复当前审查发现的问题');
-    expect(review).toContain('`standard`：执行 `transition "<name>" 6 20`');
     expect(review).toContain('`full`：执行 `transition "<name>" 4 14`');
 
     const commitPush = await fs.readFile(

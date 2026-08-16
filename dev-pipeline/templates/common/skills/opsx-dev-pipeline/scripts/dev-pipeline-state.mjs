@@ -48,7 +48,7 @@ const routeTypes = new Set(['trivial', 'standard', 'full']);
 // 各 Route 对应的 Phase 路径
 const routePhasePaths = {
   trivial: [0, 2, 6],
-  standard: [0, 1, 2, 3, 6],
+  standard: [0, 1, 2, 5, 6],
   full: [0, 1, 2, 3, 4, 5, 6, 7],
 };
 
@@ -404,7 +404,7 @@ function allowedTransition(from, to, state) {
   const allowed = {
     0: [0, 1],
     1: [1, 2],
-    2: [1, 2, 3, 4],
+    2: [1, 2, 3, 5],
     3: [2, 3, 4],
     4: [2, 4, 5],
     5: [1, 2, 5, 6],
@@ -445,14 +445,20 @@ function validateGates(state, from, to) {
     return ['implementation-confirmation-required', '离开 Phase2 前必须确认实施摘要'];
   }
 
-  if (route === 'standard' && from === 3 && to === 6) {
-    if (!hasPassedReview(state)) {
-      return ['review-gate-required', '进入 Phase6 前必须记录 review passed'];
+  // Standard route: Phase 2 → Phase 5 → Phase 6 (跳过代码审查)
+  if (route === 'standard') {
+    // Phase 5 → Phase 6: 需要 verify 通过、归档路径、交付方式决策
+    if (to === 6) {
+      if (!['passed', 'skipped'].includes(state.verify?.status)) {
+        return ['verify-gate-required', '进入 Phase6 前必须记录 verify 通过或经用户确认跳过'];
+      }
+      if (!state.archivePath) {
+        return ['archive-required', '进入 Phase6 前必须记录归档路径'];
+      }
+      if (!['merge', 'push-only', 'local-only'].includes(state.decisions.postArchiveAction)) {
+        return ['post-archive-decision-required', '进入 Phase6 前必须记录归档后交付方式'];
+      }
     }
-    if (!['merge', 'push-only', 'local-only'].includes(state.decisions.postArchiveAction)) {
-      return ['post-archive-decision-required', '进入 Phase6 前必须记录归档后交付方式'];
-    }
-    return null;
   }
 
   if (route === 'full') {

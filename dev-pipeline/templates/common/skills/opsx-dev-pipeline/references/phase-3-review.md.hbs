@@ -1,7 +1,7 @@
 ---
 phase: 3
 asset_kind: procedure
-routes: [standard, full]
+routes: [full]
 path_hints:
   - "src/**"
   - "tests/**"
@@ -49,7 +49,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs attempt "<name>" review passed 
 - `直接修复并重新审查` → 直接改代码后重新审查
 - `回到 Phase2 重新实施` → 回到 Phase2
 - `暂停流水线，手动调整后继续` → 展示恢复指引后退出
-- `继续后续流程` → standard 直接 Phase6；full 进入 Phase4（随后 Phase5）
+- `继续后续流程` → 进入 Phase4（随后 Phase5）
 - `终止流程` → 退出
 
 ### 仅有一般问题或建议 → {{askTool}}：
@@ -58,23 +58,17 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs attempt "<name>" review passed 
 - `暂停流水线，手动调整后继续` → 退出
 - `终止流程` → 退出
 
-### 审查无问题 → 按 route 进入后继 Phase
+### 审查无问题 → 进入 Phase4
 
-- `standard` → Phase6
-- `full` → Phase4
+`full`：执行 `transition "<name>" 4 14`，等待 Phase4 决策点 4 的显式选择，再按 Phase4 → Phase5 → Phase6 → Phase7 推进。
 
 **重要：「继续后续流程」仅跳过修复当前审查发现的问题。选择此项后必须按 route 推进：**
 
-1. `standard`：执行 `transition "<name>" 6 20`，进入 Phase6 决策点 6
-2. `full`：执行 `transition "<name>" 4 14`，等待 Phase4 决策点 4 的显式选择，再按 Phase4 → Phase5 → Phase6 → Phase7 推进
-3. 每次进入新 Phase 前运行 `opsx-dev-pipeline load --phase <phase> --change "<name>" --dir "<repo-root>" --format markdown`
-4. 禁止进入当前 route 矩阵外的 Phase，或跳过后续决策点直接归档、提交、推送、合并
+1. 每次进入新 Phase 前运行 `opsx-dev-pipeline load --phase <phase> --change "<name>" --dir "<repo-root>" --format markdown`
+2. 禁止进入当前 route 矩阵外的 Phase，或跳过后续决策点直接归档、提交、推送、合并
 
-进入后续流程前记录 `reviewDisposition`，再按 route 执行：
+进入后续流程前记录 `reviewDisposition`，再执行：
 ```bash
-# standard
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 6 20
-
 # full
 node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 4 14
 ```

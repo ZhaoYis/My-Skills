@@ -21,9 +21,9 @@ afterEach(async () => {
 describe('bundle loader', () => {
   describe('isPhaseAllowed', () => {
     it('allows only configured phases for standard route', () => {
-      expect(getRoutePhasePath('standard')).toEqual([0, 1, 2, 3, 6]);
+      expect(getRoutePhasePath('standard')).toEqual([0, 1, 2, 5, 6]);
+      expect(isPhaseAllowed('standard', 3)).toBe(false);
       expect(isPhaseAllowed('standard', 4)).toBe(false);
-      expect(isPhaseAllowed('standard', 5)).toBe(false);
       expect(isPhaseAllowed('standard', 7)).toBe(false);
     });
 
@@ -46,7 +46,8 @@ describe('bundle loader', () => {
 
     it('defaults to standard for unknown route', () => {
       expect(isPhaseAllowed('unknown', 1)).toBe(true);
-      expect(isPhaseAllowed('unknown', 3)).toBe(true);
+      expect(isPhaseAllowed('unknown', 5)).toBe(true);
+      expect(isPhaseAllowed('unknown', 3)).toBe(false);
     });
   });
 
@@ -56,7 +57,7 @@ describe('bundle loader', () => {
     });
 
     it('returns correct path for standard route', () => {
-      expect(getRoutePhasePath('standard')).toEqual([0, 1, 2, 3, 6]);
+      expect(getRoutePhasePath('standard')).toEqual([0, 1, 2, 5, 6]);
     });
 
     it('returns correct path for full route', () => {
@@ -64,7 +65,7 @@ describe('bundle loader', () => {
     });
 
     it('defaults to standard for unknown route', () => {
-      expect(getRoutePhasePath('unknown')).toEqual([0, 1, 2, 3, 6]);
+      expect(getRoutePhasePath('unknown')).toEqual([0, 1, 2, 5, 6]);
     });
   });
 
@@ -108,7 +109,7 @@ describe('bundle loader', () => {
             default_route: 'standard',
             routes: {
               trivial: { phases: [0, 2, 6] },
-              standard: { phases: [0, 1, 2, 3, 6] },
+              standard: { phases: [0, 1, 2, 5, 6] },
               full: { phases: [0, 1, 2, 3, 4, 5, 6, 7] },
             },
           },

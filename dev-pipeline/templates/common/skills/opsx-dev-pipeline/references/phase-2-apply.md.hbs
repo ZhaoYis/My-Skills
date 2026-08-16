@@ -53,7 +53,8 @@ node <SKILL_ROOT>/scripts/instructions-apply.mjs "<name>"
 
 展示实施摘要（完成任务数、跳过任务数、变更文件列表），**{{askTool}}**：
 - `trivial`：`进入提交与推送` → Phase6
-- `standard` / `full`：`进入代码审查` → Phase3
+- `standard`：`进入提案归档` → Phase5
+- `full`：`进入代码审查` → Phase3
 - `暂停流水线，手动调整后继续` → 展示恢复指引后退出
 - `终止流程` → 退出
 
@@ -62,11 +63,17 @@ node <SKILL_ROOT>/scripts/instructions-apply.mjs "<name>"
 node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" implementationConfirmed true
 
 # trivial：0 → 2 → 6
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" postArchiveAction '"push-only"'
 node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 6 20
 
-# standard / full：进入审查；Phase3 再按 route 选择后继
+# standard：0 → 1 → 2 → 5 → 6，进入提案归档
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 5 15
+
+# full：0 → 1 → 2 → 3 → 4 → 5 → 6 → 7，进入审查
 node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" reviewDisposition '"review"'
 node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 3 9
 ```
 
-standard/full 回到提案时迁移到 Phase1 Step3；trivial 若发现需要提案或审查，必须暂停并让用户升级 route，不得迁移到 Route 矩阵外的 Phase。暂停时执行 `pause`。任何路径都不得绕过 `implementationConfirmed`。
+> **按当前 route 只执行对应分支的命令，不要顺序执行所有分支。**
+
+full 回到提案时迁移到 Phase1 Step3；trivial 若发现需要提案或归档，必须暂停并让用户升级 route，不得迁移到 Route 矩阵外的 Phase。暂停时执行 `pause`。任何路径都不得绕过 `implementationConfirmed`。

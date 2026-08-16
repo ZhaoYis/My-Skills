@@ -189,7 +189,7 @@ describe('route grading', () => {
   });
 
   describe('standard route phase path', () => {
-    it('allows 0 -> 1 -> 2 -> 3 -> 6 with standard gates', async () => {
+    it('allows 0 -> 1 -> 2 -> 5 -> 6 with standard gates', async () => {
       await rawState(
         'init',
         'standard-seq',
@@ -204,23 +204,24 @@ describe('route grading', () => {
       await state('decision', 'standard-seq', 'proposalApproved', 'true');
       expect((await state('transition', 'standard-seq', '2', '1')).code).toBe(0);
       await state('decision', 'standard-seq', 'implementationConfirmed', 'true');
-      expect((await state('transition', 'standard-seq', '3', '1')).code).toBe(0);
+      expect((await state('transition', 'standard-seq', '5', '1')).code).toBe(0);
       expect((await state('transition', 'standard-seq', '6', '1')).payload.reason).toBe(
-        'review-gate-required',
+        'verify-gate-required',
       );
-      await state('attempt', 'standard-seq', 'review', 'passed');
+      await state('set', 'standard-seq', 'verify.status', '"passed"');
+      await state('set', 'standard-seq', 'archivePath', '"/tmp/archive"');
       await state('decision', 'standard-seq', 'postArchiveAction', '"push-only"');
       const result = await state('transition', 'standard-seq', '6', '1');
       expect(result.code).toBe(0);
       expect(result.payload.state).toMatchObject({
         currentPhase: 6,
-        archivePath: null,
+        archivePath: '/tmp/archive',
         tests: { status: 'pending' },
-        verify: { status: 'pending' },
+        verify: { status: 'passed' },
       });
     });
 
-    it.each([4, 5, 7])('rejects Phase %s for standard route', async (phase) => {
+    it.each([3, 4, 7])('rejects Phase %s for standard route', async (phase) => {
       const change = `standard-reject-${phase}`;
       await rawState(
         'init',
