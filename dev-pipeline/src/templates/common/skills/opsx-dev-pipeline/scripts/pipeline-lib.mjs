@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { accessSync, constants, existsSync, statSync } from 'node:fs';
+import { accessSync, constants, existsSync, statSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 const EXIT_DEPENDENCY_MISSING = 1;
@@ -255,4 +255,124 @@ export function prepareOpenSpecRepo() {
   requireCommand('openspec', 'openspec-cli-not-found', 'install-openspec');
   requireCommand('node', 'node-cli-not-found', 'install-node');
   return findOpenSpecRoot();
+}
+
+export function parseRouteConfig(configPath) {
+  const defaultRoutes = {
+    trivial: { description: '无行为变化的极小变更', phases: [0, 2, 6] },
+    standard: { description: '标准变更', phases: [0, 1, 2, 5, 6] },
+    full: { description: '高保障变更', phases: [0, 1, 2, 3, 4, 5, 6, 7] },
+  };
+
+  if (!existsSync(configPath)) {
+    return defaultRoutes;
+  }
+
+  try {
+    const content = readFileSync(configPath, 'utf8');
+    const lines = content.split('\n');
+    const routes = {};
+    let currentRoute = null;
+    let inRoutes = false;
+    let inPhases = false;
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+
+      if (trimmed === 'routes:') {
+        inRoutes = true;
+        continue;
+      }
+
+      if (inRoutes && !line.startsWith(' ') && !line.startsWith('\t') && trimmed) {
+        inRoutes = false;
+        continue;
+      }
+
+      if (inRoutes) {
+        const routeMatch = line.match(/^ {2}(\w+):\s*$/);
+        if (routeMatch) {
+          currentRoute = routeMatch[1];
+          routes[currentRoute] = { description: '', phases: [] };
+          inPhases = false;
+          continue;
+        }
+
+        if (currentRoute) {
+          const descMatch = line.match(/^ {4}description:\s*(.+)$/);
+          if (descMatch) {
+            routes[currentRoute].description = descMatch[1].replace(/^["']|["']$/g, '');
+            continue;
+          }
+
+          const phasesMatch = line.match(/^ {4}phases:\s*\[([^\]]+)\]$/);
+          if (phasesMatch) {
+            routes[currentRoute].phases = phasesMatch[1].split(',').map((p) => parseInt(p.trim(), 10));
+            inPhases = false;
+            continue;
+          }
+        }
+      }
+    }
+
+    if (Object.keys(routes).length === 0) {
+      return defaultRoutes;
+    }
+
+    return routes;
+  } catch {
+    return defaultRoutes;
+  }
+}
+
+export function validateRouteConfig(routes) {
+  for (const [routeName, route] of Object.entries(routes)) {
+    if (!Array.isArray(route.phases)) {
+      emitError(
+        'invalid-route-config',
+        `Route "${routeName}" 的 phases 必须是数组`,
+        'fix-route-config',
+        4,
+      );
+    }
+
+    for (const phase of route.phases) {
+      if (!Number.isInteger(phase) || phase < 0 || phase > 7) {
+        emitError(
+          'invalid-route-config',
+          `Route "${routeName}" 的 phases 必须包含 0-7 的整数，发现: ${phase}`,
+          'fix-route-config',
+          4,
+        );
+      }
+    }
+
+    if (!route.phases.includes(0)) {
+      emitError(
+        'invalid-route-config',
+        `Route "${routeName}" 必须包含 Phase 0（入口）`,
+        'fix-route-config',
+        4,
+      );
+    }
+
+    if (!route.phases.includes(6)) {
+      emitError(
+        'invalid-route-config',
+        `Route "${routeName}" 必须包含 Phase 6（提交）`,
+        'fix-route-config',
+        4,
+      );
+    }
+  }
+
+  return true;
+}
+
+export function getRoutePhases(routeName, routes) {
+  const route = routes[routeName];
+  if (!route) {
+    return routes.full.phases;
+  }
+  return route.phases;
 }

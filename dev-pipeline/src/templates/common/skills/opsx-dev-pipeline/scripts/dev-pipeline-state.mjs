@@ -7,6 +7,9 @@ import {
   execCommandSync,
   findOpenSpecRoot,
   validateChangeName,
+  parseRouteConfig,
+  validateRouteConfig,
+  getRoutePhases,
 } from './pipeline-lib.mjs';
 
 const EXIT_STATE_NOT_FOUND = 10;
@@ -290,6 +293,14 @@ function ensureMetaFields(state) {
   if (!state.featureInfo) state.featureInfo = null;
   if (!state.fingerprintId) state.fingerprintId = '';
   if (!state.fingerprintNonce) state.fingerprintNonce = '';
+  // Add route field for backward compatibility
+  if (!state.route) {
+    state.route = {
+      choice: 'full',
+      upgradedFrom: null,
+      upgradedAt: null,
+    };
+  }
   return state;
 }
 
@@ -674,6 +685,11 @@ if (!command) {
             currentStep: 1,
             status: 'active',
             executionMode: 'pipeline',
+            route: {
+              choice: 'full',
+              upgradedFrom: null,
+              upgradedAt: null,
+            },
             createdBy,
             createdByEmail,
             machineInfo,
@@ -959,6 +975,20 @@ if (!command) {
               EXIT_INVALID_TRANSITION,
             );
           } else {
+            // Route validation: check if target phase is allowed by current route
+            const routeChoice = state.route?.choice || 'full';
+            const configPath = path.join(root, 'openspec', 'config.yaml');
+            const routes = parseRouteConfig(configPath);
+            validateRouteConfig(routes);
+            const allowedPhases = getRoutePhases(routeChoice, routes);
+            if (!allowedPhases.includes(toPhase)) {
+              emitError(
+                'phase-not-in-route',
+                `Phase ${toPhase} 不在当前 route "${routeChoice}" 的执行列表中（允许: ${allowedPhases.join(', ')}）`,
+                'choose-phase-in-route',
+                EXIT_INVALID_TRANSITION,
+              );
+            }
             const gateError = validateTransitionGates(state, fromPhase, toPhase);
             if (!allowedTransition(fromPhase, toPhase, state)) {
               if (gateError) {
@@ -1002,6 +1032,55 @@ if (!command) {
           state.status = 'paused';
           state.pauseReason = args.join(' ') || 'user-requested';
           if (await saveState(root, state)) output({ status: 'ok', state });
+        } else if (command === 'route') {
+          const [subcommand, targetRoute] = args;
+          if (subcommand !== 'upgrade') {
+            emitError(
+              'invalid-route-command',
+              'route 命令仅支持 upgrade 子命令',
+              'use-route-upgrade',
+              EXIT_INVALID_TRANSITION,
+            );
+          }
+          if (!targetRoute) {
+            emitError(
+              'missing-route-name',
+              'route upgrade 需要指定目标 route',
+              'provide-route-name',
+              EXIT_INVALID_TRANSITION,
+            );
+          }
+          const validRoutes = ['trivial', 'standard', 'full'];
+          if (!validRoutes.includes(targetRoute)) {
+            emitError(
+              'invalid-route-name',
+              `无效的 route 名称: ${targetRoute}，必须是 trivial/standard/full 之一`,
+              'choose-valid-route',
+              EXIT_INVALID_TRANSITION,
+            );
+          }
+          const currentRoute = state.route?.choice || 'full';
+          const routeOrder = { trivial: 0, standard: 1, full: 2 };
+          if (routeOrder[targetRoute] <= routeOrder[currentRoute]) {
+            emitError(
+              'route-downgrade-not-allowed',
+              `不允许从 ${currentRoute} 降级到 ${targetRoute}，route 只能向上升级`,
+              'choose-higher-route',
+              EXIT_INVALID_TRANSITION,
+            );
+          }
+          // Perform upgrade
+          state.route = {
+            choice: targetRoute,
+            upgradedFrom: currentRoute,
+            upgradedAt: formatLocalTime(),
+          };
+          if (await saveState(root, state)) {
+            output({
+              status: 'ok',
+              route: state.route,
+            });
+          }
         } else if (command === 'complete') {
           if (state.currentPhase !== 6 && state.currentPhase !== 7) {
             emitError(

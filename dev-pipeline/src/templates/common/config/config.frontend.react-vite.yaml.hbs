@@ -48,3 +48,15 @@ rules:
   design:
     - "Must include component tree diagram or description"
     - "Must specify route design and state management strategy"
+
+pipeline:
+  routes:
+    trivial:
+      description: "无行为变化的极小变更"
+      phases: [0, 2, 6]
+    standard:
+      description: "标准变更"
+      phases: [0, 1, 2, 5, 6]
+    full:
+      description: "高保障变更"
+      phases: [0, 1, 2, 3, 4, 5, 6, 7]

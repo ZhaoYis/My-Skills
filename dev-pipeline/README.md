@@ -190,9 +190,106 @@ flowchart TD
   MERGE -->|推送 / 标签| DONE
 ```
 
+## Route 分级机制
 
+Pipeline 支持 Route 分级机制，根据变更的风险等级自动选择不同重量的工作流，避免简单变更经历不必要的流程。
 
+### 三种 Route
 
+| Route | 适用场景 | 执行的 Phase | 跳过的 Phase |
+|-------|---------|-------------|-------------|
+| **trivial** | 拼写错误、格式化、注释、import 清理 | 0, 2, 6 | 1, 3, 4, 5, 7 |
+| **standard** | 功能开发、Bug 修复、重构 | 0, 1, 2, 5, 6 | 3, 4, 7 |
+| **full** | 核心业务逻辑、数据库迁移、安全相关 | 0-7（全部） | 无 |
+
+### 何时使用哪个 Route
+
+**Trivial Route**
+- 修改 README 中的拼写错误
+- 调整代码格式化（缩进、空行）
+- 添加或修改注释
+- 清理未使用的 import
+
+**Standard Route**
+- 开发新功能
+- 修复 Bug
+- 代码重构
+- 添加测试用例
+
+**Full Route**
+- 修改核心业务逻辑
+- 数据库 schema 变更
+- 安全相关的修改
+- 影响多个模块的重大变更
+
+### 配置 Route
+
+在 `openspec/config.yaml` 中配置：
+
+```yaml
+pipeline:
+  routes:
+    trivial:
+      description: "无行为变化的极小变更"
+      phases: [0, 2, 6]
+    standard:
+      description: "标准变更"
+      phases: [0, 1, 2, 5, 6]
+    full:
+      description: "高保障变更"
+      phases: [0, 1, 2, 3, 4, 5, 6, 7]
+```
+
+### Route 选择流程
+
+在 Phase 0 中，Pipeline 会自动评估变更并推荐合适的 Route：
+
+1. 分析需求描述，判断变更类型和风险等级
+2. 推荐最匹配的 Route
+3. 用户确认或选择其他 Route
+4. 记录选择并继续执行
+
+如果状态文件中已存在 `route.choice` 字段（续接已有变更），则跳过评估，直接使用已记录的 Route。
+
+### Route 升级
+
+在执行过程中，如果发现变更的风险比预期高，可以升级 Route：
+
+```bash
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs route <change-name> upgrade <target-route>
+```
+
+**升级规则**：
+- 只能向上升级：`trivial` → `standard` → `full`
+- 不允许降级
+- 升级后会记录升级历史（`upgradedFrom` 和 `upgradedAt`）
+
+**示例**：
+```bash
+# 从 trivial 升级到 standard
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs route fix-typo upgrade standard
+
+# 从 standard 升级到 full
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs route add-feature upgrade full
+```
+
+### 向后兼容
+
+对于没有 `route` 字段的旧状态文件，系统会自动使用 `full` Route，确保所有 Phase 都可以执行。
+
+### 常见问题
+
+**Q: 如何查看当前变更使用的 Route？**
+```bash
+node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get <change-name>
+```
+查看返回结果中的 `route.choice` 字段。
+
+**Q: Route 选择错误怎么办？**
+可以在 Phase 0 完成后使用 `route upgrade` 命令升级到更高的 Route。注意不能降级。
+
+**Q: 旧的状态文件如何支持 Route 机制？**
+无需额外操作。系统会自动识别没有 `route` 字段的旧状态文件，并使用 `full` Route 作为默认值。
 
 ## Commands
 
