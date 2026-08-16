@@ -1,13 +1,7 @@
 import crypto from 'node:crypto';
 import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
-import os from 'node:os';
 import path from 'node:path';
-import {
-  emitError,
-  execCommandSync,
-  findOpenSpecRoot,
-  validateChangeName,
-} from './pipeline-lib.mjs';
+import { emitError, findOpenSpecRoot, validateChangeName } from './pipeline-lib.mjs';
 
 const EXIT_STATE_NOT_FOUND = 10;
 const EXIT_INVALID_TRANSITION = 11;
@@ -53,18 +47,31 @@ const routeTypes = new Set(['trivial', 'standard', 'full']);
 
 // 各 Route 对应的 Phase 路径
 const routePhasePaths = {
-  trivial: [0, 2, 6], // entrance -> apply -> commit/push
-  standard: [0, 1, 2, 3, 4, 5, 6, 7], // 完整流程
-  full: [0, 1, 2, 3, 4, 5, 6, 7], // 完整流程，但增加更多验证
+  trivial: [0, 2, 6],
+  standard: [0, 1, 2, 3, 6],
+  full: [0, 1, 2, 3, 4, 5, 6, 7],
 };
+
+const PRIVATE_STATE_FIELDS = new Set([
+  'createdByEmail',
+  'machineInfo',
+  'hostname',
+  'os',
+  'node',
+  'arch',
+]);
 
 function output(payload, exitCode = 0) {
   process.stdout.write(`${JSON.stringify(payload)}\n`);
   process.exitCode = exitCode;
 }
 
+function stateRoot(root) {
+  return path.join(root, 'openspec', '.pipeline-state');
+}
+
 function statePath(root, changeName) {
-  return path.join(root, 'openspec', '.pipeline-state', `${changeName}.json`);
+  return path.join(stateRoot(root), `${changeName}.json`);
 }
 
 function diskVersion(state) {
@@ -81,48 +88,19 @@ function rememberReadVersion(state) {
   return state;
 }
 
-function resolveCreatedBy() {
-  try {
-    const name = execCommandSync('git', ['config', 'user.name'], {
-      encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'pipe'],
-    }).trim();
-    if (name) return name;
-  } catch {
-    // Fall through to local environment identity.
-  }
-
-  if (process.env.USER) return process.env.USER;
-  try {
-    const username = os.userInfo().username;
-    if (username) return username;
-  } catch {
-    // Fall through to hostname.
-  }
-  return os.hostname() || 'unknown';
+function resolveCreatedBy(value) {
+  const identifier = String(value || 'pipeline-actor').trim();
+  return identifier && !identifier.includes('@') ? identifier : 'pipeline-actor';
 }
 
-function resolveCreatedByEmail() {
-  try {
-    const email = execCommandSync('git', ['config', 'user.email'], {
-      encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'pipe'],
-    }).trim();
-    if (email) return email;
-  } catch {
-    // An email is optional.
-  }
-  return '';
-}
-
-function collectMachineInfo() {
-  return {
-    platform: os.platform(),
-    hostname: os.hostname(),
-    osRelease: os.release(),
-    nodeVersion: process.version,
-    arch: os.arch(),
-  };
+function sanitizeState(value) {
+  if (Array.isArray(value)) return value.map(sanitizeState);
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => !PRIVATE_STATE_FIELDS.has(key))
+      .map(([key, item]) => [key, sanitizeState(item)]),
+  );
 }
 
 function formatLocalTime(date = new Date()) {
@@ -136,8 +114,6 @@ function canonicalizeFingerprintFields(fields) {
     changeName: fields.changeName,
     createdAt: fields.createdAt,
     createdBy: fields.createdBy,
-    createdByEmail: fields.createdByEmail || '',
-    machineInfo: fields.machineInfo,
     featureId: fields.featureId || '',
     fingerprintNonce: fields.fingerprintNonce,
   });
@@ -164,9 +140,7 @@ function fingerprintFieldsFromState(state) {
     schemaVersion: state.schemaVersion,
     changeName: state.changeName,
     createdAt: state.createdAt,
-    createdBy: state.createdBy,
-    createdByEmail: state.createdByEmail || '',
-    machineInfo: state.machineInfo,
+    createdBy: resolveCreatedBy(state.createdBy),
     featureId: state.featureInfo?.featureId || '',
     fingerprintNonce: state.fingerprintNonce,
   };
@@ -186,18 +160,13 @@ function hasRefreshableFingerprint(state) {
     state.changeName.length > 0 &&
     typeof state.createdAt === 'string' &&
     state.createdAt.length > 0 &&
-    typeof state.createdBy === 'string' &&
-    state.createdBy.length > 0 &&
-    state.machineInfo &&
-    typeof state.machineInfo === 'object' &&
-    !Array.isArray(state.machineInfo) &&
     typeof state.fingerprintNonce === 'string' &&
     state.fingerprintNonce.length > 0
   );
 }
 
 async function refreshFingerprints(root, dryRun) {
-  const directory = path.join(root, 'openspec', '.pipeline-state');
+  const directory = stateRoot(root);
   let entries;
   try {
     entries = await readdir(directory, { withFileTypes: true });
@@ -243,18 +212,27 @@ async function refreshFingerprints(root, dryRun) {
     }
   }
 
-  const compliant = states.filter(({ state }) => isCurrentFingerprintId(state?.fingerprintId));
+  const compliant = states.filter(
+    ({ state }) =>
+      isCurrentFingerprintId(state?.fingerprintId) &&
+      !Object.keys(state).some((key) => PRIVATE_STATE_FIELDS.has(key)),
+  );
   const refreshable = states.filter(
     ({ state }) =>
-      !isCurrentFingerprintId(state?.fingerprintId) && hasRefreshableFingerprint(state),
+      (!isCurrentFingerprintId(state?.fingerprintId) ||
+        Object.keys(state).some((key) => PRIVATE_STATE_FIELDS.has(key))) &&
+      hasRefreshableFingerprint(state),
   );
-  const updates = refreshable.map(({ file, state }) => ({
-    file,
-    state: {
-      ...state,
-      fingerprintId: computeFingerprint(fingerprintFieldsFromState(state)),
-    },
-  }));
+  const updates = refreshable.map(({ file, state }) => {
+    const sanitized = sanitizeState({ ...state, createdBy: resolveCreatedBy(state.createdBy) });
+    return {
+      file,
+      state: {
+        ...sanitized,
+        fingerprintId: computeFingerprint(fingerprintFieldsFromState(sanitized)),
+      },
+    };
+  });
 
   if (!dryRun) {
     for (const { file, state } of updates) {
@@ -287,21 +265,19 @@ async function refreshFingerprints(root, dryRun) {
 }
 
 function ensureMetaFields(state) {
-  if (!state.createdBy) state.createdBy = 'unknown';
-  if (!state.createdByEmail) state.createdByEmail = '';
-  if (!state.machineInfo?.platform) {
-    state.machineInfo = {
-      platform: state.machineInfo?.platform || 'unknown',
-      hostname: state.machineInfo?.hostname || 'unknown',
-      osRelease: state.machineInfo?.osRelease || 'unknown',
-      nodeVersion: state.machineInfo?.nodeVersion || 'unknown',
-      arch: state.machineInfo?.arch || 'unknown',
-    };
-  }
+  const needsFingerprintRefresh = Object.keys(state).some((key) => PRIVATE_STATE_FIELDS.has(key));
+  state.createdBy = resolveCreatedBy(state.createdBy);
   if (!state.featureInfo) state.featureInfo = null;
   if (!state.fingerprintId) state.fingerprintId = '';
   if (!state.fingerprintNonce) state.fingerprintNonce = '';
-  return state;
+  const sanitized = sanitizeState(state);
+  Object.defineProperty(sanitized, '_needsFingerprintRefresh', {
+    value: needsFingerprintRefresh,
+    writable: true,
+    configurable: true,
+    enumerable: false,
+  });
+  return sanitized;
 }
 
 async function tryReadState(root, changeName) {
@@ -376,9 +352,13 @@ async function saveState(root, state) {
 
   state._version = diskVersion(state) + 1;
   state.updatedAt = formatLocalTime();
+  if (state._needsFingerprintRefresh && hasRefreshableFingerprint(state)) {
+    state.fingerprintId = computeFingerprint(fingerprintFieldsFromState(state));
+  }
+  const persistedState = sanitizeState(state);
   try {
     await mkdir(directory, { recursive: true });
-    await writeFile(temporary, `${JSON.stringify(state, null, 2)}\n`, { mode: 0o600 });
+    await writeFile(temporary, `${JSON.stringify(persistedState, null, 2)}\n`, { mode: 0o600 });
     await rename(temporary, target);
     rememberReadVersion(state);
   } catch (error) {
@@ -414,29 +394,13 @@ function setNested(target, dottedPath, value) {
 function allowedTransition(from, to, state) {
   const route = state.route || 'standard';
   const routePath = routePhasePaths[route] || routePhasePaths.standard;
-  
-  // Route-based transition: allow skipping phases not in the route path
-  if (route !== 'standard' && route !== 'full') {
-    const fromIndex = routePath.indexOf(from);
-    const toIndex = routePath.indexOf(to);
-    
-    // Both phases must be in the route path
-    if (fromIndex !== -1 && toIndex !== -1) {
-      // Allow forward jump along the route path
-      if (toIndex === fromIndex + 1) return true;
-      // Allow skipping phases not in route (e.g., trivial: 0->2, 2->6)
-      if (toIndex > fromIndex) {
-        // Check gates only for phases being entered
-        for (let i = fromIndex + 1; i <= toIndex; i += 1) {
-          const targetPhase = routePath[i];
-          const prevPhase = i > 0 ? routePath[i - 1] : from;
-          if (validateGates(state, prevPhase, targetPhase)) return false;
-        }
-        return true;
-      }
-    }
-  }
-  
+  const fromIndex = routePath.indexOf(from);
+  const toIndex = routePath.indexOf(to);
+
+  if (fromIndex === -1 || toIndex === -1) return false;
+  if (from === to) return true;
+  if (to > from && route !== 'full') return toIndex === fromIndex + 1;
+
   const allowed = {
     0: [0, 1],
     1: [1, 2],
@@ -449,32 +413,56 @@ function allowedTransition(from, to, state) {
   };
 
   if (allowed[from]?.includes(to)) return true;
+  return route === 'full' && to > from;
+}
 
-  if (to > from) {
-    for (let phase = from + 1; phase <= to; phase += 1) {
-      if (validateGates(state, phase - 1, phase)) return false;
-    }
-    return true;
-  }
-
-  return false;
+function hasPassedReview(state) {
+  return (
+    state.review?.status === 'passed' ||
+    state.review?.rounds?.at(-1)?.status === 'passed'
+  );
 }
 
 function validateGates(state, from, to) {
   const route = state.route || 'standard';
-  const routePath = routePhasePaths[route] || routePhasePaths.standard;
-  
-  // Helper: check if a phase is in the current route
-  const isPhaseInRoute = (phase) => routePath.includes(phase);
-  
-  // For non-standard routes, skip gates for phases not in the route
+
   if (route === 'trivial') {
-    // Trivial route: 0 -> 2 -> 6, skip review(3), tests(4), archive(5), merge(7) gates
-    if (to === 2 && state.decisions.proposalApproved !== true) {
-      return ['proposal-approval-required', '进入 Phase2 前必须记录 proposalApproved=true'];
-    }
     if (from === 2 && to === 6) {
-      // Direct to Phase 6, only need basic checks
+      if (state.decisions.implementationConfirmed !== true) {
+        return ['implementation-confirmation-required', '离开 Phase2 前必须确认实施摘要'];
+      }
+      if (!['merge', 'push-only', 'local-only'].includes(state.decisions.postArchiveAction)) {
+        return ['post-archive-decision-required', '进入 Phase6 前必须记录归档后交付方式'];
+      }
+    }
+    return null;
+  }
+
+  if (to === 2 && state.decisions.proposalApproved !== true) {
+    return ['proposal-approval-required', '进入 Phase2 前必须记录 proposalApproved=true'];
+  }
+  if (from === 2 && to >= 3 && state.decisions.implementationConfirmed !== true) {
+    return ['implementation-confirmation-required', '离开 Phase2 前必须确认实施摘要'];
+  }
+
+  if (route === 'standard' && from === 3 && to === 6) {
+    if (!hasPassedReview(state)) {
+      return ['review-gate-required', '进入 Phase6 前必须记录 review passed'];
+    }
+    if (!['merge', 'push-only', 'local-only'].includes(state.decisions.postArchiveAction)) {
+      return ['post-archive-decision-required', '进入 Phase6 前必须记录归档后交付方式'];
+    }
+    return null;
+  }
+
+  if (route === 'full') {
+    if (to === 5 && !['passed', 'skipped', 'debt-recorded'].includes(state.tests.status)) {
+      return ['test-gate-required', '进入 Phase5 前必须记录测试通过、显式跳过或技术债务'];
+    }
+    if (to === 6) {
+      if (!['passed', 'skipped'].includes(state.verify.status)) {
+        return ['verify-gate-required', '进入 Phase6 前必须记录 verify 通过或经用户确认跳过'];
+      }
       if (!state.archivePath) {
         return ['archive-required', '进入 Phase6 前必须记录归档路径'];
       }
@@ -482,59 +470,30 @@ function validateGates(state, from, to) {
         return ['post-archive-decision-required', '进入 Phase6 前必须记录归档后交付方式'];
       }
     }
-    if (to === 6) {
-      if (!['merge', 'push-only', 'local-only'].includes(state.decisions.postArchiveAction)) {
-        return ['post-archive-decision-required', '进入 Phase6 前必须记录归档后交付方式'];
+    if (to === 7) {
+      if (state.decisions.postArchiveAction !== 'merge') {
+        return ['merge-gate-required', '进入 Phase7 前必须记录 postArchiveAction=merge'];
       }
-    }
-    return null;
-  }
-  
-  // Standard and full routes use full gate validation
-  if (to === 2 && state.decisions.proposalApproved !== true) {
-    return ['proposal-approval-required', '进入 Phase2 前必须记录 proposalApproved=true'];
-  }
-  if (from === 2 && to >= 3 && state.decisions.implementationConfirmed !== true) {
-    return ['implementation-confirmation-required', '离开 Phase2 前必须确认实施摘要'];
-  }
-  if (to === 5 && !['passed', 'skipped', 'debt-recorded'].includes(state.tests.status)) {
-    return ['test-gate-required', '进入 Phase5 前必须记录测试通过、显式跳过或技术债务'];
-  }
-  if (to === 6) {
-    if (!['passed', 'skipped'].includes(state.verify.status)) {
-      return ['verify-gate-required', '进入 Phase6 前必须记录 verify 通过或经用户确认跳过'];
-    }
-    if (!state.archivePath) {
-      return ['archive-required', '进入 Phase6 前必须记录归档路径'];
-    }
-    if (!['merge', 'push-only', 'local-only'].includes(state.decisions.postArchiveAction)) {
-      return ['post-archive-decision-required', '进入 Phase6 前必须记录归档后交付方式'];
-    }
-  }
-  if (to === 7) {
-    if (state.decisions.postArchiveAction !== 'merge') {
-      return ['merge-gate-required', '进入 Phase7 前必须记录 postArchiveAction=merge'];
-    }
-    if (!state.delivery.commitSha) {
-      return ['commit-required', '进入 Phase7 前必须记录 delivery.commitSha'];
-    }
-    if (!state.delivery.sourcePushed) {
-      return ['source-push-required', '进入 Phase7 前必须推送源分支'];
+      if (!state.delivery.commitSha) {
+        return ['commit-required', '进入 Phase7 前必须记录 delivery.commitSha'];
+      }
+      if (!state.delivery.sourcePushed) {
+        return ['source-push-required', '进入 Phase7 前必须推送源分支'];
+      }
     }
   }
   return null;
 }
 
 function validateTransitionGates(state, from, to) {
-  if (to > from) {
-    for (let phase = from + 1; phase <= to; phase += 1) {
-      const gateError = validateGates(state, phase - 1, phase);
-      if (gateError) return gateError;
-    }
-    return null;
+  if ((state.route || 'standard') !== 'full' || to <= from) {
+    return validateGates(state, from, to);
   }
-
-  return validateGates(state, from, to);
+  for (let phase = from + 1; phase <= to; phase += 1) {
+    const gateError = validateGates(state, phase - 1, phase);
+    if (gateError) return gateError;
+  }
+  return null;
 }
 
 function migrateReviewToV3(state) {
@@ -717,8 +676,7 @@ if (!command) {
         output({ status: 'ok', reason: 'pipeline-state-already-exists', state: existingState });
       } else if (process.exitCode === undefined) {
         const { sourceBranch, namedArgs } = parseInitArgs(args);
-        const createdBy = namedArgs['--created-by'] || resolveCreatedBy();
-        const createdByEmail = resolveCreatedByEmail();
+        const createdBy = resolveCreatedBy(namedArgs['--created-by']);
         const featureId = namedArgs['--feature-id'] || null;
         const featureUrl = namedArgs['--feature-url'] || null;
         const skipFeatureAssociation = namedArgs['--skip-feature-association'] === true;
@@ -747,7 +705,6 @@ if (!command) {
         } else {
           const now = formatLocalTime();
           const nonce = crypto.randomBytes(4).toString('hex');
-          const machineInfo = collectMachineInfo();
           const route = namedArgs['--route'] || 'standard';
           if (!routeTypes.has(route)) {
             emitError(
@@ -769,16 +726,12 @@ if (!command) {
             executionMode: 'pipeline',
             route,
             createdBy,
-            createdByEmail,
-            machineInfo,
             featureInfo: featureId ? { featureId, featureUrl } : null,
             fingerprintId: computeFingerprint({
               schemaVersion: SCHEMA_VERSION,
               changeName,
               createdAt: now,
               createdBy,
-              createdByEmail,
-              machineInfo,
               featureId,
               fingerprintNonce: nonce,
             }),

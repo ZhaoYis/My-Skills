@@ -170,29 +170,35 @@ describe('pipeline state machine', () => {
     expect(persisted._readVersion).toBeUndefined();
   });
 
-  it('initializes creator, machine, feature and fingerprint metadata', async () => {
+  it('initializes shareable creator and fingerprint metadata without machine identity', async () => {
     const initialized = await state('init', 'metadata-fields', 'feature/metadata-fields');
     const initializedState = initialized.payload.state as {
       createdBy: string;
-      createdByEmail: string;
-      machineInfo: Record<string, string>;
       featureInfo: null;
       fingerprintId: string;
       fingerprintNonce: string;
+      createdByEmail?: string;
+      machineInfo?: unknown;
+      hostname?: string;
+      os?: string;
+      node?: string;
+      arch?: string;
     };
 
     expect(initializedState).toMatchObject({
-      createdBy: 'Pipeline Tester',
-      createdByEmail: 'pipeline@example.com',
+      createdBy: 'pipeline-actor',
       featureInfo: null,
-      machineInfo: {
-        platform: os.platform(),
-        hostname: os.hostname(),
-        osRelease: os.release(),
-        nodeVersion: process.version,
-        arch: os.arch(),
-      },
     });
+    for (const field of [
+      'createdByEmail',
+      'machineInfo',
+      'hostname',
+      'os',
+      'node',
+      'arch',
+    ]) {
+      expect(initializedState).not.toHaveProperty(field);
+    }
     expect(initializedState.fingerprintId).toMatch(/^fp1\.[A-Za-z0-9_-]{342}$/);
     expect(initializedState.fingerprintNonce).toMatch(/^[a-f0-9]{8}$/);
   });
@@ -228,8 +234,8 @@ describe('pipeline state machine', () => {
 
     expect(initialized.payload.state).toMatchObject({
       createdBy: 'testuser',
-      createdByEmail: 'pipeline@example.com',
     });
+    expect(initialized.payload.state).not.toHaveProperty('createdByEmail');
   });
 
   it('generates a unique fingerprint for each change', async () => {
@@ -241,7 +247,7 @@ describe('pipeline state machine', () => {
     );
   });
 
-  it('fills metadata defaults when loading an older Schema v2 state', async () => {
+  it('reads older state and removes private metadata when it is next saved', async () => {
     const stateDir = path.join(repo, 'openspec/.pipeline-state');
     await fs.ensureDir(stateDir);
     await fs.writeJson(path.join(stateDir, 'older-v2.json'), {
@@ -254,23 +260,35 @@ describe('pipeline state machine', () => {
       phaseHistory: [],
       gatesBypassed: [],
       decisions: {},
+      createdBy: 'Legacy Person',
+      createdByEmail: 'legacy@example.com',
+      machineInfo: {
+        platform: 'darwin',
+        hostname: 'private-host',
+        osRelease: '1',
+        nodeVersion: 'v24',
+        arch: 'arm64',
+      },
+      fingerprintId: 'legacy-fingerprint',
+      fingerprintNonce: '1234abcd',
+      createdAt: '2026-07-25 00:00:00',
     });
 
     const loaded = await state('get', 'older-v2');
     expect(loaded.payload.state).toMatchObject({
-      createdBy: 'unknown',
-      createdByEmail: '',
-      machineInfo: {
-        platform: 'unknown',
-        hostname: 'unknown',
-        osRelease: 'unknown',
-        nodeVersion: 'unknown',
-        arch: 'unknown',
-      },
+      createdBy: 'Legacy Person',
       featureInfo: null,
-      fingerprintId: '',
-      fingerprintNonce: '',
+      fingerprintId: 'legacy-fingerprint',
+      fingerprintNonce: '1234abcd',
     });
+    expect(loaded.payload.state).not.toHaveProperty('createdByEmail');
+    expect(loaded.payload.state).not.toHaveProperty('machineInfo');
+
+    await state('decision', 'older-v2', 'legacyRead', 'true');
+    const persisted = await fs.readJson(path.join(stateDir, 'older-v2.json'));
+    expect(persisted).not.toHaveProperty('createdByEmail');
+    expect(persisted).not.toHaveProperty('machineInfo');
+    expect(persisted.fingerprintId).toMatch(/^fp1\.[A-Za-z0-9_-]{342}$/);
   });
 
   it('records pipeline phase history during transitions', async () => {

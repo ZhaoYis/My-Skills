@@ -117,6 +117,8 @@ describe('dev-pipeline-state transition gates', () => {
     const state = JSON.parse(result.stdout).state;
     expect(state.fingerprintId).toMatch(/^fp1\.[A-Za-z0-9_-]{342}$/);
     expect(state.featureInfo.featureId).toBe('REQ-2026-001');
+    expect(state).not.toHaveProperty('createdByEmail');
+    expect(state).not.toHaveProperty('machineInfo');
   });
 
   it('skips compliant fingerprints and refreshes only noncompliant values', async () => {

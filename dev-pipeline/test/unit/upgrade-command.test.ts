@@ -114,10 +114,15 @@ describe('runUpgradeCommand', () => {
     const refreshedState = await fs.readJson(stateFile);
     expect(refreshedState.fingerprintId).toMatch(/^fp1\.[A-Za-z0-9_-]{342}$/);
     expect(refreshedState.fingerprintId).not.toBe('legacy-fingerprint');
-    expect((await fs.readJson(compliantStateFile)).fingerprintId).toBe(compliantFingerprintId);
+    expect(refreshedState).not.toHaveProperty('createdByEmail');
+    expect(refreshedState).not.toHaveProperty('machineInfo');
+    const refreshedCompliantState = await fs.readJson(compliantStateFile);
+    expect(refreshedCompliantState.fingerprintId).not.toBe(compliantFingerprintId);
+    expect(refreshedCompliantState).not.toHaveProperty('createdByEmail');
+    expect(refreshedCompliantState).not.toHaveProperty('machineInfo');
     const messages = logSpy.mock.calls.map((call) => String(call[0]));
     expect(
-      messages.some((message) => message.includes('detected 2; 1 compliant; 1 refreshed')),
+      messages.some((message) => message.includes('detected 2; 0 compliant; 2 refreshed')),
     ).toBe(true);
   });
 });

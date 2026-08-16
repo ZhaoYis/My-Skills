@@ -115,7 +115,7 @@ describe('route grading', () => {
   });
 
   describe('trivial route phase path', () => {
-    it('allows Phase 0 to Phase 2 transition', async () => {
+    it('allows Phase 0 to Phase 2 without proposal approval', async () => {
       await rawState(
         'init',
         'trivial-p0-p2',
@@ -125,16 +125,13 @@ describe('route grading', () => {
         'trivial',
       );
 
-      // Set proposal approved to pass gate
-      await state('decision', 'trivial-p0-p2', 'proposalApproved', 'true');
-
       const result = await state('transition', 'trivial-p0-p2', '2', '1');
 
       expect(result.code).toBe(0);
       expect(result.payload.state).toMatchObject({ currentPhase: 2 });
     });
 
-    it('allows Phase 2 to Phase 6 transition', async () => {
+    it('allows Phase 2 to Phase 6 with implementation and delivery decisions only', async () => {
       await rawState(
         'init',
         'trivial-p2-p6',
@@ -144,17 +141,34 @@ describe('route grading', () => {
         'trivial',
       );
 
-      // Set up state for Phase 2 -> Phase 6
-      await state('decision', 'trivial-p2-p6', 'proposalApproved', 'true');
       await state('transition', 'trivial-p2-p6', '2', '1');
       await state('decision', 'trivial-p2-p6', 'implementationConfirmed', 'true');
-      await state('set', 'trivial-p2-p6', 'archivePath', '"openspec/archive/trivial-p2-p6"');
       await state('decision', 'trivial-p2-p6', 'postArchiveAction', '"push-only"');
 
       const result = await state('transition', 'trivial-p2-p6', '6', '1');
 
       expect(result.code).toBe(0);
-      expect(result.payload.state).toMatchObject({ currentPhase: 6 });
+      expect(result.payload.state).toMatchObject({ currentPhase: 6, archivePath: null });
+    });
+
+    it('requires implementation confirmation and post-archive action', async () => {
+      await rawState(
+        'init',
+        'trivial-gates',
+        'feature/trivial-gates',
+        '--skip-feature-association',
+        '--route',
+        'trivial',
+      );
+      await state('transition', 'trivial-gates', '2', '1');
+
+      expect((await state('transition', 'trivial-gates', '6', '1')).payload.reason).toBe(
+        'implementation-confirmation-required',
+      );
+      await state('decision', 'trivial-gates', 'implementationConfirmed', 'true');
+      expect((await state('transition', 'trivial-gates', '6', '1')).payload.reason).toBe(
+        'post-archive-decision-required',
+      );
     });
 
     it('rejects Phase 0 to Phase 1 transition for trivial route', async () => {
@@ -175,7 +189,7 @@ describe('route grading', () => {
   });
 
   describe('standard route phase path', () => {
-    it('allows sequential phase transitions', async () => {
+    it('allows 0 -> 1 -> 2 -> 3 -> 6 with standard gates', async () => {
       await rawState(
         'init',
         'standard-seq',
@@ -183,10 +197,59 @@ describe('route grading', () => {
         '--skip-feature-association',
       );
 
-      // Phase 0 -> Phase 1
-      const result1 = await state('transition', 'standard-seq', '1', '1');
-      expect(result1.code).toBe(0);
-      expect(result1.payload.state).toMatchObject({ currentPhase: 1 });
+      expect((await state('transition', 'standard-seq', '1', '1')).code).toBe(0);
+      expect((await state('transition', 'standard-seq', '2', '1')).payload.reason).toBe(
+        'proposal-approval-required',
+      );
+      await state('decision', 'standard-seq', 'proposalApproved', 'true');
+      expect((await state('transition', 'standard-seq', '2', '1')).code).toBe(0);
+      await state('decision', 'standard-seq', 'implementationConfirmed', 'true');
+      expect((await state('transition', 'standard-seq', '3', '1')).code).toBe(0);
+      expect((await state('transition', 'standard-seq', '6', '1')).payload.reason).toBe(
+        'review-gate-required',
+      );
+      await state('attempt', 'standard-seq', 'review', 'passed');
+      await state('decision', 'standard-seq', 'postArchiveAction', '"push-only"');
+      const result = await state('transition', 'standard-seq', '6', '1');
+      expect(result.code).toBe(0);
+      expect(result.payload.state).toMatchObject({
+        currentPhase: 6,
+        archivePath: null,
+        tests: { status: 'pending' },
+        verify: { status: 'pending' },
+      });
+    });
+
+    it.each([4, 5, 7])('rejects Phase %s for standard route', async (phase) => {
+      const change = `standard-reject-${phase}`;
+      await rawState(
+        'init',
+        change,
+        `feature/${change}`,
+        '--skip-feature-association',
+      );
+      const result = await state('transition', change, String(phase), '1');
+      expect(result.code).toBe(11);
+      expect(result.payload.reason).toBe('route-phase-not-allowed');
+    });
+  });
+
+  describe('full route phase path', () => {
+    it('keeps all phases available', async () => {
+      await rawState(
+        'init',
+        'full-matrix',
+        'feature/full-matrix',
+        '--skip-feature-association',
+        '--route',
+        'full',
+      );
+      expect((await state('transition', 'full-matrix', '1', '1')).code).toBe(0);
+      await state('decision', 'full-matrix', 'proposalApproved', 'true');
+      expect((await state('transition', 'full-matrix', '2', '1')).code).toBe(0);
+      await state('decision', 'full-matrix', 'implementationConfirmed', 'true');
+      expect((await state('transition', 'full-matrix', '3', '1')).code).toBe(0);
+      expect((await state('transition', 'full-matrix', '4', '1')).code).toBe(0);
     });
   });
 
@@ -201,7 +264,6 @@ describe('route grading', () => {
         'trivial',
       );
 
-      await state('decision', 'route-persist', 'proposalApproved', 'true');
       await state('transition', 'route-persist', '2', '1');
 
       const getResult = await state('get', 'route-persist');

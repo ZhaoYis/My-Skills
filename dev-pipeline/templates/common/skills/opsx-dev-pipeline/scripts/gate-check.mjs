@@ -33,10 +33,17 @@ function output(payload, exitCode = EXIT_OK) {
   process.exitCode = exitCode;
 }
 
+function stateRoot(root) {
+  return path.join(root, 'openspec', '.pipeline-state');
+}
+
+function statePath(root, changeName) {
+  return path.join(stateRoot(root), `${changeName}.json`);
+}
+
 async function loadState(root, changeName) {
-  const statePath = path.join(root, 'openspec', '.pipeline-state', `${changeName}.json`);
   try {
-    return JSON.parse(await readFile(statePath, 'utf8'));
+    return JSON.parse(await readFile(statePath(root, changeName), 'utf8'));
   } catch (error) {
     if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
       return null;
