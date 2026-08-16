@@ -25,7 +25,8 @@
     "prisma:validate": "node scripts/run-prisma.mjs validate",
     "prisma:verify-db": "node scripts/verify-database.mjs",
     "prisma:push": "node scripts/run-prisma.mjs db push",
-    "prisma:migrate": "node scripts/run-prisma.mjs migrate deploy"
+    "prisma:migrate": "node scripts/run-prisma.mjs migrate deploy",
+    "acceptance": "node scripts/metrics-acceptance.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

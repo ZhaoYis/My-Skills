@@ -2,9 +2,8 @@ import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const server = path.join(root, 'metrics-server');
-const website = path.join(root, 'metrics-website');
+const server = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const website = path.resolve(server, '..', 'metrics-website');
 const provider = process.env.DB_PROVIDER;
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 
