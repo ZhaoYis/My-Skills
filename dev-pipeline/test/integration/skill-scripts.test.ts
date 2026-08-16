@@ -81,6 +81,26 @@ switch (command) {
   return { root, bin };
 }
 
+async function createPipelineCliMock(bin: string): Promise<void> {
+  const mock = `
+const args = process.argv.slice(2);
+process.stdout.write(JSON.stringify({ args, cwd: process.cwd() }) + '\\n');
+process.exit(Number(process.env.MOCK_PIPELINE_EXIT || 0));
+`;
+  const mockScript = path.join(bin, 'opsx-dev-pipeline.mjs');
+  await fs.outputFile(mockScript, mock);
+  if (process.platform === 'win32') {
+    await fs.outputFile(
+      path.join(bin, 'opsx-dev-pipeline.cmd'),
+      `@echo off\r\n"${process.execPath}" "${mockScript}" %*\r\n`,
+    );
+  } else {
+    const mockPath = path.join(bin, 'opsx-dev-pipeline');
+    await fs.outputFile(mockPath, `#!/usr/bin/env node\n${mock}`);
+    await fs.chmod(mockPath, 0o755);
+  }
+}
+
 function exec(command: string, args: string[], cwd: string): Promise<ScriptResult> {
   return new Promise((resolve) => {
     execFile(command, args, { cwd }, (error, stdout, stderr) => {
@@ -235,6 +255,57 @@ describe('opsx-dev-pipeline script contracts', () => {
 });
 
 // --- Script wrapper success-path and edge-case tests ---
+
+describe('load-phase.mjs compatibility wrapper', () => {
+  it('forwards every argument to the opsx-dev-pipeline load command', async () => {
+    const { root, bin } = await createRepo(true);
+    await createPipelineCliMock(bin);
+
+    const result = await runScript(
+      'load-phase.mjs',
+      ['--phase', '3', '--change', 'demo-change', '--dir', root, '--format', 'json'],
+      root,
+      bin,
+    );
+
+    expect(result.code).toBe(0);
+    const payload = JSON.parse(result.stdout) as { args: string[]; cwd: string };
+    expect(payload.args).toEqual([
+      'load',
+      '--phase',
+      '3',
+      '--change',
+      'demo-change',
+      '--dir',
+      root,
+      '--format',
+      'json',
+    ]);
+    expect(await isSameFileSystemEntry(payload.cwd, root)).toBe(true);
+    expect(result.stderr).toBe('');
+  });
+
+  it('preserves the wrapped CLI exit code', async () => {
+    const { root, bin } = await createRepo(true);
+    await createPipelineCliMock(bin);
+
+    const result = await runScript('load-phase.mjs', ['--phase', '6'], root, bin, {
+      MOCK_PIPELINE_EXIT: '23',
+    });
+
+    expect(result.code).toBe(23);
+  });
+
+  it('fails when the opsx-dev-pipeline CLI is unavailable', async () => {
+    const { root } = await createRepo(true);
+
+    const result = await runScript('load-phase.mjs', ['--phase', '0'], root, '');
+
+    expect(result.code).not.toBe(0);
+    expect(result.stdout).toBe('');
+    expect(result.stderr.length).toBeGreaterThan(0);
+  });
+});
 
 describe('new-change.mjs', () => {
   it('creates a change successfully', async () => {

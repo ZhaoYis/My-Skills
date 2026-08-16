@@ -6,7 +6,7 @@ path_hints:
   - "src/**"
   - "tests/**"
   - "openspec/**"
-description: "提交与推送阶段的详细指引，包括预提交检查、分步暂存、源分支推送"
+description: "trivial、standard、full 共用的提交与推送阶段指引；仅 full 可在 merge 交付时继续 Phase7"
 ---
 
 # Phase6: 提交与推送
@@ -88,9 +88,12 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<name>" delivery.sourcePus
 
 ### 分支逻辑
 
-- `postArchiveAction=local-only` → 进入 [local-only 完成流程](#local-only-完成流程)
-- `postArchiveAction=push-only` → 进入 [push-only 完成流程](#push-only-完成流程)
-- `postArchiveAction=merge` → 执行 `node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 7 23` 进入 Phase 7
+- `trivial` / `standard`：Phase6 是最后一个 Phase；只允许 `local-only` 或 `push-only` 完成流程，不进入 Phase7
+- `full` 且 `postArchiveAction=local-only` → 进入 [local-only 完成流程](#local-only-完成流程)
+- `full` 且 `postArchiveAction=push-only` → 进入 [push-only 完成流程](#push-only-完成流程)
+- 仅 `full` 且 `postArchiveAction=merge` → 执行 `node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 7 23`，再加载 Phase7 bundle
+
+若 trivial/standard 状态中出现 `postArchiveAction=merge`，必须暂停并让用户改为 local-only/push-only 或升级 route，不得进入 Phase7。
 
 ### local-only 完成流程
 

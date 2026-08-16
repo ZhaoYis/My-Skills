@@ -416,9 +416,16 @@ describe('tool matrix', () => {
     // Verify SKILL.md thin entry design
     const skillContent = await fs.readFile(path.join(skillRoot, 'SKILL.md'), 'utf8');
     expect(skillContent).toContain('入口决策树');
-    expect(skillContent).toContain('Route 分级');
-    expect(skillContent).toContain('动态加载 Phase 指引');
-    expect(skillContent).toContain('load-phase.mjs --phase');
+    expect(skillContent).toContain('Route 矩阵');
+    expect(skillContent).toContain('Phase 加载协议');
+    expect(skillContent).toContain(
+      'opsx-dev-pipeline load --phase <N> --change "<change>" --dir "<repo-root>"',
+    );
+    expect(skillContent).toContain('| `trivial` |');
+    expect(skillContent).toContain('| 0 → 2 → 6 |');
+    expect(skillContent).toContain('| 0 → 1 → 2 → 3 → 6 |');
+    expect(skillContent).toContain('| 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 |');
+    expect(skillContent).not.toContain('load-phase.mjs --phase <N> --route');
     expect(skillContent).toContain('执行约束');
     expect(skillContent).toContain('错误处理速查');
     expect(skillContent).toContain('状态协议');
@@ -473,10 +480,29 @@ describe('tool matrix', () => {
     expect(entrance).toContain('--feature-id "<featureId>" --feature-url "<featureUrl>"');
     expect(entrance).toContain('--skip-feature-association');
     expect(entrance).toContain('不得推断为跳过');
+    expect(entrance).toContain('0 → 2 → 6');
+    expect(entrance).toContain('0 → 1 → 2 → 3 → 6');
+    expect(entrance).toContain('0 → 1 → 2 → 3 → 4 → 5 → 6 → 7');
+    expect(entrance).toContain('trivial：跳过 Phase1，直接实施');
 
     const review = await fs.readFile(path.join(skillRoot, 'references/phase-3-review.md'), 'utf8');
     expect(review).toContain('「继续后续流程」仅跳过修复当前审查发现的问题');
-    expect(review).toContain('transition "<name>" 4 14');
+    expect(review).toContain('`standard`：执行 `transition "<name>" 6 20`');
+    expect(review).toContain('`full`：执行 `transition "<name>" 4 14`');
+
+    const commitPush = await fs.readFile(
+      path.join(skillRoot, 'references/phase-6-commit-push.md'),
+      'utf8',
+    );
+    expect(commitPush).toContain('trivial、standard、full 共用');
+    expect(commitPush).toContain('仅 `full` 且 `postArchiveAction=merge`');
+
+    const mergeDeliver = await fs.readFile(
+      path.join(skillRoot, 'references/phase-7-merge-deliver.md'),
+      'utf8',
+    );
+    expect(mergeDeliver).toContain('routes: [full]');
+    expect(mergeDeliver).toContain('Phase7: 合并与交付（仅 full route）');
 
     const unitTests = await fs.readFile(
       path.join(skillRoot, 'references/phase-4-unit-tests.md'),

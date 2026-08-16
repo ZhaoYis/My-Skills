@@ -36,17 +36,17 @@ node <SKILL_ROOT>/scripts/preflight.mjs
 
 | Route | 适用场景 | Phase 路径 | 跳过阶段 |
 |-------|---------|-----------|---------|
-| `trivial` | typo 修复、配置调整、单文件改动、文档更新 | 0 → 2 → 6 | 1, 3, 4, 5, 7 |
-| `standard` | 常规功能开发、Bug 修复、小范围重构 | 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 | 无 |
-| `full` | 跨模块重构、架构变更、高风险变更 | 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 | 无（增强验证） |
+| `trivial` | 无运行时行为变化的 typo、格式、注释、极小配置调整 | 0 → 2 → 6 | 1, 3, 4, 5, 7 |
+| `standard` | 常规功能开发、Bug 修复、小范围重构 | 0 → 1 → 2 → 3 → 6 | 4, 5, 7 |
+| `full` | 核心逻辑、数据库、安全、跨模块高风险变更 | 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 | 无 |
 
 使用 **{{askTool}}** 询问用户选择 Route：
 - **header**：`Route 分级`
 - **question**：`根据变更复杂度选择合适的 Route。Route 决定了流水线经过的 Phase 路径。`
 - **options**：
   - `trivial — 简单变更` — typo 修复、配置调整、单文件改动。路径：Phase0 → Phase2 → Phase6
-  - `standard — 标准变更（推荐）` — 常规功能开发、Bug 修复。路径：完整 7 Phase 流程
-  - `full — 复杂变更` — 跨模块重构、架构变更。路径：完整 7 Phase 流程，增加更多验证
+  - `standard — 标准变更（推荐）` — 常规功能开发、Bug 修复。路径：Phase0 → Phase1 → Phase2 → Phase3 → Phase6
+  - `full — 高保障变更` — 核心逻辑、数据库、安全或跨模块高风险变更。路径：Phase0 → Phase1 → Phase2 → Phase3 → Phase4 → Phase5 → Phase6 → Phase7
 
 ## Step3：判断入口类型
 
@@ -84,11 +84,15 @@ node <SKILL_ROOT>/scripts/preflight.mjs
 ### 3.b 用户提供了需求描述
 
 - 从描述推导 kebab-case 的 change 名称
-- 获取当前分支，按“首次创建状态的统一规则”询问外部需求关联并初始化状态，然后迁移到 Phase1：
+- 获取当前分支，按“首次创建状态的统一规则”询问外部需求关联并初始化状态，然后按 route 分流：
   ```bash
+  # trivial：跳过 Phase1，直接实施
+  node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 2 6
+
+  # standard / full：进入提案确认
   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 1 3
   ```
-- 进入 **Phase1 Step3（决策点 1a）**
+- `trivial` 进入 **Phase2 Step6**；`standard` / `full` 进入 **Phase1 Step3（决策点 1a）**。每次迁移后都用 `opsx-dev-pipeline load --phase <phase> --change "<name>" --dir "<repo-root>" --format markdown` 加载后续指引。
 
 ### 3.c 检测到非 pipeline 执行模式
 

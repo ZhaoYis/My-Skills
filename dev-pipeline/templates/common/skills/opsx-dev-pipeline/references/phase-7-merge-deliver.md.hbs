@@ -1,13 +1,13 @@
 ---
 phase: 7
 asset_kind: procedure
-routes: [standard, full]
+routes: [full]
 path_hints:
   - "openspec/**"
-description: "合并与交付阶段的详细指引，包括目标分支合并、推送验证、标签创建、分支清理"
+description: "仅 full route 使用的合并与交付指引，包括目标分支合并、推送验证、标签创建、分支清理"
 ---
 
-# Phase7: 合并与交付
+# Phase7: 合并与交付（仅 full route）
 
 ## 步骤索引
 
@@ -23,7 +23,8 @@ description: "合并与交付阶段的详细指引，包括目标分支合并、
 - 禁止 `git push --force`、`git branch -D`、未经逐文件确认的全局 ours/theirs。
 - 任一步失败时先记录 `pause` 和失败事实，不得谎报完成或自动选择破坏性恢复方案。
 
-> **前置条件**：本 Phase 仅在 `postArchiveAction=merge` 且 Phase 6 Step22 源分支推送完成后执行。
+> **Route 限制**：本 Phase 仅属于 `full` 路径 `0 → 1 → 2 → 3 → 4 → 5 → 6 → 7`。trivial/standard 不得进入。
+> **前置条件**：`postArchiveAction=merge` 且 Phase 6 Step22 源分支推送完成。
 > 进入前必须通过 Phase 7 门禁：`postArchiveAction=merge`、`delivery.commitSha` 已记录、`delivery.sourcePushed=true`。
 
 ## Step23：[决策点 7] 目标分支与合并
