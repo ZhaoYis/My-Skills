@@ -1,19 +1,15 @@
-/**
- * knowledge select 命令
- * 根据 Phase、Route、Paths 选择 Knowledge
- */
-
 import { join } from 'node:path';
-import { resolvePackageRoot } from '../../core/runtime/resolvePackageRoot.js';
+import { buildEffectiveConfig, writeEffectiveConfigAtomic } from '../../core/config/index.js';
 import {
+  formatKnowledgeSelectResult,
   loadReferenceMetadata,
   selectKnowledge,
-  formatKnowledgeSelectResult,
 } from '../../core/knowledge/index.js';
-import { fileURLToPath } from 'node:url';
+import { resolvePackageRoot } from '../../core/runtime/resolvePackageRoot.js';
 
 export interface KnowledgeSelectCommandOptions {
   phase: number;
+  dir: string;
   routes?: string[];
   paths?: string[];
   format: 'yaml' | 'json';
@@ -22,7 +18,9 @@ export interface KnowledgeSelectCommandOptions {
 export async function runKnowledgeSelectCommand(
   options: KnowledgeSelectCommandOptions,
 ): Promise<void> {
-  const packageRoot = await resolvePackageRoot(fileURLToPath(import.meta.url));
+  const packageRoot = await resolvePackageRoot(import.meta.url);
+  const { config } = await buildEffectiveConfig(options.dir, packageRoot);
+  await writeEffectiveConfigAtomic(options.dir, config);
   const referencesDir = join(
     packageRoot,
     'templates',
@@ -31,17 +29,13 @@ export async function runKnowledgeSelectCommand(
     'opsx-dev-pipeline',
     'references',
   );
-
-  const metadata = await loadReferenceMetadata(referencesDir);
-  const result = selectKnowledge(metadata, {
+  const result = selectKnowledge(await loadReferenceMetadata(referencesDir), {
     phase: options.phase,
     routes: options.routes,
     paths: options.paths,
+    assetKindRank: config.knowledge?.asset_kind_rank,
   });
-
-  if (options.format === 'json') {
-    console.log(JSON.stringify(result, null, 2));
-  } else {
-    console.log(formatKnowledgeSelectResult(result));
-  }
+  console.log(
+    options.format === 'json' ? JSON.stringify(result, null, 2) : formatKnowledgeSelectResult(result),
+  );
 }

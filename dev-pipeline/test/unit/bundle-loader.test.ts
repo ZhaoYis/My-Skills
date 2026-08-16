@@ -1,18 +1,30 @@
-import { describe, expect, it } from 'vitest';
+import { mkdir, writeFile } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import fs from 'fs-extra';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   isPhaseAllowed,
   getRoutePhasePath,
+  loadPhaseBundle,
   formatPhaseBundleMarkdown,
   formatPhaseBundleJson,
 } from '../../src/core/bundle/loader.js';
 import type { PhaseBundle } from '../../src/core/bundle/types.js';
 
+const temporaryDirectories: string[] = [];
+
+afterEach(async () => {
+  await Promise.all(temporaryDirectories.splice(0).map((directory) => fs.remove(directory)));
+});
+
 describe('bundle loader', () => {
   describe('isPhaseAllowed', () => {
-    it('allows all phases for standard route', () => {
-      for (let phase = 0; phase <= 7; phase++) {
-        expect(isPhaseAllowed('standard', phase)).toBe(true);
-      }
+    it('allows only configured phases for standard route', () => {
+      expect(getRoutePhasePath('standard')).toEqual([0, 1, 2, 3, 6]);
+      expect(isPhaseAllowed('standard', 4)).toBe(false);
+      expect(isPhaseAllowed('standard', 5)).toBe(false);
+      expect(isPhaseAllowed('standard', 7)).toBe(false);
     });
 
     it('allows all phases for full route', () => {
@@ -44,7 +56,7 @@ describe('bundle loader', () => {
     });
 
     it('returns correct path for standard route', () => {
-      expect(getRoutePhasePath('standard')).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+      expect(getRoutePhasePath('standard')).toEqual([0, 1, 2, 3, 6]);
     });
 
     it('returns correct path for full route', () => {
@@ -52,7 +64,61 @@ describe('bundle loader', () => {
     });
 
     it('defaults to standard for unknown route', () => {
-      expect(getRoutePhasePath('unknown')).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+      expect(getRoutePhasePath('unknown')).toEqual([0, 1, 2, 3, 6]);
+    });
+  });
+
+  describe('loadPhaseBundle', () => {
+    it('reads .md.hbs references and route from change state', async () => {
+      const root = await fs.mkdtemp(path.join(os.tmpdir(), 'bundle-loader-'));
+      temporaryDirectories.push(root);
+      const references = path.join(
+        root,
+        'package/templates/common/skills/opsx-dev-pipeline/references',
+      );
+      const stateDirectory = path.join(root, 'project/openspec/.pipeline-state');
+      await mkdir(references, { recursive: true });
+      await mkdir(stateDirectory, { recursive: true });
+      await writeFile(
+        path.join(references, 'phase-2-apply.md.hbs'),
+        [
+          '---',
+          'phase: 2',
+          'asset_kind: procedure',
+          'routes: [trivial, standard, full]',
+          'path_hints:',
+          '  - "src/**"',
+          'description: "apply"',
+          '---',
+          '# Template reference',
+        ].join('\n'),
+      );
+      await writeFile(
+        path.join(stateDirectory, 'demo.json'),
+        JSON.stringify({ decisions: { route_choice: 'trivial' } }),
+      );
+
+      const bundle = await loadPhaseBundle({
+        phase: 2,
+        projectRoot: path.join(root, 'project'),
+        packageRoot: path.join(root, 'package'),
+        change: 'demo',
+        effectiveConfig: {
+          pipeline: {
+            default_route: 'standard',
+            routes: {
+              trivial: { phases: [0, 2, 6] },
+              standard: { phases: [0, 1, 2, 3, 6] },
+              full: { phases: [0, 1, 2, 3, 4, 5, 6, 7] },
+            },
+          },
+        },
+      });
+
+      expect(bundle.route).toBe('trivial');
+      expect(bundle.reference).toContain('# Template reference');
+      expect(bundle.reference).not.toContain('asset_kind');
+      expect(bundle.knowledge[0]?.file).toBe('phase-2-apply.md.hbs');
     });
   });
 
@@ -99,7 +165,7 @@ describe('bundle loader', () => {
 
       expect(result).toContain('# Phase 1: 提案编写 (Propose)');
       expect(result).toContain('**Route**: trivial');
-      expect(result).toContain('⚠️ **此 Phase 已被当前 Route 跳过**');
+      expect(result).toContain('**此 Phase 已被当前 Route 跳过**');
       expect(result).toContain('Route "trivial" 跳过此 Phase');
       expect(result).not.toContain('## 执行指引');
     });

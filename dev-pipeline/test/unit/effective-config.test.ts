@@ -1,9 +1,20 @@
-import { describe, expect, it } from 'vitest';
+import { mkdir, readFile, readdir } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { afterEach, describe, expect, it } from 'vitest';
+import fs from 'fs-extra';
 import {
   deepMerge,
   formatSourcesExplanation,
+  writeEffectiveConfigAtomic,
 } from '../../src/core/config/effective.js';
 import type { ConfigSource } from '../../src/core/config/types.js';
+
+const temporaryDirectories: string[] = [];
+
+afterEach(async () => {
+  await Promise.all(temporaryDirectories.splice(0).map((directory) => fs.remove(directory)));
+});
 
 describe('effective config', () => {
   describe('deepMerge', () => {
@@ -56,6 +67,24 @@ describe('effective config', () => {
       const a = { x: 1 };
       const b = {};
       expect(deepMerge(a, b)).toEqual({ x: 1 });
+    });
+  });
+
+  describe('atomic effective config output', () => {
+    it('writes openspec/.effective-config.yaml without leaving temp files', async () => {
+      const root = await fs.mkdtemp(path.join(os.tmpdir(), 'effective-config-'));
+      temporaryDirectories.push(root);
+      await mkdir(path.join(root, 'openspec'), { recursive: true });
+
+      const target = await writeEffectiveConfigAtomic(root, {
+        pipeline: { default_route: 'standard' },
+      });
+
+      expect(target).toBe(path.join(root, 'openspec', '.effective-config.yaml'));
+      expect(await readFile(target, 'utf8')).toContain('default_route: standard');
+      expect((await readdir(path.dirname(target))).filter((file) => file.endsWith('.tmp'))).toEqual(
+        [],
+      );
     });
   });
 

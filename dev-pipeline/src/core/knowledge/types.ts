@@ -1,9 +1,3 @@
-/**
- * Knowledge 两阶段加载模块
- * 第一阶段：CLI 基于元数据过滤
- * 第二阶段：AI 判断是否打开正文
- */
-
 export interface KnowledgeMetadata {
   file: string;
   phase: number;
@@ -17,6 +11,7 @@ export interface KnowledgeSelectOptions {
   phase: number;
   routes?: string[];
   paths?: string[];
+  assetKindRank?: string[];
 }
 
 export interface KnowledgeSelection {

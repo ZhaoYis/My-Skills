@@ -12,6 +12,14 @@ import { runUpgradeCommand } from './commands/upgrade.js';
 
 export async function runCli(argv: string[]): Promise<void> {
   const cli = cac('opsx-dev-pipeline');
+  const normalizedArgv = [...argv];
+  for (const command of ['config effective', 'knowledge select']) {
+    const [parent, child] = command.split(' ');
+    const parentIndex = normalizedArgv.indexOf(parent);
+    if (parentIndex >= 0 && normalizedArgv[parentIndex + 1] === child) {
+      normalizedArgv.splice(parentIndex, 2, command);
+    }
+  }
   const dirOption = ['--dir [dir]', 'Target directory', { default: process.cwd() }] as const;
 
   cli
@@ -114,14 +122,15 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--routes <routes>', 'Comma-separated route types (e.g. trivial,standard,full)')
     .option('--paths <paths>', 'Comma-separated file paths for path_hints matching')
     .option('--format <yaml|json>', 'Output format', { default: 'yaml' })
+    .option(...dirOption)
     .action(async (options) => {
       if (options.phase === undefined) {
-        console.error('Error: --phase is required');
-        process.exit(1);
+        throw new Error('Error: --phase is required');
       }
 
       await runKnowledgeSelectCommand({
         phase: Number(options.phase),
+        dir: options.dir,
         routes: options.routes ? options.routes.split(',').map((s: string) => s.trim()) : undefined,
         paths: options.paths ? options.paths.split(',').map((s: string) => s.trim()) : undefined,
         format: options.format,
@@ -131,20 +140,21 @@ export async function runCli(argv: string[]): Promise<void> {
   cli
     .command('load', 'Load phase execution bundle dynamically')
     .option('--phase <phase>', 'Phase number (required)')
-    .option('--route <route>', 'Route type (trivial|standard|full)', { default: 'standard' })
+    .option('--route <route>', 'Route type (trivial|standard|full)')
+    .option('--change <change>', 'Read route from openspec/.pipeline-state/<change>.json')
     .option('--paths <paths>', 'Comma-separated file paths for knowledge matching')
     .option('--format <markdown|json>', 'Output format', { default: 'markdown' })
     .option(...dirOption)
     .action(async (options) => {
       if (options.phase === undefined) {
-        console.error('Error: --phase is required');
-        process.exit(1);
+        throw new Error('Error: --phase is required');
       }
 
       await runLoadCommand({
         phase: Number(options.phase),
         dir: options.dir,
         route: options.route,
+        change: options.change,
         paths: options.paths ? options.paths.split(',').map((s: string) => s.trim()) : undefined,
         format: options.format,
       });
@@ -152,6 +162,6 @@ export async function runCli(argv: string[]): Promise<void> {
 
   cli.help();
   cli.version(PACKAGE_VERSION);
-  cli.parse(argv, { run: false });
+  cli.parse(normalizedArgv, { run: false });
   await cli.runMatchedCommand();
 }

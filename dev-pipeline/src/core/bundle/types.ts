@@ -1,6 +1,4 @@
-/**
- * Phase Bundle 类型定义
- */
+import type { EffectiveConfig } from '../config/index.js';
 
 export interface PhaseBundle {
   phase: number;
@@ -24,5 +22,7 @@ export interface LoadPhaseOptions {
   projectRoot: string;
   packageRoot: string;
   route?: string;
+  change?: string;
   paths?: string[];
+  effectiveConfig?: EffectiveConfig;
 }

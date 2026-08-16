@@ -1,38 +1,34 @@
-/**
- * load 命令
- * 动态加载指定 Phase 的执行指引 Bundle
- */
-
-import { resolvePackageRoot } from '../../core/runtime/resolvePackageRoot.js';
 import {
-  loadPhaseBundle,
-  formatPhaseBundleMarkdown,
   formatPhaseBundleJson,
+  formatPhaseBundleMarkdown,
+  loadPhaseBundle,
 } from '../../core/bundle/index.js';
-import { fileURLToPath } from 'node:url';
+import { buildEffectiveConfig, writeEffectiveConfigAtomic } from '../../core/config/index.js';
+import { resolvePackageRoot } from '../../core/runtime/resolvePackageRoot.js';
 
 export interface LoadOptions {
   phase: number;
   dir: string;
   route?: string;
+  change?: string;
   paths?: string[];
   format: 'markdown' | 'json';
 }
 
 export async function runLoadCommand(options: LoadOptions): Promise<void> {
-  const packageRoot = await resolvePackageRoot(fileURLToPath(import.meta.url));
-
+  const packageRoot = await resolvePackageRoot(import.meta.url);
+  const { config } = await buildEffectiveConfig(options.dir, packageRoot);
+  await writeEffectiveConfigAtomic(options.dir, config);
   const bundle = await loadPhaseBundle({
     phase: options.phase,
     projectRoot: options.dir,
     packageRoot,
     route: options.route,
+    change: options.change,
     paths: options.paths,
+    effectiveConfig: config,
   });
-
-  if (options.format === 'json') {
-    console.log(formatPhaseBundleJson(bundle));
-  } else {
-    console.log(formatPhaseBundleMarkdown(bundle));
-  }
+  console.log(
+    options.format === 'json' ? formatPhaseBundleJson(bundle) : formatPhaseBundleMarkdown(bundle),
+  );
 }

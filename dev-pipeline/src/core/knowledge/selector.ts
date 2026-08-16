@@ -1,198 +1,107 @@
-/**
- * Knowledge 两阶段加载模块
- * 第一阶段：CLI 基于元数据过滤
- * 第二阶段：AI 判断是否打开正文
- */
-
 import { readFile, readdir } from 'node:fs/promises';
-import { join, extname } from 'node:path';
+import { basename, join } from 'node:path';
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import type {
   KnowledgeMetadata,
   KnowledgeSelectOptions,
   KnowledgeSelectResult,
-  KnowledgeSelection,
-  KnowledgeSkip,
 } from './types.js';
 
-/**
- * 从 markdown 文件中解析 frontmatter
- */
+const DEFAULT_ASSET_KIND_RANK = ['constraint', 'procedure', 'principle', 'convention'];
+
 function parseFrontmatter(content: string): Record<string, unknown> {
-  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  const normalized = content.replace(/^﻿/, '').replace(/\r\n/g, '\n');
+  const match = normalized.match(/^---[ \t]*\n([\s\S]*?)\n---[ \t]*(?:\n|$)/);
   if (!match) return {};
-
-  const frontmatter = match[1];
-  const result: Record<string, unknown> = {};
-
-  for (const line of frontmatter.split('\n')) {
-    const colonIndex = line.indexOf(':');
-    if (colonIndex === -1) continue;
-
-    const key = line.slice(0, colonIndex).trim();
-    const value = line.slice(colonIndex + 1).trim();
-
-    // 解析数组 [a, b, c]
-    if (value.startsWith('[') && value.endsWith(']')) {
-      result[key] = value
-        .slice(1, -1)
-        .split(',')
-        .map((s) => s.trim().replace(/^["']|["']$/g, ''));
-    } else {
-      // 解析标量值
-      result[key] = value.replace(/^["']|["']$/g, '');
-    }
-  }
-
-  return result;
+  const parsed = parseYaml(match[1]);
+  return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {};
 }
 
-/**
- * 加载所有 reference 文档的元数据
- */
+function toStringArray(value: unknown, fallback: string[] = []): string[] {
+  return Array.isArray(value) ? value.map(String) : fallback;
+}
+
 export async function loadReferenceMetadata(referencesDir: string): Promise<KnowledgeMetadata[]> {
   const metadata: KnowledgeMetadata[] = [];
-
   try {
-    const files = await readdir(referencesDir);
-
+    const files = (await readdir(referencesDir)).sort();
     for (const file of files) {
       if (!file.endsWith('.md') && !file.endsWith('.md.hbs')) continue;
-
-      const filePath = join(referencesDir, file);
-      const content = await readFile(filePath, 'utf-8');
-      const frontmatter = parseFrontmatter(content);
-
+      const frontmatter = parseFrontmatter(await readFile(join(referencesDir, file), 'utf8'));
       if (frontmatter.phase === undefined) continue;
-
       metadata.push({
-        file: filePath,
+        file,
         phase: Number(frontmatter.phase),
-        asset_kind: String(frontmatter.asset_kind || 'procedure'),
-        routes: Array.isArray(frontmatter.routes) ? frontmatter.routes : ['standard'],
-        path_hints: Array.isArray(frontmatter.path_hints) ? frontmatter.path_hints : [],
-        description: String(frontmatter.description || ''),
+        asset_kind: String(frontmatter.asset_kind ?? 'procedure'),
+        routes: toStringArray(frontmatter.routes, ['standard']),
+        path_hints: toStringArray(frontmatter.path_hints),
+        description: String(frontmatter.description ?? ''),
       });
     }
   } catch {
-    // 目录不存在时返回空数组
+    // Missing reference directories contain no selectable knowledge.
   }
-
   return metadata;
 }
 
-/**
- * 简单的 glob 匹配
- */
-function globMatch(pattern: string, path: string): boolean {
-  // 将 glob 模式转换为正则表达式
-  const regexPattern = pattern
+function globMatch(pattern: string, candidate: string): boolean {
+  const escaped = pattern
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
     .replace(/\*\*/g, '{{GLOBSTAR}}')
     .replace(/\*/g, '[^/]*')
     .replace(/\{\{GLOBSTAR\}\}/g, '.*')
     .replace(/\?/g, '.');
-
-  const regex = new RegExp(`^${regexPattern}$`);
-  return regex.test(path);
+  return new RegExp(`^${escaped}$`).test(candidate.replace(/\\/g, '/'));
 }
 
-/**
- * 检查路径是否匹配任何 path_hints
- */
 function matchesPathHints(pathHints: string[], paths: string[]): boolean {
-  if (pathHints.length === 0) return true; // 没有 path_hints 时默认匹配
-  if (paths.length === 0) return true; // 没有提供 paths 时默认匹配
-
-  return paths.some((path) => pathHints.some((hint) => globMatch(hint, path)));
+  if (pathHints.length === 0 || paths.length === 0) return true;
+  return paths.some((candidate) => pathHints.some((hint) => globMatch(hint, candidate)));
 }
 
-/**
- * 根据选项选择 Knowledge
- */
 export function selectKnowledge(
   metadata: KnowledgeMetadata[],
   options: KnowledgeSelectOptions,
 ): KnowledgeSelectResult {
-  const selected: KnowledgeSelection[] = [];
-  const skipped: KnowledgeSkip[] = [];
+  const selected: KnowledgeSelectResult['selected'] = [];
+  const skipped: KnowledgeSelectResult['skipped'] = [];
 
   for (const ref of metadata) {
-    // Phase 过滤
+    let reason: string | undefined;
     if (ref.phase !== options.phase) {
-      skipped.push({ file: ref.file, reason: `phase ${ref.phase} not matched (expected ${options.phase})` });
-      continue;
+      reason = `phase ${ref.phase} not matched (expected ${options.phase})`;
+    } else if (
+      options.routes?.length &&
+      !ref.routes.some((route) => options.routes?.includes(route))
+    ) {
+      reason = `routes [${ref.routes.join(', ')}] not matched (expected [${options.routes.join(', ')}])`;
+    } else if (options.paths?.length && !matchesPathHints(ref.path_hints, options.paths)) {
+      reason = `path_hints not matched for paths [${options.paths.join(', ')}]`;
     }
 
-    // Route 过滤
-    if (options.routes && options.routes.length > 0) {
-      const hasMatchingRoute = ref.routes.some((r) => options.routes!.includes(r));
-      if (!hasMatchingRoute) {
-        skipped.push({
-          file: ref.file,
-          reason: `routes [${ref.routes.join(', ')}] not matched (expected [${options.routes.join(', ')}])`,
-        });
-        continue;
-      }
+    if (reason) {
+      skipped.push({ file: basename(ref.file), reason });
+    } else {
+      selected.push({
+        file: basename(ref.file),
+        phase: ref.phase,
+        asset_kind: ref.asset_kind,
+        description: ref.description,
+        match_reason: 'phase/route/paths matched',
+      });
     }
-
-    // Path 过滤
-    if (options.paths && options.paths.length > 0) {
-      if (!matchesPathHints(ref.path_hints, options.paths)) {
-        skipped.push({
-          file: ref.file,
-          reason: `path_hints not matched for paths [${options.paths.join(', ')}]`,
-        });
-        continue;
-      }
-    }
-
-    // 通过所有过滤条件
-    selected.push({
-      file: ref.file,
-      phase: ref.phase,
-      asset_kind: ref.asset_kind,
-      description: ref.description,
-      match_reason: 'phase/route/paths matched',
-    });
   }
 
-  // 按 asset_kind 排序
-  const assetKindRank = ['constraint', 'procedure', 'principle', 'convention'];
+  const rank = options.assetKindRank ?? DEFAULT_ASSET_KIND_RANK;
   selected.sort((a, b) => {
-    const aIndex = assetKindRank.indexOf(a.asset_kind);
-    const bIndex = assetKindRank.indexOf(b.asset_kind);
-    return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+    const left = rank.indexOf(a.asset_kind);
+    const right = rank.indexOf(b.asset_kind);
+    return (left < 0 ? Number.MAX_SAFE_INTEGER : left) -
+      (right < 0 ? Number.MAX_SAFE_INTEGER : right) || a.file.localeCompare(b.file);
   });
-
   return { selected, skipped };
 }
 
-/**
- * 格式化 Knowledge 选择结果为 YAML
- */
 export function formatKnowledgeSelectResult(result: KnowledgeSelectResult): string {
-  const lines: string[] = ['selected:'];
-
-  if (result.selected.length === 0) {
-    lines.push('  []');
-  } else {
-    for (const item of result.selected) {
-      lines.push(`  - file: ${item.file}`);
-      lines.push(`    phase: ${item.phase}`);
-      lines.push(`    asset_kind: ${item.asset_kind}`);
-      lines.push(`    description: "${item.description}"`);
-      lines.push(`    match_reason: "${item.match_reason}"`);
-    }
-  }
-
-  lines.push('skipped:');
-  if (result.skipped.length === 0) {
-    lines.push('  []');
-  } else {
-    for (const item of result.skipped) {
-      lines.push(`  - file: ${item.file}`);
-      lines.push(`    reason: "${item.reason}"`);
-    }
-  }
-
-  return lines.join('\n');
+  return stringifyYaml(result);
 }

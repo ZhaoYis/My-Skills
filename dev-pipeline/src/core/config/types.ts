@@ -1,11 +1,15 @@
-/**
- * 有效配置合成模块
- * 实现多层配置级联：包内默认 → 项目事实 → 项目覆写 → 合成有效配置
- */
+export type PipelineRoute = 'trivial' | 'standard' | 'full';
+
+export interface RouteConfig {
+  description?: string;
+  phases: number[];
+  examples?: string[];
+  conditions?: string[];
+}
 
 export interface PipelineConfig {
   language?: string;
-  default_route?: 'trivial' | 'standard' | 'full';
+  default_route?: PipelineRoute;
   review?: {
     max_rounds?: number;
     auto_fix?: boolean;
@@ -18,17 +22,7 @@ export interface PipelineConfig {
     commit_style?: string;
     branch_prefix?: string;
   };
-  phases?: {
-    routes?: Record<string, RouteConfig>;
-  };
-}
-
-export interface RouteConfig {
-  description?: string;
-  phases?: number[];
-  bypass_phases?: number[];
-  examples?: string[];
-  conditions?: string[];
+  routes?: Partial<Record<PipelineRoute, RouteConfig>>;
 }
 
 export interface KnowledgeConfig {
