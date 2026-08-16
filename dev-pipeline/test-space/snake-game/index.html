@@ -1817,6 +1817,12 @@
                             <span class="toggle-knob"></span>
                         </button>
                     </div>
+                    <div class="settings-row settings-toggle-row">
+                        <span class="settings-toggle-label">障碍物</span>
+                        <button class="toggle-switch active" id="toggleObstacles" role="switch" aria-checked="true">
+                            <span class="toggle-knob"></span>
+                        </button>
+                    </div>
                 </section>
 
                 <!-- 🎨 Appearance Section -->
@@ -2750,6 +2756,7 @@
             soundEnabled: true,
             playerName: '玩家',
             showGridLines: true,
+            showObstacles: true,
         });
 
         const DIFFICULTY_PRESETS = Object.freeze({
@@ -2767,6 +2774,8 @@
                 dormantProb: 0.85,
                 fuseMin: 5000,
                 fuseMax: 10000,
+                obstacleBase: 0,
+                obstacleMin: 0,
             },
             normal: {
                 label: '普通',
@@ -2782,6 +2791,8 @@
                 dormantProb: 0.70,
                 fuseMin: 3000,
                 fuseMax: 8000,
+                obstacleBase: 800,
+                obstacleMin: 3,
             },
             hard: {
                 label: '困难',
@@ -2797,6 +2808,8 @@
                 dormantProb: 0.55,
                 fuseMin: 2000,
                 fuseMax: 5000,
+                obstacleBase: 500,
+                obstacleMin: 5,
             },
         });
 
@@ -3124,6 +3137,10 @@
                     explosionBlast: 'rgba(251, 146, 60, 0.7)',
                     explosionGround: 'rgba(239, 68, 68, 0.6)',
                     explosionParticle: 'rgba(255, 200, 50, 0.9)',
+                    // Obstacle colors
+                    obstacleBody: '#475569',
+                    obstacleBorder: '#334155',
+                    obstacleHighlight: 'rgba(148,163,184,0.4)',
                 },
                 ambientGlow1: 'rgba(34, 211, 238, 0.08)',
                 ambientGlow2: 'rgba(16, 185, 129, 0.06)',
@@ -3176,6 +3193,10 @@
                     explosionBlast: 'rgba(255, 170, 0, 0.7)',
                     explosionGround: 'rgba(255, 100, 0, 0.6)',
                     explosionParticle: 'rgba(255, 220, 50, 0.9)',
+                    // Obstacle colors
+                    obstacleBody: '#854d0e',
+                    obstacleBorder: '#713f12',
+                    obstacleHighlight: 'rgba(253,224,71,0.3)',
                 },
                 ambientGlow1: 'rgba(0, 255, 0, 0.05)',
                 ambientGlow2: 'rgba(255, 176, 0, 0.03)',
@@ -3228,6 +3249,10 @@
                     explosionBlast: 'rgba(217, 70, 239, 0.7)',
                     explosionGround: 'rgba(168, 85, 247, 0.6)',
                     explosionParticle: 'rgba(255, 180, 255, 0.9)',
+                    // Obstacle colors
+                    obstacleBody: '#1e3a5f',
+                    obstacleBorder: '#0f172a',
+                    obstacleHighlight: 'rgba(96,165,250,0.3)',
                 },
                 ambientGlow1: 'rgba(167, 139, 250, 0.08)',
                 ambientGlow2: 'rgba(99, 102, 241, 0.05)',
@@ -3280,6 +3305,10 @@
                     explosionBlast: 'rgba(251, 146, 60, 0.7)',
                     explosionGround: 'rgba(239, 68, 68, 0.6)',
                     explosionParticle: 'rgba(255, 220, 100, 0.9)',
+                    // Obstacle colors
+                    obstacleBody: '#9a3412',
+                    obstacleBorder: '#7c2d12',
+                    obstacleHighlight: 'rgba(253,186,116,0.3)',
                 },
                 ambientGlow1: 'rgba(251, 146, 60, 0.08)',
                 ambientGlow2: 'rgba(245, 158, 11, 0.04)',
@@ -3379,6 +3408,9 @@
         let bombSpawnAccumulator = 0;
         let nextBombSpawnDelay = currentDifficulty.bombSpawnMin
             + Math.random() * (currentDifficulty.bombSpawnMax - currentDifficulty.bombSpawnMin);
+
+        // ─── Obstacle State ──────────────────────────
+        let obstacles = [];          // { x, y }
 
         // ─── Grid & Canvas Setup ────────────────────
         let canvasWidth = COLS * CELL_SIZE;
@@ -3619,6 +3651,15 @@
             return bombs.some(b => b.x === cell.x && b.y === cell.y);
         }
 
+        /**
+         * 查询指定格子是否被障碍物占据
+         * @param {{x: number, y: number}} cell - 格子坐标
+         * @returns {boolean} 是否被障碍物占据
+         */
+        function cellIsOccupiedByObstacle(cell) {
+            return obstacles.some(o => o.x === cell.x && o.y === cell.y);
+        }
+
         function bombAt(cell) {
             return bombs.find(b => b.x === cell.x && b.y === cell.y);
         }
@@ -3634,7 +3675,8 @@
                 const candidate = randomCell();
                 if (!snakeOccupies(candidate)
                     && !(food && cellEquals(food, candidate))
-                    && !cellIsOccupiedByBomb(candidate)) {
+                    && !cellIsOccupiedByBomb(candidate)
+                    && !cellIsOccupiedByObstacle(candidate)) {
                     pos = candidate;
                     break;
                 }
@@ -3738,6 +3780,161 @@
         }
 
         // ─── Game Logic ────────────────────────────
+        /**
+         * 根据网格面积和难度配置计算障碍物数量
+         * @returns {number} 障碍物数量
+         */
+        function calcObstacleCount() {
+            // 如果设置中关闭了障碍物，返回 0
+            if (!currentSettings.showObstacles) return 0;
+
+            const totalCells = COLS * ROWS;
+            const obstacleBase = currentDifficulty.obstacleBase || 0;
+            const obstacleMin = currentDifficulty.obstacleMin || 0;
+
+            // 如果 obstacleBase 为 0（简单模式），不生成障碍物
+            if (obstacleBase <= 0) return 0;
+
+            // 计算基础数量
+            let count = Math.max(obstacleMin, Math.floor(totalCells / obstacleBase));
+
+            // 应用上限：不超过总格数的 15%
+            const maxObstacles = Math.floor(totalCells * 0.15);
+            count = Math.min(count, maxObstacles);
+
+            return count;
+        }
+
+        /**
+         * 生成障碍物数组
+         * @returns {Array<{x: number, y: number}>} 障碍物数组
+         */
+        function generateObstacles() {
+            const count = calcObstacleCount();
+            if (count <= 0) return [];
+
+            const snakeStartX = Math.floor(COLS / 2);
+            const snakeStartY = Math.floor(ROWS / 2);
+
+            // 最多重试 5 次
+            for (let attempt = 0; attempt < 5; attempt++) {
+                const newObstacles = [];
+
+                for (let i = 0; i < count; i++) {
+                    let pos = null;
+
+                    // 尝试找到空闲格子
+                    for (let tryCount = 0; tryCount < 100; tryCount++) {
+                        const candidate = randomCell();
+
+                        // 检查是否与已有元素重叠
+                        if (snakeOccupies(candidate)) continue;
+                        if (food && cellEquals(food, candidate)) continue;
+                        if (cellIsOccupiedByBomb(candidate)) continue;
+                        if (newObstacles.some(o => cellEquals(o, candidate))) continue;
+
+                        // 检查是否在出生点保护区
+                        // 保护区：蛇头右侧 5 格，上下各 1 格
+                        const inProtectionZone = (
+                            candidate.x >= snakeStartX &&
+                            candidate.x <= snakeStartX + 5 &&
+                            candidate.y >= snakeStartY - 1 &&
+                            candidate.y <= snakeStartY + 1
+                        );
+                        if (inProtectionZone) continue;
+
+                        pos = candidate;
+                        break;
+                    }
+
+                    if (!pos) {
+                        // 无法找到足够的空闲格子，放弃本次生成
+                        break;
+                    }
+
+                    newObstacles.push(pos);
+                }
+
+                // 如果生成了足够数量的障碍物，进行连通性校验
+                if (newObstacles.length === count) {
+                    if (validateObstacleConnectivity(newObstacles)) {
+                        return newObstacles;
+                    }
+                }
+            }
+
+            // 5 次尝试都失败，返回空数组
+            return [];
+        }
+
+        /**
+         * 验证障碍物布局的连通性
+         * @param {Array<{x: number, y: number}>} obstacleList - 障碍物列表
+         * @returns {boolean} 是否通过连通性校验
+         */
+        function validateObstacleConnectivity(obstacleList) {
+            const snakeHead = snake[0];
+            const totalCells = COLS * ROWS;
+            const obstacleCount = obstacleList.length;
+            const nonObstacleCells = totalCells - obstacleCount;
+
+            // 使用洪水填充计算可达格子数
+            const reachable = floodFillCountExcluding(snakeHead.x, snakeHead.y, obstacleList);
+
+            // 要求至少 60% 的非障碍物格子可达
+            return reachable >= nonObstacleCells * 0.6;
+        }
+
+        /**
+         * 洪水填充计数（排除障碍物）
+         * @param {number} startX - 起始 X 坐标
+         * @param {number} startY - 起始 Y 坐标
+         * @param {Array<{x: number, y: number}>} excludeCells - 排除的格子列表
+         * @returns {number} 可达格子数
+         */
+        function floodFillCountExcluding(startX, startY, excludeCells) {
+            const visited = new Set();
+            const queue = [{ x: startX, y: startY }];
+            let count = 0;
+            const maxSteps = COLS * ROWS;
+
+            while (queue.length > 0 && count < maxSteps) {
+                const current = queue.shift();
+                const key = `${current.x},${current.y}`;
+
+                if (visited.has(key)) continue;
+                visited.add(key);
+                count++;
+
+                // 检查四个方向
+                const directions = [
+                    { x: 0, y: -1 }, // 上
+                    { x: 0, y: 1 },  // 下
+                    { x: -1, y: 0 }, // 左
+                    { x: 1, y: 0 }   // 右
+                ];
+
+                for (const dir of directions) {
+                    const nx = current.x + dir.x;
+                    const ny = current.y + dir.y;
+                    const nKey = `${nx},${ny}`;
+
+                    // 检查边界
+                    if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+
+                    // 检查是否已访问
+                    if (visited.has(nKey)) continue;
+
+                    // 检查是否在排除列表中
+                    if (excludeCells.some(c => c.x === nx && c.y === ny)) continue;
+
+                    queue.push({ x: nx, y: ny });
+                }
+            }
+
+            return count;
+        }
+
         function rollItemType() {
             // Special items now spawn in both classic and timed modes
             const roll = Math.random();
@@ -3752,7 +3949,7 @@
         function spawnFood() {
             let pos;
             function isEmpty(cell) {
-                return !snakeOccupies(cell) && !cellIsOccupiedByBomb(cell);
+                return !snakeOccupies(cell) && !cellIsOccupiedByBomb(cell) && !cellIsOccupiedByObstacle(cell);
             }
             // Try a limited number of times to find an empty cell
             for (let i = 0; i < 1000; i++) {
@@ -3829,6 +4026,10 @@
             bombSpawnAccumulator = 0;
             nextBombSpawnDelay = currentDifficulty.bombSpawnMin
                 + Math.random() * (currentDifficulty.bombSpawnMax - currentDifficulty.bombSpawnMin);
+
+            // Reset and generate obstacles
+            obstacles = [];
+            obstacles = generateObstacles();
 
             updateBestDisplay();
             foodItem = rollItemType();
@@ -3933,6 +4134,8 @@
                     if (bodyCheck[bi].x === nx && bodyCheck[bi].y === ny) { hitsBody = true; break; }
                 }
                 if (hitsBody) continue;
+                // 禁止撞障碍物
+                if (cellIsOccupiedByObstacle({ x: nx, y: ny })) continue;
                 candidates.push({ d: d, nx: nx, ny: ny });
             }
 
@@ -4084,6 +4287,12 @@
                 return gameOver();
             }
 
+            // Obstacle collision
+            if (cellIsOccupiedByObstacle(newHead)) {
+                if (!handleCollision()) return;
+                return gameOver(false, 'obstacle');
+            }
+
             // Add new head
             snake.unshift(newHead);
 
@@ -4175,6 +4384,11 @@
                 finalScoreEl.textContent = score;
             } else if (reason === 'bomb') {
                 titleEl.textContent = '💥 被炸死了!';
+                titleEl.classList.add('game-over');
+                titleEl.style.color = '';
+                finalScoreEl.textContent = score;
+            } else if (reason === 'obstacle') {
+                titleEl.textContent = '💥 撞障碍物了!';
                 titleEl.classList.add('game-over');
                 titleEl.style.color = '';
                 finalScoreEl.textContent = score;
@@ -4514,6 +4728,34 @@
         }
 
         // ─── Drawing ────────────────────────────────
+        /**
+         * 渲染所有障碍物
+         * 使用当前皮肤的配色方案绘制障碍物方块
+         */
+        function drawObstacles() {
+            const cs = currentSkin.canvas;
+            const padding = 2;
+
+            for (const obs of obstacles) {
+                const x = obs.x * CELL_SIZE;
+                const y = obs.y * CELL_SIZE;
+                const size = CELL_SIZE - padding * 2;
+
+                // 主体填充
+                ctx.fillStyle = cs.obstacleBody;
+                ctx.fillRect(x + padding, y + padding, size, size);
+
+                // 边框描边
+                ctx.strokeStyle = cs.obstacleBorder;
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(x + padding, y + padding, size, size);
+
+                // 左上角高光（小方块）
+                ctx.fillStyle = cs.obstacleHighlight;
+                ctx.fillRect(x + padding + 3, y + padding + 3, 5, 5);
+            }
+        }
+
         function draw() {
             const w = canvasWidth;
             const h = canvasHeight;
@@ -4541,6 +4783,9 @@
                     ctx.stroke();
                 }
             }
+
+            // Draw obstacles
+            drawObstacles();
 
             // Food — pulsating glow (varies by item type)
             if (food) {
@@ -5356,6 +5601,12 @@
                 // Grid toggle
                 setToggle(toggleGrid, currentSettings.showGridLines);
 
+                // Obstacles toggle
+                var toggleObstacles = document.getElementById('toggleObstacles');
+                if (toggleObstacles) {
+                    setToggle(toggleObstacles, currentSettings.showObstacles);
+                }
+
                 // Sound toggle
                 setToggle(toggleSound, currentSettings.soundEnabled);
 
@@ -5419,6 +5670,19 @@
                 };
                 toggleGrid.addEventListener('click', onGridToggle);
                 addToggleKeyboard(toggleGrid, onGridToggle);
+            }
+
+            // ── Event: Obstacles Toggle ──
+            var toggleObstacles = document.getElementById('toggleObstacles');
+            if (toggleObstacles) {
+                var onObstaclesToggle = function () {
+                    currentSettings.showObstacles = !currentSettings.showObstacles;
+                    SettingsStore.save(currentSettings);
+                    setToggle(toggleObstacles, currentSettings.showObstacles);
+                    // Note: obstacles are generated at game init, so this only affects new games
+                };
+                toggleObstacles.addEventListener('click', onObstaclesToggle);
+                addToggleKeyboard(toggleObstacles, onObstaclesToggle);
             }
 
             // ── Event: Sound Toggle ──

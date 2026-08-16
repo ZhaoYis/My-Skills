@@ -1,3 +1,4 @@
+@ -1,14 +1,3 @@
 dist
 node_modules
 *.tgz
@@ -12,3 +13,4 @@ metrics-server/.collector/
 metrics-website/playwright-report/
 metrics-website/test-results/
 *.tsbuildinfo
+*.log

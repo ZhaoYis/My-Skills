@@ -418,7 +418,7 @@ describe('tool matrix', () => {
     expect(skillContent).toContain('入口决策树');
     expect(skillContent).toContain('Route 分级');
     expect(skillContent).toContain('动态加载 Phase 指引');
-    expect(skillContent).toContain('opsx-dev-pipeline load --phase');
+    expect(skillContent).toContain('load-phase.mjs --phase');
     expect(skillContent).toContain('执行约束');
     expect(skillContent).toContain('错误处理速查');
     expect(skillContent).toContain('状态协议');

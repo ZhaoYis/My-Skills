@@ -71,6 +71,9 @@
     "schemaVersion": 1,
     "projectName": "dev-pipeline",
     "tool": "claude",
+    "stack": "backend",
+    "language": "zh",
+    "scope": "project",
     "features": [
       "base",
       "skills",
@@ -113,6 +116,10 @@
         "destination": ".claude/skills/opsx-dev-pipeline/scripts/list-changes.mjs"
       },
       {
+        "id": "opsx-dev-pipeline-skill-bundle:scripts/load-phase.mjs",
+        "destination": ".claude/skills/opsx-dev-pipeline/scripts/load-phase.mjs"
+      },
+      {
         "id": "opsx-dev-pipeline-skill-bundle:scripts/new-change.mjs",
         "destination": ".claude/skills/opsx-dev-pipeline/scripts/new-change.mjs"
       },
@@ -151,6 +158,54 @@
       {
         "id": "claude-docs",
         "destination": "CLAUDE.md"
+      },
+      {
+        "id": "stack-config",
+        "destination": "openspec/config.yaml"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:agents/openai.yaml",
+        "destination": ".claude/skills/opsx-dev-pipeline/agents/openai.yaml"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:references/phase-0-entrance.md.hbs",
+        "destination": ".claude/skills/opsx-dev-pipeline/references/phase-0-entrance.md"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:references/phase-1-propose.md.hbs",
+        "destination": ".claude/skills/opsx-dev-pipeline/references/phase-1-propose.md"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:references/phase-2-apply.md.hbs",
+        "destination": ".claude/skills/opsx-dev-pipeline/references/phase-2-apply.md"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:references/phase-3-review.md.hbs",
+        "destination": ".claude/skills/opsx-dev-pipeline/references/phase-3-review.md"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:references/phase-4-unit-tests.md.hbs",
+        "destination": ".claude/skills/opsx-dev-pipeline/references/phase-4-unit-tests.md"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:references/phase-5-archive.md.hbs",
+        "destination": ".claude/skills/opsx-dev-pipeline/references/phase-5-archive.md"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:references/phase-6-commit-push.md.hbs",
+        "destination": ".claude/skills/opsx-dev-pipeline/references/phase-6-commit-push.md"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:references/phase-7-merge-deliver.md.hbs",
+        "destination": ".claude/skills/opsx-dev-pipeline/references/phase-7-merge-deliver.md"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:scripts/dev-pipeline-state.mjs",
+        "destination": ".claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs"
+      },
+      {
+        "id": "opsx-dev-pipeline-skill-bundle:scripts/pipeline-lib.mjs",
+        "destination": ".claude/skills/opsx-dev-pipeline/scripts/pipeline-lib.mjs"
       }
     ]
   }

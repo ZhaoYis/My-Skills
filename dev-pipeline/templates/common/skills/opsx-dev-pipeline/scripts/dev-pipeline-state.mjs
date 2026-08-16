@@ -923,6 +923,10 @@ if (!command) {
           }
         } else if (command === 'decision') {
           const [key, rawValue] = args;
+          const userConfirmedFlag = args.includes('--user-confirmed');
+          const summaryIndex = args.indexOf('--summary');
+          const summary = summaryIndex !== -1 ? args[summaryIndex + 1] : null;
+
           if (!key || rawValue === undefined || !/^[A-Za-z][A-Za-z0-9]*$/.test(key)) {
             emitError(
               'invalid-decision',
@@ -932,6 +936,19 @@ if (!command) {
             );
           } else {
             state.decisions[key] = parseValue(rawValue);
+
+            // 如果提供了 --user-confirmed 标志，记录用户确认信息
+            if (userConfirmedFlag) {
+              if (!state.confirmations) {
+                state.confirmations = {};
+              }
+              state.confirmations[key] = {
+                userConfirmed: true,
+                confirmedAt: formatLocalTime(),
+                summary: summary || null,
+              };
+            }
+
             if (await saveState(root, state)) output({ status: 'ok', state });
           }
         } else if (command === 'set') {

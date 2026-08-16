@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 3,
+  "_version": 12,
+  "changeName": "add-obstacle-map",
+  "sourceBranch": "feature/lite-opt",
+  "targetBranch": null,
+  "currentPhase": 6,
+  "currentStep": 20,
+  "status": "active",
+  "executionMode": "pipeline",
+  "route": "standard",
+  "createdBy": "大師兄丶",
+  "createdByEmail": "zhaoyi@yzw.cn",
+  "machineInfo": {
+    "platform": "darwin",
+    "hostname": "ZLA0082.local",
+    "osRelease": "24.5.0",
+    "nodeVersion": "v22.22.3",
+    "arch": "arm64"
+  },
+  "featureInfo": null,
+  "fingerprintId": "fp1.a-slF7cE1wPzB7iJiHww_9pD9BCwupk0VOAyvFnwt7_XX11JF-wsONZTuVlCyCTMBzD2-DtR8z8Go8EwMohvwXKDhAvALOgR-hzxxmsGFw_w79Db_nSsu5WrblB4yrmUNi_5Ufe0F4XXlZ7CmqQMqNHhWor1w8QyMJY3q4uX2PWIjpgLlzb3fGQGEg-CzQu7t91AOHZM25Hqa8EOJ-xqXFVpj0wqii4lk-MybdjkG69HaKUYxq5Os59GitSg91DxmS745cKhzD7PmOwwz5jKOqkGCSVDRXcSJU8zFszlF27wyGNQTLuxmoh3IaoqB9l1PulRMxb4JttzM2A12M66Ew",
+  "fingerprintNonce": "828764d2",
+  "phaseHistory": [
+    {
+      "phase": 0,
+      "step": 1,
+      "executedBy": "pipeline",
+      "status": "completed",
+      "startedAt": "2026-08-16 11:46:03",
+      "completedAt": "2026-08-16 11:46:29",
+      "decisions": {},
+      "gatesBypassed": []
+    },
+    {
+      "phase": 1,
+      "step": 1,
+      "executedBy": "pipeline",
+      "status": "completed",
+      "startedAt": "2026-08-16 11:46:29",
+      "completedAt": "2026-08-16 11:51:45",
+      "decisions": {
+        "proposalApproved": true
+      },
+      "gatesBypassed": []
+    },
+    {
+      "phase": 2,
+      "step": 1,
+      "executedBy": "pipeline",
+      "status": "completed",
+      "startedAt": "2026-08-16 11:51:45",
+      "completedAt": "2026-08-16 12:59:38",
+      "decisions": {
+        "proposalApproved": true,
+        "postArchiveAction": "local-only",
+        "implementationConfirmed": true
+      },
+      "gatesBypassed": []
+    },
+    {
+      "phase": 5,
+      "step": 19,
+      "executedBy": "openspec-archive-change",
+      "status": "completed",
+      "startedAt": "2026-08-16 12:56:55",
+      "completedAt": "2026-08-16 12:58:49",
+      "decisions": {
+        "proposalApproved": true
+      },
+      "gatesBypassed": []
+    },
+    {
+      "phase": 6,
+      "step": 20,
+      "executedBy": "pipeline",
+      "status": "in-progress",
+      "startedAt": "2026-08-16 12:59:38",
+      "completedAt": null,
+      "decisions": {
+        "proposalApproved": true,
+        "postArchiveAction": "local-only",
+        "implementationConfirmed": true
+      },
+      "gatesBypassed": []
+    }
+  ],
+  "gatesBypassed": [],
+  "decisions": {
+    "proposalApproved": true,
+    "postArchiveAction": "local-only",
+    "implementationConfirmed": true
+  },
+  "review": {
+    "currentRound": 0,
+    "rounds": [],
+    "reportPath": null,
+    "status": "pending"
+  },
+  "tests": {
+    "command": null,
+    "attempts": 0,
+    "status": "passed",
+    "detail": null
+  },
+  "verify": {
+    "command": null,
+    "attempts": 1,
+    "status": "passed",
+    "detail": null
+  },
+  "archivePath": "openspec/changes/archive/2026-08-16-add-obstacle-map",
+  "delivery": {
+    "commitSha": null,
+    "mergeCommitSha": null,
+    "sourcePushed": false,
+    "targetPushed": false,
+    "tag": null
+  },
+  "createdAt": "2026-08-16 11:46:03",
+  "updatedAt": "2026-08-16 12:59:38",
+  "confirmations": {
+    "implementationConfirmed": {
+      "userConfirmed": true,
+      "confirmedAt": "2026-08-16 12:59:33",
+      "summary": "用户确认障碍物地图功能实施完成"
+    }
+  }
+}

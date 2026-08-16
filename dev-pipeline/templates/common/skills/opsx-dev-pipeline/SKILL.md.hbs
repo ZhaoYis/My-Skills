@@ -19,7 +19,7 @@ repository: "{{~packageRepoUrl~}}"
 IF 用户提供了 change 名称:
   1. 读取状态: node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<change>"
   2. 根据 currentPhase 加载对应 Phase 指引:
-     opsx-dev-pipeline load --phase <N> --route <route> --format markdown
+     node <SKILL_ROOT>/scripts/load-phase.mjs --phase <N> --route <route> --format markdown
   3. 按加载的指引继续执行
 ELSE IF 用户提供了需求描述:
   1. 进入 Phase 0 入口判断
@@ -43,13 +43,12 @@ ELSE:
 **进入任何 Phase 前，必须先加载该 Phase 的执行指引：**
 
 ```bash
-opsx-dev-pipeline load --phase <N> --route <route> --format markdown
+node <SKILL_ROOT>/scripts/load-phase.mjs --phase <N> --route <route> --format markdown
 ```
 
 这会返回：
 - Phase 标题和说明
 - 当前 Route 是否跳过此 Phase
-- 相关知识摘要
 - 详细的执行指引和决策点
 
 ## 执行约束
@@ -79,10 +78,50 @@ opsx-dev-pipeline load --phase <N> --route <route> --format markdown
 - 确认迁移旧版 Schema：先运行 `migrate-schema "<change>"` 获取确认提示，用户同意后运行 `migrate-schema "<change>" --confirm`
 - 阶段迁移：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<change>" <phase> <step>`
 - 记录决策：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<change>" <key> <json-value>`
+- 记录决策（带用户确认）：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<change>" <key> <json-value> --user-confirmed --summary "<确认摘要>"`
 - 记录结果：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<change>" <field> <json-value>`
 - 记录尝试：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs attempt "<change>" <review|tests|verify> <status>`
 - 暂停流程：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs pause "<change>" "<reason>"`
 - 完成交付：`node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs complete "<change>"`
+
+## 门禁检查
+
+**关键 Phase 转换前必须运行门禁检查：**
+
+```bash
+node <SKILL_ROOT>/scripts/gate-check.mjs <subcommand> "<change>"
+```
+
+### 门禁检查命令
+
+| 子命令 | 触发时机 | 检查内容 |
+|--------|---------|---------|
+| `pre-apply` | Phase 1 → Phase 2 | 制品完整性、proposalApproved 用户确认 |
+| `pre-review` | Phase 2 → Phase 3 | implementationConfirmed 用户确认 |
+| `pre-merge` | Phase 6 → Phase 7 | merge 操作用户确认 |
+| `pre-test-skip` | 测试失败后跳过 | 跳过确认 |
+
+### 门禁检查流程
+
+1. **运行门禁检查**：`node <SKILL_ROOT>/scripts/gate-check.mjs pre-apply "<change>"`
+2. **解读结果**：
+   - `status: passed` → 可以继续 transition
+   - `status: confirmation-required` → 必须使用 {{askTool}} 向用户确认
+   - `status: blocked` → 存在错误，必须先解决
+3. **用户确认后记录**：`decision "<change>" <key> <value> --user-confirmed --summary "<摘要>"`
+
+### 强制确认点
+
+以下决策**必须**先使用 {{askTool}} 获得用户明确确认，再记录：
+
+| 决策 | 触发时机 | 必须展示的信息 |
+|------|---------|--------------|
+| `proposalApproved` | 进入 Phase 2 前 | proposal/design/specs/tasks 摘要 |
+| `implementationConfirmed` | 进入 Phase 3 前 | 实施完成摘要、变更文件列表 |
+| `mergeConfirmed` | 进入 Phase 7 前 | 合并目标和分支信息 |
+| `testSkipConfirmed` | 测试失败后跳过 | 失败详情、建议处理方式 |
+
+**违反确认点 = 流水线违规，必须暂停。**
 
 Schema v3 使用 `_version` 做乐观锁，并以 `review.currentRound` / `review.rounds` 保存审查历史。任何状态命令返回 exit code 10/11/12 时，按"状态不存在 / 非法迁移或 gate / I/O 或并发冲突"处理；并发冲突只重载重试一次，仍失败则暂停。
 
