@@ -1,7 +1,9 @@
 import { cac } from 'cac';
 import { PACKAGE_VERSION } from '../core/runtime/meta.js';
+import { runConfigEffectiveCommand } from './commands/config.js';
 import { runDoctorCommand } from './commands/doctor.js';
 import { runInitCommand } from './commands/init.js';
+import { runKnowledgeSelectCommand } from './commands/knowledge.js';
 import { runListToolsCommand } from './commands/list-tools.js';
 import { runSyncCommand } from './commands/sync.js';
 import { runUninstallCommand } from './commands/uninstall.js';
@@ -90,6 +92,39 @@ export async function runCli(argv: string[]): Promise<void> {
       if (status === 'fail') {
         process.exitCode = 1;
       }
+    });
+
+  cli
+    .command('config effective', 'Show the synthesized effective configuration')
+    .option('--format <yaml|json>', 'Output format', { default: 'yaml' })
+    .option('--explain', 'Show configuration source explanation')
+    .option(...dirOption)
+    .action(async (options) => {
+      await runConfigEffectiveCommand({
+        dir: options.dir,
+        format: options.format,
+        explain: Boolean(options.explain),
+      });
+    });
+
+  cli
+    .command('knowledge select', 'Select knowledge references for a phase')
+    .option('--phase <phase>', 'Phase number (required)')
+    .option('--routes <routes>', 'Comma-separated route types (e.g. trivial,standard,full)')
+    .option('--paths <paths>', 'Comma-separated file paths for path_hints matching')
+    .option('--format <yaml|json>', 'Output format', { default: 'yaml' })
+    .action(async (options) => {
+      if (options.phase === undefined) {
+        console.error('Error: --phase is required');
+        process.exit(1);
+      }
+
+      await runKnowledgeSelectCommand({
+        phase: Number(options.phase),
+        routes: options.routes ? options.routes.split(',').map((s: string) => s.trim()) : undefined,
+        paths: options.paths ? options.paths.split(',').map((s: string) => s.trim()) : undefined,
+        format: options.format,
+      });
     });
 
   cli.help();

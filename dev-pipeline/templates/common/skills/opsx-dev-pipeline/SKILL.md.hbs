@@ -30,6 +30,57 @@ repository: "{{~packageRepoUrl~}}"
 - 禁止跳过中间 Phase 直接进入后续 Phase。Phase 推进必须按顺序进行，且每阶段必经其决策点。
 - 以 `openspec/.pipeline-state/<change>.json` 为恢复权威，并用 OpenSpec/Git 事实校验；不一致时暂停，不得猜测。
 
+## 配置说明
+
+当前配置来自三个层次的合成：
+
+1. **包内默认** (`opsx-dev-pipeline/config/defaults.yaml`)
+   - 提供所有配置项的默认值
+   - 升级时会更新
+
+2. **项目事实** (`openspec/config.yaml`)
+   - 人类可维护的项目配置
+   - 初始化时生成，后续手动维护
+
+3. **项目覆写** (`openspec/overrides.yaml`)
+   - 可选的本地覆写
+   - 用于覆盖特定配置项
+
+查看当前有效配置：
+```bash
+opsx-dev-pipeline config effective
+```
+
+查看配置来源：
+```bash
+opsx-dev-pipeline config effective --explain
+```
+
+## Knowledge 两阶段加载
+
+Reference 文档采用两阶段加载机制，减少 AI 上下文噪声：
+
+**第一阶段：CLI 基于元数据过滤**
+```bash
+opsx-dev-pipeline knowledge select --phase <N> --routes <route> --paths <modified-files>
+```
+
+输出示例：
+```yaml
+selected:
+  - file: references/phase-2-apply.md
+    phase: 2
+    asset_kind: procedure
+    description: "提案应用阶段的实施指引"
+    match_reason: "phase/route/paths matched"
+skipped:
+  - file: references/phase-1-propose.md
+    reason: "phase 1 not matched (expected 2)"
+```
+
+**第二阶段：AI 判断是否打开正文**
+根据 Knowledge 选择结果，AI 判断是否需要读取 `selected` 中的文件正文。
+
 **`<SKILL_ROOT>`**：本技能安装根目录（内含 `scripts/`）。命令在目标 git 仓库根目录执行。
 {{#if skillRootNote~}}
 {{{skillRootNote}}}

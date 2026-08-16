@@ -1,0 +1,71 @@
+# Dev-Pipeline 默认配置
+# 此文件定义所有配置项的默认值，升级时会更新
+# 项目可通过 openspec/config.yaml 覆盖，或通过 openspec/overrides.yaml 本地覆写
+
+pipeline:
+  # 默认语言
+  language: zh
+  
+  # 默认 Route（trivial/standard/full）
+  default_route: standard
+  
+  # 代码审查配置
+  review:
+    max_rounds: 3
+    auto_fix: false
+    
+  # 测试配置
+  tests:
+    required: true
+    command_auto_detect: true
+    
+  # Git 配置
+  git:
+    commit_style: conventional
+    branch_prefix: feature/
+    
+  # Phase 配置
+  phases:
+    # 各 Route 对应的 Phase 路径
+    routes:
+      trivial:
+        description: "无行为变化的极小变更"
+        phases: [0, 2, 6]
+        bypass_phases: [1, 3, 4, 5, 7]
+        examples:
+          - typo
+          - formatting
+          - comment-only
+          - import-cleanup
+        conditions:
+          - "不改变运行时行为"
+          - "不改变 API 或配置语义"
+          - "不影响多个模块"
+      
+      standard:
+        description: "标准变更"
+        phases: [0, 1, 2, 3, 4, 5, 6, 7]
+        examples:
+          - 功能开发
+          - Bug 修复
+          - 重构
+      
+      full:
+        description: "高保障变更"
+        phases: [0, 1, 2, 3, 4, 5, 6, 7]
+        examples:
+          - 核心业务逻辑变更
+          - 数据库迁移
+          - 安全相关变更
+
+# Knowledge 配置
+knowledge:
+  # 是否启用两阶段加载
+  two_phase_loading: true
+  
+  # 默认 asset_kind 优先级
+  asset_kind_rank:
+    - constraint
+    - procedure
+    - principle
+    - convention
