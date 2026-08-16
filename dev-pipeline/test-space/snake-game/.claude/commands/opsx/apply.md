@@ -1,0 +1,80 @@
+---
+name: "OPSX: Apply"
+description: Implement an OpenSpec change with pipeline-aware state tracking
+allowed-tools: Bash(openspec:*), AskUserQuestion
+category: Workflow
+tags: [workflow, artifacts, experimental]
+---
+
+Implement tasks from an OpenSpec change while preserving resumable pipeline state.
+
+## Pipeline Integration (v2)
+
+> **状态命令失败时，不得静默继续。** 任何 `dev-pipeline-state.mjs` 命令返回非零 exit code 时，必须暂停并报告用户。禁止跳过 pre-flight 或 post-flight。
+
+| exit code | reason | action |
+|-----------|--------|--------|
+| 0 | success | Read the returned state and continue. |
+| 10 | state missing | Run `init`, set standalone mode, and create a Phase 2 audit entry. |
+| 11 | invalid transition or unmet gate | Stop and show the detail for user confirmation. |
+| 12 | I/O error or concurrent modification | Reload and retry once; if it fails again, stop and report it. |
+
+### Pre-flight: State Awareness
+
+1. Select the change using the rules in the underlying Skill, then run:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<name>"
+   ```
+2. If the state is Schema v1, run `migrate-schema "<name>"`; require explicit approval before `migrate-schema "<name>" --confirm`.
+3. If state is missing, **MUST call AskUserQuestion and wait for an explicit choice**: `Associate external requirement` / `Skip association`. Never infer a skip from a detailed request, absent issue information, or an instruction to proceed. If the user chooses association, collect `featureId` and optional `featureUrl`. Run exactly one `init` branch, then set `executionMode` to `standalone`:
+   ```bash
+   CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+   # Associate external requirement without a URL
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>"
+   # Associate external requirement with a URL
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   # Explicitly skip association
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --skip-feature-association
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
+   ```
+   Run exactly one `init` command and never pass placeholder values.
+4. Check `phaseHistory` for an `in-progress` Phase 2 entry executed by `openspec-apply-change`. Reuse it when present; otherwise start Phase 2 before transitioning. The history entry lets hybrid gate inference recognize that applying an existing proposal implies proposal approval:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 2 6 openspec-apply-change --start
+   ```
+5. Handle the recorded phase:
+   - Phase 0/1: transition to Phase 2 Step 6.
+   - Phase 2: resume implementation without another transition.
+   - Phase 3+: ask whether this is a repair pass; if confirmed, transition back to Phase 2 Step 6. Otherwise cancel.
+
+### Execute
+
+Load and follow `.claude/skills/openspec-apply-change/SKILL.md` completely. Use its change selection, status, context files, implementation loop, task checkboxes, pause conditions, and guardrails.
+
+When all tasks are complete, ask what to do next: `Skip review and continue to tests/archive` / `Continue with pipeline review` / `Pause`.
+
+### Post-flight: Record State
+
+Execute these commands **in order**, checking every exit code:
+
+1. `record-phase` first. Add `review-skipped` only when the user chose to skip review:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 2 8 openspec-apply-change [review-skipped]
+   ```
+2. Persist the implementation decision:
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs decision "<name>" implementationConfirmed true
+   ```
+3. Transition according to the explicit choice:
+   ```bash
+   # Skip review
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 4 13
+   # Continue with review
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 3 9
+   # Pause
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs pause "<name>" "paused-after-standalone-apply"
+   ```
+   Run exactly one branch. For review, tell the user to continue with `/opsx-dev-pipeline <name>`.
+4. Run `get "<name>"`. Verify `implementationConfirmed=true`, Phase 2 has a completed entry, and `currentPhase` matches the selected branch. Warn and stop on mismatch.
+
+If implementation pauses or fails, do not complete the audit entry. Preserve it as `in-progress`, call `pause`, and show the resume command `/opsx:apply <name>`.

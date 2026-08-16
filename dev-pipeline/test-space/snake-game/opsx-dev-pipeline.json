@@ -13,13 +13,9 @@
     "docs",
     "schema"
   ],
-  "templateVersion": "0.2.14",
+  "templateVersion": "0.2.15",
   "packageName": "opsx-dev-pipeline",
   "managedAssets": [
-    {
-      "id": "common-readme",
-      "destination": "README.md"
-    },
     {
       "id": "common-gitignore",
       "destination": ".gitignore"

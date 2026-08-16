@@ -1,0 +1,41 @@
+---
+name: "OPSX: Dev-Spec-Design"
+description: Generate system analysis and design specification document (lite version)
+allowed-tools: Bash(openspec:*), AskUserQuestion
+category: Workflow
+tags: [workflow, design, spec, experimental]
+---
+
+Generate a system analysis and design specification document using the lite template.
+
+## Pipeline Integration
+
+> Read-only pipeline awareness. Never initialize, migrate, or modify pipeline state. Report unexpected state-command failures instead of silently continuing.
+
+| exit code | reason | action |
+|-----------|--------|--------|
+| 0 | success | Read the returned state and use relevant fields as design context. |
+| 10 | state missing | Report that the change is untracked, then continue standalone. |
+| 11 | invalid command or input | Stop the state lookup and report the detail. |
+| 12 | I/O error or concurrent modification | Reload and retry once; if it fails again, stop the state lookup and report it. |
+
+### Pre-flight: Read-only State Awareness
+
+1. Run `openspec list --json` to discover active changes. If OpenSpec is unavailable or the repository has no active changes, continue standalone and say so.
+2. If the user mentions a change, or exactly one active change is clearly relevant, run:
+
+   ```bash
+   node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<name>"
+   ```
+
+3. If several changes could apply, use AskUserQuestion to ask the user which change to use. Do not guess.
+4. If state exists, summarize the associated change plus relevant `currentPhase`, `currentStep`, `featureInfo`, decisions, and artifact paths as context.
+5. If state is missing, continue standalone. Do not initialize or migrate it.
+
+### Execute
+
+Load and follow `.claude/skills/dev-spec-design/SKILL.md` completely. Let that Skill control requirement collection, template use, filename derivation, document generation, verification, and output reporting.
+
+### Post-flight
+
+Show the generated document path and summary. Do not run `init`, `migrate-schema`, `record-phase`, `decision`, `set`, `attempt`, `transition`, `pause`, `complete`, or any other state-modifying command.
