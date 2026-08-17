@@ -1,14 +1,11 @@
 ---
-{{#if (isTool "codex")}}
 name: opsx:propose
 description: Propose a new change with pipeline-aware state tracking
-{{else}}
-name: "OPSX: Propose"
-description: Propose a new change with pipeline-aware state tracking
+{{#unless (isTool "codex")}}
 allowed-tools: Bash(openspec:*), {{askTool}}
 category: Workflow
 tags: [workflow, artifacts, experimental]
-{{/if}}
+{{/unless}}
 ---
 
 Propose a new change and generate every artifact required before implementation.

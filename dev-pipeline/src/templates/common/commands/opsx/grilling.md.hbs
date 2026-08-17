@@ -1,14 +1,11 @@
 ---
-{{#if (isTool "codex")}}
 name: opsx:grilling
 description: Grill the user relentlessly about a plan, decision, or idea
-{{else}}
-name: "OPSX: Grilling"
-description: Grill the user relentlessly about a plan, decision, or idea
+{{#unless (isTool "codex")}}
 allowed-tools: Bash(openspec:*), {{askTool}}
 category: Workflow
 tags: [workflow, thinking, experimental]
-{{/if}}
+{{/unless}}
 ---
 
 Load and follow `{{skillsDir}}/grilling/SKILL.md` completely.

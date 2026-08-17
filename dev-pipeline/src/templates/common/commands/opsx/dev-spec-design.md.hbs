@@ -1,14 +1,11 @@
 ---
-{{#if (isTool "codex")}}
 name: opsx:dev-spec-design
 description: Generate system analysis and design specification document (lite version)
-{{else}}
-name: "OPSX: Dev-Spec-Design"
-description: Generate system analysis and design specification document (lite version)
+{{#unless (isTool "codex")}}
 allowed-tools: Bash(openspec:*), {{askTool}}
 category: Workflow
 tags: [workflow, design, spec, experimental]
-{{/if}}
+{{/unless}}
 ---
 
 Generate a system analysis and design specification document using the lite template.

@@ -1,14 +1,11 @@
 ---
-{{#if (isTool "codex")}}
 name: opsx:verify
 description: Verify implementation against OpenSpec artifacts with pipeline state tracking
-{{else}}
-name: "OPSX: Verify"
-description: Verify implementation against OpenSpec artifacts with pipeline state tracking
+{{#unless (isTool "codex")}}
 allowed-tools: Bash(openspec:*), {{askTool}}
 category: Workflow
 tags: [workflow, verify, experimental]
-{{/if}}
+{{/unless}}
 ---
 
 Verify that implementation matches the change artifacts and record the result.

@@ -1,14 +1,11 @@
 ---
-{{#if (isTool "codex")}}
 name: opsx:explore
 description: Explore ideas and code with read-only pipeline context
-{{else}}
-name: "OPSX: Explore"
-description: Explore ideas and code with read-only pipeline context
+{{#unless (isTool "codex")}}
 allowed-tools: Bash(openspec:*), {{askTool}}
 category: Workflow
 tags: [workflow, explore, experimental, thinking]
-{{/if}}
+{{/unless}}
 ---
 
 Enter read-only explore mode with awareness of active pipeline context.
