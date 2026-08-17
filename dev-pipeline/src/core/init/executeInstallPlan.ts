@@ -74,16 +74,22 @@ function extractLanguageRules(content: string): string[] {
 function mergeConfigLanguage(existingContent: string, nextContent: string): string {
   const languageLine = nextContent.match(/^language:\s*(?:en|zh)\s*$/m)?.[0];
   const languageRules = extractLanguageRules(nextContent);
-  if (!languageLine || languageRules.length === 0) return existingContent;
+  if (!languageLine && languageRules.length === 0) return existingContent;
 
   const lines = existingContent.split('\n');
-  const existingLanguageIndex = lines.findIndex((line) => /^language:\s*/.test(line));
-  if (existingLanguageIndex >= 0) {
-    lines[existingLanguageIndex] = languageLine;
-  } else {
-    const schemaIndex = lines.findIndex((line) => /^schema:\s*/.test(line));
-    lines.splice(schemaIndex >= 0 ? schemaIndex : 0, 0, languageLine);
+
+  // Insert or replace the top-level language line independently of rules.
+  if (languageLine) {
+    const existingLanguageIndex = lines.findIndex((line) => /^language:\s*/.test(line));
+    if (existingLanguageIndex >= 0) {
+      lines[existingLanguageIndex] = languageLine;
+    } else {
+      const schemaIndex = lines.findIndex((line) => /^schema:\s*/.test(line));
+      lines.splice(schemaIndex >= 0 ? schemaIndex : 0, 0, languageLine);
+    }
   }
+
+  if (languageRules.length === 0) return lines.join('\n');
 
   const rulesIndex = lines.findIndex((line) => /^rules:\s*$/.test(line));
   if (rulesIndex < 0) {
