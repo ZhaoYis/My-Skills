@@ -267,7 +267,7 @@ describe('buildInstallPlan', () => {
   it('selects one localized bundle template and removes its language suffix', async () => {
     const rootDir = await createTempTargetDir();
     // Create skill directories for all 'skills' feature bundles
-    for (const skill of ['opsx-dev-pipeline', 'grill-me', 'grilling', 'dev-spec-design']) {
+    for (const skill of ['opsx-dev-pipeline', 'opsx-grill-me', 'opsx-grilling', 'opsx-dev-spec-design']) {
       await fs.ensureDir(path.join(rootDir, 'src/templates/common/skills', skill, 'agents'));
     }
     const sourceRoot = path.join(rootDir, 'src/templates/common/skills/opsx-dev-pipeline');
@@ -353,27 +353,27 @@ describe('buildInstallPlan', () => {
     expect(
       plan.files.some(
         (file) =>
-          file.destinationPath === path.join('/tmp/demo', skillsDir, 'grill-me', 'SKILL.md'),
+          file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-grill-me', 'SKILL.md'),
       ),
     ).toBe(true);
     expect(
       plan.files.some(
         (file) =>
           file.destinationPath ===
-          path.join('/tmp/demo', skillsDir, 'grill-me', 'agents', 'openai.yaml'),
+          path.join('/tmp/demo', skillsDir, 'opsx-grill-me', 'agents', 'openai.yaml'),
       ),
     ).toBe(true);
     expect(
       plan.files.some(
         (file) =>
-          file.destinationPath === path.join('/tmp/demo', skillsDir, 'grilling', 'SKILL.md'),
+          file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-grilling', 'SKILL.md'),
       ),
     ).toBe(true);
     expect(
       plan.files.some(
         (file) =>
           file.destinationPath ===
-          path.join('/tmp/demo', skillsDir, 'grilling', 'agents', 'openai.yaml'),
+          path.join('/tmp/demo', skillsDir, 'opsx-grilling', 'agents', 'openai.yaml'),
       ),
     ).toBe(true);
     for (const skillFile of [
@@ -385,7 +385,7 @@ describe('buildInstallPlan', () => {
         plan.files.some(
           (file) =>
             file.destinationPath ===
-            path.join('/tmp/demo', skillsDir, 'dev-spec-design', skillFile),
+            path.join('/tmp/demo', skillsDir, 'opsx-dev-spec-design', skillFile),
         ),
       ).toBe(true);
     }
@@ -514,7 +514,7 @@ describe('buildInstallPlan', () => {
       } else if (command === 'dev-spec-design') {
         expect(rendered).toContain('AskUserQuestion');
         expect(rendered).toMatch(/^allowed-tools: .*AskUserQuestion$/m);
-        expect(rendered).toContain(`${skillsDir}/dev-spec-design/SKILL.md`);
+        expect(rendered).toContain(`${skillsDir}/opsx-dev-spec-design/SKILL.md`);
         expect(rendered).toContain('Never initialize, migrate, or modify pipeline state.');
         expect(rendered).not.toContain(' --feature-id ');
       } else {

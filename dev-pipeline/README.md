@@ -67,7 +67,7 @@ npx opsx-dev-pipeline uninstall --yes
 | -------- | ----------- | ------------------------------------------------------------ | ------------------------------------------------- |
 | `claude` | Claude Code | `CLAUDE.md`、`.claude/skills/`、`.claude/commands/`            | `SKILL_ROOT=.claude/skills/opsx-dev-pipeline`     |
 | `cursor` | Cursor      | `.cursor/rules/`、`.cursor/commands/`、`opsx-dev-pipeline.mdc` | 按需加载；`SKILL_ROOT=.cursor/rules/opsx-dev-pipeline` |
-| `codex`  | Codex       | `.codex/prompts/`、`.codex/commands/`                         | 入口 prompt 加载 `.codex/prompts/opsx-dev-pipeline/`  |
+| `codex`  | Codex       | `.agents/skills/`                                              | `SKILL_ROOT=.agents/skills/opsx-dev-pipeline`     |
 
 
 查看当前内置适配器：

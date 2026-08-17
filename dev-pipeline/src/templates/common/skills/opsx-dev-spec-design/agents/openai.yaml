@@ -1,0 +1,4 @@
+interface:
+  display_name: "opsx:dev-spec-design"
+  short_description: "Generate system analysis and design specification documents"
+  default_prompt: "Use $opsx:dev-spec-design to generate a system analysis and design document."

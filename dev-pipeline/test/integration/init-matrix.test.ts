@@ -85,16 +85,16 @@ const toolExpectations = {
     { path: '.claude/skills/opsx-dev-pipeline/scripts/preflight.mjs', present: true },
     { path: '.claude/skills/opsx-dev-pipeline/scripts/archive.mjs', present: true },
     { path: '.claude/skills/opsx-dev-pipeline/agents/openai.yaml', present: true },
-    { path: '.claude/skills/grill-me/SKILL.md', present: true },
-    { path: '.claude/skills/grill-me/agents/openai.yaml', present: true },
-    { path: '.claude/skills/grilling/SKILL.md', present: true },
-    { path: '.claude/skills/grilling/agents/openai.yaml', present: true },
-    { path: '.claude/skills/dev-spec-design/SKILL.md', present: true },
+    { path: '.claude/skills/opsx-grill-me/SKILL.md', present: true },
+    { path: '.claude/skills/opsx-grill-me/agents/openai.yaml', present: true },
+    { path: '.claude/skills/opsx-grilling/SKILL.md', present: true },
+    { path: '.claude/skills/opsx-grilling/agents/openai.yaml', present: true },
+    { path: '.claude/skills/opsx-dev-spec-design/SKILL.md', present: true },
     {
-      path: '.claude/skills/dev-spec-design/references/system-analysis-design-template-lite.md',
+      path: '.claude/skills/opsx-dev-spec-design/references/system-analysis-design-template-lite.md',
       present: true,
     },
-    { path: '.claude/skills/dev-spec-design/agents/openai.yaml', present: true },
+    { path: '.claude/skills/opsx-dev-spec-design/agents/openai.yaml', present: true },
     { path: '.claude/commands/opsx-dev-pipeline.md', present: true },
     ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore', 'dev-spec-design'].map(
       (command) => ({
@@ -112,16 +112,16 @@ const toolExpectations = {
     { path: '.cursor/rules/opsx-dev-pipeline/scripts/preflight.mjs', present: true },
     { path: '.cursor/rules/opsx-dev-pipeline/scripts/archive.mjs', present: true },
     { path: '.cursor/rules/opsx-dev-pipeline/agents/openai.yaml', present: true },
-    { path: '.cursor/rules/grill-me/SKILL.md', present: true },
-    { path: '.cursor/rules/grill-me/agents/openai.yaml', present: true },
-    { path: '.cursor/rules/grilling/SKILL.md', present: true },
-    { path: '.cursor/rules/grilling/agents/openai.yaml', present: true },
-    { path: '.cursor/rules/dev-spec-design/SKILL.md', present: true },
+    { path: '.cursor/rules/opsx-grill-me/SKILL.md', present: true },
+    { path: '.cursor/rules/opsx-grill-me/agents/openai.yaml', present: true },
+    { path: '.cursor/rules/opsx-grilling/SKILL.md', present: true },
+    { path: '.cursor/rules/opsx-grilling/agents/openai.yaml', present: true },
+    { path: '.cursor/rules/opsx-dev-spec-design/SKILL.md', present: true },
     {
-      path: '.cursor/rules/dev-spec-design/references/system-analysis-design-template-lite.md',
+      path: '.cursor/rules/opsx-dev-spec-design/references/system-analysis-design-template-lite.md',
       present: true,
     },
-    { path: '.cursor/rules/dev-spec-design/agents/openai.yaml', present: true },
+    { path: '.cursor/rules/opsx-dev-spec-design/agents/openai.yaml', present: true },
     { path: '.cursor/commands/opsx-dev-pipeline.md', present: true },
     ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore', 'dev-spec-design'].map(
       (command) => ({
@@ -139,16 +139,16 @@ const toolExpectations = {
     { path: '.agents/skills/opsx-dev-pipeline/scripts/preflight.mjs', present: true },
     { path: '.agents/skills/opsx-dev-pipeline/scripts/archive.mjs', present: true },
     { path: '.agents/skills/opsx-dev-pipeline/agents/openai.yaml', present: true },
-    { path: '.agents/skills/grill-me/SKILL.md', present: true },
-    { path: '.agents/skills/grill-me/agents/openai.yaml', present: true },
-    { path: '.agents/skills/grilling/SKILL.md', present: true },
-    { path: '.agents/skills/grilling/agents/openai.yaml', present: true },
-    { path: '.agents/skills/dev-spec-design/SKILL.md', present: true },
+    { path: '.agents/skills/opsx-grill-me/SKILL.md', present: true },
+    { path: '.agents/skills/opsx-grill-me/agents/openai.yaml', present: true },
+    { path: '.agents/skills/opsx-grilling/SKILL.md', present: true },
+    { path: '.agents/skills/opsx-grilling/agents/openai.yaml', present: true },
+    { path: '.agents/skills/opsx-dev-spec-design/SKILL.md', present: true },
     {
-      path: '.agents/skills/dev-spec-design/references/system-analysis-design-template-lite.md',
+      path: '.agents/skills/opsx-dev-spec-design/references/system-analysis-design-template-lite.md',
       present: true,
     },
-    { path: '.agents/skills/dev-spec-design/agents/openai.yaml', present: true },
+    { path: '.agents/skills/opsx-dev-spec-design/agents/openai.yaml', present: true },
     ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore', 'grill-me', 'grilling', 'dev-spec-design'].map(
       (command) => ({
         path: `.agents/skills/opsx-${command}/SKILL.md`,
@@ -213,7 +213,7 @@ describe('tool matrix', () => {
     const isCodex = tool === 'codex';
     const proposeFileName = isCodex ? 'SKILL.md' : 'propose.md';
     const propose = await fs.readFile(path.join(dir, commandsRoot, proposeFileName), 'utf8');
-    const devSpecSkillRoot = path.join(path.dirname(skillRoot), 'dev-spec-design');
+    const devSpecSkillRoot = path.join(path.dirname(skillRoot), 'opsx-dev-spec-design');
     const devSpecSkill = await fs.readFile(path.join(dir, devSpecSkillRoot, 'SKILL.md'), 'utf8');
     const devSpecTemplate = await fs.readFile(
       path.join(dir, devSpecSkillRoot, 'references/system-analysis-design-template-lite.md'),
@@ -242,9 +242,9 @@ describe('tool matrix', () => {
       expect(devSpecCommand).toMatch(
         new RegExp(`^allowed-tools: Bash\\(openspec:\\*\\), ${askTool}$`, 'm'),
       );
+      expect(devSpecCommand).toContain(`${path.dirname(skillRoot)}/opsx-dev-spec-design/SKILL.md`);
+      expect(devSpecCommand).toContain('Never initialize, migrate, or modify pipeline state.');
     }
-    expect(devSpecCommand).toContain(`${path.dirname(skillRoot)}/dev-spec-design/SKILL.md`);
-    expect(devSpecCommand).toContain('Never initialize, migrate, or modify pipeline state.');
     expect([skill, entrance, propose, devSpecSkill, devSpecCommand].join('\n')).not.toMatch(
       /\{\{[^}]+\}\}/,
     );
@@ -564,8 +564,8 @@ describe('tool matrix', () => {
     );
 
     const openaiConfig = await fs.readFile(path.join(skillDir, 'agents/openai.yaml'), 'utf8');
-    expect(openaiConfig).toContain('display_name: "OpenSpec Dev Pipeline"');
-    expect(openaiConfig).toContain('Use $opsx-dev-pipeline');
+    expect(openaiConfig).toContain('display_name: "opsx:dev-pipeline"');
+    expect(openaiConfig).toContain('Use $opsx:dev-pipeline');
     expect(openaiConfig).not.toMatch(/\{\{[^}]+\}\}/);
   });
 
