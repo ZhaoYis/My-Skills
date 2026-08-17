@@ -370,7 +370,7 @@ describe('tool matrix', () => {
       dryRun: false,
     });
     expect(await fs.readFile(path.join(dir, 'openspec/config.yaml'), 'utf8')).toContain(
-      'Tech Stack: Java Spring Boot',
+      'Tech Stack: Java 17+, Spring Boot 3.x, Maven/Gradle',
     );
     expect((await readManifest(dir)).techStack).toBe('java-spring-boot');
 
@@ -380,7 +380,7 @@ describe('tool matrix', () => {
 
     expect(await fs.pathExists(path.join(dir, MANIFEST_FILE))).toBe(true);
     expect(await fs.readFile(path.join(dir, 'openspec/config.yaml'), 'utf8')).toContain(
-      'Tech Stack: Java Spring Boot',
+      'Tech Stack: Java 17+, Spring Boot 3.x, Maven/Gradle',
     );
     expect((await readManifest(dir)).techStack).toBe('java-spring-boot');
   });
