@@ -1,11 +1,18 @@
 ---
+{{#if (isTool "cursor")}}
+name: /opsx-grill-me
+id: opsx-grill-me
+{{else}}
 name: opsx:grill-me
+{{/if}}
 description: A relentless interview to sharpen a plan or design
-{{#unless (isTool "codex")}}
+{{#if (isTool "claude")}}
 allowed-tools: Bash(openspec:*), {{askTool}}
 category: Workflow
 tags: [workflow, thinking, experimental]
-{{/unless}}
+{{else}}
+category: Workflow
+{{/if}}
 ---
 
 Load and follow `{{skillsDir}}/opsx-grill-me/SKILL.md` completely.

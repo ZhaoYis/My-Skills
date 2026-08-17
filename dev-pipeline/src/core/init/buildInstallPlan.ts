@@ -71,6 +71,11 @@ export function buildTemplateContext(params: {
   techStack?: TechStackId;
   techStackName?: string;
 }): Record<string, unknown> {
+  const commandSeparator = params.toolId === 'claude' ? ':' : '-';
+  const commandPrefix = params.toolId === 'codex' ? '$' : '/';
+  const commandInvocation = (command: string) =>
+    `${commandPrefix}opsx${commandSeparator}${command}`;
+
   return {
     projectName: sanitizeProjectName(params.projectName),
     toolId: params.toolId,
@@ -89,6 +94,18 @@ export function buildTemplateContext(params: {
     packageRepoUrl: PACKAGE_REPO_URL,
     skillRootNote: params.skillRootNote?.replaceAll('{skillsDir}', params.skillsDir),
     askTool: ASK_TOOL_MAP[params.toolId],
+    commands: {
+      apply: commandInvocation('apply'),
+      archive: commandInvocation('archive'),
+      devPipeline: commandInvocation('dev-pipeline'),
+      devSpecDesign: commandInvocation('dev-spec-design'),
+      explore: commandInvocation('explore'),
+      grillMe: commandInvocation('grill-me'),
+      grilling: commandInvocation('grilling'),
+      propose: commandInvocation('propose'),
+      sync: commandInvocation('sync'),
+      verify: commandInvocation('verify'),
+    },
   };
 }
 
@@ -354,7 +371,10 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
         // Skip for user-scope installs: user destinations (e.g. ~/.claude/skills/) are
         // intentionally outside the project target directory.
         if (scope !== 'user') {
-          assertPathWithinBase(input.targetDir, path.relative(input.targetDir, file.destinationPath));
+          assertPathWithinBase(
+            input.targetDir,
+            path.relative(input.targetDir, file.destinationPath),
+          );
         }
         const exists = await fs.pathExists(file.destinationPath);
         const policy = resolveFileWritePolicy(findAssetDefinition(file.assetId), file, input.mode);

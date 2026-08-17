@@ -1,11 +1,20 @@
 ---
+{{#if (isTool "codex")}}
+name: opsx-archive
+{{else}}{{#if (isTool "cursor")}}
+name: /opsx-archive
+id: opsx-archive
+{{else}}
 name: opsx:archive
+{{/if}}{{/if}}
 description: Archive an OpenSpec change with pipeline gate and delivery state tracking
-{{#unless (isTool "codex")}}
+{{#if (isTool "claude")}}
 allowed-tools: Bash(openspec:*), {{askTool}}
 category: Workflow
 tags: [workflow, archive, experimental]
-{{/unless}}
+{{else}}{{#if (isTool "cursor")}}
+category: Workflow
+{{/if}}{{/if}}
 ---
 
 Archive a completed change and persist the final pipeline gates.
@@ -39,7 +48,7 @@ Archive a completed change and persist the final pipeline gates.
    Run exactly one `init` command and never pass placeholder values.
 4. Compensate missing gates without guessing:
    - If `tests.status` is pending, ask `passed` / `failed` / `skipped` / `rerun tests`. Persist a confirmed result with `set tests.status`; stop on failed.
-   - If `verify.status` is pending, ask `passed` / `failed` / `skipped` / `run /opsx:verify`. Persist `passed` or `failed` through `attempt verify`, and a confirmed skip through `set verify.status`; stop on failed.
+   - If `verify.status` is pending, ask `passed` / `failed` / `skipped` / `run {{commands.verify}}`. Persist `passed` or `failed` through `attempt verify`, and a confirmed skip through `set verify.status`; stop on failed.
 5. Check `phaseHistory` for an `in-progress` Phase 5 entry executed by `openspec-archive-change`. Reuse it when present; otherwise start the archive audit entry below. Starting it changes an existing strict `pipeline` state to `hybrid` before any standalone forward transition:
    ```bash
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 15 openspec-archive-change --start
@@ -74,4 +83,4 @@ Execute these commands **in order**, checking every exit code:
    ```
 5. Run `get "<name>"`. Verify `currentPhase=6`, `archivePath` is exact, `verify.status` is `passed` or `skipped`, the delivery choice matches, and the archive history entry is completed. Warn and stop on mismatch.
 
-Show `/opsx-dev-pipeline <name>` as the next action for commit, push, and optional merge delivery.
+Show `{{commands.devPipeline}} <name>` as the next action for commit, push, and optional merge delivery.

@@ -1,11 +1,18 @@
 ---
+{{#if (isTool "cursor")}}
+name: /opsx-dev-spec-design
+id: opsx-dev-spec-design
+{{else}}
 name: opsx:dev-spec-design
+{{/if}}
 description: Generate system analysis and design specification document (lite version)
-{{#unless (isTool "codex")}}
+{{#if (isTool "claude")}}
 allowed-tools: Bash(openspec:*), {{askTool}}
 category: Workflow
 tags: [workflow, design, spec, experimental]
-{{/unless}}
+{{else}}
+category: Workflow
+{{/if}}
 ---
 
 Generate a system analysis and design specification document using the lite template.

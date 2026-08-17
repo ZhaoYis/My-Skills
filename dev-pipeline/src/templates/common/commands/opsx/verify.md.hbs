@@ -1,11 +1,20 @@
 ---
+{{#if (isTool "codex")}}
+name: opsx-verify
+{{else}}{{#if (isTool "cursor")}}
+name: /opsx-verify
+id: opsx-verify
+{{else}}
 name: opsx:verify
+{{/if}}{{/if}}
 description: Verify implementation against OpenSpec artifacts with pipeline state tracking
-{{#unless (isTool "codex")}}
+{{#if (isTool "claude")}}
 allowed-tools: Bash(openspec:*), {{askTool}}
 category: Workflow
 tags: [workflow, verify, experimental]
-{{/unless}}
+{{else}}{{#if (isTool "cursor")}}
+category: Workflow
+{{/if}}{{/if}}
 ---
 
 Verify that implementation matches the change artifacts and record the result.
@@ -62,4 +71,4 @@ Execute these commands **in order**, checking every exit code:
    ```
 3. Run `get "<name>"`. Verify `verify.status` matches the report and Phase 5 Step 16 has a completed history entry. Warn and stop on mismatch. This command does not transition phases.
 
-If verification is interrupted, keep the history entry `in-progress`, call `pause`, and report how to resume with `/opsx:verify <name>`.
+If verification is interrupted, keep the history entry `in-progress`, call `pause`, and report how to resume with `{{commands.verify}} <name>`.

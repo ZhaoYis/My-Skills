@@ -1,11 +1,18 @@
 ---
+{{#if (isTool "cursor")}}
+name: /opsx-dev-pipeline
+id: opsx-dev-pipeline
+{{else}}
 name: opsx:dev-pipeline
-description: Drive the full OpenSpec + Git development pipeline (Phase 0-6)
-{{#unless (isTool "codex")}}
+{{/if}}
+description: Drive the full OpenSpec + Git development pipeline (Phase 0-7)
+{{#if (isTool "claude")}}
 allowed-tools: Bash(openspec:*), {{askTool}}
 category: Workflow
 tags: [workflow, experimental]
-{{/unless}}
+{{else}}{{#if (isTool "cursor")}}
+category: Workflow
+{{/if}}{{/if}}
 ---
 
 # opsx-dev-pipeline
@@ -20,4 +27,4 @@ Drive the full OpenSpec + Git development pipeline through the installed skill a
 
 ## Flow
 
-Load and follow the `opsx-dev-pipeline` skill. It covers Phase0–6: preflight → propose → apply → review → unit tests → archive → merge & push.
+Load and follow the `opsx-dev-pipeline` skill. It covers Phase0–7: preflight → propose → apply → review → unit tests → archive → commit and push → optional merge delivery.

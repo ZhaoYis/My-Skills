@@ -1,11 +1,20 @@
 ---
+{{#if (isTool "codex")}}
+name: opsx-apply
+{{else}}{{#if (isTool "cursor")}}
+name: /opsx-apply
+id: opsx-apply
+{{else}}
 name: opsx:apply
+{{/if}}{{/if}}
 description: Implement an OpenSpec change with pipeline-aware state tracking
-{{#unless (isTool "codex")}}
+{{#if (isTool "claude")}}
 allowed-tools: Bash(openspec:*), {{askTool}}
 category: Workflow
 tags: [workflow, artifacts, experimental]
-{{/unless}}
+{{else}}{{#if (isTool "cursor")}}
+category: Workflow
+{{/if}}{{/if}}
 ---
 
 Implement tasks from an OpenSpec change while preserving resumable pipeline state.
@@ -76,7 +85,7 @@ Execute these commands **in order**, checking every exit code:
    # Pause
    node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs pause "<name>" "paused-after-standalone-apply"
    ```
-   Run exactly one branch. For review, tell the user to continue with `/opsx-dev-pipeline <name>`.
+   Run exactly one branch. For review, tell the user to continue with `{{commands.devPipeline}} <name>`.
 4. Run `get "<name>"`. Verify `implementationConfirmed=true`, Phase 2 has a completed entry, and `currentPhase` matches the selected branch. Warn and stop on mismatch.
 
-If implementation pauses or fails, do not complete the audit entry. Preserve it as `in-progress`, call `pause`, and show the resume command `/opsx:apply <name>`.
+If implementation pauses or fails, do not complete the audit entry. Preserve it as `in-progress`, call `pause`, and show the resume command `{{commands.apply}} <name>`.
