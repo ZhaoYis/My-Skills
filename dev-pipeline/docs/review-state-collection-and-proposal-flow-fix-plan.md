@@ -171,9 +171,9 @@ AI 按提案逐任务实施修复
 | # | 文件 | 变更内容 |
 |---|------|----------|
 | 4 | `test/integration/pipeline-state.test.ts` | 新增 rounds 集合测试、migration 测试、更新 `review.round` → `review.currentRound` |
-| 5 | `test-pipeline/src/validators/PhaseValidators.ts` | 更新 `PipelineState` 接口、`validatePhase3` 断言 |
-| 6 | `test-pipeline/scenarios/error-recovery/review-fix-loop.test.ts` | 验证 rounds 历史、连续失败上限 |
-| 7 | `test-pipeline/src/harness/DeterministicPipelineExecutor.ts` | 增加 `fix-and-rereview` 路径 |
+| 5 | `src/validators/PhaseValidators.ts` | 更新 `PipelineState` 接口、`validatePhase3` 断言 |
+| 6 | `scenarios/error-recovery/review-fix-loop.test.ts` | 验证 rounds 历史、连续失败上限 |
+| 7 | `src/harness/DeterministicPipelineExecutor.ts` | 增加 `fix-and-rereview` 路径 |
 
 ### 同步文件（模板变更后同步）：
 
@@ -457,7 +457,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" fixApplied tr
   - `review.reportPath` / `review.status` 兼容字段始终等于最后一轮
   - `review.status` 不能通过 `set` 命令直接修改（已从 `mutablePaths` 移除）
 
-**✅ 4b. `test-pipeline/src/validators/PhaseValidators.ts`：**
+**✅ 4b. `src/validators/PhaseValidators.ts`：**
 
 - 更新 `PipelineState` 接口中的 `review` 类型：
 
@@ -487,7 +487,7 @@ review: {
 }
 ```
 
-**✅ 4c. `test-pipeline/scenarios/error-recovery/review-fix-loop.test.ts`：**
+**✅ 4c. `scenarios/error-recovery/review-fix-loop.test.ts`：**
 
 - 更新 `LoopState` 接口匹配新结构
 - 验证多轮 issues-found 后 `state.review.rounds.length === 3`
@@ -495,7 +495,7 @@ review: {
 - 验证 `state.review.currentRound === 3`、`state.status === 'paused'`
 - 验证恢复后（passed）`rounds` 包含 4 条记录
 
-**✅ 4d. `test-pipeline/src/harness/DeterministicPipelineExecutor.ts`：**
+**✅ 4d. `src/harness/DeterministicPipelineExecutor.ts`：**
 
 - `executePhase3` 增加 `fix-and-rereview` 路径（当 `scenario.reviewDisposition === 'fix-and-rereview'` 时触发）
 - Round 1：写入审查报告 → `attempt review issues-found` → 生成 fix proposal → 记录 decisions → 修复代码
@@ -546,13 +546,13 @@ node test/integration/dev-pipeline-state.test.mjs
 
 ```bash
 # Review fix loop（3 轮连续失败 + 恢复）
-npx vitest run test-pipeline/scenarios/error-recovery/review-fix-loop.test.ts
+npx vitest run scenarios/error-recovery/review-fix-loop.test.ts
 
 # 全流程（含 review + fix-and-rereview）
-npx vitest run test-pipeline/scenarios/happy-path/fullstack-todo-full-flow.test.ts
+npx vitest run scenarios/happy-path/fullstack-todo-full-flow.test.ts
 
 # 跳过 review
-npx vitest run test-pipeline/scenarios/delivery-variants/skip-review.test.ts
+npx vitest run scenarios/delivery-variants/skip-review.test.ts
 ```
 
 ### 手动验证场景

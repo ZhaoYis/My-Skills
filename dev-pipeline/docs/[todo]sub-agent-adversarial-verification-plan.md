@@ -177,15 +177,14 @@ project standards files. Do not add your own assessment.
 | 5 | 重构 `phase-4-unit-tests.md`（[D-3] 混合模式） | 高 |
 | 6 | 更新 `SKILL.md.hbs`（约束+工具说明+Phase表 + [D-6] 回退透明） | 低 |
 | 7 | 更新 `agents/openai.yaml` | 低 |
-| 8 | 全量验证: typecheck + lint + test + test:pipeline + pack:check | 中 |
+| 8 | 全量验证: typecheck + lint + test + pack:check | 中 |
 
 ## 验证方案
 
 1. **模板渲染验证**：`npm run dev -- init --tool claude --stack backend --yes --dir /tmp/test-init`，检查生成的 SKILL.md 和 phase reference 文件
 2. **编译检查**：`npm run build && npm run typecheck`
 3. **单元测试**：`npm test`（确认 `review.mode`、`review.dispute` 状态字段正常）
-4. **Pipeline E2E**：`npm run test:pipeline`
-5. **回退路径**：确认 Cursor/Codex 工具在 SKILL_ROOT 中标注了回退说明
+4. **回退路径**：确认 Cursor/Codex 工具在 SKILL_ROOT 中标注了回退说明
 6. **打包完整性**：`npm run pack:check`
 
 ## 风险与缓解

@@ -280,13 +280,9 @@ Bundle 的 `includeExtensions` 需要更新：
 |---------|---------|---------|
 | `test/unit/pipeline-lib.test.ts` | **NEW** | 新建。独立单元测试 pipeline-lib.mjs 的 7 个导出函数。纯函数（`validateChangeName`、`validateIdentifier`）做到 100% 覆盖；副作用函数（`getRepoRoot`、`runJsonCommand` 等）通过 PATH 注入 mock 进行集成测试 |
 | `test/integration/skill-scripts.test.ts` | HIGH | `runScript()`: `execFile('bash', [script.sh])` → `execFile(process.execPath, [script.mjs])`。mock `openspec` 策略不变（假 bash 脚本注入 PATH，`.mjs` 通过 `execFileSync` 调用时操作系统按 shebang 解析）。9 个 JSON 断言保持不变 |
-| `test-pipeline/src/harness/DeterministicPipelineExecutor.ts` | HIGH | `runSkillScript()`: `'bash'` → `process.execPath`；8 个调用点的 `.sh` → `.mjs` |
-| `test-pipeline/scenarios/error-recovery/missing-openspec.test.ts` | MODERATE | `/bin/bash` → `process.execPath`；`.sh` → `.mjs`；JSON 断言保持不变 |
-| `test-pipeline/scenarios/error-recovery/archive-with-pending-tasks.test.ts` | MODERATE | `/bin/bash` → `process.execPath`；`.sh` → `.mjs`；JSON 断言保持不变 |
 | `test/integration/pipeline-state.test.ts` | MODERATE | 3 处退出码断言：`code: 4` → `code: 11`（`EXIT_INVALID_TRANSITION` 从 4 重映射到 11）。其余 `.mjs` 执行路径不变（已使用 `process.execPath`） |
 | `test/unit/build-install-plan.test.ts` | LOW | 2 处 destination path 断言：`.sh` → `.mjs` |
 | `test/integration/init-matrix.test.ts` | LOW | 6 处文件存在性断言：`.sh` → `.mjs` |
-| `test-pipeline/src/harness/AgentPhaseRunner.ts` | LOW | 8 处 prompt 模板字符串：`bash ... .sh` → `node ... .mjs` |
 
 ## 十、验证方案
 
