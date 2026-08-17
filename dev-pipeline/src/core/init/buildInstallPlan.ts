@@ -203,6 +203,10 @@ function shouldIncludeInstallFile(
   return managed.topLevelIds.has(file.assetId);
 }
 
+function resolveAssetDestination(asset: AssetDefinition, toolId: ToolId): string {
+  return asset.toolDestinations?.[toolId] ?? asset.destination;
+}
+
 async function expandBundle(
   asset: AssetDefinition,
   rootDir: string,
@@ -210,11 +214,12 @@ async function expandBundle(
   templateContext: Record<string, unknown>,
   features: FeatureId[],
   language: DocLanguage,
+  toolId: ToolId,
 ): Promise<InstallFile[]> {
   const sourceRoot = path.join(rootDir, asset.source);
   const bundleDestinationRoot = path.join(
     targetDir,
-    renderString(asset.destination, templateContext),
+    renderString(resolveAssetDestination(asset, toolId), templateContext),
   );
   const files = await fs.readdir(sourceRoot, { recursive: true });
 
@@ -302,6 +307,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
           templateContext,
           input.features,
           language,
+          input.tool,
         );
       }
 
@@ -328,7 +334,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
               : renderedSource,
           destinationPath: path.join(
             input.targetDir,
-            renderString(asset.destination, templateContext),
+            renderString(resolveAssetDestination(asset, input.tool), templateContext),
           ),
           kind: asset.kind,
           exists: false,

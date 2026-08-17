@@ -132,32 +132,29 @@ const toolExpectations = {
     { path: '.cursor/commands/README.md', present: true },
   ],
   codex: [
-    { path: '.codex/prompts/opsx-dev-pipeline.md', present: true },
-    { path: '.codex/prompts/opsx-dev-pipeline/SKILL.md', present: true },
-    { path: '.codex/prompts/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
-    { path: '.codex/prompts/opsx-dev-pipeline/references/phase-6-commit-push.md', present: true },
-    { path: '.codex/prompts/opsx-dev-pipeline/references/phase-7-merge-deliver.md', present: true },
-    { path: '.codex/prompts/opsx-dev-pipeline/scripts/preflight.mjs', present: true },
-    { path: '.codex/prompts/opsx-dev-pipeline/scripts/archive.mjs', present: true },
-    { path: '.codex/prompts/opsx-dev-pipeline/agents/openai.yaml', present: true },
-    { path: '.codex/prompts/grill-me/SKILL.md', present: true },
-    { path: '.codex/prompts/grill-me/agents/openai.yaml', present: true },
-    { path: '.codex/prompts/grilling/SKILL.md', present: true },
-    { path: '.codex/prompts/grilling/agents/openai.yaml', present: true },
-    { path: '.codex/prompts/dev-spec-design/SKILL.md', present: true },
+    { path: '.agents/skills/opsx-dev-pipeline/SKILL.md', present: true },
+    { path: '.agents/skills/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
+    { path: '.agents/skills/opsx-dev-pipeline/references/phase-6-commit-push.md', present: true },
+    { path: '.agents/skills/opsx-dev-pipeline/references/phase-7-merge-deliver.md', present: true },
+    { path: '.agents/skills/opsx-dev-pipeline/scripts/preflight.mjs', present: true },
+    { path: '.agents/skills/opsx-dev-pipeline/scripts/archive.mjs', present: true },
+    { path: '.agents/skills/opsx-dev-pipeline/agents/openai.yaml', present: true },
+    { path: '.agents/skills/grill-me/SKILL.md', present: true },
+    { path: '.agents/skills/grill-me/agents/openai.yaml', present: true },
+    { path: '.agents/skills/grilling/SKILL.md', present: true },
+    { path: '.agents/skills/grilling/agents/openai.yaml', present: true },
+    { path: '.agents/skills/dev-spec-design/SKILL.md', present: true },
     {
-      path: '.codex/prompts/dev-spec-design/references/system-analysis-design-template-lite.md',
+      path: '.agents/skills/dev-spec-design/references/system-analysis-design-template-lite.md',
       present: true,
     },
-    { path: '.codex/prompts/dev-spec-design/agents/openai.yaml', present: true },
-    { path: '.codex/commands/opsx-dev-pipeline.md', present: true },
-    ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore', 'dev-spec-design'].map(
+    { path: '.agents/skills/dev-spec-design/agents/openai.yaml', present: true },
+    ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore', 'grill-me', 'grilling', 'dev-spec-design'].map(
       (command) => ({
-        path: `.codex/commands/opsx/${command}.md`,
+        path: `.agents/skills/opsx-${command}/SKILL.md`,
         present: true as const,
       }),
     ),
-    { path: '.codex/commands/README.md', present: true },
   ],
 } as const;
 
@@ -173,8 +170,8 @@ const askToolExpectations = {
     askTool: 'AskQuestion',
   },
   codex: {
-    skillRoot: '.codex/prompts/opsx-dev-pipeline',
-    commandsRoot: '.codex/commands/opsx',
+    skillRoot: '.agents/skills/opsx-dev-pipeline',
+    commandsRoot: '.agents/skills/opsx-propose',
     askTool: 'AskUserQuestion',
   },
 } as const;
@@ -213,27 +210,39 @@ describe('tool matrix', () => {
       path.join(dir, skillRoot, 'references/phase-0-entrance.md'),
       'utf8',
     );
-    const propose = await fs.readFile(path.join(dir, commandsRoot, 'propose.md'), 'utf8');
+    const isCodex = tool === 'codex';
+    const proposeFileName = isCodex ? 'SKILL.md' : 'propose.md';
+    const propose = await fs.readFile(path.join(dir, commandsRoot, proposeFileName), 'utf8');
     const devSpecSkillRoot = path.join(path.dirname(skillRoot), 'dev-spec-design');
     const devSpecSkill = await fs.readFile(path.join(dir, devSpecSkillRoot, 'SKILL.md'), 'utf8');
     const devSpecTemplate = await fs.readFile(
       path.join(dir, devSpecSkillRoot, 'references/system-analysis-design-template-lite.md'),
       'utf8',
     );
+    const devSpecCommandFileName = isCodex ? 'SKILL.md' : 'dev-spec-design.md';
+    const devSpecCommandRoot = isCodex
+      ? '.agents/skills/opsx-dev-spec-design'
+      : commandsRoot;
     const devSpecCommand = await fs.readFile(
-      path.join(dir, commandsRoot, 'dev-spec-design.md'),
+      path.join(dir, devSpecCommandRoot, devSpecCommandFileName),
       'utf8',
     );
     expect(skill).toContain(`决策点首选 **${askTool}** tool`);
     expect(entrance).toContain(`必须使用 **${askTool}** 询问用户是否关联外部需求`);
-    expect(propose).toMatch(new RegExp(`^allowed-tools: Bash\\(openspec:\\*\\), ${askTool}$`, 'm'));
+    if (!isCodex) {
+      expect(propose).toMatch(
+        new RegExp(`^allowed-tools: Bash\\(openspec:\\*\\), ${askTool}$`, 'm'),
+      );
+    }
     expect(propose).toContain(`MUST call ${askTool} and wait for an explicit choice`);
     expect(devSpecSkill).toContain('openspec/docs/<yyyyMMdd>/<kebab-case-name>.md');
     expect(devSpecSkill).toContain(`**${askTool}**`);
     expect(devSpecTemplate).toContain('# {项目/需求名称} 系统分析与设计');
-    expect(devSpecCommand).toMatch(
-      new RegExp(`^allowed-tools: Bash\\(openspec:\\*\\), ${askTool}$`, 'm'),
-    );
+    if (!isCodex) {
+      expect(devSpecCommand).toMatch(
+        new RegExp(`^allowed-tools: Bash\\(openspec:\\*\\), ${askTool}$`, 'm'),
+      );
+    }
     expect(devSpecCommand).toContain(`${path.dirname(skillRoot)}/dev-spec-design/SKILL.md`);
     expect(devSpecCommand).toContain('Never initialize, migrate, or modify pipeline state.');
     expect([skill, entrance, propose, devSpecSkill, devSpecCommand].join('\n')).not.toMatch(
@@ -547,7 +556,7 @@ describe('tool matrix', () => {
     const expectedSkillRoot = {
       claude: '- 对于 Claude Code 安装：`<SKILL_ROOT>` = `.claude/skills/opsx-dev-pipeline`',
       cursor: '- 对于 Cursor 安装：`<SKILL_ROOT>` = `.cursor/rules/opsx-dev-pipeline`',
-      codex: '- 对于 Codex 安装：`<SKILL_ROOT>` = `.codex/prompts/opsx-dev-pipeline`',
+      codex: '- 对于 Codex 安装：`<SKILL_ROOT>` = `.agents/skills/opsx-dev-pipeline`',
     }[tool];
     expect(skillContent.match(/^- 对于 .*安装：.*$/gm)).toEqual([expectedSkillRoot]);
     expect(skillContent).toContain(

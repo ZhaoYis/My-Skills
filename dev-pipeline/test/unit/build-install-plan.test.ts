@@ -64,7 +64,6 @@ function createAdapter(
     supportsUserDestination: () => true,
     getRoot: () => '.',
     getSkillRootNote: () => undefined,
-    getPostInstallNotes: () => ['note'],
   };
 }
 
@@ -296,7 +295,7 @@ describe('buildInstallPlan', () => {
   it.each([
     ['claude', '.claude/skills', '.claude/commands', 'CLAUDE.md'],
     ['cursor', '.cursor/rules', '.cursor/commands', '.cursor/rules/opsx-dev-pipeline.mdc'],
-    ['codex', '.codex/prompts', '.codex/commands', '.codex/prompts/opsx-dev-pipeline.md'],
+    ['codex', '.agents/skills', '.agents/skills', '.agents/skills/opsx-dev-pipeline/SKILL.md'],
   ] as const)('maps assets for %s including bundle skill', async (tool, skillsDir, commandsDir, docsPath) => {
     const adapter = createAdapter(tool, skillsDir, commandsDir, tool);
     const registry = new Map<ToolId, ToolAdapter>([[tool, adapter]]);
@@ -390,29 +389,46 @@ describe('buildInstallPlan', () => {
         ),
       ).toBe(true);
     }
-    expect(
-      plan.files.some(
-        (file) =>
-          file.destinationPath === path.join('/tmp/demo', commandsDir, 'opsx-dev-pipeline.md'),
-      ),
-    ).toBe(true);
-    for (const command of standaloneCommands) {
+    if (tool === 'codex') {
+      // codex excludes opsx-dev-pipeline-command (tools: ['claude', 'cursor'])
       expect(
         plan.files.some(
           (file) =>
-            file.destinationPath === path.join('/tmp/demo', commandsDir, 'opsx', `${command}.md`),
+            file.destinationPath === path.join('/tmp/demo', commandsDir, 'opsx-dev-pipeline.md'),
+        ),
+      ).toBe(false);
+      // codex routes commands to per-skill SKILL.md files
+      for (const command of standaloneCommands) {
+        expect(
+          plan.files.some(
+            (file) =>
+              file.destinationPath ===
+              path.join('/tmp/demo', commandsDir, `opsx-${command}`, 'SKILL.md'),
+          ),
+        ).toBe(true);
+      }
+    } else {
+      expect(
+        plan.files.some(
+          (file) =>
+            file.destinationPath === path.join('/tmp/demo', commandsDir, 'opsx-dev-pipeline.md'),
         ),
       ).toBe(true);
+      for (const command of standaloneCommands) {
+        expect(
+          plan.files.some(
+            (file) =>
+              file.destinationPath === path.join('/tmp/demo', commandsDir, 'opsx', `${command}.md`),
+          ),
+        ).toBe(true);
+      }
     }
     // negative: no removed preset skills or commands in plan
     const removed = [
       'opsx-learn',
       'opsx-analysis',
-      'opsx-design',
-      'opsx-verify',
       'opsx-clarify',
       'opsx-health',
-      'opsx-pr',
       'opsx-prototype',
       'opsx-ci-triage',
       'git-commit-push',

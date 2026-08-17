@@ -25,6 +25,8 @@ export interface AssetDefinition {
   feature: FeatureId;
   source: string;
   destination: string;
+  /** Per-tool destination overrides. When set for a given toolId, takes precedence over `destination`. */
+  toolDestinations?: Partial<Record<ToolId, string>>;
   tools?: ToolId[];
   stacks?: StackId[];
   includeExtensions?: string[];

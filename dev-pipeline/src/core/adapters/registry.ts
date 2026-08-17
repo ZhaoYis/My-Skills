@@ -27,7 +27,6 @@ const toolSchema = z.object({
     .optional(),
   supports: z.array(z.enum(['base', 'skills', 'commands', 'docs', 'schema'])),
   skillRootNote: z.string().optional(),
-  postInstallNotes: z.array(z.string()).optional(),
 });
 
 const toolsSchema = z.object({
@@ -65,14 +64,6 @@ class StaticToolAdapter implements ToolAdapter {
 
   getSkillRootNote(): string | undefined {
     return this.definition.skillRootNote;
-  }
-
-  getPostInstallNotes(): string[] {
-    return (
-      this.definition.postInstallNotes ?? [
-        `Review installed assets for ${this.definition.displayName}.`,
-      ]
-    );
   }
 }
 

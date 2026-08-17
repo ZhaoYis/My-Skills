@@ -62,10 +62,10 @@ describe('scope selection (user vs project)', () => {
       expect(cursor.supportsUserDestination('skills')).toBe(true);
       expect(cursor.supportsUserDestination('commands')).toBe(true);
 
-      // Codex supports only skills at user scope, not commands
+      // Codex supports both skills and commands at user scope
       const codex = registry.get('codex')!;
       expect(codex.supportsUserDestination('skills')).toBe(true);
-      expect(codex.supportsUserDestination('commands')).toBe(false);
+      expect(codex.supportsUserDestination('commands')).toBe(true);
     });
 
     it('defaults to project scope when no scope is passed to getDestination', async () => {
@@ -108,7 +108,6 @@ describe('scope selection (user vs project)', () => {
             supportsUserDestination: () => true,
             getRoot: () => '.',
             getSkillRootNote: () => undefined,
-            getPostInstallNotes: () => [],
           },
         ],
       ]);
@@ -244,7 +243,7 @@ describe('scope selection (user vs project)', () => {
       );
     });
 
-    it('filters out commands feature for codex at user scope', async () => {
+    it('keeps all features for codex at user scope', async () => {
       const rootDir = await resolvePackageRoot(import.meta.url);
       const registry = await loadToolRegistry(rootDir);
 
@@ -261,17 +260,13 @@ describe('scope selection (user vs project)', () => {
         registry,
       });
 
-      // Commands should be filtered out since codex doesn't support user-level commands
+      // Commands should be present since codex now supports user-level commands (same as skills)
       const commandFiles = plan.files.filter((file) => file.assetId.includes('-command'));
-      expect(commandFiles).toHaveLength(0);
+      expect(commandFiles.length).toBeGreaterThan(0);
 
       // Skills should still be present
       const skillFiles = plan.files.filter((file) => file.assetId.includes('-skill-bundle:'));
       expect(skillFiles.length).toBeGreaterThan(0);
-
-      // Docs should still be present
-      const docsFiles = plan.files.filter((file) => file.assetId === 'codex-docs');
-      expect(docsFiles.length).toBe(1);
     });
 
     it('keeps all features for codex at project scope', async () => {
@@ -335,7 +330,7 @@ describe('scope selection (user vs project)', () => {
 
       expect(registry.get('claude')!.definition.userDestinations?.commands).toBeDefined();
       expect(registry.get('cursor')!.definition.userDestinations?.commands).toBeDefined();
-      expect(registry.get('codex')!.definition.userDestinations?.commands).toBeUndefined();
+      expect(registry.get('codex')!.definition.userDestinations?.commands).toBeDefined();
     });
   });
 });

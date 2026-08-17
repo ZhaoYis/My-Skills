@@ -1,9 +1,14 @@
 ---
+{{#if (isTool "codex")}}
+name: opsx-archive
+description: Archive an OpenSpec change with pipeline gate and delivery state tracking
+{{else}}
 name: "OPSX: Archive"
 description: Archive an OpenSpec change with pipeline gate and delivery state tracking
 allowed-tools: Bash(openspec:*), {{askTool}}
 category: Workflow
 tags: [workflow, archive, experimental]
+{{/if}}
 ---
 
 Archive a completed change and persist the final pipeline gates.
