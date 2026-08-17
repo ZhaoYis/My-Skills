@@ -16,7 +16,6 @@
 - `npm test`：49 条测试通过，但 `init-matrix.test.ts` 因语法错误导致 1 个 suite 失败。
 - `npm run typecheck`：失败，主要原因是 `Phaseof` 等错误替换。
 - `npm run lint`：失败，扫描了 `dist/` 等生成物，共报告 181 个错误。
-- `test-pipeline npm test`：失败，子目录实际解析到 Node.js 16.13.2，与 Vitest/项目要求不兼容。
 - `bash -n templates/common/skills/opsx-dev-pipeline/scripts/*.sh`：全部通过。
 
 ### 工作包 1：恢复测试可信度
@@ -25,7 +24,6 @@
 - [x] ✅ 让测试报告状态由必需断言计算，禁止失败断言被标记为 `pass`。
 - [x] ✅ 移除测试编排器固定返回 `pass` 的伪 Agent 执行路径。
 - [x] ✅ 清理测试提示中的不存在脚本和 `git add -A`，使其与正式 Skill 一致。
-- [x] ✅ 为 `test-pipeline` 声明 Node.js 20+，并避免使用不兼容运行时。
 - [x] ✅ 调整 lint 范围，排除 `dist/`、报告和其他生成物。
 
 验收：`npm run typecheck`、`npm run lint`、`npm test` 均通过；构造失败断言时报告必须为失败。
@@ -79,7 +77,7 @@
 
 - [x] ✅ 增加 OpenSpec 未安装、隐式根、已初始化、损坏输出和归档恢复场景。
 - [x] ✅ 增加 review/test/verify 失败及三轮上限场景。
-- [x] ✅ 运行 typecheck、lint、主测试、test-pipeline、build 和 pack 检查。
+- [x] ✅ 运行 typecheck、lint、主测试、build 和 pack 检查。
 - [x] ✅ 运行 `bash -n`，并在可用时运行 ShellCheck。
 - [x] ✅ 检查所有模板引用、脚本权限、状态协议和未解析变量。
 - [x] ✅ 使用全新 Agent 上下文进行前向验证；若当前环境不能启动隔离 Agent，记录为人工发布门禁。
@@ -87,10 +85,8 @@
 最终验证记录（2026-07-25）：
 
 - `npm run typecheck`：通过。
-- `./node_modules/.bin/tsc --noEmit -p test-pipeline/tsconfig.json`：通过。
 - `npm run lint`：退出码 0；保留仓库既有的非阻断 warning/info。
 - `npm test`：19 个测试文件、97 个测试全部通过。
-- `npm run test:pipeline`：4 个场景文件、10 个测试全部通过。
 - `npm run build`：通过。
 - `npm_config_cache=/tmp/opsx-dev-pipeline-npm-cache npm run pack:check`：通过；使用隔离 cache 避免用户级 npm cache 的历史所有权问题。
 - 全部 Shell 脚本 `bash -n` 与状态脚本 `node --check`：通过。
@@ -115,9 +111,8 @@
 
 本轮验证记录（2026-07-25）：
 
-- `npm run test:pipeline`：4 个场景文件、10 个测试全部通过。
 - `npm test`：19 个测试文件、97 个测试全部通过；根级集成测试上限调整为 15 秒，避免状态机 Shell 子进程在并行负载下被默认 5 秒误杀。
-- 根项目与 `test-pipeline` TypeScript 检查、`npm run build`、`npm run lint` 全部通过；lint 仅保留既有非阻断 warning/info。
+- 根项目 TypeScript 检查、`npm run build`、`npm run lint` 全部通过；lint 仅保留既有非阻断 warning/info。
 - `npm_config_cache=/tmp/opsx-dev-pipeline-npm-cache npm run pack:check` 通过，产物包含更新后的 `.gitignore`。
 - Shell/Node 脚本语法、`git diff --check` 通过；过期 schema 配置、伪执行文案和旧 Phase 术语扫描零命中。
 

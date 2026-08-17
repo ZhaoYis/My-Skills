@@ -503,7 +503,7 @@ function migrateToV2(state) {
 | 8 | ✅ 修改 6 个 command 模板：pre-flight 增加 AskUserQuestion | `templates/common/commands/opsx/*.hbs` | 中 |
 | 9 | ⏳ 固化生产 `fp1` 公钥，实现包含 featureId 的 canonical JSON、RSA-OAEP-SHA256 计算及 featureId 变更时原子重算 | `dev-pipeline-state.mjs` | 高 |
 | 10 | ⏳ 增加非对称指纹、篡改、错误密钥和 legacy 迁移测试 | `test/integration/pipeline-state.test.ts`、metrics-server | 高 |
-| 11 | ⏳ 运行全量验证：typecheck + lint + test + test:pipeline + pack:check | — | 低 |
+| 11 | ⏳ 运行全量验证：typecheck + lint + test + pack:check | — | 低 |
 
 ---
 
@@ -537,10 +537,7 @@ npm run lint
 # 4. 单元/集成测试（包含新增 13 个）
 npm test
 
-# 5. Pipeline E2E 测试
-npm run test:pipeline
-
-# 6. 打包完整性检查
+# 5. 打包完整性检查
 npm run pack:check
 ```
 

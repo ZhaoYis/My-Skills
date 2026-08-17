@@ -591,7 +591,7 @@ Post-flight 所有状态命令执行完毕后，必须：
 | 9 | ✅ `phase-0-entrance.md`: 新增 standalone/hybrid 恢复 | 中 |
 | 10 | ✅ `phase-5-archive.md`: 增加 standalone 感知 | 低 |
 | 11 | ✅ `SKILL.md.hbs`: 更新状态协议 | 低 |
-| 12 | ✅ 全量验证: typecheck + lint + test + test:pipeline + pack:check | 中 |
+| 12 | ✅ 全量验证: typecheck + lint + test + pack:check | 中 |
 
 ---
 
@@ -619,7 +619,6 @@ npm run typecheck     # 零错误
 npm run build         # 零错误
 npm run lint          # 零阻断
 npm test              # 97 现有 + 新增 v2 测试
-npm run test:pipeline # 4 场景 10 测试
 npm run pack:check    # 产物完整性
 ```
 

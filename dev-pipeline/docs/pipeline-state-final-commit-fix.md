@@ -186,7 +186,7 @@ merge 模式在 Step 26.1 预先确认并记录计划创建的标签名；最终
 
 ---
 
-### ✅ 文件 2：`test-pipeline/src/harness/DeterministicPipelineExecutor.ts`
+### ✅ 文件 2：`src/harness/DeterministicPipelineExecutor.ts`
 
 在 `complete` 调用后追加 git 状态提交操作（约 216-266 行区域）：
 
@@ -207,7 +207,7 @@ if (postArchiveAction === 'push-only') {
 
 ---
 
-### ✅ 文件 3：`test-pipeline/src/validators/PhaseValidators.ts`
+### ✅ 文件 3：`src/validators/PhaseValidators.ts`
 
 更新 `validatePhase6` 和 `validatePhase7` 断言：
 
@@ -276,7 +276,6 @@ npm run build
 
 # 2. 全量测试
 npm test
-npm run test:pipeline
 
 # 3. 手动验证（在 test-space/snake-game 中）
 cd test-space/snake-game

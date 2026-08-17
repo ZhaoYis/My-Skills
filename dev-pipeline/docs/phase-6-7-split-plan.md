@@ -116,21 +116,21 @@ if (state.currentPhase < 6) {
 
 ### 四、测试框架 (4 个文件)
 
-#### 10. 修改：`test-pipeline/src/harness/types.ts`
+#### 10. 修改：`src/harness/types.ts`
 - `PhaseId` 联合类型：删除 `'phase-6-merge-push'`，新增 `'phase-6-commit-push'` 和 `'phase-7-merge-deliver'`
 - `ALL_PHASES` 数组：同上
 - `PHASE_META` 对象：更新两个新 phase 的元数据
 
-#### 11. 修改：`test-pipeline/src/harness/DeterministicPipelineExecutor.ts`
+#### 11. 修改：`src/harness/DeterministicPipelineExecutor.ts`
 - `executePhase` switch：拆分 `case 'phase-6-merge-push'` 为两个 case
 - `executePhase6`：只做 commit + push（Step 20-22）
 - 新增 `executePhase7`：merge + target push + complete（Step 23-26）
 - `executePhase5`：根据 `postArchiveAction` 决定 transition 到 Phase 6 还是 Phase 7
 
-#### 12. 修改：`test-pipeline/src/harness/AgentPhaseRunner.ts`
+#### 12. 修改：`src/harness/AgentPhaseRunner.ts`
 - `getPhaseSpecificInstructions` switch：拆分 Phase 6 case
 
-#### 13. 修改：`test-pipeline/src/validators/PhaseValidators.ts`
+#### 13. 修改：`src/validators/PhaseValidators.ts`
 - 拆分 `validatePhase6` 为 `validatePhase6`（commit + push 验证）和 `validatePhase7`（merge + deliver 验证）
 - `PHASE_VALIDATORS` 映射：更新两个新 phase 的 key
 
@@ -139,13 +139,13 @@ if (state.currentPhase < 6) {
 ### 五、E2E 测试场景 (7 个文件)
 
 #### 14-20. 修改场景文件：
-- `test-pipeline/scenarios/happy-path/fullstack-todo-full-flow.test.ts`
-- `test-pipeline/scenarios/happy-path/codex-fullstack-full-flow.test.ts`
-- `test-pipeline/scenarios/happy-path/cursor-fullstack-full-flow.test.ts`
-- `test-pipeline/scenarios/happy-path/backend-only-full-flow.test.ts`
-- `test-pipeline/scenarios/delivery-variants/push-only.test.ts`
-- `test-pipeline/scenarios/delivery-variants/skip-review.test.ts`
-- `test-pipeline/scenarios/delivery-variants/skip-tests.test.ts`
+- `scenarios/happy-path/fullstack-todo-full-flow.test.ts`
+- `scenarios/happy-path/codex-fullstack-full-flow.test.ts`
+- `scenarios/happy-path/cursor-fullstack-full-flow.test.ts`
+- `scenarios/happy-path/backend-only-full-flow.test.ts`
+- `scenarios/delivery-variants/push-only.test.ts`
+- `scenarios/delivery-variants/skip-review.test.ts`
+- `scenarios/delivery-variants/skip-tests.test.ts`
 
 每个文件变更模式相同，但各场景的 Phase 7 行为不同：
 
