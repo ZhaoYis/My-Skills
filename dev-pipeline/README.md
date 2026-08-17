@@ -96,10 +96,20 @@ OpenSpec 版本预检
 
 ```text
 .claude/
-├── skills/openspec-*/                  # OpenSpec 原生 Skills
-├── commands/opsx/                      # OpenSpec 原生 Commands
 ├── skills/opsx-dev-pipeline/           # Pipeline Skill bundle
-└── commands/opsx-dev-pipeline.md       # Pipeline Command
+├── skills/opsx-grill-me/               # Interview skill
+├── skills/opsx-grilling/               # Stress-test skill
+├── skills/opsx-dev-spec-design/        # Design spec skill
+├── commands/opsx-dev-pipeline.md       # Pipeline Command
+├── commands/opsx/propose.md            # Propose Command
+├── commands/opsx/apply.md              # Apply Command
+├── commands/opsx/archive.md            # Archive Command
+├── commands/opsx/verify.md             # Verify Command
+├── commands/opsx/sync.md               # Sync Command
+├── commands/opsx/explore.md            # Explore Command
+├── commands/opsx/grill-me.md           # Grill-me Command
+├── commands/opsx/grilling.md           # Grilling Command
+└── commands/opsx/dev-spec-design.md    # Dev-spec-design Command
 
 openspec/
 ├── config.yaml                         # schema: backend + Java/Spring context
@@ -118,16 +128,19 @@ openspec/
 
 | 入口                   | 类型                       | 用途摘要                                                      |
 | -------------------- | ------------------------ | --------------------------------------------------------- |
-| `/opsx:explore`      | OpenSpec command         | 探索问题、澄清需求和调查可行方案，不创建正式变更                                  |
-| `/opsx:propose`      | OpenSpec command         | 创建变更提案，并生成 proposal、specs、design 和 tasks artifacts        |
-| `/opsx:apply`        | OpenSpec command         | 按变更 artifacts 实施任务，并同步任务完成状态                              |
-| `/opsx:verify`       | OpenSpec command         | 校验实现是否与变更 artifacts 和规范一致                                 |
-| `/opsx:sync`         | OpenSpec command         | 将变更中的 delta specs 同步到主 specs                              |
-| `/opsx:archive`      | OpenSpec command         | 完成验证后归档变更，并更新当前规范                                         |
-| `/opsx-dev-pipeline` | Pipeline skill / command | 编排 OpenSpec + Git 需求开发全流程（提案 → 应用 → 审查 → 单测 → 归档 → 推送/合并） |
+| `opsx:explore`      | OpenSpec command         | 探索问题、澄清需求和调查可行方案，不创建正式变更                                  |
+| `opsx:propose`      | OpenSpec command         | 创建变更提案，并生成 proposal、specs、design 和 tasks artifacts        |
+| `opsx:apply`        | OpenSpec command         | 按变更 artifacts 实施任务，并同步任务完成状态                              |
+| `opsx:verify`       | OpenSpec command         | 校验实现是否与变更 artifacts 和规范一致                                 |
+| `opsx:sync`         | OpenSpec command         | 将变更中的 delta specs 同步到主 specs                              |
+| `opsx:archive`      | OpenSpec command         | 完成验证后归档变更，并更新当前规范                                         |
+| `opsx:dev-pipeline` | Pipeline skill / command | 编排 OpenSpec + Git 需求开发全流程（提案 → 应用 → 审查 → 单测 → 归档 → 推送/合并） |
+| `opsx:grill-me`     | Skill                    | 通过访谈方式完善计划或设计                                            |
+| `opsx:grilling`     | Skill                    | 对计划、决策或想法进行严格质询                                          |
+| `opsx:dev-spec-design` | Skill                 | 生成系统分析与设计说明书（精简版）                                       |
 
 
-这些 OpenSpec 命令由 `openspec init --tools <tool>` 安装。表中使用 Claude Code 的 `/opsx:<command>` 形式表示逻辑入口；Cursor、Codex 等工具会按各自适配器生成对应的命令文件和调用形式。
+这些 OpenSpec 命令由 `openspec init --tools <tool>` 安装。所有命令和 skill 统一使用 `opsx:` 前缀命名。
 
 Pipeline Skill bundle 同时包含 `agents/openai.yaml`，用于提供 OpenAI/Codex 界面显示名、简述和默认调用提示。
 
