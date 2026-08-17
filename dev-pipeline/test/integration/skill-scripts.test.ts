@@ -7,7 +7,7 @@ import { cleanupDirectories } from '../helpers/cleanup.js';
 import { isSameFileSystemEntry } from '../helpers/filesystem.js';
 import { PACKAGE_ROOT } from '../helpers/package-root.js';
 
-const scriptsRoot = path.join(PACKAGE_ROOT, 'templates/common/skills/opsx-dev-pipeline/scripts');
+const scriptsRoot = path.join(PACKAGE_ROOT, 'src/templates/common/skills/opsx-dev-pipeline/scripts');
 const createdDirs: string[] = [];
 
 interface ScriptResult {

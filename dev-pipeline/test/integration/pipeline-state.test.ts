@@ -8,7 +8,7 @@ import { PACKAGE_ROOT } from '../helpers/package-root.js';
 
 const stateScript = path.join(
   PACKAGE_ROOT,
-  'templates/common/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs',
+  'src/templates/common/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs',
 );
 const createdDirs: string[] = [];
 let repo = '';

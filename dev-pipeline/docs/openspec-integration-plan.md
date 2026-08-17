@@ -423,7 +423,6 @@ templates/common/
 | 文件 | 改动 |
 |------|------|
 | `test/integration/init-matrix.test.ts` | 新增 stack 维度测试用例 |
-| `test-pipeline/scenarios/` | 后续新增 frontend-only / backend-only 场景 |
 
 ---
 

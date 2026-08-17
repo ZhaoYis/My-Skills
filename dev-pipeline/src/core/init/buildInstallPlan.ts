@@ -310,7 +310,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
         const techStackSource = path.join(
           input.rootDir,
           renderString(
-            'templates/common/config/config.{{stack}}.{{techStack}}.yaml.hbs',
+            'src/templates/common/config/config.{{stack}}.{{techStack}}.yaml.hbs',
             templateContext,
           ),
         );

@@ -1215,8 +1215,7 @@ async function medianCycleTime(devId: number): Promise<number> {
 ## 8. 实施状态与验收门禁
 
 Phase 状态不再由文件存在或人工判断直接标记。每个 Phase 只有满足全部适用门禁后才能
-标记为“已验证”；不适用项必须在证据表说明原因。逐项命令、结果和关键文件见
-[M001-M020 验收证据](metrics-system-acceptance-evidence.md)。
+标记为”已验证”；不适用项必须在证据表说明原因。
 
 | 门禁 | 完成条件 |
 |------|---------|
@@ -1321,7 +1320,7 @@ export { prisma };
 | 开发者识别 | 指纹验真后的规范化邮箱 | RSA-OAEP 密文随机，不能作为稳定开发者键；邮箱为空时进入待认领流程 |
 | 团队层级 | 递归 CTE | MySQL 8+ 和 PostgreSQL 均支持 `WITH RECURSIVE` |
 | 增量采集 | `last_fetched_commit` 追踪 | 支持断点续传 |
-| 子项目模式 | 独立 `package.json`，无 workspaces | 与现有 `website/`、`test-pipeline/` 模式一致 |
+| 子项目模式 | 独立 `package.json`，无 workspaces | 与现有 `website/` 模式一致 |
 
 ---
 

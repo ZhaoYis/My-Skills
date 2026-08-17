@@ -1,0 +1,68 @@
+language: {{language}}
+schema: frontend
+context: |
+  ## 全局规范
+
+  ### 语言要求
+{{#if (isLanguage "zh")}}
+  - 所有文档、规格、提案、设计和任务必须使用简体中文编写
+  - 所有代码注释必须使用简体中文编写
+  - 所有 commit message 必须使用简体中文编写
+  - 所有 PR 描述和代码审查评论必须使用简体中文编写
+{{else}}
+  - All documents, specs, proposals, designs, and tasks MUST be written in English
+  - All code comments MUST be written in English
+  - All commit messages MUST be written in English
+  - All PR descriptions and review comments MUST be written in English
+{{/if}}
+
+  ### 编码规范
+{{#if (isLanguage "zh")}}
+  - 所有新编写的函数/组件必须包含完整的 JSDoc 注释，包括：功能描述、@param（每个参数的类型和含义）、@returns（返回值类型和含义）
+  - 所有新编写的类（class）必须包含完整的 JSDoc 类注释，包括：类的职责说明、使用场景
+  - 所有新编写的 TypeScript 接口（interface）和类型（type）必须包含注释，说明其用途和每个字段的含义
+  - React 组件必须使用 JSDoc 或 TSDoc 注释说明组件的功能、Props 含义和使用示例
+  - 禁止提交没有注释的导出（export）函数、类和组件
+{{else}}
+  - Every newly written function/component MUST include complete JSDoc comments covering: purpose, @param (type and meaning of each parameter), @returns (return type and meaning)
+  - Every newly written class MUST include complete JSDoc class comments covering: class responsibility and usage scenarios
+  - Every newly written TypeScript interface and type MUST include comments explaining its purpose and the meaning of each field
+  - React components MUST use JSDoc or TSDoc comments describing the component purpose, Props meaning, and usage examples
+  - Exported functions, classes, and components without comments MUST NOT be committed
+{{/if}}
+
+  ### UI 组件规范
+  - UI 组件库优先使用 hammer 与 @hammer/* 生态（以及现有项目中的封装组件，例如 @hammer/basic、@hammer/pro 等）；不要私自引入新的 UI 库来实现同类基础组件
+  - 非常重要：按 package.json 中 hammer / @hammer/* 的 version 选择文档站
+  - 含 qa → https://hammer.yzwqa.cn；含 stg → https://hammer-stg.yzw.cn；否则 https://hammer.yzw.cn
+  - qa 与 stg 同时出现时用 qa
+
+  ## 项目信息
+  Project: {{projectName}}
+  Project Type: Frontend Application
+  Tech Stack: React 18+, TypeScript, Vite
+  Testing: Vitest + React Testing Library + Playwright (E2E)
+  Conventions: Functional components, hooks-first, CSS Modules or Tailwind
+  Code Quality: Biome for linting/formatting
+
+rules:
+  proposal:
+    - "Must include UI/UX impact analysis"
+    - "Must specify browser/device compatibility requirements"
+  specs:
+    - "Use Given/When/Then format for user interaction scenarios"
+  design:
+    - "Must include component tree diagram or description"
+    - "Must specify route design and state management strategy"
+
+pipeline:
+  routes:
+    trivial:
+      description: "无行为变化的极小变更"
+      phases: [0, 2, 6]
+    standard:
+      description: "标准变更"
+      phases: [0, 1, 2, 5, 6]
+    full:
+      description: "高保障变更"
+      phases: [0, 1, 2, 3, 4, 5, 6, 7]

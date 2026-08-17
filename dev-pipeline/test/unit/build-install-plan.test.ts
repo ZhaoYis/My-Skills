@@ -121,7 +121,7 @@ describe('buildInstallPlan', () => {
     });
 
     const rendered = await renderTemplate(
-      path.join(PACKAGE_ROOT, 'templates/common/skills/opsx-dev-pipeline/SKILL.md.hbs'),
+      path.join(PACKAGE_ROOT, 'src/templates/common/skills/opsx-dev-pipeline/SKILL.md.hbs'),
       context,
     );
     expect(rendered).toContain('- Custom root: `.custom/skills/opsx-dev-pipeline`');
@@ -210,7 +210,7 @@ describe('buildInstallPlan', () => {
     const assetId = `${stack}-schema-bundle:templates/api_design.md.hbs`;
     const apiDesignFile = plan.files.find((file) => file.assetId === assetId);
     const schemaTemplate = await fs.readFile(
-      path.join(PACKAGE_ROOT, 'templates/common/schemas', stack, 'schema.yaml.hbs'),
+      path.join(PACKAGE_ROOT, 'src/templates/common/schemas', stack, 'schema.yaml.hbs'),
       'utf8',
     );
 
@@ -224,7 +224,7 @@ describe('buildInstallPlan', () => {
   });
 
   it('keeps fullstack artifacts backend-first', async () => {
-    const templateRoot = path.join(PACKAGE_ROOT, 'templates/common/schemas/fullstack/templates');
+    const templateRoot = path.join(PACKAGE_ROOT, 'src/templates/common/schemas/fullstack/templates');
     const [proposalTemplate, designTemplate, specTemplate, tasksTemplate] = await Promise.all([
       fs.readFile(path.join(templateRoot, 'proposal.md.hbs'), 'utf8'),
       fs.readFile(path.join(templateRoot, 'design.md.hbs'), 'utf8'),
@@ -269,9 +269,9 @@ describe('buildInstallPlan', () => {
     const rootDir = await createTempTargetDir();
     // Create skill directories for all 'skills' feature bundles
     for (const skill of ['opsx-dev-pipeline', 'grill-me', 'grilling', 'dev-spec-design']) {
-      await fs.ensureDir(path.join(rootDir, 'templates/common/skills', skill, 'agents'));
+      await fs.ensureDir(path.join(rootDir, 'src/templates/common/skills', skill, 'agents'));
     }
-    const sourceRoot = path.join(rootDir, 'templates/common/skills/opsx-dev-pipeline');
+    const sourceRoot = path.join(rootDir, 'src/templates/common/skills/opsx-dev-pipeline');
     await fs.writeFile(path.join(sourceRoot, 'guide.en.hbs'), '# English\n');
     await fs.writeFile(path.join(sourceRoot, 'guide.zh.hbs'), '# 中文\n');
     await fs.writeFile(path.join(sourceRoot, 'fallback.md.hbs'), '# fallback\n');
@@ -448,7 +448,7 @@ describe('buildInstallPlan', () => {
     expect(readmeFile?.resolution).toBe('overwrite');
   });
 
-  it('replaces OpenSpec-generated command entries only during init', async () => {
+  it('replaces OpenSpec-generated command entries in all modes', async () => {
     const targetDir = await createTempTargetDir();
     const commandPath = path.join(targetDir, '.claude/commands/opsx/propose.md');
     await fs.ensureDir(path.dirname(commandPath));
@@ -473,7 +473,7 @@ describe('buildInstallPlan', () => {
     expect(syncPlan.files).toHaveLength(1);
     expect(syncPlan.files[0]).toMatchObject({
       assetId: 'opsx-propose-command',
-      resolution: 'unresolved',
+      resolution: 'overwrite',
     });
   });
 
@@ -484,7 +484,7 @@ describe('buildInstallPlan', () => {
   ] as const)('renders standalone command templates for %s', async (skillsDir, commandsDir) => {
     for (const command of standaloneCommands) {
       const rendered = await renderTemplate(
-        path.join(PACKAGE_ROOT, 'templates/common/commands/opsx', `${command}.md.hbs`),
+        path.join(PACKAGE_ROOT, 'src/templates/common/commands/opsx', `${command}.md.hbs`),
         { skillsDir, commandsDir, askTool: 'AskUserQuestion' },
       );
 

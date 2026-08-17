@@ -61,7 +61,14 @@ describe('fileWritePolicy', () => {
         { destinationPath: '/project/.claude/commands/opsx/propose.md', kind: 'template' },
         'sync',
       ).onConflict,
-    ).toBe('prompt');
+    ).toBe('overwrite');
+    expect(
+      resolveFileWritePolicy(
+        findAssetDefinition('opsx-propose-command'),
+        { destinationPath: '/project/.claude/commands/opsx/propose.md', kind: 'template' },
+        'upgrade',
+      ).onConflict,
+    ).toBe('overwrite');
   });
 
   it('uses non-appendable prompt defaults for unknown assets', () => {

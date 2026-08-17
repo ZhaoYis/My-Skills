@@ -58,10 +58,6 @@ npm test
 npm run test:db
 ```
 
-From the repository root, `npm run metrics:acceptance` additionally runs schema/migration verification,
-website production build, and desktop/mobile Playwright. It requires matching `DB_PROVIDER`,
-`DATABASE_URL`, and `TEST_DATABASE_URL` environment variables.
-
 Known limits:
 
 - MySQL live acceptance is CI-owned unless a local MySQL test URL is explicitly supplied.
