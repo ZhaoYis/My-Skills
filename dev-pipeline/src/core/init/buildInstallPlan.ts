@@ -344,8 +344,12 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
       .flat()
       .filter((file) => shouldIncludeInstallFile(file, input.mode, managed, upgradeAssetIds))
       .map(async (file) => {
-        // Validate that the destination stays within the target directory (path traversal guard)
-        assertPathWithinBase(input.targetDir, path.relative(input.targetDir, file.destinationPath));
+        // Validate that the destination stays within the target directory (path traversal guard).
+        // Skip for user-scope installs: user destinations (e.g. ~/.claude/skills/) are
+        // intentionally outside the project target directory.
+        if (scope !== 'user') {
+          assertPathWithinBase(input.targetDir, path.relative(input.targetDir, file.destinationPath));
+        }
         const exists = await fs.pathExists(file.destinationPath);
         const policy = resolveFileWritePolicy(findAssetDefinition(file.assetId), file, input.mode);
 
