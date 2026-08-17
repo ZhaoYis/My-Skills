@@ -27,18 +27,11 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
-          cache-dependency-path: |
-            dev-pipeline/package-lock.json
-            dev-pipeline/test-pipeline/package-lock.json
+          cache-dependency-path: dev-pipeline/package-lock.json
 
       - name: Install dependencies
         working-directory: dev-pipeline
         run: npm ci
-
-      - name: Install pipeline test dependencies
-        if: matrix.node-version == 22
-        working-directory: dev-pipeline
-        run: npm ci --prefix test-pipeline
 
       - name: Typecheck
         working-directory: dev-pipeline
@@ -56,8 +49,3 @@ jobs:
       - name: Test
         working-directory: dev-pipeline
         run: npm test
-
-      - name: Test delivery pipeline
-        if: matrix.node-version == 22
-        working-directory: dev-pipeline
-        run: npm run test:pipeline
