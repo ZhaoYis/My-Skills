@@ -13,9 +13,21 @@ const stateScript = path.join(
 const createdDirs: string[] = [];
 let repo = '';
 
+interface RouteInfo {
+  choice: string;
+  upgradedFrom: string | null;
+  upgradedAt: string | null;
+}
+
 interface StateResult {
   code: number;
-  payload: Record<string, unknown>;
+  payload: {
+    status?: string;
+    reason?: string;
+    route?: RouteInfo;
+    state?: { route?: RouteInfo; currentPhase?: number };
+    [key: string]: unknown;
+  };
 }
 
 beforeEach(async () => {
@@ -43,7 +55,7 @@ function run(command: string, args: string[]): Promise<void> {
 function runState(args: string[]): Promise<StateResult> {
   return new Promise((resolve) => {
     execFile('node', [stateScript, ...args], { cwd: repo }, (error, stdout) => {
-      const code = error?.code ?? 0;
+      const code = typeof error?.code === 'number' ? error.code : 0;
       const payload = stdout ? JSON.parse(stdout) : {};
       resolve({ code, payload });
     });
@@ -305,8 +317,8 @@ describe('Route End-to-End Scenarios', () => {
       // Upgrade to standard
       result = await runState(['route', changeName, 'upgrade', 'standard']);
       expect(result.code).toBe(0);
-      expect(result.payload.route.choice).toBe('standard');
-      expect(result.payload.route.upgradedFrom).toBe('trivial');
+      expect(result.payload.route!.choice).toBe('standard');
+      expect(result.payload.route!.upgradedFrom).toBe('trivial');
 
       // Now Phase 1 should be accessible (going back)
       result = await runState(['transition', changeName, '1', '3']);
@@ -314,7 +326,7 @@ describe('Route End-to-End Scenarios', () => {
 
       // Verify upgrade history
       const finalState = await runState(['get', changeName]);
-      expect(finalState.payload.state.route).toMatchObject({
+      expect(finalState.payload.state!.route).toMatchObject({
         choice: 'standard',
         upgradedFrom: 'trivial',
         upgradedAt: expect.any(String),
