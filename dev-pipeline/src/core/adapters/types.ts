@@ -31,7 +31,6 @@ export interface ToolDefinition {
   supports: FeatureId[];
   /** Custom SKILL_ROOT guidance. Supports a `{skillsDir}` placeholder. */
   skillRootNote?: string;
-  postInstallNotes?: string[];
 }
 
 export interface ToolAdapter {
@@ -43,5 +42,4 @@ export interface ToolAdapter {
   supportsUserDestination(feature: Extract<FeatureId, 'skills' | 'commands'>): boolean;
   getRoot(): string;
   getSkillRootNote(): string | undefined;
-  getPostInstallNotes(): string[];
 }

@@ -1,9 +1,14 @@
 ---
+{{#if (isTool "codex")}}
+name: opsx-apply
+description: Implement an OpenSpec change with pipeline-aware state tracking
+{{else}}
 name: "OPSX: Apply"
 description: Implement an OpenSpec change with pipeline-aware state tracking
 allowed-tools: Bash(openspec:*), {{askTool}}
 category: Workflow
 tags: [workflow, artifacts, experimental]
+{{/if}}
 ---
 
 Implement tasks from an OpenSpec change while preserving resumable pipeline state.

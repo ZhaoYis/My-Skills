@@ -23,7 +23,6 @@ function createAdapter(): ToolAdapter {
       markers: ['.claude'],
       destinations: { root: '.', skills: '.claude/skills', commands: '.claude/commands' },
       supports: ['base', 'skills', 'commands', 'docs'],
-      postInstallNotes: ['note-a', 'note-b'],
     },
     detectFiles: () => ['.claude'],
     supports: () => true,
@@ -32,7 +31,6 @@ function createAdapter(): ToolAdapter {
     supportsUserDestination: () => true,
     getRoot: () => '.',
     getSkillRootNote: () => undefined,
-    getPostInstallNotes: () => ['note-a', 'note-b'],
   };
 }
 

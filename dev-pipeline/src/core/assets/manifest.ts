@@ -153,6 +153,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'src/templates/common/commands/opsx-dev-pipeline.md.hbs',
     destination: '{{commandsDir}}/opsx-dev-pipeline.md',
+    tools: ['claude', 'cursor'],
     writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
@@ -162,6 +163,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'src/templates/common/commands/opsx/propose.md.hbs',
     destination: '{{commandsDir}}/opsx/propose.md',
+    toolDestinations: { codex: '{{commandsDir}}/opsx-propose/SKILL.md' },
     writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
@@ -171,6 +173,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'src/templates/common/commands/opsx/apply.md.hbs',
     destination: '{{commandsDir}}/opsx/apply.md',
+    toolDestinations: { codex: '{{commandsDir}}/opsx-apply/SKILL.md' },
     writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
@@ -180,6 +183,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'src/templates/common/commands/opsx/archive.md.hbs',
     destination: '{{commandsDir}}/opsx/archive.md',
+    toolDestinations: { codex: '{{commandsDir}}/opsx-archive/SKILL.md' },
     writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
@@ -189,6 +193,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'src/templates/common/commands/opsx/verify.md.hbs',
     destination: '{{commandsDir}}/opsx/verify.md',
+    toolDestinations: { codex: '{{commandsDir}}/opsx-verify/SKILL.md' },
     writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
@@ -198,6 +203,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'src/templates/common/commands/opsx/sync.md.hbs',
     destination: '{{commandsDir}}/opsx/sync.md',
+    toolDestinations: { codex: '{{commandsDir}}/opsx-sync/SKILL.md' },
     writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
@@ -207,6 +213,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'src/templates/common/commands/opsx/explore.md.hbs',
     destination: '{{commandsDir}}/opsx/explore.md',
+    toolDestinations: { codex: '{{commandsDir}}/opsx-explore/SKILL.md' },
     writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
@@ -216,6 +223,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'src/templates/common/commands/opsx/grill-me.md.hbs',
     destination: '{{commandsDir}}/opsx/grill-me.md',
+    toolDestinations: { codex: '{{commandsDir}}/opsx-grill-me/SKILL.md' },
     writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
@@ -225,6 +233,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'src/templates/common/commands/opsx/grilling.md.hbs',
     destination: '{{commandsDir}}/opsx/grilling.md',
+    toolDestinations: { codex: '{{commandsDir}}/opsx-grilling/SKILL.md' },
     writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
@@ -234,6 +243,7 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'commands',
     source: 'src/templates/common/commands/opsx/dev-spec-design.md.hbs',
     destination: '{{commandsDir}}/opsx/dev-spec-design.md',
+    toolDestinations: { codex: '{{commandsDir}}/opsx-dev-spec-design/SKILL.md' },
     writePolicy: { appendStrategy: 'simple', onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' } },
   },
   {
@@ -264,26 +274,6 @@ export const assetManifest: AssetDefinition[] = [
     tools: ['cursor'],
     source: 'src/templates/tools/cursor/overlay/.cursor/commands/README.md.hbs',
     destination: '.cursor/commands/README.md',
-    writePolicy: { appendStrategy: 'simple' },
-  },
-  {
-    id: 'codex-docs',
-    kind: 'template',
-    scope: 'tool',
-    feature: 'docs',
-    tools: ['codex'],
-    source: 'src/templates/tools/cursor/overlay/.cursor/rules/opsx-dev-pipeline.mdc.hbs',
-    destination: '.codex/prompts/opsx-dev-pipeline.md',
-    writePolicy: { appendStrategy: 'simple' },
-  },
-  {
-    id: 'codex-command-guide',
-    kind: 'template',
-    scope: 'tool',
-    feature: 'commands',
-    tools: ['codex'],
-    source: 'src/templates/tools/cursor/overlay/.cursor/commands/README.md.hbs',
-    destination: '.codex/commands/README.md',
     writePolicy: { appendStrategy: 'simple' },
   },
 ];

@@ -14,8 +14,7 @@
         "skills": ".claude/skills",
         "commands": ".claude/commands"
       },
-      "supports": ["base", "skills", "commands", "docs", "schema"],
-      "postInstallNotes": ["Try /opsx-dev-pipeline in Claude Code to start an OpenSpec change."]
+      "supports": ["base", "skills", "commands", "docs", "schema"]
     },
     {
       "id": "cursor",
@@ -31,30 +30,23 @@
         "skills": ".cursor/skills",
         "commands": ".cursor/commands"
       },
-      "supports": ["base", "skills", "commands", "docs", "schema"],
-      "postInstallNotes": [
-        "Use Cursor commands under .cursor/commands/ (e.g. opsx-dev-pipeline).",
-        "The opsx-dev-pipeline rule is loaded on demand for OpenSpec delivery work."
-      ]
+      "supports": ["base", "skills", "commands", "docs", "schema"]
     },
     {
       "id": "codex",
       "displayName": "Codex",
-      "description": "Install Codex-oriented prompt and command templates.",
-      "markers": [".codex"],
+      "description": "Install Codex-oriented skills under .agents/skills/.",
+      "markers": [".agents"],
       "destinations": {
-        "root": ".codex",
-        "skills": ".codex/prompts",
-        "commands": ".codex/commands"
+        "root": ".agents",
+        "skills": ".agents/skills",
+        "commands": ".agents/skills"
       },
       "userDestinations": {
-        "skills": ".codex/skills"
+        "skills": ".agents/skills",
+        "commands": ".agents/skills"
       },
-      "supports": ["base", "skills", "commands", "docs", "schema"],
-      "postInstallNotes": [
-        "Open .codex/prompts/opsx-dev-pipeline.md; it loads the bundled skill from .codex/prompts/opsx-dev-pipeline/.",
-        "Commands live under .codex/commands/ for quick invocation."
-      ]
+      "supports": ["base", "skills", "commands", "docs", "schema"]
     }
   ]
 }

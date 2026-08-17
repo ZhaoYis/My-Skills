@@ -297,7 +297,4 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
   });
 
   console.log(pc.green(successMessage(plan.mode, plan.adapter.definition.displayName)));
-  for (const note of plan.adapter.getPostInstallNotes()) {
-    console.log(`- ${note}`);
-  }
 }
