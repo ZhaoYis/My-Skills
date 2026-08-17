@@ -1,14 +1,20 @@
 ---
 {{#if (isTool "codex")}}
 name: opsx-propose
-description: Propose a new change with pipeline-aware state tracking
+{{else}}{{#if (isTool "cursor")}}
+name: /opsx-propose
+id: opsx-propose
 {{else}}
-name: "OPSX: Propose"
+name: opsx:propose
+{{/if}}{{/if}}
 description: Propose a new change with pipeline-aware state tracking
+{{#if (isTool "claude")}}
 allowed-tools: Bash(openspec:*), {{askTool}}
 category: Workflow
 tags: [workflow, artifacts, experimental]
-{{/if}}
+{{else}}{{#if (isTool "cursor")}}
+category: Workflow
+{{/if}}{{/if}}
 ---
 
 Propose a new change and generate every artifact required before implementation.
@@ -83,4 +89,4 @@ After all required artifacts exist and the user confirms the proposal, execute t
    ```
    Verify `currentPhase=2`, `currentStep=6`, both decisions are `true`, and Phase 1 has a completed history entry. If any value differs, warn explicitly and stop.
 
-Show the change location, completed artifacts, `Phase 1 complete`, and the next choices: `/opsx:apply <name>` for standalone work or `/opsx-dev-pipeline <name>` for the gated pipeline.
+Show the change location, completed artifacts, `Phase 1 complete`, and the next choices: `{{commands.apply}} <name>` for standalone work or `{{commands.devPipeline}} <name>` for the gated pipeline.

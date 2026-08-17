@@ -115,6 +115,11 @@ describe('buildInstallPlan', () => {
       packageRepoUrl: PACKAGE_REPO_URL,
       skillRootNote: '- Custom root: `.custom/skills/opsx-dev-pipeline`',
       askTool: 'AskUserQuestion',
+      commands: {
+        apply: '/opsx:apply',
+        devPipeline: '/opsx:dev-pipeline',
+        verify: '/opsx:verify',
+      },
       techStack: 'java-spring-boot',
       techStackName: 'Java Spring Boot',
     });
@@ -223,7 +228,10 @@ describe('buildInstallPlan', () => {
   });
 
   it('keeps fullstack artifacts backend-first', async () => {
-    const templateRoot = path.join(PACKAGE_ROOT, 'src/templates/common/schemas/fullstack/templates');
+    const templateRoot = path.join(
+      PACKAGE_ROOT,
+      'src/templates/common/schemas/fullstack/templates',
+    );
     const [proposalTemplate, designTemplate, specTemplate, tasksTemplate] = await Promise.all([
       fs.readFile(path.join(templateRoot, 'proposal.md.hbs'), 'utf8'),
       fs.readFile(path.join(templateRoot, 'design.md.hbs'), 'utf8'),
@@ -267,7 +275,12 @@ describe('buildInstallPlan', () => {
   it('selects one localized bundle template and removes its language suffix', async () => {
     const rootDir = await createTempTargetDir();
     // Create skill directories for all 'skills' feature bundles
-    for (const skill of ['opsx-dev-pipeline', 'grill-me', 'grilling', 'dev-spec-design']) {
+    for (const skill of [
+      'opsx-dev-pipeline',
+      'opsx-grill-me',
+      'opsx-grilling',
+      'opsx-dev-spec-design',
+    ]) {
       await fs.ensureDir(path.join(rootDir, 'src/templates/common/skills', skill, 'agents'));
     }
     const sourceRoot = path.join(rootDir, 'src/templates/common/skills/opsx-dev-pipeline');
@@ -353,27 +366,27 @@ describe('buildInstallPlan', () => {
     expect(
       plan.files.some(
         (file) =>
-          file.destinationPath === path.join('/tmp/demo', skillsDir, 'grill-me', 'SKILL.md'),
+          file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-grill-me', 'SKILL.md'),
       ),
     ).toBe(true);
     expect(
       plan.files.some(
         (file) =>
           file.destinationPath ===
-          path.join('/tmp/demo', skillsDir, 'grill-me', 'agents', 'openai.yaml'),
+          path.join('/tmp/demo', skillsDir, 'opsx-grill-me', 'agents', 'openai.yaml'),
       ),
     ).toBe(true);
     expect(
       plan.files.some(
         (file) =>
-          file.destinationPath === path.join('/tmp/demo', skillsDir, 'grilling', 'SKILL.md'),
+          file.destinationPath === path.join('/tmp/demo', skillsDir, 'opsx-grilling', 'SKILL.md'),
       ),
     ).toBe(true);
     expect(
       plan.files.some(
         (file) =>
           file.destinationPath ===
-          path.join('/tmp/demo', skillsDir, 'grilling', 'agents', 'openai.yaml'),
+          path.join('/tmp/demo', skillsDir, 'opsx-grilling', 'agents', 'openai.yaml'),
       ),
     ).toBe(true);
     for (const skillFile of [
@@ -385,7 +398,7 @@ describe('buildInstallPlan', () => {
         plan.files.some(
           (file) =>
             file.destinationPath ===
-            path.join('/tmp/demo', skillsDir, 'dev-spec-design', skillFile),
+            path.join('/tmp/demo', skillsDir, 'opsx-dev-spec-design', skillFile),
         ),
       ).toBe(true);
     }
@@ -407,11 +420,26 @@ describe('buildInstallPlan', () => {
           ),
         ).toBe(true);
       }
-    } else {
+    } else if (tool === 'cursor') {
       expect(
         plan.files.some(
           (file) =>
             file.destinationPath === path.join('/tmp/demo', commandsDir, 'opsx-dev-pipeline.md'),
+        ),
+      ).toBe(true);
+      for (const command of standaloneCommands) {
+        expect(
+          plan.files.some(
+            (file) =>
+              file.destinationPath === path.join('/tmp/demo', commandsDir, `opsx-${command}.md`),
+          ),
+        ).toBe(true);
+      }
+    } else {
+      expect(
+        plan.files.some(
+          (file) =>
+            file.destinationPath === path.join('/tmp/demo', commandsDir, 'opsx', 'dev-pipeline.md'),
         ),
       ).toBe(true);
       for (const command of standaloneCommands) {
@@ -494,33 +522,53 @@ describe('buildInstallPlan', () => {
   });
 
   it.each([
-    ['.claude/skills', '.claude/commands'],
-    ['.cursor/rules', '.cursor/commands'],
-    ['.codex/prompts', '.codex/commands'],
-  ] as const)('renders standalone command templates for %s', async (skillsDir, commandsDir) => {
+    ['claude', '.claude/skills', '.claude/commands', '/opsx:apply', '/opsx:dev-pipeline'],
+    ['cursor', '.cursor/rules', '.cursor/commands', '/opsx-apply', '/opsx-dev-pipeline'],
+    ['codex', '.agents/skills', '.agents/skills', '$opsx-apply', '$opsx-dev-pipeline'],
+  ] as const)('renders standalone command templates for %s', async (toolId, skillsDir, commandsDir, applyInvocation, pipelineInvocation) => {
+    const context = buildTemplateContext({
+      projectName: 'demo',
+      toolId,
+      toolName: toolId,
+      stack: 'backend',
+      language: 'zh',
+      features: ['skills', 'commands'],
+      skillsDir,
+      commandsDir,
+    });
+    const askTool = toolId === 'cursor' ? 'AskQuestion' : 'AskUserQuestion';
+
     for (const command of standaloneCommands) {
       const rendered = await renderTemplate(
         path.join(PACKAGE_ROOT, 'src/templates/common/commands/opsx', `${command}.md.hbs`),
-        { skillsDir, commandsDir, askTool: 'AskUserQuestion' },
+        context,
       );
 
       expect(rendered).toContain(
         `node ${skillsDir}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs`,
       );
       expect(rendered).not.toMatch(/\{\{[^}]+\}\}/);
+      if (command === 'propose') {
+        expect(rendered).toContain(`${applyInvocation} <name>`);
+        expect(rendered).toContain(`${pipelineInvocation} <name>`);
+      }
       if (command === 'explore') {
         expect(rendered).toContain('featureInfo');
         expect(rendered).toContain('Do not collect or persist metadata in explore mode.');
       } else if (command === 'dev-spec-design') {
-        expect(rendered).toContain('AskUserQuestion');
-        expect(rendered).toMatch(/^allowed-tools: .*AskUserQuestion$/m);
-        expect(rendered).toContain(`${skillsDir}/dev-spec-design/SKILL.md`);
+        expect(rendered).toContain(askTool);
+        if (toolId === 'claude') {
+          expect(rendered).toMatch(/^allowed-tools: .*AskUserQuestion$/m);
+        }
+        expect(rendered).toContain(`${skillsDir}/opsx-dev-spec-design/SKILL.md`);
         expect(rendered).toContain('Never initialize, migrate, or modify pipeline state.');
         expect(rendered).not.toContain(' --feature-id ');
       } else {
-        expect(rendered).toContain('AskUserQuestion');
-        expect(rendered).toMatch(/^allowed-tools: .*AskUserQuestion$/m);
-        expect(rendered).toContain('MUST call AskUserQuestion and wait for an explicit choice');
+        expect(rendered).toContain(askTool);
+        if (toolId === 'claude') {
+          expect(rendered).toMatch(/^allowed-tools: .*AskUserQuestion$/m);
+        }
+        expect(rendered).toContain(`MUST call ${askTool} and wait for an explicit choice`);
         expect(rendered).toContain('--feature-id "<featureId>"');
         expect(rendered).toContain('--feature-url "<featureUrl>"');
         expect(rendered).toContain('--skip-feature-association');
@@ -553,7 +601,10 @@ describe('buildInstallPlan', () => {
   it('limits sync plans to manifest-managed assets and full managed bundles', async () => {
     const managedAssets: ManagedAssetRecord[] = [
       { id: 'common-readme', destination: 'README.md' },
-      { id: 'opsx-dev-pipeline-command', destination: '.claude/commands/opsx-dev-pipeline.md' },
+      {
+        id: 'opsx-dev-pipeline-command',
+        destination: '.claude/commands/opsx/dev-pipeline.md',
+      },
       {
         id: 'opsx-dev-pipeline-skill-bundle:SKILL.md.hbs',
         destination: '.claude/skills/opsx-dev-pipeline/SKILL.md',

@@ -1,14 +1,20 @@
 ---
 {{#if (isTool "codex")}}
 name: opsx-sync
-description: Sync delta specs with read-through pipeline state tracking
+{{else}}{{#if (isTool "cursor")}}
+name: /opsx-sync
+id: opsx-sync
 {{else}}
-name: "OPSX: Sync"
+name: opsx:sync
+{{/if}}{{/if}}
 description: Sync delta specs with read-through pipeline state tracking
+{{#if (isTool "claude")}}
 allowed-tools: Bash(openspec:*), {{askTool}}
 category: Workflow
 tags: [workflow, specs, experimental]
-{{/if}}
+{{else}}{{#if (isTool "cursor")}}
+category: Workflow
+{{/if}}{{/if}}
 ---
 
 Sync delta specs from an active change to main specs and audit the operation.
