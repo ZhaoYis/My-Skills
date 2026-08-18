@@ -10,7 +10,7 @@ import type { FeatureId, InstallScope, ToolAdapter, ToolDefinition, ToolId } fro
 // 3. Create overlay templates under templates/tools/<tool-id>/overlay/
 // See config/tools.json for the current set of supported tools.
 const toolSchema = z.object({
-  id: z.enum(['claude', 'cursor', 'codex']),
+  id: z.enum(['claude', 'cursor', 'codex', 'opencode']),
   displayName: z.string(),
   description: z.string(),
   markers: z.array(z.string()),

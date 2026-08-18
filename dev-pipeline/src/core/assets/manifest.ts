@@ -158,7 +158,7 @@ export const assetManifest: AssetDefinition[] = [
     source: 'src/templates/common/commands/opsx-dev-pipeline.md.hbs',
     destination: '{{commandsDir}}/opsx/dev-pipeline.md',
     toolDestinations: { cursor: '{{commandsDir}}/opsx-dev-pipeline.md' },
-    tools: ['claude', 'cursor'],
+    tools: ['claude', 'cursor', 'opencode'],
     writePolicy: {
       appendStrategy: 'simple',
       onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' },
@@ -268,7 +268,7 @@ export const assetManifest: AssetDefinition[] = [
     source: 'src/templates/common/commands/opsx/grill-me.md.hbs',
     destination: '{{commandsDir}}/opsx/grill-me.md',
     toolDestinations: { cursor: '{{commandsDir}}/opsx-grill-me.md' },
-    tools: ['claude', 'cursor'],
+    tools: ['claude', 'cursor', 'opencode'],
     writePolicy: {
       appendStrategy: 'simple',
       onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' },
@@ -282,7 +282,7 @@ export const assetManifest: AssetDefinition[] = [
     source: 'src/templates/common/commands/opsx/grilling.md.hbs',
     destination: '{{commandsDir}}/opsx/grilling.md',
     toolDestinations: { cursor: '{{commandsDir}}/opsx-grilling.md' },
-    tools: ['claude', 'cursor'],
+    tools: ['claude', 'cursor', 'opencode'],
     writePolicy: {
       appendStrategy: 'simple',
       onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' },
@@ -296,7 +296,7 @@ export const assetManifest: AssetDefinition[] = [
     source: 'src/templates/common/commands/opsx/dev-spec-design.md.hbs',
     destination: '{{commandsDir}}/opsx/dev-spec-design.md',
     toolDestinations: { cursor: '{{commandsDir}}/opsx-dev-spec-design.md' },
-    tools: ['claude', 'cursor'],
+    tools: ['claude', 'cursor', 'opencode'],
     writePolicy: {
       appendStrategy: 'simple',
       onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' },

@@ -57,6 +57,25 @@ export async function preflightOpenSpec(): Promise<void> {
   }
 }
 
+/**
+ * OpenSpec CLI's opencode adapter creates a flat command layout
+ * (opsx-apply.md) that differs from opsx-dev-pipeline's nested
+ * layout (opsx/apply.md). Clean up those flat files after init.
+ */
+async function cleanOpenSpecFlatCommands(targetDir: string, tool: string): Promise<void> {
+  if (tool !== 'opencode') return;
+  const commandsDir = path.join(targetDir, '.opencode', 'commands');
+  if (!(await fs.pathExists(commandsDir))) return;
+  const entries = await fs.readdir(commandsDir);
+  for (const entry of entries) {
+    const entryPath = path.join(commandsDir, entry);
+    const stat = await fs.stat(entryPath);
+    if (stat.isFile() && entry.startsWith('opsx-') && entry.endsWith('.md')) {
+      await fs.remove(entryPath);
+    }
+  }
+}
+
 async function initializeOpenSpec(targetDir: string, tool: InitOptions['tool']): Promise<void> {
   if (!tool) {
     throw new Error('Cannot initialize OpenSpec without a selected AI tool.');
@@ -77,6 +96,8 @@ async function initializeOpenSpec(targetDir: string, tool: InitOptions['tool']):
   if (!hadConfig && (await fs.pathExists(configPath))) {
     await fs.remove(configPath);
   }
+
+  await cleanOpenSpecFlatCommands(targetDir, tool);
 }
 
 export async function runInit(options: InitOptions): Promise<void> {
