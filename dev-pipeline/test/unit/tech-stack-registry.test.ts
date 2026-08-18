@@ -7,9 +7,9 @@ import {
 } from '../../src/core/tech-stack/registry.js';
 
 describe('tech stack registry', () => {
-  it('registers one initial tech stack for each parent stack', () => {
-    expect(TECH_STACK_REGISTRY).toHaveLength(3);
-    expect(getTechStacksByParentStack('backend').map(({ id }) => id)).toEqual(['java-spring-boot']);
+  it('registers tech stacks for each parent stack', () => {
+    expect(TECH_STACK_REGISTRY).toHaveLength(4);
+    expect(getTechStacksByParentStack('backend').map(({ id }) => id)).toEqual(['java-spring-boot', 'python-fastapi']);
     expect(getTechStacksByParentStack('frontend').map(({ id }) => id)).toEqual(['react-vite']);
     expect(getTechStacksByParentStack('fullstack').map(({ id }) => id)).toEqual(['java-react']);
   });
@@ -21,7 +21,7 @@ describe('tech stack registry', () => {
 
   it('rejects unknown tech stacks and lists valid ids', () => {
     expect(() => resolveTechStackId('invalid')).toThrow(
-      'Invalid tech stack: invalid. Valid: java-spring-boot, react-vite, java-react.',
+      'Invalid tech stack: invalid. Valid: java-spring-boot, python-fastapi, react-vite, java-react.',
     );
   });
 });

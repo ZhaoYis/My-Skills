@@ -9,6 +9,12 @@ export const TECH_STACK_REGISTRY: TechStackDefinition[] = [
     parentStack: 'backend',
   },
   {
+    id: 'python-fastapi',
+    displayName: 'Python FastAPI',
+    description: 'Python 3.10+, FastAPI, Pydantic, SQLAlchemy/Tortoise ORM, pytest, Ruff, mypy',
+    parentStack: 'backend',
+  },
+  {
     id: 'react-vite',
     displayName: 'React + Vite',
     description: 'React 18+, TypeScript, Vite, Vitest + React Testing Library',
