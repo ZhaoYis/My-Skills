@@ -23,7 +23,7 @@ describe('scope selection (user vs project)', () => {
       const rootDir = await resolvePackageRoot(import.meta.url);
       const registry = await loadToolRegistry(rootDir);
 
-      for (const toolId of ['claude', 'cursor', 'codex'] as const) {
+      for (const toolId of ['claude', 'cursor', 'codex', 'opencode'] as const) {
         const adapter = registry.get(toolId);
         expect(adapter).toBeDefined();
         expect(adapter!.getDestination('skills', 'project')).toBe(
@@ -317,7 +317,7 @@ describe('scope selection (user vs project)', () => {
       const rootDir = await resolvePackageRoot(import.meta.url);
       const registry = await loadToolRegistry(rootDir);
 
-      for (const toolId of ['claude', 'cursor', 'codex'] as const) {
+      for (const toolId of ['claude', 'cursor', 'codex', 'opencode'] as const) {
         const adapter = registry.get(toolId);
         expect(adapter!.definition.userDestinations).toBeDefined();
         expect(adapter!.definition.userDestinations?.skills).toBeDefined();
@@ -331,6 +331,7 @@ describe('scope selection (user vs project)', () => {
       expect(registry.get('claude')!.definition.userDestinations?.commands).toBeDefined();
       expect(registry.get('cursor')!.definition.userDestinations?.commands).toBeDefined();
       expect(registry.get('codex')!.definition.userDestinations?.commands).toBeDefined();
+      expect(registry.get('opencode')!.definition.userDestinations?.commands).toBeDefined();
     });
   });
 });

@@ -181,10 +181,15 @@ export async function collectInputs(
         type: 'select',
         name: 'scope',
         message: 'Select install scope',
-        choices: [
-          { title: 'Project (./.claude/skills/)', value: 'project' satisfies InstallScope },
-          { title: 'User (~/.claude/skills/)', value: 'user' satisfies InstallScope },
-        ],
+        choices: (_previous, values) => {
+          const adapter = registry.get(values.tool as ToolId);
+          const skillsPath = adapter?.getDestination('skills', 'project') ?? '.claude/skills';
+          const userSkillsPath = adapter?.getDestination('skills', 'user') ?? '~/.claude/skills';
+          return [
+            { title: `Project (./${skillsPath})`, value: 'project' satisfies InstallScope },
+            { title: `User (${userSkillsPath})`, value: 'user' satisfies InstallScope },
+          ];
+        },
         initial: 0,
       },
     ],

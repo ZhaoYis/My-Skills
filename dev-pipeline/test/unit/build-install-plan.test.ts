@@ -309,6 +309,7 @@ describe('buildInstallPlan', () => {
     ['claude', '.claude/skills', '.claude/commands', 'CLAUDE.md'],
     ['cursor', '.cursor/rules', '.cursor/commands', '.cursor/rules/opsx-dev-pipeline.mdc'],
     ['codex', '.agents/skills', '.agents/skills', '.agents/skills/opsx-dev-pipeline/SKILL.md'],
+    ['opencode', '.opencode/skills', '.opencode/commands', null],
   ] as const)('maps assets for %s including bundle skill', async (tool, skillsDir, commandsDir, docsPath) => {
     const adapter = createAdapter(tool, skillsDir, commandsDir, tool);
     const registry = new Map<ToolId, ToolAdapter>([[tool, adapter]]);
@@ -326,9 +327,11 @@ describe('buildInstallPlan', () => {
       registry,
     });
 
-    expect(
-      plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', docsPath)),
-    ).toBe(true);
+    if (docsPath !== null) {
+      expect(
+        plan.files.some((file) => file.destinationPath === path.join('/tmp/demo', docsPath)),
+      ).toBe(true);
+    }
     expect(
       plan.files.some(
         (file) =>
@@ -525,6 +528,7 @@ describe('buildInstallPlan', () => {
     ['claude', '.claude/skills', '.claude/commands', '/opsx:apply', '/opsx:dev-pipeline'],
     ['cursor', '.cursor/rules', '.cursor/commands', '/opsx-apply', '/opsx-dev-pipeline'],
     ['codex', '.agents/skills', '.agents/skills', '$opsx-apply', '$opsx-dev-pipeline'],
+    ['opencode', '.opencode/skills', '.opencode/commands', '/opsx:apply', '/opsx:dev-pipeline'],
   ] as const)('renders standalone command templates for %s', async (toolId, skillsDir, commandsDir, applyInvocation, pipelineInvocation) => {
     const context = buildTemplateContext({
       projectName: 'demo',
@@ -536,7 +540,7 @@ describe('buildInstallPlan', () => {
       skillsDir,
       commandsDir,
     });
-    const askTool = toolId === 'cursor' ? 'AskQuestion' : 'AskUserQuestion';
+    const askTool = toolId === 'cursor' ? 'AskQuestion' : toolId === 'opencode' ? 'question' : 'AskUserQuestion';
 
     for (const command of standaloneCommands) {
       const rendered = await renderTemplate(

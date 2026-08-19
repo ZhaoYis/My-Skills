@@ -47,6 +47,22 @@
         "commands": ".agents/skills"
       },
       "supports": ["base", "skills", "commands", "docs", "schema"]
+    },
+    {
+      "id": "opencode",
+      "displayName": "OpenCode",
+      "description": "Install .opencode skills and commands.",
+      "markers": [".opencode"],
+      "destinations": {
+        "root": ".",
+        "skills": ".opencode/skills",
+        "commands": ".opencode/commands"
+      },
+      "userDestinations": {
+        "skills": ".opencode/skills",
+        "commands": ".opencode/commands"
+      },
+      "supports": ["base", "skills", "commands", "docs", "schema"]
     }
   ]
 }

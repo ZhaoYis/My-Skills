@@ -14,7 +14,7 @@ import type { PipelineManifest } from './types.js';
 const manifestSchema = z.object({
   schemaVersion: z.number().default(1),
   projectName: z.string(),
-  tool: z.enum(['claude', 'cursor', 'codex']),
+  tool: z.enum(['claude', 'cursor', 'codex', 'opencode']),
   stack: z.enum(['frontend', 'backend', 'fullstack']).optional(),
   techStack: z.string().optional(),
   language: z.enum(['en', 'zh']).optional(),

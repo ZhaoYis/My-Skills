@@ -164,6 +164,32 @@ const toolExpectations = {
       present: true as const,
     })),
   ],
+  opencode: [
+    { path: '.opencode/skills/opsx-dev-pipeline/SKILL.md', present: true },
+    { path: '.opencode/skills/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
+    { path: '.opencode/skills/opsx-dev-pipeline/references/phase-6-commit-push.md', present: true },
+    { path: '.opencode/skills/opsx-dev-pipeline/references/phase-7-merge-deliver.md', present: true },
+    { path: '.opencode/skills/opsx-dev-pipeline/scripts/preflight.mjs', present: true },
+    { path: '.opencode/skills/opsx-dev-pipeline/scripts/archive.mjs', present: true },
+    { path: '.opencode/skills/opsx-dev-pipeline/agents/openai.yaml', present: true },
+    { path: '.opencode/skills/opsx-grill-me/SKILL.md', present: true },
+    { path: '.opencode/skills/opsx-grill-me/agents/openai.yaml', present: true },
+    { path: '.opencode/skills/opsx-grilling/SKILL.md', present: true },
+    { path: '.opencode/skills/opsx-grilling/agents/openai.yaml', present: true },
+    { path: '.opencode/skills/opsx-dev-spec-design/SKILL.md', present: true },
+    {
+      path: '.opencode/skills/opsx-dev-spec-design/references/system-analysis-design-template-lite.md',
+      present: true,
+    },
+    { path: '.opencode/skills/opsx-dev-spec-design/agents/openai.yaml', present: true },
+    { path: '.opencode/commands/opsx/dev-pipeline.md', present: true },
+    ...['propose', 'apply', 'archive', 'verify', 'sync', 'explore', 'dev-spec-design'].map(
+      (command) => ({
+        path: `.opencode/commands/opsx/${command}.md`,
+        present: true as const,
+      }),
+    ),
+  ],
 } as const;
 
 const askToolExpectations = {
@@ -191,6 +217,14 @@ const askToolExpectations = {
     applyInvocation: '$opsx-apply',
     pipelineInvocation: '$opsx-dev-pipeline',
   },
+  opencode: {
+    skillRoot: '.opencode/skills/opsx-dev-pipeline',
+    proposePath: '.opencode/commands/opsx/propose.md',
+    devSpecCommandPath: '.opencode/commands/opsx/dev-spec-design.md',
+    askTool: 'question',
+    applyInvocation: '/opsx:apply',
+    pipelineInvocation: '/opsx:dev-pipeline',
+  },
 } as const;
 
 describe('tool matrix', () => {
@@ -202,7 +236,7 @@ describe('tool matrix', () => {
 
     await runInit({
       dir,
-      tool: tool as 'claude' | 'cursor' | 'codex',
+      tool: tool as 'claude' | 'cursor' | 'codex' | 'opencode',
       yes: true,
       force: false,
       dryRun: false,
@@ -256,8 +290,11 @@ describe('tool matrix', () => {
     } else if (tool === 'cursor') {
       expect(propose).toMatch(/^name: \/opsx-propose$/m);
       expect(propose).toMatch(/^id: opsx-propose$/m);
-    } else {
+    } else if (tool === 'codex') {
       expect(propose).toMatch(/^name: opsx-propose$/m);
+    } else {
+      // opencode: same frontmatter as claude but no allowed-tools
+      expect(propose).toMatch(/^name: opsx:propose$/m);
     }
     expect(propose).toContain(`MUST call ${askTool} and wait for an explicit choice`);
     expect(devSpecSkill).toContain('openspec/docs/<yyyyMMdd>/<kebab-case-name>.md');
@@ -555,6 +592,7 @@ describe('tool matrix', () => {
     'claude',
     'cursor',
     'codex',
+    'opencode',
   ] as const)('renders valid skill metadata and tool entry semantics for %s', async (tool) => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), `opsx-metadata-${tool}-`));
     createdDirs.push(dir);
@@ -587,6 +625,7 @@ describe('tool matrix', () => {
       claude: '- 对于 Claude Code 安装：`<SKILL_ROOT>` = `.claude/skills/opsx-dev-pipeline`',
       cursor: '- 对于 Cursor 安装：`<SKILL_ROOT>` = `.cursor/rules/opsx-dev-pipeline`',
       codex: '- 对于 Codex 安装：`<SKILL_ROOT>` = `.agents/skills/opsx-dev-pipeline`',
+      opencode: '- 对于 OpenCode 安装：`<SKILL_ROOT>` = `.opencode/skills/opsx-dev-pipeline`',
     }[tool];
     expect(skillContent.match(/^- 对于 .*安装：.*$/gm)).toEqual([expectedSkillRoot]);
     expect(skillContent).toContain(

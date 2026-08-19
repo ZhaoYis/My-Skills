@@ -23,6 +23,7 @@ const ASK_TOOL_MAP: Record<ToolId, string> = {
   claude: 'AskUserQuestion',
   cursor: 'AskQuestion',
   codex: 'AskUserQuestion',
+  opencode: 'question',
 };
 
 export interface BuildInstallPlanInput {
@@ -71,7 +72,7 @@ export function buildTemplateContext(params: {
   techStack?: TechStackId;
   techStackName?: string;
 }): Record<string, unknown> {
-  const commandSeparator = params.toolId === 'claude' ? ':' : '-';
+  const commandSeparator = (params.toolId === 'claude' || params.toolId === 'opencode') ? ':' : '-';
   const commandPrefix = params.toolId === 'codex' ? '$' : '/';
   const commandInvocation = (command: string) =>
     `${commandPrefix}opsx${commandSeparator}${command}`;

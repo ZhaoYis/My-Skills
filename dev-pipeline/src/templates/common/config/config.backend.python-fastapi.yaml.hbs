@@ -1,0 +1,73 @@
+language: {{language}}
+schema: backend
+context: |
+  ## 全局规范
+
+  ### 语言要求
+{{#if (isLanguage "zh")}}
+  - 所有文档、规格、提案、设计和任务必须使用简体中文编写
+  - 所有代码注释必须使用简体中文编写
+  - 所有 commit message 必须使用简体中文编写
+  - 所有 PR 描述和代码审查评论必须使用简体中文编写
+{{else}}
+  - All documents, specs, proposals, designs, and tasks MUST be written in English
+  - All code comments MUST be written in English
+  - All commit messages MUST be written in English
+  - All PR descriptions and review comments MUST be written in English
+{{/if}}
+
+  ### 编码规范
+{{#if (isLanguage "zh")}}
+  - 所有代码必须遵循 PEP 8 风格指南
+  - 所有公开函数和类必须包含 Google 风格的 docstring，包括：函数/类功能描述、Args（每个参数的类型和含义）、Returns（返回值含义）、Raises（可能抛出的异常）
+  - 所有函数和方法必须使用类型提示（type hints，PEP 484+）
+  - 使用 Pydantic 模型进行数据验证和序列化
+  - 异步函数必须使用 async/await 语法
+  - 禁止提交没有 docstring 的公开函数和类
+{{else}}
+  - All code MUST follow PEP 8 style guide
+  - Every public function and class MUST include Google-style docstrings covering: function/class purpose, Args (parameter types and meanings), Returns (return value semantics), Raises (possible exceptions)
+  - All functions and methods MUST use type hints (PEP 484+)
+  - Use Pydantic models for data validation and serialization
+  - Async functions MUST use async/await syntax
+  - Public functions and classes without docstrings MUST NOT be committed
+{{/if}}
+
+  ## 项目信息
+  Project: {{projectName}}
+  Project Type: Backend Service
+  Tech Stack: {{techStackName}} - Python 3.10+, FastAPI
+  Data Validation: Pydantic v2
+  ORM: SQLAlchemy 2.0+ / Tortoise ORM
+  Testing: pytest + pytest-asyncio + httpx (AsyncClient)
+  Conventions: Layered architecture (Router -> Service -> Repository), Pydantic schemas
+  Code Quality: Ruff (linting + formatting), mypy (type checking)
+  Migrations: Alembic
+
+rules:
+  proposal:
+    - "Must include API contract changes (endpoints, request/response Pydantic schemas)"
+    - "Must specify database migration strategy (Alembic)"
+  api-design:
+    - "Must document all request/response Pydantic schemas with field types and constraints"
+    - "Must specify authentication and authorization requirements for each endpoint"
+    - "Must include error response contracts and status codes"
+    - "Must document async behavior and side effects for state-changing operations"
+  specs:
+    - "Use Given/When/Then format for API behavior scenarios"
+  design:
+    - "Must include database schema changes or ORM model updates"
+    - "Must specify middleware/dependency injection changes"
+    - "Must address async patterns and concurrency considerations"
+
+pipeline:
+  routes:
+    trivial:
+      description: "无行为变化的极小变更"
+      phases: [0, 2, 6]
+    standard:
+      description: "标准变更"
+      phases: [0, 1, 2, 5, 6]
+    full:
+      description: "高保障变更"
+      phases: [0, 1, 2, 3, 4, 5, 6, 7]
