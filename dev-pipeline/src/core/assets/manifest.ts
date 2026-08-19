@@ -12,12 +12,12 @@ export const assetManifest: AssetDefinition[] = [
   },
   {
     id: 'common-gitignore',
-    kind: 'static',
+    kind: 'template',
     scope: 'common',
     feature: 'base',
     source: 'src/templates/common/base/gitignore',
     destination: '.gitignore',
-    writePolicy: { appendStrategy: 'none' },
+    writePolicy: { appendStrategy: 'simple' },
   },
   {
     id: 'frontend-schema-bundle',

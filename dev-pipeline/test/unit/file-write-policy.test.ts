@@ -21,8 +21,8 @@ describe('fileWritePolicy', () => {
     expect(
       resolve('stack-config', '/project/openspec/config.yaml', 'template').appendStrategy,
     ).toBe('config-merge');
-    expect(resolve('common-gitignore', '/project/.gitignore', 'static').appendStrategy).toBe(
-      'none',
+    expect(resolve('common-gitignore', '/project/.gitignore', 'template').appendStrategy).toBe(
+      'simple',
     );
   });
 
