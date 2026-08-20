@@ -43,7 +43,7 @@
     "lint:fix": "biome check --write ."
   },
   "engines": {
-    "node": ">=16.6.0"
+    "node": ">=20"
   },
   "dependencies": {
     "cac": "^6.7.14",
@@ -55,13 +55,14 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.3",
+    "@fission-ai/openspec": "^1.7.0",
     "@types/fs-extra": "^11.0.4",
     "@types/handlebars": "^4.1.0",
     "@types/node": "^24.0.1",
     "@types/prompts": "^2.4.9",
-    "tsx": "^3.14.0",
+    "tsx": "^4.20.6",
     "typescript": "^5.8.3",
-    "vitest": "^0.34.6"
+    "vitest": "^3.2.4"
   },
   "opsxDevPipeline": {
     "schemaVersion": 1,

@@ -1,7 +1,7 @@
 schema: spec-driven
 
 context: |
-  Tech stack: TypeScript, Node.js 16+, Vitest, Biome
+  Tech stack: TypeScript, Node.js 20+, Vitest, Biome
   Project type: CLI tool for initializing AI development workflow templates
   Domain: Developer tools, AI workflow automation, OpenSpec integration
   Conventions:
