@@ -64,6 +64,7 @@ function createAdapter(
     supportsUserDestination: () => true,
     getRoot: () => '.',
     getSkillRootNote: () => undefined,
+      getHookMode: () => undefined,
   };
 }
 

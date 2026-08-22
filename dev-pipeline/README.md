@@ -326,15 +326,70 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get <change-name>
 
 | Option                  | Description                                                       |
 | ----------------------- | ----------------------------------------------------------------- |
-| `--tool <tool>`         | AI 工具 ID：`claude`、`cursor` 或 `codex`                           |
+| `--tool <tool>`         | AI 工具 ID：`claude`、`cursor`、`codex` 或 `opencode`                |
 | `--stack <stack>`       | 项目类型：`frontend`、`backend` 或 `fullstack`；`--yes` 模式必填       |
-| `--tech-stack <id>`     | 技术栈细分：`java-spring-boot`、`react-vite` 或 `java-react`；可选       |
+| `--tech-stack <id>`     | 技术栈细分：`java-spring-boot`、`react-vite`、`java-react`、`python-fastapi`；可选 |
 | `--lang <en\|zh>`        | 文档语言，影响所有 AI 产出物（提案、代码注释、commit message 等）；默认 `zh` |
-| `--feature <feature>`   | 启用可选功能（可重复使用，如 `--feature structural-analysis-hint`）      |
+| `--feature <feature>`   | 启用可选功能（可重复使用），如 `--feature hooks` / `--feature no-hooks`（互斥） |
 | `--yes`                 | 非交互执行；已有冲突文件默认跳过，不等同于覆盖                             |
 | `--force`               | 覆盖冲突的托管文件                                                    |
 | `--dry-run`             | 预览完整安装计划，不调用 `openspec init`，不写入文件                      |
 | `--dir <dir>`           | 指定目标目录，默认当前目录                                              |
+
+
+
+
+## Pipeline Hooks
+
+`init` 默认会为支持的 AI 工具安装 PreToolUse hook 脚本，把流水线里横切且高风险的约束（危险 Bash、敏感文件写入）从提示词下沉到宿主强制层。
+
+### 启用的工具
+
+| 工具         | 模式 | 自动生成 | 说明 |
+| ------------ | ---- | -------- | ---- |
+| Claude Code  | auto | `.claude/settings.json` + `.claude/skills/opsx-dev-pipeline/scripts/hooks/` | PreToolUse 拦截 Bash + Write/Edit/MultiEdit |
+| OpenCode     | auto | `.opencode/opencode.json` + `.opencode/skills/opsx-dev-pipeline/scripts/hooks/` | PreToolUse 拦截 bash + write/edit/multi_edit |
+| Cursor       | manual | （不生成） | 参考 [docs/hooks/cursor.md](docs/hooks/cursor.md) 手写 `.cursor/hooks.json` |
+| Codex        | manual | （不生成） | 当前 notify 钩子能力有限；参考 [docs/hooks/codex.md](docs/hooks/codex.md) |
+
+### 阻止规则
+
+**block-dangerous-bash.sh**
+
+| 模式 | 拒绝原因 |
+| ---- | -------- |
+| `rm -rf /`、`rm -rf ~`、`rm -rf .` | `destructive-rm-blocked` |
+| `git push --force` / `--force-with-lease` | `force-push-blocked` |
+| `git branch -D`（强制删除） | `force-branch-delete-blocked` |
+| `chmod 777` / `chmod -R 777` | `world-writable-chmod-blocked` |
+| `curl <url> \| sh`、`wget <url> \| bash` | `remote-pipe-shell-blocked` |
+| `mkfs.ext4 /dev/sda1` | `filesystem-format-blocked` |
+| `dd if=/dev/zero of=/dev/sda` | `raw-disk-write-blocked` |
+
+**block-sensitive-write.sh**
+
+| 模式 | 拒绝原因 |
+| ---- | -------- |
+| `.env` / `.env.*` / `*.env` | `sensitive-env-blocked` |
+| `*.key` / `*.pem` / `*.p12` / `*.pfx` / `*.secret` | `sensitive-key-blocked` |
+| `credentials.json` / `service-account.json` | `sensitive-credentials-blocked` |
+| `openspec/.pipeline-state/*.json` | `pipeline-state-write-blocked`（请用 `dev-pipeline-state.mjs` 命令） |
+| `.git/` 内部文件 | `git-internal-write-blocked` |
+
+### 关闭 / 重写规则
+
+```bash
+# 完全关闭 hooks（不生成 settings.json / opencode.json / hook 脚本）
+npx opsx-dev-pipeline init --tool claude --stack backend --yes --feature no-hooks
+
+# 同时传 hooks 与 no-hooks 会报错（互斥）
+npx opsx-dev-pipeline init --tool claude --stack backend --yes --feature hooks --feature no-hooks
+# Error: `hooks` 与 `no-hooks` 互斥，请只传其中一个
+```
+
+### 运行时依赖
+
+hook 脚本是纯 Node.js（无外部依赖），要求 Node.js 20+（与 opsx-dev-pipeline 自身一致）。跨平台：macOS / Linux / Windows (WSL) 都能跑。
 
 
 

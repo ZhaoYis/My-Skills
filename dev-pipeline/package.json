@@ -33,6 +33,7 @@
     "dev": "tsx src/bin/opsx-dev-pipeline.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --dir test",
+    "test:hooks": "vitest run --dir test/unit/hooks",
     "test:watch": "vitest",
     "prepublishOnly": "npm run build",
     "pack:check": "npm pack --dry-run",

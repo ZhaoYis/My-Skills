@@ -14,7 +14,10 @@
         "skills": ".claude/skills",
         "commands": ".claude/commands"
       },
-      "supports": ["base", "skills", "commands", "docs", "schema"]
+      "supports": ["base", "skills", "commands", "docs", "schema", "hooks"],
+      "metadata": {
+        "hooks": { "mode": "auto" }
+      }
     },
     {
       "id": "cursor",
@@ -30,7 +33,10 @@
         "skills": ".cursor/skills",
         "commands": ".cursor/commands"
       },
-      "supports": ["base", "skills", "commands", "docs", "schema"]
+      "supports": ["base", "skills", "commands", "docs", "schema"],
+      "metadata": {
+        "hooks": { "mode": "manual" }
+      }
     },
     {
       "id": "codex",
@@ -46,7 +52,10 @@
         "skills": ".agents/skills",
         "commands": ".agents/skills"
       },
-      "supports": ["base", "skills", "commands", "docs", "schema"]
+      "supports": ["base", "skills", "commands", "docs", "schema"],
+      "metadata": {
+        "hooks": { "mode": "manual" }
+      }
     },
     {
       "id": "opencode",
@@ -62,7 +71,10 @@
         "skills": ".opencode/skills",
         "commands": ".opencode/commands"
       },
-      "supports": ["base", "skills", "commands", "docs", "schema"]
+      "supports": ["base", "skills", "commands", "docs", "schema", "hooks"],
+      "metadata": {
+        "hooks": { "mode": "auto" }
+      }
     }
   ]
 }

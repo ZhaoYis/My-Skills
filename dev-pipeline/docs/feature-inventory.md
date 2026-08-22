@@ -285,3 +285,4 @@ EnvironmentFactory → PipelineAgentOrchestrator → PhaseValidators → ReportG
 | Asset 定义   | 12 个 (覆盖 base/schema/skills/commands/docs)                    |
 | 状态机命令      | 8 个 (init/get/decision/set/attempt/transition/pause/complete) |
 | 安全检测       | 9 类敏感文件自动扫描                                                   |
+| Pipeline Hooks | 2 个跨工具 shell 脚本 (危险 bash + 敏感文件 write) + Claude/OpenCode 模板渲染 + Cursor/Codex 文档指引 |

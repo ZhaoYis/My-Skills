@@ -179,6 +179,7 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
       skillRootNote: plan.adapter.getSkillRootNote(),
       techStack: plan.techStack,
       techStackName: plan.techStack ? getTechStackById(plan.techStack)?.displayName : undefined,
+      hooksEnabled: plan.hooksEnabled,
     }),
     managedAssets: [] as Array<{ id: string; destination: string }>,
   };

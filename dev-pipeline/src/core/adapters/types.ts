@@ -1,4 +1,4 @@
-export type FeatureId = 'base' | 'skills' | 'commands' | 'docs' | 'schema';
+export type FeatureId = 'base' | 'skills' | 'commands' | 'docs' | 'schema' | 'hooks';
 
 export const ALL_FEATURE_IDS = [
   'base',
@@ -6,6 +6,7 @@ export const ALL_FEATURE_IDS = [
   'commands',
   'docs',
   'schema',
+  'hooks',
 ] as const satisfies readonly FeatureId[];
 export type ToolId = 'claude' | 'cursor' | 'codex' | 'opencode';
 export type StackId = 'frontend' | 'backend' | 'fullstack';
@@ -20,6 +21,8 @@ export interface ToolDestinations {
   commands: string;
 }
 
+export type HookMode = 'auto' | 'manual';
+
 export interface ToolDefinition {
   id: ToolId;
   displayName: string;
@@ -31,6 +34,14 @@ export interface ToolDefinition {
   supports: FeatureId[];
   /** Custom SKILL_ROOT guidance. Supports a `{skillsDir}` placeholder. */
   skillRootNote?: string;
+  /** Optional tool-specific metadata. */
+  metadata?: {
+    /** Hook configuration for this tool. */
+    hooks?: {
+      /** `auto`: render hook templates on init. `manual`: print docs only. */
+      mode?: HookMode;
+    };
+  };
 }
 
 export interface ToolAdapter {
@@ -42,4 +53,6 @@ export interface ToolAdapter {
   supportsUserDestination(feature: Extract<FeatureId, 'skills' | 'commands'>): boolean;
   getRoot(): string;
   getSkillRootNote(): string | undefined;
+  /** Hook generation mode for this tool. `undefined` when the tool has no hook metadata. */
+  getHookMode(): HookMode | undefined;
 }

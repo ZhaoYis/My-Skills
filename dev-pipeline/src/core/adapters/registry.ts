@@ -2,7 +2,7 @@ import os from 'node:os';
 import fs from 'fs-extra';
 import path from 'node:path';
 import { z } from 'zod';
-import type { FeatureId, InstallScope, ToolAdapter, ToolDefinition, ToolId } from './types.js';
+import type { FeatureId, HookMode, InstallScope, ToolAdapter, ToolDefinition, ToolId } from './types.js';
 
 // Tool adapter schema. To add a new AI tool:
 // 1. Add its id to the id enum below
@@ -25,8 +25,17 @@ const toolSchema = z.object({
       commands: z.string().optional(),
     })
     .optional(),
-  supports: z.array(z.enum(['base', 'skills', 'commands', 'docs', 'schema'])),
+  supports: z.array(z.enum(['base', 'skills', 'commands', 'docs', 'schema', 'hooks'])),
   skillRootNote: z.string().optional(),
+  metadata: z
+    .object({
+      hooks: z
+        .object({
+          mode: z.enum(['auto', 'manual']).optional(),
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 const toolsSchema = z.object({
@@ -64,6 +73,10 @@ class StaticToolAdapter implements ToolAdapter {
 
   getSkillRootNote(): string | undefined {
     return this.definition.skillRootNote;
+  }
+
+  getHookMode(): HookMode | undefined {
+    return this.definition.metadata?.hooks?.mode;
   }
 }
 

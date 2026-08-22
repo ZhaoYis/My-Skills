@@ -23,5 +23,7 @@ export interface InitAnswers {
   techStack?: TechStackId;
   language: DocLanguage;
   features: FeatureId[];
+  /** When false, hook assets/templates are rendered with empty payloads (no-op). */
+  hooksEnabled?: boolean;
   scope: InstallScope;
 }

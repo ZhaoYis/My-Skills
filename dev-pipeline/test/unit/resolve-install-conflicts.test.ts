@@ -29,6 +29,7 @@ function createPlan(files?: Partial<InstallPlan['files'][number]>[]): InstallPla
       supportsUserDestination: () => true,
       getRoot: () => '.',
       getSkillRootNote: () => undefined,
+      getHookMode: () => undefined,
     },
     files: (
       files ?? [
