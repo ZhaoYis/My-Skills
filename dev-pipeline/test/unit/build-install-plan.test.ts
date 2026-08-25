@@ -507,8 +507,9 @@ describe('buildInstallPlan', () => {
     expect(initPlan.files.find((file) => file.assetId === 'opsx-propose-command')?.resolution).toBe(
       'overwrite',
     );
+    // common-readme 是用户维护的文档，存在时静默跳过，不进入冲突提示流程
     expect(initPlan.files.find((file) => file.assetId === 'common-readme')?.resolution).toBe(
-      'unresolved',
+      'skip',
     );
 
     const syncPlan = await buildInstallPlan({

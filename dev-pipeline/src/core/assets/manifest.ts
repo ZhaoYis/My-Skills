@@ -8,7 +8,11 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'base',
     source: 'src/templates/common/base/README.md.hbs',
     destination: 'README.md',
-    writePolicy: { appendStrategy: 'simple' },
+    // 用户 README 由用户维护：目标已存在时静默跳过，未存在时静默写入。
+    // 显式 --force 仍会覆盖（由 buildInstallPlan 中的 force 分支处理）。
+    writePolicy: {
+      onConflict: { init: 'skip', sync: 'skip', upgrade: 'skip' },
+    },
   },
   {
     id: 'common-gitignore',
