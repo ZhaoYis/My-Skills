@@ -55,6 +55,56 @@ function output(payload, exitCode = 0) {
   process.exitCode = exitCode;
 }
 
+function summaryView(state) {
+  const stripped = { ...state };
+
+  // Strip audit-only top-level fields not needed for agent decision-making.
+  delete stripped._version;
+  delete stripped._readVersion;
+  delete stripped.createdBy;
+  delete stripped.createdByEmail;
+  delete stripped.machineInfo;
+  delete stripped.fingerprintId;
+  delete stripped.fingerprintNonce;
+
+  // Strip decisions snapshots from phaseHistory entries (redundant with top-level decisions).
+  if (Array.isArray(stripped.phaseHistory)) {
+    stripped.phaseHistory = stripped.phaseHistory.map(
+      ({ decisions: _d, ...entry }) => entry,
+    );
+  }
+
+  // Strip decisions snapshots from review.rounds entries.
+  if (stripped.review && Array.isArray(stripped.review.rounds)) {
+    stripped.review = {
+      ...stripped.review,
+      rounds: stripped.review.rounds.map(
+        ({ decisions: _d, ...round }) => round,
+      ),
+    };
+  }
+
+  return stripped;
+}
+
+function resolveViewArg(args) {
+  const viewIdx = args.indexOf('--view');
+  if (viewIdx === -1) return { view: 'summary', args };
+  const view = args[viewIdx + 1];
+  if (view !== 'full' && view !== 'summary') {
+    emitError(
+      'invalid-view-arg',
+      '--view 仅支持 summary 或 full',
+      'choose-valid-view',
+      EXIT_INVALID_TRANSITION,
+    );
+  }
+  return {
+    view,
+    args: args.filter((_, i) => i !== viewIdx && i !== viewIdx + 1),
+  };
+}
+
 function statePath(root, changeName) {
   return path.join(root, 'openspec', '.pipeline-state', `${changeName}.json`);
 }
@@ -745,7 +795,9 @@ if (!command) {
       const state = await loadState(root, changeName);
       if (state) {
         if (command === 'get') {
-          output({ status: 'ok', state });
+          const { view, args: remainingArgs } = resolveViewArg(args);
+          const stateToOutput = view === 'summary' ? summaryView(state) : state;
+          output({ status: 'ok', state: stateToOutput });
         } else if (command === 'migrate-schema') {
           if (state.schemaVersion === SCHEMA_VERSION) {
             output({ status: 'ok', reason: 'already-v3', state });

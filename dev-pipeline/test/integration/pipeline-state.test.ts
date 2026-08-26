@@ -256,7 +256,7 @@ describe('pipeline state machine', () => {
       decisions: {},
     });
 
-    const loaded = await state('get', 'older-v2');
+    const loaded = await state('get', 'older-v2', '--view', 'full');
     expect(loaded.payload.state).toMatchObject({
       createdBy: 'unknown',
       createdByEmail: '',
@@ -296,7 +296,7 @@ describe('pipeline state machine', () => {
     await state('transition', 'same-phase-history', '1', '3');
     await state('transition', 'same-phase-history', '1', '4');
     await state('transition', 'same-phase-history', '1', '5');
-    const current = await state('get', 'same-phase-history');
+    const current = await state('get', 'same-phase-history', '--view', 'full');
     const history = (current.payload.state as { phaseHistory: PhaseHistoryEntry[] }).phaseHistory;
     const phaseOneEntries = history.filter(
       (entry) => entry.phase === 1 && entry.executedBy === 'pipeline',
@@ -334,7 +334,7 @@ describe('pipeline state machine', () => {
     };
     await state('transition', 'stable-fingerprint', '1', '3');
     await state('transition', 'stable-fingerprint', '1', '5');
-    const current = await state('get', 'stable-fingerprint');
+    const current = await state('get', 'stable-fingerprint', '--view', 'full');
 
     expect(current.payload.state).toMatchObject({
       fingerprintId: initialState.fingerprintId,
@@ -553,7 +553,7 @@ describe('pipeline state machine', () => {
     await state('record-phase', 'phase-history', '3', '9', 'pipeline', '--start');
     await state('record-phase', 'phase-history', '3', '9', 'pipeline', '--abandon');
 
-    const current = await state('get', 'phase-history');
+    const current = await state('get', 'phase-history', '--view', 'full');
     const currentState = current.payload.state as {
       executionMode: string;
       phaseHistory: Array<{
@@ -951,5 +951,66 @@ describe('pipeline state machine', () => {
     await state('decision', 'archive-resume', 'postArchiveAction', 'push-only');
     const transition = await state('transition', 'archive-resume', '6', '20');
     expect(transition.code).toBe(0);
+  });
+
+  it('returns a summary view by default, stripping audit fields and history snapshots', async () => {
+    await state('init', 'summary-test', 'feature/summary-test');
+    await state('decision', 'summary-test', 'proposalApproved', 'true');
+    await state('decision', 'summary-test', 'implementationConfirmed', 'true');
+    await state('transition', 'summary-test', '2', '6');
+    await state('attempt', 'summary-test', 'review', 'passed');
+
+    const result = await state('get', 'summary-test');
+    expect(result.code).toBe(0);
+    const s = result.payload.state as Record<string, unknown>;
+
+    // Core routing fields preserved
+    expect(s.currentPhase).toBe(2);
+    expect(s.currentStep).toBe(6);
+    expect(s.status).toBe('active');
+    expect(s.decisions).toBeDefined();
+    expect(s.route).toBeDefined();
+
+    // Audit-only fields stripped
+    expect(s._version).toBeUndefined();
+    expect(s._readVersion).toBeUndefined();
+    expect(s.createdBy).toBeUndefined();
+    expect(s.createdByEmail).toBeUndefined();
+    expect(s.machineInfo).toBeUndefined();
+    expect(s.fingerprintId).toBeUndefined();
+    expect(s.fingerprintNonce).toBeUndefined();
+
+    // phaseHistory entries preserved but decisions snapshots stripped
+    const ph = s.phaseHistory as Array<Record<string, unknown>>;
+    expect(ph).toBeDefined();
+    expect(ph.length).toBeGreaterThan(0);
+    for (const entry of ph) {
+      expect(entry.phase).toBeDefined();
+      expect(entry.executedBy).toBeDefined();
+      expect(entry.decisions).toBeUndefined();
+    }
+
+    // review.rounds entries preserved but decisions snapshots stripped
+    const review = s.review as { rounds: Array<Record<string, unknown>> };
+    expect(review.rounds).toBeDefined();
+    for (const round of review.rounds) {
+      expect(round.round).toBeDefined();
+      expect(round.decisions).toBeUndefined();
+    }
+  });
+
+  it('returns full view with --view full', async () => {
+    await state('init', 'full-view-test', 'feature/full-view-test');
+    const result = await state('get', 'full-view-test', '--view', 'full');
+    expect(result.code).toBe(0);
+    const s = result.payload.state as Record<string, unknown>;
+
+    expect(s._version).toBeDefined();
+    expect(s.createdBy).toBeDefined();
+    expect(s.machineInfo).toBeDefined();
+    expect(s.fingerprintId).toBeDefined();
+
+    const ph = s.phaseHistory as Array<Record<string, unknown>>;
+    expect(ph[0].decisions).toBeDefined();
   });
 });
