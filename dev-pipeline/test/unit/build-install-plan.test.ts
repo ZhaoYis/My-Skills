@@ -134,11 +134,11 @@ describe('buildInstallPlan', () => {
   });
 
   it.each([
-    ['backend', 'java-spring-boot', 'config.backend.java-spring-boot.yaml.hbs'],
-    ['frontend', 'react-vite', 'config.frontend.react-vite.yaml.hbs'],
-    ['fullstack', 'java-react', 'config.fullstack.java-react.yaml.hbs'],
-    ['fullstack', 'python-react', 'config.fullstack.python-react.yaml.hbs'],
-  ] as const)('selects the %s tech stack config template', async (stack, techStack, template) => {
+    ['backend', 'java-spring-boot'],
+    ['frontend', 'react-vite'],
+    ['fullstack', 'java-react'],
+    ['fullstack', 'python-react'],
+  ] as const)('uses the composable skeleton for %s %s stack-config', async (stack, techStack) => {
     const plan = await buildInstallPlan({
       ...createPlanInput(),
       stack,
@@ -147,7 +147,9 @@ describe('buildInstallPlan', () => {
 
     expect(plan.techStack).toBe(techStack);
     expect(
-      plan.files.find((file) => file.assetId === 'stack-config')?.sourcePath.endsWith(template),
+      plan.files
+        .find((file) => file.assetId === 'stack-config')
+        ?.sourcePath.endsWith('fragments/skeleton.yaml.hbs'),
     ).toBe(true);
   });
 
@@ -167,11 +169,11 @@ describe('buildInstallPlan', () => {
     expect(
       plan.files
         .find((file) => file.assetId === 'stack-config')
-        ?.sourcePath.endsWith('config.backend.yaml.hbs'),
+        ?.sourcePath.endsWith('fragments/skeleton.yaml.hbs'),
     ).toBe(true);
   });
 
-  it('selects the fullstack config template', async () => {
+  it('selects the fullstack config skeleton', async () => {
     const plan = await buildInstallPlan({
       ...createPlanInput(),
       stack: 'fullstack',
@@ -181,7 +183,7 @@ describe('buildInstallPlan', () => {
     expect(
       plan.files
         .find((file) => file.assetId === 'stack-config')
-        ?.sourcePath.endsWith('config.fullstack.yaml.hbs'),
+        ?.sourcePath.endsWith('fragments/skeleton.yaml.hbs'),
     ).toBe(true);
   });
 

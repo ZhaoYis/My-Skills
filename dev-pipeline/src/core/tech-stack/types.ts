@@ -1,4 +1,5 @@
 import type { StackId } from '../adapters/types.js';
+import type { ProgrammingLanguageId } from '../config/types.js';
 
 export type TechStackId =
   | 'java-spring-boot'
@@ -12,4 +13,5 @@ export interface TechStackDefinition {
   displayName: string;
   description: string;
   parentStack: StackId;
+  programmingLanguages: ProgrammingLanguageId[];
 }

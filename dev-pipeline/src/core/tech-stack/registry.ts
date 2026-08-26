@@ -7,30 +7,35 @@ export const TECH_STACK_REGISTRY: TechStackDefinition[] = [
     displayName: 'Java Spring Boot',
     description: 'Java 17+, Spring Boot 3.x, Maven/Gradle, MyBatis-Plus/JPA/JOOQ',
     parentStack: 'backend',
+    programmingLanguages: ['java'],
   },
   {
     id: 'python-fastapi',
     displayName: 'Python FastAPI',
     description: 'Python 3.10+, FastAPI, Pydantic, SQLAlchemy/Tortoise ORM, pytest, Ruff, mypy',
     parentStack: 'backend',
+    programmingLanguages: ['python'],
   },
   {
     id: 'react-vite',
     displayName: 'React + Vite',
     description: 'React 18+, TypeScript, Vite, Vitest + React Testing Library',
     parentStack: 'frontend',
+    programmingLanguages: ['typescript'],
   },
   {
     id: 'java-react',
     displayName: 'Java Spring Boot + React',
     description: 'Monorepo: React 18+ frontend + Java Spring Boot backend',
     parentStack: 'fullstack',
+    programmingLanguages: ['java', 'typescript'],
   },
   {
     id: 'python-react',
     displayName: 'Python FastAPI + React',
     description: 'Monorepo: React 18+ frontend + Python FastAPI backend',
     parentStack: 'fullstack',
+    programmingLanguages: ['python', 'typescript'],
   },
 ];
 

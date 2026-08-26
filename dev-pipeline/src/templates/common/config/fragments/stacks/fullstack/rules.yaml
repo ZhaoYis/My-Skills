@@ -1,0 +1,8 @@
+api-design:
+  - Must specify authentication and authorization requirements for each endpoint
+  - Must include error response contracts and status codes
+  - Must specify frontend consumer impact and migration guidance
+specs:
+  - Use Given/When/Then format for API behavior scenarios
+design:
+  - Must include component tree or ERD depending on change scope

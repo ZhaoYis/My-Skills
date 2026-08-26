@@ -1,0 +1,10 @@
+proposal:
+  - Must include API contract changes (endpoints, request/response Pydantic schemas)
+  - Must specify database migration strategy (Alembic)
+api-design:
+  - Must document all request/response Pydantic schemas with field types and constraints
+  - Must document async behavior, idempotency, and side effects for state-changing operations
+design:
+  - Must include database schema changes or ORM model updates
+  - Must specify middleware/dependency injection changes
+  - Must address async patterns and concurrency considerations

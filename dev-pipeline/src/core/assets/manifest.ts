@@ -1,3 +1,4 @@
+import { STACK_CONFIG_SKELETON } from '../config/paths.js';
 import type { AssetDefinition } from './types.js';
 
 export const assetManifest: AssetDefinition[] = [
@@ -94,7 +95,7 @@ export const assetManifest: AssetDefinition[] = [
     kind: 'template',
     scope: 'common',
     feature: 'schema',
-    source: 'src/templates/common/config/config.{{stack}}.yaml.hbs',
+    source: STACK_CONFIG_SKELETON,
     destination: 'openspec/config.yaml',
     writePolicy: { appendStrategy: 'config-merge' },
   },

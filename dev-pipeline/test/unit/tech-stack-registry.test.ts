@@ -25,6 +25,10 @@ describe('tech stack registry', () => {
     expect(resolveTechStackId('java-react')).toBe('java-react');
     expect(getTechStackById('python-react')?.displayName).toBe('Python FastAPI + React');
     expect(resolveTechStackId('python-react')).toBe('python-react');
+    expect(getTechStackById('python-react')?.programmingLanguages).toEqual([
+      'python',
+      'typescript',
+    ]);
   });
 
   it('rejects unknown tech stacks and lists valid ids', () => {

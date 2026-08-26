@@ -333,19 +333,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
         );
       }
 
-      let renderedSource = path.join(input.rootDir, renderString(asset.source, templateContext));
-      if (asset.id === 'stack-config' && input.techStack) {
-        const techStackSource = path.join(
-          input.rootDir,
-          renderString(
-            'src/templates/common/config/config.{{stack}}.{{techStack}}.yaml.hbs',
-            templateContext,
-          ),
-        );
-        if (await fs.pathExists(techStackSource)) {
-          renderedSource = techStackSource;
-        }
-      }
+      const renderedSource = path.join(input.rootDir, renderString(asset.source, templateContext));
 
       return [
         {

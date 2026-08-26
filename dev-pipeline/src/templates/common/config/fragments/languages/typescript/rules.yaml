@@ -1,0 +1,7 @@
+proposal:
+  - Must include UI/UX impact analysis
+specs:
+  - Use Given/When/Then format for user interaction scenarios
+design:
+  - Must include component tree diagram or description
+  - Must specify route design and state management strategy
