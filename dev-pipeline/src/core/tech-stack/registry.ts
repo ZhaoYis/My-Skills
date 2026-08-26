@@ -26,6 +26,12 @@ export const TECH_STACK_REGISTRY: TechStackDefinition[] = [
     description: 'Monorepo: React 18+ frontend + Java Spring Boot backend',
     parentStack: 'fullstack',
   },
+  {
+    id: 'python-react',
+    displayName: 'Python FastAPI + React',
+    description: 'Monorepo: React 18+ frontend + Python FastAPI backend',
+    parentStack: 'fullstack',
+  },
 ];
 
 export function getTechStacksByParentStack(parentStack: StackId): TechStackDefinition[] {

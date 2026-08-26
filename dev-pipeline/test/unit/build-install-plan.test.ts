@@ -137,6 +137,7 @@ describe('buildInstallPlan', () => {
     ['backend', 'java-spring-boot', 'config.backend.java-spring-boot.yaml.hbs'],
     ['frontend', 'react-vite', 'config.frontend.react-vite.yaml.hbs'],
     ['fullstack', 'java-react', 'config.fullstack.java-react.yaml.hbs'],
+    ['fullstack', 'python-react', 'config.fullstack.python-react.yaml.hbs'],
   ] as const)('selects the %s tech stack config template', async (stack, techStack, template) => {
     const plan = await buildInstallPlan({
       ...createPlanInput(),

@@ -1,0 +1,92 @@
+language: {{language}}
+schema: fullstack
+context: |
+  ## 全局规范
+
+  ### 语言要求
+{{#if (isLanguage "zh")}}
+  - 所有文档、规格、提案、设计和任务必须使用简体中文编写
+  - 所有代码注释必须使用简体中文编写
+  - 所有 commit message 必须使用简体中文编写
+  - 所有 PR 描述和代码审查评论必须使用简体中文编写
+{{else}}
+  - All documents, specs, proposals, designs, and tasks MUST be written in English
+  - All code comments MUST be written in English
+  - All commit messages MUST be written in English
+  - All PR descriptions and review comments MUST be written in English
+{{/if}}
+
+  ### 编码规范
+{{#if (isLanguage "zh")}}
+  - 【后端】所有代码必须遵循 PEP 8 风格指南
+  - 【后端】所有公开函数和类必须包含 Google 风格的 docstring，包括：函数/类功能描述、Args（每个参数的类型和含义）、Returns（返回值含义）、Raises（可能抛出的异常）
+  - 【后端】所有函数和方法必须使用类型提示（type hints，PEP 484+）
+  - 【后端】使用 Pydantic 模型进行数据验证和序列化；异步函数必须使用 async/await 语法
+  - 【前端】所有新编写的函数/组件必须包含完整的 JSDoc 注释，包括：功能描述、@param、@returns
+  - 【前端】所有新编写的 TypeScript 接口（interface）和类型（type）必须包含注释，说明其用途和每个字段的含义
+  - 【前端】React 组件必须使用 JSDoc 或 TSDoc 注释说明组件的功能、Props 含义和使用示例
+  - 禁止提交没有注释的公开函数、类、导出函数和组件
+{{else}}
+  - [Backend] All code MUST follow PEP 8 style guide
+  - [Backend] Every public function and class MUST include Google-style docstrings covering: function/class purpose, Args (parameter types and meanings), Returns (return value semantics), Raises (possible exceptions)
+  - [Backend] All functions and methods MUST use type hints (PEP 484+)
+  - [Backend] Use Pydantic models for data validation and serialization; async functions MUST use async/await syntax
+  - [Frontend] Every newly written function/component MUST include complete JSDoc comments covering: purpose, @param, @returns
+  - [Frontend] Every newly written TypeScript interface and type MUST include comments explaining its purpose and the meaning of each field
+  - [Frontend] React components MUST use JSDoc or TSDoc comments describing the component purpose, Props meaning, and usage examples
+  - Public functions, classes, exported functions, and components without comments MUST NOT be committed
+{{/if}}
+
+  ### UI 组件规范
+  - UI 组件库优先使用 hammer 与 @hammer/* 生态（以及现有项目中的封装组件，例如 @hammer/basic、@hammer/pro 等）；不要私自引入新的 UI 库来实现同类基础组件
+  - 非常重要：按 package.json 中 hammer / @hammer/* 的 version 选择文档站
+  - 含 qa → https://hammer.yzwqa.cn；含 stg → https://hammer-stg.yzw.cn；否则 https://hammer.yzw.cn
+  - qa 与 stg 同时出现时用 qa
+
+  ## 项目信息
+  Project: {{projectName}}
+  Project Type: Fullstack Application
+  Frontend: React 18+, TypeScript, Vite, Vitest + React Testing Library, Playwright (E2E)
+  Backend: Python 3.10+, FastAPI, Pydantic v2, SQLAlchemy 2.0+ / Tortoise ORM, pytest, Ruff, mypy, Alembic
+  Conventions: Monorepo (frontend/ + backend/), API contract-first
+
+stack:
+  id: fullstack
+  languages: [typescript, python]
+  services:
+    - name: frontend
+      path: frontend
+    - name: backend
+      path: backend
+
+rules:
+  proposal:
+    - "Must include API contract changes (endpoints, request/response Pydantic schemas)"
+    - "Must include UI/UX impact analysis for frontend changes"
+    - "Must specify database migration strategy (Alembic) for backend changes"
+  api-design:
+    - "Must document all request/response Pydantic schemas with field types and constraints"
+    - "Must specify authentication and authorization requirements for each endpoint"
+    - "Must include error response contracts and status codes"
+    - "Must document async behavior, idempotency, and side effects for state-changing operations"
+    - "Must specify frontend consumer impact and migration guidance"
+  specs:
+    - "Use Given/When/Then format for API behavior scenarios"
+    - "Use Given/When/Then format for user interaction scenarios"
+  design:
+    - "Must include component tree or ERD depending on change scope"
+    - "Must specify route design and state management for frontend changes"
+    - "Must specify middleware/dependency injection changes for backend changes"
+    - "Must address async patterns and concurrency considerations for backend changes"
+
+pipeline:
+  routes:
+    trivial:
+      description: "无行为变化的极小变更"
+      phases: [0, 2, 6]
+    standard:
+      description: "标准变更"
+      phases: [0, 1, 2, 5, 6]
+    full:
+      description: "高保障变更"
+      phases: [0, 1, 2, 3, 4, 5, 6, 7]

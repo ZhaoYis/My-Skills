@@ -8,20 +8,28 @@ import {
 
 describe('tech stack registry', () => {
   it('registers tech stacks for each parent stack', () => {
-    expect(TECH_STACK_REGISTRY).toHaveLength(4);
-    expect(getTechStacksByParentStack('backend').map(({ id }) => id)).toEqual(['java-spring-boot', 'python-fastapi']);
+    expect(TECH_STACK_REGISTRY).toHaveLength(5);
+    expect(getTechStacksByParentStack('backend').map(({ id }) => id)).toEqual([
+      'java-spring-boot',
+      'python-fastapi',
+    ]);
     expect(getTechStacksByParentStack('frontend').map(({ id }) => id)).toEqual(['react-vite']);
-    expect(getTechStacksByParentStack('fullstack').map(({ id }) => id)).toEqual(['java-react']);
+    expect(getTechStacksByParentStack('fullstack').map(({ id }) => id)).toEqual([
+      'java-react',
+      'python-react',
+    ]);
   });
 
   it('finds and resolves registered tech stacks', () => {
     expect(getTechStackById('react-vite')?.displayName).toBe('React + Vite');
     expect(resolveTechStackId('java-react')).toBe('java-react');
+    expect(getTechStackById('python-react')?.displayName).toBe('Python FastAPI + React');
+    expect(resolveTechStackId('python-react')).toBe('python-react');
   });
 
   it('rejects unknown tech stacks and lists valid ids', () => {
     expect(() => resolveTechStackId('invalid')).toThrow(
-      'Invalid tech stack: invalid. Valid: java-spring-boot, python-fastapi, react-vite, java-react.',
+      'Invalid tech stack: invalid. Valid: java-spring-boot, python-fastapi, react-vite, java-react, python-react.',
     );
   });
 });

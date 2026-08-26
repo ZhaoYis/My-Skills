@@ -328,7 +328,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get <change-name>
 | ----------------------- | ----------------------------------------------------------------- |
 | `--tool <tool>`         | AI 工具 ID：`claude`、`cursor`、`codex` 或 `opencode`                |
 | `--stack <stack>`       | 项目类型：`frontend`、`backend` 或 `fullstack`；`--yes` 模式必填       |
-| `--tech-stack <id>`     | 技术栈细分：`java-spring-boot`、`react-vite`、`java-react`、`python-fastapi`；可选 |
+| `--tech-stack <id>`     | 技术栈细分：`java-spring-boot`、`react-vite`、`java-react`、`python-fastapi`、`python-react`；可选 |
 | `--lang <en\|zh>`        | 文档语言，影响所有 AI 产出物（提案、代码注释、commit message 等）；默认 `zh` |
 | `--feature <feature>`   | 启用可选功能（可重复使用），如 `--feature hooks` / `--feature no-hooks`（互斥） |
 | `--yes`                 | 非交互执行；已有冲突文件默认跳过，不等同于覆盖                             |
