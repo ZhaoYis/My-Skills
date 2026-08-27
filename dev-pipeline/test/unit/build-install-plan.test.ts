@@ -195,7 +195,7 @@ describe('buildInstallPlan', () => {
     });
     const schemaBundleFiles = plan.files.filter((file) => file.assetId.includes('-schema-bundle:'));
 
-    expect(schemaBundleFiles).toHaveLength(6);
+    expect(schemaBundleFiles).toHaveLength(7);
     expect(
       schemaBundleFiles.every((file) => file.assetId.startsWith('fullstack-schema-bundle:')),
     ).toBe(true);
