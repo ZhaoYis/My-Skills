@@ -160,6 +160,18 @@ export const assetManifest: AssetDefinition[] = [
     writePolicy: { appendStrategy: 'simple', appendExtensions: ['.md'] },
   },
   {
+    id: 'opsx-init-skill-bundle',
+    kind: 'bundle',
+    scope: 'common',
+    feature: 'skills',
+    source: 'src/templates/common/skills/opsx-init',
+    destination: '{{skillsDir}}/opsx-init',
+    includeExtensions: ['.md', '.hbs', '.yaml'],
+    templateFiles: ['SKILL.md.hbs'],
+    excludePatterns: ['.gitkeep'],
+    writePolicy: { appendStrategy: 'simple', appendExtensions: ['.md'] },
+  },
+  {
     id: 'opsx-dev-pipeline-command',
     kind: 'template',
     scope: 'common',
@@ -306,6 +318,23 @@ export const assetManifest: AssetDefinition[] = [
     destination: '{{commandsDir}}/opsx/dev-spec-design.md',
     toolDestinations: { cursor: '{{commandsDir}}/opsx-dev-spec-design.md' },
     tools: ['claude', 'cursor', 'opencode'],
+    writePolicy: {
+      appendStrategy: 'simple',
+      onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' },
+    },
+  },
+  {
+    id: 'opsx-init-command',
+    kind: 'template',
+    scope: 'common',
+    feature: 'commands',
+    source: 'src/templates/common/commands/opsx/init.md.hbs',
+    destination: '{{commandsDir}}/opsx/init.md',
+    toolDestinations: {
+      cursor: '{{commandsDir}}/opsx-init.md',
+      codex: '{{commandsDir}}/opsx-init/SKILL.md',
+    },
+    tools: ['claude', 'cursor', 'opencode', 'codex'],
     writePolicy: {
       appendStrategy: 'simple',
       onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' },

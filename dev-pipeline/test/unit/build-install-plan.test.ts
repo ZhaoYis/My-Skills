@@ -284,6 +284,7 @@ describe('buildInstallPlan', () => {
       'opsx-grill-me',
       'opsx-grilling',
       'opsx-dev-spec-design',
+      'opsx-init',
     ]) {
       await fs.ensureDir(path.join(rootDir, 'src/templates/common/skills', skill, 'agents'));
     }

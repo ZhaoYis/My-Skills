@@ -106,6 +106,7 @@ export function buildTemplateContext(params: {
       explore: commandInvocation('explore'),
       grillMe: commandInvocation('grill-me'),
       grilling: commandInvocation('grilling'),
+      init: commandInvocation('init'),
       propose: commandInvocation('propose'),
       sync: commandInvocation('sync'),
       verify: commandInvocation('verify'),
