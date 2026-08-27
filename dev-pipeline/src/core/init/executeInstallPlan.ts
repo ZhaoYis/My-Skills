@@ -256,6 +256,16 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
     managedFiles.push(file);
   }
 
+  // Hook scripts must be executable for the tools to invoke them directly.
+  // POSIX-only: Windows has no exec bits and fs.chmod cannot set them there.
+  if (process.platform !== 'win32') {
+    for (const file of managedFiles) {
+      if (file.assetId.split(':', 1)[0] === 'pipeline-hooks-script-bundle') {
+        await fs.chmod(file.destinationPath, 0o755);
+      }
+    }
+  }
+
   const writtenAssets = managedFiles.map((file) => ({
     id: file.assetId,
     destination: path.relative(plan.targetDir, file.destinationPath),
