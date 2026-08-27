@@ -60,7 +60,9 @@ function prefixConventionLines(text: string, prefix: string): string {
     return text;
   }
 
-  return text
+  // Normalize CRLF to LF so the regex below works on Windows.
+  const normalized = text.replaceAll('\r\n', '\n');
+  return normalized
     .split('\n')
     .map((line) => {
       const match = line.match(/^(\s*-\s*)(.*)$/);
@@ -70,16 +72,18 @@ function prefixConventionLines(text: string, prefix: string): string {
 }
 
 function applyHeadlineKey(block: string, key: string): string {
-  const lines = block.split('\n');
+  // Normalize CRLF to LF so the regex below works on Windows.
+  const normalized = block.replaceAll('\r\n', '\n');
+  const lines = normalized.split('\n');
   const index = lines.findIndex((line) => line.trim().length > 0);
   if (index < 0) {
-    return block;
+    return normalized;
   }
 
   const line = lines[index] ?? '';
   const match = line.match(/^(\s*)(.*)$/);
   if (!match) {
-    return block;
+    return normalized;
   }
 
   lines[index] = `${match[1]}${key}: ${match[2]}`;

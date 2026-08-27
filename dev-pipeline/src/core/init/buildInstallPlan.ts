@@ -252,7 +252,7 @@ async function expandBundle(
     .filter((entry) => asset.includeExtensions?.includes(path.extname(entry)) ?? true);
 
   return selectBundleEntries(eligibleEntries, language).map(({ entry, relativeDestination }) => {
-    const sourcePath = path.join(sourceRoot, entry);
+    const sourcePath = normalizeBundleEntry(path.join(sourceRoot, entry));
     const fileName = path.basename(entry);
     return {
       assetId: `${asset.id}:${entry}`,
@@ -333,7 +333,9 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
         );
       }
 
-      const renderedSource = path.join(input.rootDir, renderString(asset.source, templateContext));
+      const renderedSource = normalizeBundleEntry(
+        path.join(input.rootDir, renderString(asset.source, templateContext)),
+      );
 
       return [
         {
