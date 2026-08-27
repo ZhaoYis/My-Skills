@@ -46,6 +46,91 @@ npx opsx-dev-pipeline init --tool claude --stack frontend --yes --dry-run
 npx opsx-dev-pipeline uninstall --yes
 ```
 
+### 常见使用场景示例
+
+**场景 1：为 Python FastAPI 后端项目初始化**
+
+```bash
+# 使用 Python FastAPI 技术栈
+npx opsx-dev-pipeline init --tool claude --stack backend --tech-stack python-fastapi --yes
+
+# 生成的目录结构
+# .claude/skills/opsx-dev-pipeline/
+# .claude/commands/opsx/
+# openspec/config.yaml (包含 Python 相关配置)
+# openspec/schemas/backend/
+```
+
+**场景 2：为全栈项目初始化（Java + React）**
+
+```bash
+npx opsx-dev-pipeline init --tool claude --stack fullstack --tech-stack java-react --yes
+
+# 生成的配置会包含前后端分离的约定
+# openspec/config.yaml 中会包含：
+# - 前端：React 18+, TypeScript, Vite
+# - 后端：Java 17+, Spring Boot 3.x
+# - Monorepo 结构约定
+```
+
+**场景 3：使用 Cursor 作为 AI 工具**
+
+```bash
+npx opsx-dev-pipeline init --tool cursor --stack backend --yes
+
+# 生成的目录结构
+# .cursor/rules/opsx-dev-pipeline.mdc
+# .cursor/commands/opsx-*.md
+# openspec/config.yaml
+```
+
+**场景 4：预览安装计划（不实际安装）**
+
+```bash
+npx opsx-dev-pipeline init --tool claude --stack backend --yes --dry-run
+
+# 输出示例：
+# 将创建以下文件：
+# - README.md
+# - .gitignore
+# - openspec/config.yaml
+# - openspec/schemas/backend/schema.yaml
+# - openspec/schemas/backend/templates/proposal.md
+# - openspec/schemas/backend/templates/design.md
+# - openspec/schemas/backend/templates/spec.md
+# - openspec/schemas/backend/templates/tasks.md
+# - .claude/skills/opsx-dev-pipeline/SKILL.md
+# - .claude/commands/opsx/dev-pipeline.md
+# ... (更多文件)
+```
+
+**场景 5：强制覆盖已有配置**
+
+```bash
+# 当已有配置文件存在冲突时，使用 --force 覆盖
+npx opsx-dev-pipeline init --tool claude --stack backend --yes --force
+```
+
+**场景 6：同步更新已安装的模板**
+
+```bash
+# 当 opsx-dev-pipeline 版本更新后，同步更新项目中的模板
+npx opsx-dev-pipeline sync
+
+# 预览同步将更新哪些文件
+npx opsx-dev-pipeline sync --dry-run
+```
+
+**场景 7：升级到新版本**
+
+```bash
+# 升级时会采纳包内新增的模板文件
+npx opsx-dev-pipeline upgrade
+
+# 预览升级将添加哪些新文件
+npx opsx-dev-pipeline upgrade --dry-run
+```
+
 
 
 ## Supported Stacks
@@ -54,8 +139,8 @@ npx opsx-dev-pipeline uninstall --yes
 | Stack ID    | 默认技术栈                                 | OpenSpec Schema               | 主要规则                       |
 | ----------- | ------------------------------------- | ----------------------------- | -------------------------- |
 | `frontend`  | React 18+、TypeScript、Vite             | `openspec/schemas/frontend/`  | UI/UX 影响、浏览器兼容、组件树、路由与状态管理 |
-| `backend`   | Java 17+、Spring Boot 3.x、Maven/Gradle | `openspec/schemas/backend/`   | API 契约、API 设计、数据库迁移、数据模型、中间件与拦截器  |
-| `fullstack` | React 18+（前端）+ Java Spring Boot（后端） | `openspec/schemas/fullstack/` | API 契约优先、前后端分离、Monorepo 约定（`frontend/` + `backend/`） |
+| `backend`   | Java 17+、Spring Boot 3.x、Maven/Gradle；Python 3.10+、FastAPI、Pydantic | `openspec/schemas/backend/`   | API 契约、API 设计、数据库迁移、数据模型、中间件与拦截器 |
+| `fullstack` | React 18+（前端）+ Java Spring Boot / Python FastAPI（后端） | `openspec/schemas/fullstack/` | API 契约优先、前后端分离、Monorepo 约定（`frontend/` + `backend/`） |
 
 
 每次 `init` 只安装一套 stack schema。所选 stack 会记录在 pipeline manifest 中，后续 `sync` 和 `upgrade` 会继续使用同一套 schema 与 config 模板。
@@ -63,11 +148,12 @@ npx opsx-dev-pipeline uninstall --yes
 ## Supported AI Tools
 
 
-| Tool ID  | 工具          | 生成目录 / 文件                                                    | 说明                                                |
-| -------- | ----------- | ------------------------------------------------------------ | ------------------------------------------------- |
-| `claude` | Claude Code | `CLAUDE.md`、`.claude/skills/`、`.claude/commands/`            | `SKILL_ROOT=.claude/skills/opsx-dev-pipeline`     |
-| `cursor` | Cursor      | `.cursor/rules/`、`.cursor/commands/`、`opsx-dev-pipeline.mdc` | 按需加载；`SKILL_ROOT=.cursor/rules/opsx-dev-pipeline` |
-| `codex`  | Codex       | `.agents/skills/`                                              | `SKILL_ROOT=.agents/skills/opsx-dev-pipeline`     |
+| Tool ID    | 工具          | 生成目录 / 文件                                                    | 说明                                                |
+| ---------- | ----------- | ------------------------------------------------------------ | ------------------------------------------------- |
+| `claude`   | Claude Code | `CLAUDE.md`、`.claude/skills/`、`.claude/commands/`            | `SKILL_ROOT=.claude/skills/opsx-dev-pipeline`     |
+| `cursor`   | Cursor      | `.cursor/rules/`、`.cursor/commands/`、`opsx-dev-pipeline.mdc` | 按需加载；`SKILL_ROOT=.cursor/rules/opsx-dev-pipeline` |
+| `codex`    | Codex       | `.agents/skills/`                                              | `SKILL_ROOT=.agents/skills/opsx-dev-pipeline`     |
+| `opencode` | OpenCode    | `.opencode/skills/`、`.opencode/commands/`                     | `SKILL_ROOT=.opencode/skills/opsx-dev-pipeline`   |
 
 
 查看当前内置适配器：
@@ -100,6 +186,7 @@ OpenSpec 版本预检
 ├── skills/opsx-grill-me/               # Interview skill
 ├── skills/opsx-grilling/               # Stress-test skill
 ├── skills/opsx-dev-spec-design/        # Design spec skill
+├── skills/opsx-init/                   # Config initialization skill
 ├── commands/opsx/dev-pipeline.md       # Pipeline Command
 ├── commands/opsx/propose.md            # Propose Command
 ├── commands/opsx/apply.md              # Apply Command
@@ -109,7 +196,8 @@ OpenSpec 版本预检
 ├── commands/opsx/explore.md            # Explore Command
 ├── commands/opsx/grill-me.md           # Grill-me Command
 ├── commands/opsx/grilling.md           # Grilling Command
-└── commands/opsx/dev-spec-design.md    # Dev-spec-design Command
+├── commands/opsx/dev-spec-design.md    # Dev-spec-design Command
+└── commands/opsx/init.md               # Init Config Command
 
 openspec/
 ├── config.yaml                         # schema: backend + Java/Spring context
@@ -119,6 +207,7 @@ openspec/
         ├── proposal.md
         ├── api_design.md
         ├── design.md
+        ├── adr.md                      # Architecture Decision Record (optional)
         ├── spec.md
         └── tasks.md
 ```
@@ -138,6 +227,7 @@ openspec/
 | `/opsx:grill-me`     | Skill                    | 通过访谈方式完善计划或设计                                            |
 | `/opsx:grilling`     | Skill                    | 对计划、决策或想法进行严格质询                                          |
 | `/opsx:dev-spec-design` | Skill                 | 生成系统分析与设计说明书（精简版）                                       |
+| `/opsx:init`       | Skill                    | 分析当前项目并初始化或更新 `openspec/config.yaml`                       |
 
 
 这些 OpenSpec 命令由 `openspec init --tools <tool>` 安装。底层 Skill 名称与目录统一使用 `opsx-*`；用户调用语法遵循各宿主约定：Claude Code 使用 `/opsx:xxx`，Cursor 使用 `/opsx-xxx`，Codex 使用 `$opsx-xxx`。
@@ -330,6 +420,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get <change-name>
 | `--stack <stack>`       | 项目类型：`frontend`、`backend` 或 `fullstack`；`--yes` 模式必填       |
 | `--tech-stack <id>`     | 技术栈细分：`java-spring-boot`、`react-vite`、`java-react`、`python-fastapi`、`python-react`；可选 |
 | `--lang <en\|zh>`        | 文档语言，影响所有 AI 产出物（提案、代码注释、commit message 等）；默认 `zh` |
+| `--scope <scope>`       | 安装范围：`project`（项目级，默认）或 `user`（用户级，安装到 `~/.claude/` 等全局目录） |
 | `--feature <feature>`   | 启用可选功能（可重复使用），如 `--feature hooks` / `--feature no-hooks`（互斥） |
 | `--yes`                 | 非交互执行；已有冲突文件默认跳过，不等同于覆盖                             |
 | `--force`               | 覆盖冲突的托管文件                                                    |
@@ -390,6 +481,131 @@ npx opsx-dev-pipeline init --tool claude --stack backend --yes --feature hooks -
 ### 运行时依赖
 
 hook 脚本是纯 Node.js（无外部依赖），要求 Node.js 20+（与 opsx-dev-pipeline 自身一致）。跨平台：macOS / Linux / Windows (WSL) 都能跑。
+
+## 故障排查
+
+### OpenSpec 版本不兼容
+
+**问题**：初始化时报错 "OpenSpec version mismatch"
+
+**解决方案**：
+```bash
+# 检查当前 OpenSpec 版本
+openspec --version
+
+# 升级到最新版本
+npm install -g @fission-ai/openspec@latest
+
+# 验证版本
+openspec --version
+```
+
+### 命令未找到
+
+**问题**：运行 `npx opsx-dev-pipeline` 时报错 "command not found"
+
+**解决方案**：
+```bash
+# 使用 npx 直接运行（推荐）
+npx opsx-dev-pipeline init
+
+# 或全局安装
+npm install -g opsx-dev-pipeline
+opsx-dev-pipeline init
+```
+
+### 配置文件冲突
+
+**问题**：初始化时提示 "File already exists"
+
+**解决方案**：
+```bash
+# 方案 1：使用 --force 覆盖现有文件
+npx opsx-dev-pipeline init --tool claude --stack backend --yes --force
+
+# 方案 2：手动删除冲突文件后重新初始化
+rm openspec/config.yaml
+npx opsx-dev-pipeline init --tool claude --stack backend --yes
+```
+
+### Hook 脚本执行失败
+
+**问题**：PreToolUse hook 报错 "Permission denied"
+
+**解决方案**：
+```bash
+# 检查 hook 脚本权限
+ls -la .claude/skills/opsx-dev-pipeline/scripts/hooks/
+
+# 添加执行权限
+chmod +x .claude/skills/opsx-dev-pipeline/scripts/hooks/*.sh
+
+# 或重新初始化
+npx opsx-dev-pipeline init --tool claude --stack backend --yes --force
+```
+
+### 模板同步失败
+
+**问题**：`sync` 命令执行后部分文件未更新
+
+**解决方案**：
+```bash
+# 检查 manifest 状态
+npx opsx-dev-pipeline doctor
+
+# 强制同步所有文件
+npx opsx-dev-pipeline sync --force
+
+# 或升级到最新版本
+npx opsx-dev-pipeline upgrade --force
+```
+
+### 技术栈配置错误
+
+**问题**：生成的 `openspec/config.yaml` 中的技术栈信息不正确
+
+**解决方案**：
+```bash
+# 手动编辑配置文件
+vim openspec/config.yaml
+
+# 或删除后重新初始化
+rm openspec/config.yaml
+npx opsx-dev-pipeline init --tool claude --stack backend --tech-stack python-fastapi --yes
+```
+
+### Pipeline 状态异常
+
+**问题**：Pipeline 状态文件损坏或丢失
+
+**解决方案**：
+```bash
+# 检查状态
+node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get <change-name>
+
+# 如果状态文件丢失，可以重新初始化
+# 注意：这会丢失当前的 pipeline 进度
+node .claude/skills/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init <change-name> <branch>
+```
+
+### 获取帮助
+
+如果以上解决方案无法解决你的问题：
+
+1. 查看命令帮助：
+   ```bash
+   npx opsx-dev-pipeline --help
+   npx opsx-dev-pipeline init --help
+   ```
+
+2. 启用详细日志：
+   ```bash
+   DEBUG=* npx opsx-dev-pipeline init --tool claude --stack backend --yes
+   ```
+
+3. 提交 Issue：
+   - 访问 [GitHub Issues](https://github.com/Fission-AI/opsx-dev-pipeline/issues)
+   - 提供完整的错误信息、Node.js 版本、操作系统信息
 
 
 
