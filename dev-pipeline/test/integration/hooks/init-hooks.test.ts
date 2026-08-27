@@ -65,7 +65,8 @@ describe('pipeline hooks integration', () => {
     expect(writeAsset).toBeDefined();
   });
 
-  it('hook scripts are executable (chmod +x)', async () => {
+  // Exec bits are a POSIX concept; Windows cannot set or observe them.
+  it.skipIf(process.platform === 'win32')('hook scripts are executable (chmod +x)', async () => {
     const dir = await initToTmp({
       tool: 'claude',
       stack: 'backend',
