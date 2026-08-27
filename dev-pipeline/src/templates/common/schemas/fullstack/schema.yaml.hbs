@@ -220,6 +220,57 @@ artifacts:
     requires:
       - proposal
       - api-design
+  - id: adr
+    generates: adr.md
+    description: Architecture Decision Record for key design decisions
+    template: adr.md
+    instruction: >
+      Create an Architecture Decision Record (ADR) for a significant
+      architectural decision.
+
+
+      Create only if the user explicitly requests it or if the change involves
+      a decision that benefits from a standalone ADR.
+
+
+      An ADR is appropriate when:
+
+      - Choosing between competing technologies or frameworks
+
+      - Making a significant architectural trade-off that affects both
+      frontend and backend
+
+      - Establishing a new pattern or convention that spans the fullstack
+
+      - Changing an existing architectural decision
+
+
+      Do NOT create an ADR for routine implementation details — those belong
+      in design.md.
+
+
+      Sections:
+
+      - **Title**: Decision stated in imperative mood
+
+      - **Status**: Proposed, Accepted, Deprecated, or Superseded
+
+      - **Context**: Forces at play, constraints, and background. For
+      fullstack decisions, consider both frontend and backend impacts.
+
+      - **Decision**: The chosen course of action, stated clearly
+
+      - **Alternatives Considered**: Options evaluated and why rejected
+
+      - **Consequences**: What becomes easier/harder, broken down by
+      backend/frontend layers, follow-up actions
+
+
+      Each ADR should be self-contained and understandable without reading
+      other documents. Reference proposal.md for motivation and design.md for
+      broader implementation context.
+    requires:
+      - proposal
   - id: tasks
     generates: tasks.md
     description: Implementation checklist with trackable tasks

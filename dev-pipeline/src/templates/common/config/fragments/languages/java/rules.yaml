@@ -1,0 +1,9 @@
+proposal:
+  - Must include API contract changes (endpoints, request/response DTOs)
+  - Must specify database migration strategy (Flyway/Liquibase)
+api-design:
+  - Must document all request/response DTOs with field types and constraints
+  - Must document idempotency and side effects for state-changing operations
+design:
+  - Must include ERD or data model changes
+  - Must specify middleware/interceptor chain changes

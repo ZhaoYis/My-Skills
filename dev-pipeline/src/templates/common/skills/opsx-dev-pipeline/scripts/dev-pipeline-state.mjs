@@ -50,9 +50,45 @@ const mutablePaths = new Set([
 
 const executionModes = new Set(['pipeline', 'standalone', 'hybrid']);
 
-function output(payload, exitCode = 0) {
+function output(payload, exitCode = 0, raw) {
+  const shouldStrip = raw === undefined ? !rawOutput : !raw;
+  if (shouldStrip && payload.state && typeof payload.state === 'object' && !Array.isArray(payload.state)) {
+    payload = { ...payload, state: summaryView(payload.state) };
+  }
   process.stdout.write(`${JSON.stringify(payload)}\n`);
   process.exitCode = exitCode;
+}
+
+function summaryView(state) {
+  const stripped = { ...state };
+
+  // Strip audit-only top-level fields not needed for agent decision-making.
+  delete stripped._version;
+  delete stripped._readVersion;
+  delete stripped.createdBy;
+  delete stripped.createdByEmail;
+  delete stripped.machineInfo;
+  delete stripped.fingerprintId;
+  delete stripped.fingerprintNonce;
+
+  // Strip decisions snapshots from phaseHistory entries (redundant with top-level decisions).
+  if (Array.isArray(stripped.phaseHistory)) {
+    stripped.phaseHistory = stripped.phaseHistory.map(
+      ({ decisions: _d, ...entry }) => entry,
+    );
+  }
+
+  // Strip decisions snapshots from review.rounds entries.
+  if (stripped.review && Array.isArray(stripped.review.rounds)) {
+    stripped.review = {
+      ...stripped.review,
+      rounds: stripped.review.rounds.map(
+        ({ decisions: _d, ...round }) => round,
+      ),
+    };
+  }
+
+  return stripped;
 }
 
 function statePath(root, changeName) {
@@ -599,6 +635,9 @@ const attemptRules = {
 };
 
 const [command, ...commandArgs] = process.argv.slice(2);
+const viewIdx = commandArgs.indexOf('--view');
+const rawOutput = viewIdx !== -1 && commandArgs[viewIdx + 1] === 'full';
+const filteredArgs = viewIdx === -1 ? commandArgs : commandArgs.filter((_, i) => i !== viewIdx && i !== viewIdx + 1);
 if (!command) {
   emitError(
     'missing-command',
@@ -607,7 +646,7 @@ if (!command) {
     EXIT_INVALID_TRANSITION,
   );
 } else {
-  const [changeName, ...args] = commandArgs;
+  const [changeName, ...args] = filteredArgs;
   const refreshAllFingerprints = command === 'refresh-fingerprints';
   let root;
   if (refreshAllFingerprints) {

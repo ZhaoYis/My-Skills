@@ -44,7 +44,7 @@ function runCommand(command: string, args: string[], cwd: string): Promise<Modul
 
 function runScript(args: string[]): Promise<ModuleResult> {
   return new Promise((resolve) => {
-    execFile(process.execPath, [scriptPath, ...args], { cwd: repo }, (error, stdout, stderr) => {
+    execFile(process.execPath, [scriptPath, ...args, '--view', 'full'], { cwd: repo }, (error, stdout, stderr) => {
       const code = error && 'code' in error && typeof error.code === 'number' ? error.code : 0;
       resolve({ code, stdout, stderr });
     });

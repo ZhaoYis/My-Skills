@@ -108,6 +108,7 @@ describe('scope selection (user vs project)', () => {
             supportsUserDestination: () => true,
             getRoot: () => '.',
             getSkillRootNote: () => undefined,
+      getHookMode: () => undefined,
           },
         ],
       ]);

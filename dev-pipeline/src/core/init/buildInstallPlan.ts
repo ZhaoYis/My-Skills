@@ -42,6 +42,7 @@ export interface BuildInstallPlanInput {
   languageConfigUpdate?: boolean;
   managedAssets?: ManagedAssetRecord[];
   registry: Parameters<typeof getToolAdapter>[0];
+  hooksEnabled?: boolean;
 }
 
 interface ManagedAssetIndex {
@@ -71,6 +72,7 @@ export function buildTemplateContext(params: {
   skillRootNote?: string;
   techStack?: TechStackId;
   techStackName?: string;
+  hooksEnabled?: boolean;
 }): Record<string, unknown> {
   const commandSeparator = (params.toolId === 'claude' || params.toolId === 'opencode') ? ':' : '-';
   const commandPrefix = params.toolId === 'codex' ? '$' : '/';
@@ -94,6 +96,7 @@ export function buildTemplateContext(params: {
     packageLicense: PACKAGE_LICENSE,
     packageRepoUrl: PACKAGE_REPO_URL,
     skillRootNote: params.skillRootNote?.replaceAll('{skillsDir}', params.skillsDir),
+    hooksEnabled: params.hooksEnabled ?? true,
     askTool: ASK_TOOL_MAP[params.toolId],
     commands: {
       apply: commandInvocation('apply'),
@@ -103,6 +106,7 @@ export function buildTemplateContext(params: {
       explore: commandInvocation('explore'),
       grillMe: commandInvocation('grill-me'),
       grilling: commandInvocation('grilling'),
+      init: commandInvocation('init'),
       propose: commandInvocation('propose'),
       sync: commandInvocation('sync'),
       verify: commandInvocation('verify'),
@@ -249,7 +253,7 @@ async function expandBundle(
     .filter((entry) => asset.includeExtensions?.includes(path.extname(entry)) ?? true);
 
   return selectBundleEntries(eligibleEntries, language).map(({ entry, relativeDestination }) => {
-    const sourcePath = path.join(sourceRoot, entry);
+    const sourcePath = normalizeBundleEntry(path.join(sourceRoot, entry));
     const fileName = path.basename(entry);
     return {
       assetId: `${asset.id}:${entry}`,
@@ -295,6 +299,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
     skillRootNote: adapter.getSkillRootNote(),
     techStack: input.techStack,
     techStackName: techStackDefinition?.displayName,
+    hooksEnabled: input.hooksEnabled,
   });
 
   const selectedAssets = assetManifest
@@ -329,19 +334,9 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
         );
       }
 
-      let renderedSource = path.join(input.rootDir, renderString(asset.source, templateContext));
-      if (asset.id === 'stack-config' && input.techStack) {
-        const techStackSource = path.join(
-          input.rootDir,
-          renderString(
-            'src/templates/common/config/config.{{stack}}.{{techStack}}.yaml.hbs',
-            templateContext,
-          ),
-        );
-        if (await fs.pathExists(techStackSource)) {
-          renderedSource = techStackSource;
-        }
-      }
+      const renderedSource = normalizeBundleEntry(
+        path.join(input.rootDir, renderString(asset.source, templateContext)),
+      );
 
       return [
         {
@@ -402,6 +397,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
     techStack: input.techStack,
     language,
     features: effectiveFeatures,
+    hooksEnabled: input.hooksEnabled ?? true,
     scope,
     adapter,
     files,

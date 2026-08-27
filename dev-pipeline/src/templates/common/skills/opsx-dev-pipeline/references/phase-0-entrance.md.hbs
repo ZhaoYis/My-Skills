@@ -67,7 +67,7 @@ node <SKILL_ROOT>/scripts/preflight.mjs
 
 1. 读取持久化状态：
    ```bash
-   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<name>"
+   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<name>" --view full
    ```
 2. 若 `schemaVersion=1`，执行 `migrate-schema "<name>"` 展示迁移详情；只有用户明确确认后才执行 `migrate-schema "<name>" --confirm`。拒绝迁移时保持 v1 原文件不变并终止续接。
 3. 并行核对事实：活跃/归档 change、任务勾选、状态中记录的审查报告、Git 分支和冲突状态。

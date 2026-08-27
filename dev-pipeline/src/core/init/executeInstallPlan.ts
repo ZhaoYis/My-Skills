@@ -1,6 +1,7 @@
 import path from 'node:path';
 import fs from 'fs-extra';
 import pc from 'picocolors';
+import { composeStackConfig, resolveConfigRootFromSkeleton } from '../config/composeStackConfig.js';
 import { readManifest, writeManifest } from '../manifest/io.js';
 import type { ManagedAssetRecord } from '../manifest/types.js';
 import { PACKAGE_NAME, TEMPLATE_VERSION } from '../runtime/meta.js';
@@ -8,6 +9,10 @@ import { getTechStackById } from '../tech-stack/registry.js';
 import { buildTemplateContext } from './buildInstallPlan.js';
 import { renderTemplate } from './renderTemplates.js';
 import type { InstallPlan } from './types.js';
+
+function isStackConfigSkeleton(sourcePath: string): boolean {
+  return sourcePath.replaceAll('\\', '/').endsWith('fragments/skeleton.yaml.hbs');
+}
 
 function appendContent(existingContent: string, nextContent: string): string {
   if (!existingContent) {
@@ -179,6 +184,7 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
       skillRootNote: plan.adapter.getSkillRootNote(),
       techStack: plan.techStack,
       techStackName: plan.techStack ? getTechStackById(plan.techStack)?.displayName : undefined,
+      hooksEnabled: plan.hooksEnabled,
     }),
     managedAssets: [] as Array<{ id: string; destination: string }>,
   };
@@ -207,7 +213,16 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
     await fs.ensureDir(path.dirname(file.destinationPath));
 
     if (file.kind === 'template') {
-      const content = await renderTemplate(file.sourcePath, context);
+      const content =
+        file.assetId === 'stack-config' && isStackConfigSkeleton(file.sourcePath)
+          ? await composeStackConfig({
+              configRoot: resolveConfigRootFromSkeleton(file.sourcePath),
+              stack: plan.stack ?? 'backend',
+              techStack: plan.techStack,
+              language: plan.language,
+              context,
+            })
+          : await renderTemplate(file.sourcePath, context);
 
       if (file.resolution === 'append') {
         if (file.appendStrategy === 'none') {
@@ -239,6 +254,16 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
       overwrite: file.resolution === 'overwrite',
     });
     managedFiles.push(file);
+  }
+
+  // Hook scripts must be executable for the tools to invoke them directly.
+  // POSIX-only: Windows has no exec bits and fs.chmod cannot set them there.
+  if (process.platform !== 'win32') {
+    for (const file of managedFiles) {
+      if (file.assetId.split(':', 1)[0] === 'pipeline-hooks-script-bundle') {
+        await fs.chmod(file.destinationPath, 0o755);
+      }
+    }
   }
 
   const writtenAssets = managedFiles.map((file) => ({

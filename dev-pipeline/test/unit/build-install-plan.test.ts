@@ -64,6 +64,7 @@ function createAdapter(
     supportsUserDestination: () => true,
     getRoot: () => '.',
     getSkillRootNote: () => undefined,
+      getHookMode: () => undefined,
   };
 }
 
@@ -133,10 +134,11 @@ describe('buildInstallPlan', () => {
   });
 
   it.each([
-    ['backend', 'java-spring-boot', 'config.backend.java-spring-boot.yaml.hbs'],
-    ['frontend', 'react-vite', 'config.frontend.react-vite.yaml.hbs'],
-    ['fullstack', 'java-react', 'config.fullstack.java-react.yaml.hbs'],
-  ] as const)('selects the %s tech stack config template', async (stack, techStack, template) => {
+    ['backend', 'java-spring-boot'],
+    ['frontend', 'react-vite'],
+    ['fullstack', 'java-react'],
+    ['fullstack', 'python-react'],
+  ] as const)('uses the composable skeleton for %s %s stack-config', async (stack, techStack) => {
     const plan = await buildInstallPlan({
       ...createPlanInput(),
       stack,
@@ -145,7 +147,9 @@ describe('buildInstallPlan', () => {
 
     expect(plan.techStack).toBe(techStack);
     expect(
-      plan.files.find((file) => file.assetId === 'stack-config')?.sourcePath.endsWith(template),
+      plan.files
+        .find((file) => file.assetId === 'stack-config')
+        ?.sourcePath.endsWith('fragments/skeleton.yaml.hbs'),
     ).toBe(true);
   });
 
@@ -165,11 +169,11 @@ describe('buildInstallPlan', () => {
     expect(
       plan.files
         .find((file) => file.assetId === 'stack-config')
-        ?.sourcePath.endsWith('config.backend.yaml.hbs'),
+        ?.sourcePath.endsWith('fragments/skeleton.yaml.hbs'),
     ).toBe(true);
   });
 
-  it('selects the fullstack config template', async () => {
+  it('selects the fullstack config skeleton', async () => {
     const plan = await buildInstallPlan({
       ...createPlanInput(),
       stack: 'fullstack',
@@ -179,7 +183,7 @@ describe('buildInstallPlan', () => {
     expect(
       plan.files
         .find((file) => file.assetId === 'stack-config')
-        ?.sourcePath.endsWith('config.fullstack.yaml.hbs'),
+        ?.sourcePath.endsWith('fragments/skeleton.yaml.hbs'),
     ).toBe(true);
   });
 
@@ -191,7 +195,7 @@ describe('buildInstallPlan', () => {
     });
     const schemaBundleFiles = plan.files.filter((file) => file.assetId.includes('-schema-bundle:'));
 
-    expect(schemaBundleFiles).toHaveLength(6);
+    expect(schemaBundleFiles).toHaveLength(7);
     expect(
       schemaBundleFiles.every((file) => file.assetId.startsWith('fullstack-schema-bundle:')),
     ).toBe(true);
@@ -280,6 +284,7 @@ describe('buildInstallPlan', () => {
       'opsx-grill-me',
       'opsx-grilling',
       'opsx-dev-spec-design',
+      'opsx-init',
     ]) {
       await fs.ensureDir(path.join(rootDir, 'src/templates/common/skills', skill, 'agents'));
     }
@@ -506,8 +511,9 @@ describe('buildInstallPlan', () => {
     expect(initPlan.files.find((file) => file.assetId === 'opsx-propose-command')?.resolution).toBe(
       'overwrite',
     );
+    // common-readme 是用户维护的文档，存在时静默跳过，不进入冲突提示流程
     expect(initPlan.files.find((file) => file.assetId === 'common-readme')?.resolution).toBe(
-      'unresolved',
+      'skip',
     );
 
     const syncPlan = await buildInstallPlan({

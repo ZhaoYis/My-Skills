@@ -367,6 +367,7 @@ describe('tool matrix', () => {
       'base',
       'commands',
       'docs',
+      'hooks',
       'schema',
       'skills',
     ]);

@@ -65,4 +65,36 @@ describe('tech stack input collection', () => {
     ]);
     expect(answers.techStack).toBe('react-vite');
   });
+
+  it('accepts python-react for fullstack and lists it in interactive choices', async () => {
+    const answers = await collectInputs(
+      '/tmp/demo',
+      { yes: true, stack: 'fullstack', techStack: 'python-react' },
+      new Map(),
+    );
+    expect(answers.techStack).toBe('python-react');
+
+    vi.mocked(prompts).mockResolvedValueOnce({
+      projectName: 'demo',
+      tool: 'claude',
+      stack: 'fullstack',
+      techStack: 'python-react',
+      language: 'zh',
+    });
+
+    await collectInputs('/tmp/demo', {}, new Map());
+    const questions = vi.mocked(prompts).mock.calls[0]?.[0];
+    const techStackQuestion = Array.isArray(questions)
+      ? questions.find((question) => question.name === 'techStack')
+      : undefined;
+    const choices =
+      typeof techStackQuestion?.choices === 'function'
+        ? techStackQuestion.choices(undefined, { stack: 'fullstack' }, techStackQuestion)
+        : techStackQuestion?.choices;
+
+    expect(choices).toEqual([
+      expect.objectContaining({ title: 'Java Spring Boot + React', value: 'java-react' }),
+      expect.objectContaining({ title: 'Python FastAPI + React', value: 'python-react' }),
+    ]);
+  });
 });

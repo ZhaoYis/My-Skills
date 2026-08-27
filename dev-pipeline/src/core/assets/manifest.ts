@@ -1,3 +1,4 @@
+import { STACK_CONFIG_SKELETON } from '../config/paths.js';
 import type { AssetDefinition } from './types.js';
 
 export const assetManifest: AssetDefinition[] = [
@@ -8,16 +9,24 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'base',
     source: 'src/templates/common/base/README.md.hbs',
     destination: 'README.md',
-    writePolicy: { appendStrategy: 'simple' },
+    // 用户 README 由用户维护：目标已存在时静默跳过，未存在时静默写入。
+    // 显式 --force 仍会覆盖（由 buildInstallPlan 中的 force 分支处理）。
+    writePolicy: {
+      onConflict: { init: 'skip', sync: 'skip', upgrade: 'skip' },
+    },
   },
   {
     id: 'common-gitignore',
-    kind: 'static',
+    kind: 'template',
     scope: 'common',
     feature: 'base',
     source: 'src/templates/common/base/gitignore',
     destination: '.gitignore',
-    writePolicy: { appendStrategy: 'none' },
+    // 用户 .gitignore 由用户维护：目标已存在时静默跳过，未存在时静默写入。
+    // 显式 --force 仍会覆盖（由 buildInstallPlan 中的 force 分支处理）。
+    writePolicy: {
+      onConflict: { init: 'skip', sync: 'skip', upgrade: 'skip' },
+    },
   },
   {
     id: 'frontend-schema-bundle',
@@ -86,7 +95,7 @@ export const assetManifest: AssetDefinition[] = [
     kind: 'template',
     scope: 'common',
     feature: 'schema',
-    source: 'src/templates/common/config/config.{{stack}}.yaml.hbs',
+    source: STACK_CONFIG_SKELETON,
     destination: 'openspec/config.yaml',
     writePolicy: { appendStrategy: 'config-merge' },
   },
@@ -145,6 +154,18 @@ export const assetManifest: AssetDefinition[] = [
     feature: 'skills',
     source: 'src/templates/common/skills/opsx-dev-spec-design',
     destination: '{{skillsDir}}/opsx-dev-spec-design',
+    includeExtensions: ['.md', '.hbs', '.yaml'],
+    templateFiles: ['SKILL.md.hbs'],
+    excludePatterns: ['.gitkeep'],
+    writePolicy: { appendStrategy: 'simple', appendExtensions: ['.md'] },
+  },
+  {
+    id: 'opsx-init-skill-bundle',
+    kind: 'bundle',
+    scope: 'common',
+    feature: 'skills',
+    source: 'src/templates/common/skills/opsx-init',
+    destination: '{{skillsDir}}/opsx-init',
     includeExtensions: ['.md', '.hbs', '.yaml'],
     templateFiles: ['SKILL.md.hbs'],
     excludePatterns: ['.gitkeep'],
@@ -303,6 +324,23 @@ export const assetManifest: AssetDefinition[] = [
     },
   },
   {
+    id: 'opsx-init-command',
+    kind: 'template',
+    scope: 'common',
+    feature: 'commands',
+    source: 'src/templates/common/commands/opsx/init.md.hbs',
+    destination: '{{commandsDir}}/opsx/init.md',
+    toolDestinations: {
+      cursor: '{{commandsDir}}/opsx-init.md',
+      codex: '{{commandsDir}}/opsx-init/SKILL.md',
+    },
+    tools: ['claude', 'cursor', 'opencode', 'codex'],
+    writePolicy: {
+      appendStrategy: 'simple',
+      onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' },
+    },
+  },
+  {
     id: 'claude-docs',
     kind: 'template',
     scope: 'tool',
@@ -331,5 +369,46 @@ export const assetManifest: AssetDefinition[] = [
     source: 'src/templates/tools/cursor/overlay/.cursor/commands/README.md.hbs',
     destination: '.cursor/commands/README.md',
     writePolicy: { appendStrategy: 'simple' },
+  },
+  {
+    id: 'pipeline-hooks-script-bundle',
+    kind: 'bundle',
+    scope: 'common',
+    feature: 'hooks',
+    tools: ['claude', 'opencode'],
+    source: 'src/templates/common/scripts/hooks',
+    destination: '{{skillsDir}}/opsx-dev-pipeline/scripts/hooks',
+    includeExtensions: ['.mjs'],
+    excludePatterns: ['.gitkeep'],
+    writePolicy: {
+      appendStrategy: 'simple',
+      onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' },
+    },
+  },
+  {
+    id: 'claude-settings-hooks',
+    kind: 'template',
+    scope: 'tool',
+    feature: 'hooks',
+    tools: ['claude'],
+    source: 'src/templates/tools/claude/overlay/.claude/settings.json.hbs',
+    destination: '.claude/settings.json',
+    writePolicy: {
+      appendStrategy: 'simple',
+      onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' },
+    },
+  },
+  {
+    id: 'opencode-config-hooks',
+    kind: 'template',
+    scope: 'tool',
+    feature: 'hooks',
+    tools: ['opencode'],
+    source: 'src/templates/tools/opencode/opencode.json.hbs',
+    destination: '.opencode/opencode.json',
+    writePolicy: {
+      appendStrategy: 'simple',
+      onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' },
+    },
   },
 ];

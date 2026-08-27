@@ -15,13 +15,12 @@ function resolve(
 
 describe('fileWritePolicy', () => {
   it('resolves asset-specific append strategies', () => {
-    expect(resolve('common-readme', '/project/README.md', 'template').appendStrategy).toBe(
-      'simple',
-    );
+    // common-readme / common-gitignore 用户维护，存在即跳过：append 策略无意义，固定为 none
+    expect(resolve('common-readme', '/project/README.md', 'template').appendStrategy).toBe('none');
     expect(
       resolve('stack-config', '/project/openspec/config.yaml', 'template').appendStrategy,
     ).toBe('config-merge');
-    expect(resolve('common-gitignore', '/project/.gitignore', 'static').appendStrategy).toBe(
+    expect(resolve('common-gitignore', '/project/.gitignore', 'template').appendStrategy).toBe(
       'none',
     );
   });

@@ -1,0 +1,5 @@
+api-design:
+  - Must specify authentication and authorization requirements for each endpoint
+  - Must include error response contracts and status codes
+specs:
+  - Use Given/When/Then format for API behavior scenarios

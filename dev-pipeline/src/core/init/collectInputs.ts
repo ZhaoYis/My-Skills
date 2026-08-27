@@ -31,21 +31,39 @@ function assertTechStackMatchesParent(techStack: TechStackId, parentStack: Stack
   }
 }
 
-function resolveFeatures(option: InitOptions['feature']): FeatureId[] {
+function resolveFeatures(option: InitOptions['feature']): {
+  features: FeatureId[];
+  hooksEnabled: boolean;
+} {
   const requested = option === undefined ? [] : Array.isArray(option) ? option : [option];
   const normalized = requested.map((value) => String(value).trim()).filter(Boolean);
-  const unknown = normalized.filter(
+
+  // `hooks` / `no-hooks` are feature toggles, not standalone feature ids.
+  // They control whether the `hooks` capability is in the final list.
+  const explicitHooks = normalized.includes('hooks');
+  const explicitNoHooks = normalized.includes('no-hooks');
+  if (explicitHooks && explicitNoHooks) {
+    throw new Error('`hooks` 与 `no-hooks` 互斥，请只传其中一个');
+  }
+  const hooksEnabled = explicitNoHooks ? false : true;
+
+  const filtered = normalized.filter((v) => v !== 'hooks' && v !== 'no-hooks');
+  const unknown = filtered.filter(
     (value) => !(ALL_FEATURE_IDS as readonly string[]).includes(value),
   );
 
   if (unknown.length > 0) {
     throw new Error(
-      `Unknown feature(s): ${unknown.join(', ')}. Valid features: ${ALL_FEATURE_IDS.join(', ')}.`,
+      `Unknown feature(s): ${unknown.join(', ')}. Valid features: ${ALL_FEATURE_IDS.join(', ')}, hooks, no-hooks.`,
     );
   }
 
-  // All features are default features; no optional features remain
-  return [...ALL_FEATURE_IDS];
+  // All features are default features; the `hooks` toggle controls whether
+  // the `hooks` capability is part of the resolved feature list.
+  const features: FeatureId[] = hooksEnabled ? [...ALL_FEATURE_IDS] : ALL_FEATURE_IDS.filter(
+    (f) => f !== 'hooks',
+  );
+  return { features, hooksEnabled };
 }
 
 export function resolveDocLanguage(value: unknown): DocLanguage | undefined {
@@ -98,7 +116,7 @@ export async function collectInputs(
   if (requestedStack && requestedTechStack) {
     assertTechStackMatchesParent(requestedTechStack, requestedStack);
   }
-  const features = resolveFeatures(options.feature);
+  const { features, hooksEnabled } = resolveFeatures(options.feature);
 
   if (options.yes) {
     if (!requestedStack) {
@@ -114,6 +132,7 @@ export async function collectInputs(
       techStack: requestedTechStack,
       language: defaultLanguage,
       features,
+      hooksEnabled,
       scope: requestedScope ?? 'project',
     };
   }
@@ -209,6 +228,7 @@ export async function collectInputs(
     techStack,
     language: (response.language ?? defaultLanguage) as DocLanguage,
     features,
+    hooksEnabled,
     scope: (response.scope ?? requestedScope ?? 'project') as InstallScope,
   };
 }

@@ -1,0 +1,31 @@
+language: {{language}}
+schema: {{stack}}
+context: |
+  ## 全局规范
+
+  ### 语言要求
+{{{docLanguageBlock}}}
+
+  ### 编码规范
+{{{conventionsBlock}}}
+{{#if uiBlock}}
+
+  ### UI 组件规范
+{{{uiBlock}}}
+{{/if}}
+
+  ## 项目信息
+  Project: {{projectName}}
+  Project Type: {{projectType}}
+{{{projectInfoBlock}}}
+{{#if stackBlock}}
+
+stack:
+{{{stackBlock}}}
+{{/if}}
+
+rules:
+{{{rulesBlock}}}
+
+pipeline:
+{{{pipelineBlock}}}

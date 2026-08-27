@@ -61,7 +61,7 @@ async function transition(from, to, overrides = {}) {
   const state = baseState(changeName, from, overrides);
   await writeFile(path.join(stateDirectory, `${changeName}.json`), `${JSON.stringify(state)}\n`);
 
-  const result = spawnSync(process.execPath, [script, 'transition', changeName, String(to), '99'], {
+  const result = spawnSync(process.execPath, [script, 'transition', changeName, String(to), '99', '--view', 'full'], {
     cwd: repo,
     encoding: 'utf8',
   });
@@ -108,6 +108,8 @@ describe('dev-pipeline-state transition gates', () => {
         'Fingerprint Tester',
         '--feature-id',
         'REQ-2026-001',
+        '--view',
+        'full',
       ],
       { cwd: repo, encoding: 'utf8' },
     );
@@ -131,6 +133,8 @@ describe('dev-pipeline-state transition gates', () => {
         'Upgrade Tester',
         '--feature-id',
         'REQ-2026-002',
+        '--view',
+        'full',
       ],
       { cwd: repo, encoding: 'utf8' },
     );

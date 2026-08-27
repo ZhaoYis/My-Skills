@@ -1,0 +1,34 @@
+---
+{{#if (isTool "codex")}}
+name: opsx-init
+{{else}}{{#if (isTool "cursor")}}
+name: /opsx-init
+id: opsx-init
+{{else}}
+name: opsx:init
+{{/if}}{{/if}}
+description: Initialize or update openspec/config.yaml based on current project analysis
+{{#if (isTool "claude")}}
+allowed-tools: Bash, {{askTool}}
+category: Workflow
+tags: [workflow, config, experimental]
+{{else}}{{#if (isTool "cursor")}}
+category: Workflow
+{{/if}}{{/if}}
+---
+
+# opsx:init
+
+Use this command as the entrypoint for the bundled `opsx-init` skill.
+
+## Intent
+
+Analyze the current project and initialize or update `openspec/config.yaml` with the detected tech stack, language, conventions, and rules.
+
+## Flow
+
+Load and follow the `opsx-init` skill at:
+
+- `{{skillsDir}}/opsx-init/SKILL.md`
+
+It will detect the project's tech stack, programming languages, AI tools, and other context, then generate or update `openspec/config.yaml` accordingly.

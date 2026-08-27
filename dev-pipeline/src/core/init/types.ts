@@ -9,6 +9,7 @@ export interface InstallPlan {
   techStack?: TechStackId;
   language: DocLanguage;
   features: FeatureId[];
+  hooksEnabled?: boolean;
   scope: InstallScope;
   adapter: ToolAdapter;
   files: InstallFile[];
