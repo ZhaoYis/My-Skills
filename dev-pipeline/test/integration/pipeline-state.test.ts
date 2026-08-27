@@ -68,7 +68,7 @@ function state(...args: string[]): Promise<StateResult> {
     args.includes('--feature-id') || args.includes('--skip-feature-association');
   const normalizedArgs =
     args[0] === 'init' && !hasFeatureDecision ? [...args, '--skip-feature-association'] : args;
-  return run(process.execPath, [stateScript, ...normalizedArgs]);
+  return run(process.execPath, [stateScript, ...normalizedArgs, '--view', 'full']);
 }
 
 function rawState(...args: string[]): Promise<StateResult> {
@@ -960,7 +960,7 @@ describe('pipeline state machine', () => {
     await state('transition', 'summary-test', '2', '6');
     await state('attempt', 'summary-test', 'review', 'passed');
 
-    const result = await state('get', 'summary-test');
+    const result = await rawState('get', 'summary-test');
     expect(result.code).toBe(0);
     const s = result.payload.state as Record<string, unknown>;
 

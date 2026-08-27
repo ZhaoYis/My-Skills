@@ -50,7 +50,11 @@ const mutablePaths = new Set([
 
 const executionModes = new Set(['pipeline', 'standalone', 'hybrid']);
 
-function output(payload, exitCode = 0) {
+function output(payload, exitCode = 0, raw) {
+  const shouldStrip = raw === undefined ? !rawOutput : !raw;
+  if (shouldStrip && payload.state && typeof payload.state === 'object' && !Array.isArray(payload.state)) {
+    payload = { ...payload, state: summaryView(payload.state) };
+  }
   process.stdout.write(`${JSON.stringify(payload)}\n`);
   process.exitCode = exitCode;
 }
@@ -85,24 +89,6 @@ function summaryView(state) {
   }
 
   return stripped;
-}
-
-function resolveViewArg(args) {
-  const viewIdx = args.indexOf('--view');
-  if (viewIdx === -1) return { view: 'summary', args };
-  const view = args[viewIdx + 1];
-  if (view !== 'full' && view !== 'summary') {
-    emitError(
-      'invalid-view-arg',
-      '--view 仅支持 summary 或 full',
-      'choose-valid-view',
-      EXIT_INVALID_TRANSITION,
-    );
-  }
-  return {
-    view,
-    args: args.filter((_, i) => i !== viewIdx && i !== viewIdx + 1),
-  };
 }
 
 function statePath(root, changeName) {
@@ -649,6 +635,9 @@ const attemptRules = {
 };
 
 const [command, ...commandArgs] = process.argv.slice(2);
+const viewIdx = commandArgs.indexOf('--view');
+const rawOutput = viewIdx !== -1 && commandArgs[viewIdx + 1] === 'full';
+const filteredArgs = viewIdx === -1 ? commandArgs : commandArgs.filter((_, i) => i !== viewIdx && i !== viewIdx + 1);
 if (!command) {
   emitError(
     'missing-command',
@@ -657,7 +646,7 @@ if (!command) {
     EXIT_INVALID_TRANSITION,
   );
 } else {
-  const [changeName, ...args] = commandArgs;
+  const [changeName, ...args] = filteredArgs;
   const refreshAllFingerprints = command === 'refresh-fingerprints';
   let root;
   if (refreshAllFingerprints) {
@@ -795,9 +784,7 @@ if (!command) {
       const state = await loadState(root, changeName);
       if (state) {
         if (command === 'get') {
-          const { view, args: remainingArgs } = resolveViewArg(args);
-          const stateToOutput = view === 'summary' ? summaryView(state) : state;
-          output({ status: 'ok', state: stateToOutput });
+          output({ status: 'ok', state });
         } else if (command === 'migrate-schema') {
           if (state.schemaVersion === SCHEMA_VERSION) {
             output({ status: 'ok', reason: 'already-v3', state });
