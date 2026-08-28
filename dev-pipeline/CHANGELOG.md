@@ -10,15 +10,36 @@
 
 ### Changed
 
-- **chore(deps)**：升级 `@fission-ai/openspec` 至 `^1.7.0`，升级
-`@biomejs/biome` 至 `^2.5.3`，清理过期的 `.tgz` 产物。
+- **feat(manifest)**：升级 manifest 到 `schemaVersion = 2`，引入
+`tools: ToolId[]` 字段记录所有已安装的工具；旧版单一 `tool` 字段保留
+作为向后兼容的"主工具"标识。新版结构允许在同一项目中多次执行
+`init` 安装不同工具（例如先装 `claude` 再装 `opencode`），第二次
+`init` 不会覆盖第一次的资产记录。
+- **feat(manifest)**：`managedAssets[]` 中每条资产新增可选 `tool`
+字段用于归属标记；`README.md`、`openspec/config.yaml` 等工具无关
+资产保持无标签。读取老版 manifest 时会按目标路径前缀和资产 id 前缀
+自动反推工具归属。
+- **feat(uninstall)**：`uninstall` 命令新增 `--tool <id>` 选项，仅
+卸载指定工具的资产；不指定时维持原有"全部卸载"语义，但 manifest
+的 `tools` 字段会随单工具卸载同步收敛。
 
 ### Added
 
+- **feat(sync/upgrade)**：`sync` 与 `upgrade` 现在会遍历 manifest 中
+记录的所有工具，逐个重新渲染受管文件，确保多工具安装的资产在升级
+时同步刷新。
+- **feat(doctor)**：`doctor` 输出新增 `tools` 列表；当同时存在多个
+工具时额外打印 `active tool` 行。
 - 新增 `opsx-init` skill 与 command 资产包
 （`opsx-dev-pipeline-skill-bundle:SKILL.md.hbs`、
 `opsx-dev-pipeline-command`），已纳入 manifest，使 `init` 在安装
 dev-pipeline skill 的同时一并安装 init 辅助 skill。
+
+### Tests
+
+- **test**：新增 `test/integration/multi-tool.test.ts`，覆盖
+schema 升级、跨工具 init 合并、`--tool` 卸载隔离、共享资产保留、
+重复 init 幂等、错误工具拒绝等场景。
 
 ### Fixed
 

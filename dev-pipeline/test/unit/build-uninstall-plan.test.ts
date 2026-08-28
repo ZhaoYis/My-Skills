@@ -25,9 +25,10 @@ function createManifestResult(
     path: path.join(targetDir, 'opsx-dev-pipeline.json'),
     storage: 'standalone',
     manifest: {
-      schemaVersion: 1,
+      schemaVersion: 2,
       projectName: 'demo',
       tool: 'claude',
+      tools: ['claude'],
       features: ['base', 'skills', 'commands', 'docs'],
       templateVersion: '0.2.1',
       packageName: 'opsx-dev-pipeline',

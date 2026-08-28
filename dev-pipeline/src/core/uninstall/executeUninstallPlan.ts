@@ -35,22 +35,31 @@ async function updateManifestAfterUninstall(plan: UninstallPlan): Promise<void> 
     return;
   }
 
-  const removedAssetIds = new Set(
-    plan.files.filter((file) => file.resolution === 'remove').map((file) => file.assetId),
-  );
-  const remainingAssets = manifestResult.manifest.managedAssets.filter(
-    (asset) => !removedAssetIds.has(asset.id),
-  );
+  const isFullUninstall = !plan.tool;
+  const installedTools = manifestResult.manifest.tools;
+  const remainingTools = isFullUninstall
+    ? []
+    : installedTools.filter((entry) => entry !== plan.tool);
 
-  if (remainingAssets.length === 0) {
+  const remainingAssets = manifestResult.manifest.managedAssets.filter((asset) => {
+    if (isFullUninstall) return false;
+    if (asset.tool) {
+      return asset.tool !== plan.tool;
+    }
+    // Shared asset: keep it only when at least one other tool survives the uninstall.
+    return remainingTools.length > 0;
+  });
+
+  if (remainingAssets.length === 0 && remainingTools.length === 0) {
     await removeManifest(plan.targetDir, plan.manifestStorage);
     return;
   }
 
   await writeManifest(plan.targetDir, {
     ...manifestResult.manifest,
-    templateVersion: TEMPLATE_VERSION,
+    tools: remainingTools,
     managedAssets: remainingAssets,
+    templateVersion: TEMPLATE_VERSION,
   });
 }
 

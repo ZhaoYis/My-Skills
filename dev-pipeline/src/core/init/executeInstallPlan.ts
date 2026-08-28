@@ -1,8 +1,14 @@
 import path from 'node:path';
 import fs from 'fs-extra';
 import pc from 'picocolors';
+import type { ToolId } from '../adapters/types.js';
 import { composeStackConfig, resolveConfigRootFromSkeleton } from '../config/composeStackConfig.js';
-import { readManifest, writeManifest } from '../manifest/io.js';
+import {
+  CURRENT_SCHEMA_VERSION,
+  inferAssetTool,
+  readManifest,
+  writeManifest,
+} from '../manifest/io.js';
 import type { ManagedAssetRecord } from '../manifest/types.js';
 import { PACKAGE_NAME, TEMPLATE_VERSION } from '../runtime/meta.js';
 import { getTechStackById } from '../tech-stack/registry.js';
@@ -149,13 +155,30 @@ function mergeManagedAssets(
   existingAssets: ManagedAssetRecord[],
   writtenAssets: ManagedAssetRecord[],
 ): ManagedAssetRecord[] {
-  const merged = new Map(existingAssets.map((asset) => [asset.id, asset]));
+  // Tool-attributable assets are keyed by (id, tool) so installing the same bundle id
+  // for two different tools (e.g. pipeline-hooks-script-bundle for claude and opencode,
+  // which land under .claude/... and .opencode/...) keeps two separate records.
+  // Shared assets (no `tool` field) are keyed by id alone because only one copy exists.
+  const dedupeKey = (asset: ManagedAssetRecord) =>
+    asset.tool ? `${asset.id}::${asset.tool}` : asset.id;
+  const merged = new Map(existingAssets.map((asset) => [dedupeKey(asset), asset]));
 
   for (const asset of writtenAssets) {
-    merged.set(asset.id, asset);
+    merged.set(dedupeKey(asset), asset);
   }
 
   return Array.from(merged.values());
+}
+
+function mergeTools(existing: ToolId[] | undefined, next: ToolId): ToolId[] {
+  const seen = new Set<ToolId>();
+  const result: ToolId[] = [];
+  for (const tool of [...(existing ?? []), next]) {
+    if (seen.has(tool)) continue;
+    seen.add(tool);
+    result.push(tool);
+  }
+  return result;
 }
 
 function successMessage(mode: InstallPlan['mode'], displayName: string): string {
@@ -266,20 +289,32 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
     }
   }
 
-  const writtenAssets = managedFiles.map((file) => ({
-    id: file.assetId,
-    destination: path.relative(plan.targetDir, file.destinationPath),
-  }));
+  const writtenAssets: ManagedAssetRecord[] = managedFiles.map((file) => {
+    const destination = path.relative(plan.targetDir, file.destinationPath);
+    const record: ManagedAssetRecord = { id: file.assetId, destination };
+    // Tag the asset with its owning tool when the destination lives inside a tool
+    // directory (e.g. .claude/, .opencode/) OR when the asset id encodes a tool
+    // prefix (e.g. `claude-docs` → CLAUDE.md). Shared assets stay untagged so they
+    // survive any single-tool uninstall.
+    const inferredTool = inferAssetTool(destination, file.assetId);
+    if (inferredTool) {
+      record.tool = inferredTool;
+    }
+    return record;
+  });
 
-  if (plan.mode === 'init') {
-    context.managedAssets = writtenAssets;
-  } else {
-    const existingManifest = await readManifest(plan.targetDir);
-    context.managedAssets = mergeManagedAssets(
-      existingManifest?.manifest.managedAssets ?? [],
-      writtenAssets,
-    );
-  }
+  // Always merge with any pre-existing manifest so multiple tools installed across
+  // separate `init` runs coexist. The first install has no prior manifest and behaves
+  // like the original "replace everything" path.
+  const existingManifest = await readManifest(plan.targetDir);
+  const priorAssets = existingManifest?.manifest.managedAssets ?? [];
+  context.managedAssets = mergeManagedAssets(priorAssets, writtenAssets);
+
+  const priorTools: ToolId[] = [
+    ...(existingManifest?.manifest.tools ?? []),
+    ...(existingManifest?.manifest.tool ? [existingManifest.manifest.tool] : []),
+  ];
+  const nextTools = mergeTools(priorTools, plan.tool);
 
   // Always ensure the schema line in config.yaml matches the selected stack,
   // even when the file was skipped during conflict resolution.
@@ -308,9 +343,10 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
   }
 
   await writeManifest(plan.targetDir, {
-    schemaVersion: 1,
+    schemaVersion: CURRENT_SCHEMA_VERSION,
     projectName: plan.projectName,
     tool: plan.tool,
+    tools: nextTools,
     stack: plan.stack,
     techStack: plan.techStack,
     language: plan.language,
