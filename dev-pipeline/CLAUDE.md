@@ -42,6 +42,7 @@ npm install
 - Init 冲突策略：`--yes` 跳过冲突文件，`--force` 覆盖，默认交互式提示。
 - `init` / `sync` / `upgrade` 受版本门禁控制：若 `manifest.templateVersion > cli.version`，命令拒绝执行（在 `--yes` 下则会提示确认）。
 - 用户可见变更需同步记录到 `CHANGELOG.md`（遵循 Keep a Changelog 格式，版本号由 `npm version` 驱动）。
+- 每次改动必须配套或更新相应的单元测试；提交前 `npm test` 全绿。
 
 
 
