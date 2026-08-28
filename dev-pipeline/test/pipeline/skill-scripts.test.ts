@@ -73,13 +73,39 @@ async function writeOpenspecMock(content: string, _exitCode = 0): Promise<void> 
   }
 }
 
+function findExecutableDir(name: string): string | null {
+  const dirs = (process.env.PATH ?? '').split(path.delimiter).filter(Boolean);
+  const extensions =
+    process.platform === 'win32'
+      ? ['.cmd', '.bat', '.exe', '']
+      : [''];
+  for (const dir of dirs) {
+    for (const ext of extensions) {
+      try {
+        const full = path.join(dir, `${name}${ext}`);
+        fs.accessSync(full, fs.constants.X_OK);
+        return dir;
+      } catch {
+        // try the next candidate
+      }
+    }
+  }
+  return null;
+}
+
 function commandEnv(options: { isolateOpenspec?: boolean } = {}): NodeJS.ProcessEnv {
   const env = { ...process.env };
+  env.FORCE_COLOR = '0';
+  env.NO_COLOR = '1';
   const nodeBin = path.dirname(process.execPath);
+  const gitBin = findExecutableDir('git');
   if (options.isolateOpenspec === false) {
     env.PATH = `${bin}${path.delimiter}${process.env.PATH ?? ''}`;
   } else {
-    env.PATH = [bin, nodeBin, '/usr/bin', '/bin', '/usr/local/bin'].join(path.delimiter);
+    const parts = [bin, nodeBin];
+    if (gitBin) parts.push(gitBin);
+    parts.push('/usr/bin', '/bin', '/usr/local/bin');
+    env.PATH = parts.join(path.delimiter);
   }
   env.GIT_CONFIG_GLOBAL = '/dev/null';
   env.GIT_CONFIG_SYSTEM = '/dev/null';

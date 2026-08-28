@@ -24,8 +24,15 @@ vi.mock('prompts', () => ({
 
 const createdDirs: string[] = [];
 
+beforeEach(() => {
+  // Disable ANSI color output so doctor assertions can match plain labels on every runner.
+  vi.stubEnv('FORCE_COLOR', '0');
+  vi.stubEnv('NO_COLOR', '1');
+});
+
 afterEach(async () => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
   await Promise.all(createdDirs.splice(0).map((dir) => fs.remove(dir)));
 });
 
@@ -489,6 +496,8 @@ describe('git-delivery helpers', () => {
     await runGit(['init', '--quiet']);
     await runGit(['config', 'user.name', 'Pipeline Test']);
     await runGit(['config', 'user.email', 'pipeline@example.com']);
+    // Pin the line-ending behaviour so CI runners (Windows in particular) do not introduce CRLF.
+    await runGit(['config', 'core.autocrlf', 'false']);
     await fs.writeFile(path.join(dir, 'README.md'), '# base\n');
     await runGit(['add', 'README.md']);
     await runGit(['commit', '-m', 'chore: init']);
@@ -506,7 +515,11 @@ describe('git-delivery helpers', () => {
 
     const merge = await runGit(['merge', '--ff-only', 'feature/demo']);
     expect(merge.code).toBe(0);
-    expect(await fs.readFile(path.join(dir, 'feature.txt'), 'utf8')).toBe('feature\n');
+    const featureContent = (await fs.readFile(path.join(dir, 'feature.txt'), 'utf8')).replaceAll(
+      '\r\n',
+      '\n',
+    );
+    expect(featureContent).toBe('feature\n');
   });
 
   it('detects conflicts when both branches modify the same lines', async () => {
@@ -524,10 +537,10 @@ describe('git-delivery helpers', () => {
     expect(merge.code).not.toBe(0);
 
     const status = await runGit(['diff', '--name-only', '--diff-filter=U']);
-    expect(status.stdout.trim()).toBe('conflict.txt');
+    expect(status.stdout.replaceAll('\r\n', '\n').trim()).toBe('conflict.txt');
 
     await runGit(['merge', '--abort']);
     const clean = await runGit(['status', '--porcelain']);
-    expect(clean.stdout).toBe('');
+    expect(clean.stdout.replaceAll('\r\n', '\n')).toBe('');
   });
 });
