@@ -22,6 +22,12 @@ vi.mock('prompts', () => ({
   default: vi.fn(),
 }));
 
+const ANSI_PATTERN = new RegExp(`${String.fromCharCode(0x1b)}\\[[0-9;]*m`, 'g');
+
+function stripAnsi(value: string): string {
+  return value.replace(ANSI_PATTERN, '');
+}
+
 const createdDirs: string[] = [];
 
 beforeEach(() => {
@@ -106,10 +112,10 @@ describe('runListToolsCommand', () => {
     await runListToolsCommand({});
 
     const output = logSpy.mock.calls.map((call) => String(call[0])).join('\n');
-    expect(output).toContain('claude: Claude Code');
-    expect(output).toContain('cursor: Cursor');
-    expect(output).toContain('codex: Codex');
-    expect(output).toContain('opencode: OpenCode');
+    expect(stripAnsi(output)).toContain('claude: Claude Code');
+    expect(stripAnsi(output)).toContain('cursor: Cursor');
+    expect(stripAnsi(output)).toContain('codex: Codex');
+    expect(stripAnsi(output)).toContain('opencode: OpenCode');
     logSpy.mockRestore();
   });
 
@@ -148,8 +154,10 @@ describe('runDoctorCommand', () => {
 
     expect(status).toBe('warn');
     const output = logSpy.mock.calls.map((call) => String(call[0])).join('\n');
-    expect(output).toContain('Doctor summary: WARN');
-    expect(output).toContain('No opsx-dev-pipeline manifest found in target directory.');
+    expect(stripAnsi(output)).toContain('Doctor summary: WARN');
+    expect(stripAnsi(output)).toContain(
+      'No opsx-dev-pipeline manifest found in target directory.',
+    );
     logSpy.mockRestore();
   });
 
@@ -162,7 +170,7 @@ describe('runDoctorCommand', () => {
 
     expect(status).toBe('ok');
     const output = logSpy.mock.calls.map((call) => String(call[0])).join('\n');
-    expect(output).toContain('Manifest template version matches');
+    expect(stripAnsi(output)).toContain('Manifest template version matches');
     logSpy.mockRestore();
   });
 
@@ -291,8 +299,8 @@ describe('runUpgradeCommand', () => {
     await runUpgradeCommand({ dir, yes: true, dryRun: true });
 
     const output = logSpy.mock.calls.map((call) => String(call[0])).join('\n');
-    expect(output).toContain('Upgrade preview');
-    expect(output).toContain('0.1.0');
+    expect(stripAnsi(output)).toContain('Upgrade preview');
+    expect(stripAnsi(output)).toContain('0.1.0');
   });
 
   it('skips confirmation when --yes is set and manifest is outdated', async () => {
@@ -434,7 +442,7 @@ describe('runCli command dispatch', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     await runCli(['node', 'opsx-dev-pipeline', 'list-tools', '--json']);
     const output = logSpy.mock.calls.map((call) => String(call[0])).join('\n');
-    expect(output).toContain('packageVersion');
+    expect(stripAnsi(output)).toContain('packageVersion');
     logSpy.mockRestore();
   });
 
