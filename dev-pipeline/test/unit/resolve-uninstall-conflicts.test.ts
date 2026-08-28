@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import prompts from 'prompts';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolveUninstallConflicts } from '../../src/core/uninstall/resolveUninstallConflicts.js';
 import type { UninstallPlan } from '../../src/core/uninstall/types.js';
 

@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import prompts from 'prompts';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ManifestVersionCheck } from '../../src/core/manifest/versionCheck.js';
 import {
   ensureUpgradeVersionCheck,

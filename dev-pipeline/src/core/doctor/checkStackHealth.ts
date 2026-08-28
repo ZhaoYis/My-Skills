@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { StackIssue, StackHealthResult } from './types.js';
+import type { StackHealthResult, StackIssue } from './types.js';
 
 /**
  * Validate the stack profile in openspec/config.yaml.
@@ -47,7 +47,7 @@ export async function checkStackHealth(targetDir: string): Promise<StackHealthRe
   }
 
   const root = parseYaml(raw);
-  const stackRoot = root['stack'];
+  const stackRoot = root.stack;
   if (!stackRoot || typeof stackRoot !== 'object' || Array.isArray(stackRoot)) {
     return {
       valid: false,
@@ -59,17 +59,17 @@ export async function checkStackHealth(targetDir: string): Promise<StackHealthRe
   const s = stackRoot as Record<string, unknown>;
 
   // stack.id
-  const stackId = typeof s['id'] === 'string' ? s['id'] : undefined;
+  const stackId = typeof s.id === 'string' ? s.id : undefined;
   if (!stackId)
     issues.push({ path: 'stack.id', severity: 'error', message: 'stack.id is required' });
 
   // stack.languages
-  const languages = Array.isArray(s['languages']) ? s['languages'] : [];
+  const languages = Array.isArray(s.languages) ? s.languages : [];
   if (languages.length === 0)
     issues.push({ path: 'stack.languages', severity: 'warning', message: 'No languages declared' });
 
   // stack.services[]
-  const services = Array.isArray(s['services']) ? s['services'] : [];
+  const services = Array.isArray(s.services) ? s.services : [];
   const stacks: string[] = [];
   if (services.length === 0) {
     issues.push({
@@ -84,7 +84,7 @@ export async function checkStackHealth(targetDir: string): Promise<StackHealthRe
       const svcObj = svc as Record<string, unknown>;
       const prefix = `stack.services[${i}]`;
 
-      const svcName = typeof svcObj['name'] === 'string' ? svcObj['name'] : '';
+      const svcName = typeof svcObj.name === 'string' ? svcObj.name : '';
       if (!svcName) {
         issues.push({
           path: `${prefix}.name`,
@@ -95,7 +95,7 @@ export async function checkStackHealth(targetDir: string): Promise<StackHealthRe
         stacks.push(svcName);
       }
 
-      const svcDir = typeof svcObj['path'] === 'string' ? svcObj['path'] : '';
+      const svcDir = typeof svcObj.path === 'string' ? svcObj.path : '';
       if (!svcDir) {
         issues.push({
           path: `${prefix}.path`,
@@ -118,7 +118,7 @@ export async function checkStackHealth(targetDir: string): Promise<StackHealthRe
   }
 
   // stack.verify
-  const verifyRoot = s['verify'];
+  const verifyRoot = s.verify;
   if (verifyRoot && typeof verifyRoot === 'object' && !Array.isArray(verifyRoot)) {
     const v = verifyRoot as Record<string, unknown>;
     for (const verifyKey of ['build', 'smoke', 'contract']) {
@@ -149,8 +149,8 @@ function validateCommand(
   if (!cmd || typeof cmd !== 'object' || Array.isArray(cmd)) return;
   const c = cmd as Record<string, unknown>;
 
-  const isRequired = c['required'] === true;
-  const command = typeof c['command'] === 'string' ? c['command'] : '';
+  const isRequired = c.required === true;
+  const command = typeof c.command === 'string' ? c.command : '';
 
   if (!command && isRequired) {
     issues.push({
@@ -160,7 +160,7 @@ function validateCommand(
     });
   }
 
-  const cwd = typeof c['cwd'] === 'string' ? c['cwd'] : '';
+  const cwd = typeof c.cwd === 'string' ? c.cwd : '';
   if (cwd && !fs.existsSync(path.join(targetDir, cwd))) {
     issues.push({
       path: `${jsonPath}.cwd`,
@@ -233,7 +233,7 @@ function parseYaml(raw: string): Record<string, unknown> {
       const arr: unknown[] = Array.isArray(existing) ? existing : [];
       if (!Array.isArray(existing)) parent[key] = arr;
       arr.push(parseScalar(rawValue.slice(2).trim()));
-    } else if (!isNaN(Number(rawValue)) && rawValue !== '') {
+    } else if (!Number.isNaN(Number(rawValue)) && rawValue !== '') {
       parent[key] = Number(rawValue);
     } else {
       parent[key] = parseScalar(rawValue);

@@ -168,7 +168,10 @@ const toolExpectations = {
     { path: '.opencode/skills/opsx-dev-pipeline/SKILL.md', present: true },
     { path: '.opencode/skills/opsx-dev-pipeline/references/phase-0-entrance.md', present: true },
     { path: '.opencode/skills/opsx-dev-pipeline/references/phase-6-commit-push.md', present: true },
-    { path: '.opencode/skills/opsx-dev-pipeline/references/phase-7-merge-deliver.md', present: true },
+    {
+      path: '.opencode/skills/opsx-dev-pipeline/references/phase-7-merge-deliver.md',
+      present: true,
+    },
     { path: '.opencode/skills/opsx-dev-pipeline/scripts/preflight.mjs', present: true },
     { path: '.opencode/skills/opsx-dev-pipeline/scripts/archive.mjs', present: true },
     { path: '.opencode/skills/opsx-dev-pipeline/agents/openai.yaml', present: true },

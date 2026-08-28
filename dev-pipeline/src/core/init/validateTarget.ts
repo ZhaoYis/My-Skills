@@ -1,5 +1,5 @@
-import fs from 'fs-extra';
 import path from 'node:path';
+import fs from 'fs-extra';
 import type { ToolAdapter, ToolId } from '../adapters/types.js';
 
 const SAFE_FILES = new Set([

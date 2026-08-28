@@ -1,8 +1,8 @@
 import prompts from 'prompts';
 import type {
+  ResolveUninstallConflictsOptions,
   UninstallBulkAction,
   UninstallPlan,
-  ResolveUninstallConflictsOptions,
 } from './types.js';
 
 function getUnresolvedFiles(plan: UninstallPlan) {
@@ -36,7 +36,7 @@ function applyBulkResolution(
 
   for (let index = startIndex; index < files.length; index += 1) {
     const file = files[index];
-    if (!file || file.resolution !== 'unresolved') {
+    if (file?.resolution !== 'unresolved') {
       continue;
     }
 

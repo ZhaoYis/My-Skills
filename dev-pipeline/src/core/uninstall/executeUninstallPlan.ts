@@ -1,5 +1,5 @@
-import fs from 'fs-extra';
 import path from 'node:path';
+import fs from 'fs-extra';
 import pc from 'picocolors';
 import { readManifest, removeManifest, writeManifest } from '../manifest/io.js';
 import { PACKAGE_NAME, TEMPLATE_VERSION } from '../runtime/meta.js';

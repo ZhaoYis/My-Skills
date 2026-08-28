@@ -1,12 +1,12 @@
 import path from 'node:path';
 import { loadToolRegistry } from '../../core/adapters/registry.js';
-import { readManifest } from '../../core/manifest/io.js';
-import { resolvePackageRoot } from '../../core/runtime/resolvePackageRoot.js';
 import { buildInstallPlan } from '../../core/init/buildInstallPlan.js';
 import { executeInstallPlan } from '../../core/init/executeInstallPlan.js';
-import { resolveInstallConflicts } from '../../core/init/resolveInstallConflicts.js';
 import { collectExistingLanguage } from '../../core/init/resolveExistingLanguage.js';
+import { resolveInstallConflicts } from '../../core/init/resolveInstallConflicts.js';
+import { readManifest } from '../../core/manifest/io.js';
 import type { InitOptions } from '../../core/prompts/types.js';
+import { resolvePackageRoot } from '../../core/runtime/resolvePackageRoot.js';
 import { resolveTechStackId } from '../../core/tech-stack/registry.js';
 
 export async function runSyncCommand(options: InitOptions): Promise<void> {

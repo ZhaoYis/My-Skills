@@ -1,6 +1,6 @@
-import fs from 'fs-extra';
 import os from 'node:os';
 import path from 'node:path';
+import fs from 'fs-extra';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { runSyncCommand } from '../../src/cli/commands/sync.js';
 import { MANIFEST_FILE } from '../../src/core/runtime/meta.js';
@@ -45,9 +45,7 @@ describe('runSyncCommand', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
     // Should not throw when manifest exists and dryRun is true
-    await expect(
-      runSyncCommand({ dir, yes: true, dryRun: true }),
-    ).resolves.toBeUndefined();
+    await expect(runSyncCommand({ dir, yes: true, dryRun: true })).resolves.toBeUndefined();
 
     // Console output was produced during the dry-run
     const messages = logSpy.mock.calls.map((call) => String(call[0]));

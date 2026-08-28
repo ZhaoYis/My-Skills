@@ -71,11 +71,7 @@ if (toolName !== 'bash') {
   if (toolName && toolName !== 'bash') process.exit(0);
 }
 
-const command = String(
-  envelope.tool_input?.command
-    ?? envelope.toolInput?.command
-    ?? '',
-).trim();
+const command = String(envelope.tool_input?.command ?? envelope.toolInput?.command ?? '').trim();
 
 if (!command) {
   warn('cannot parse tool_input.command; allowing');
@@ -87,14 +83,14 @@ const normalized = command.replace(/\s+/g, ' ').trim();
 // ---- 3. deny helpers --------------------------------------------------
 function deny(reason) {
   process.stdout.write(
-    JSON.stringify({
+    `${JSON.stringify({
       hookSpecificOutput: {
         hookEventName: 'PreToolUse',
         permissionDecision: 'deny',
         permissionDecisionReason: reason,
       },
       systemMessage: `Blocked by opsx-dev-pipeline hook: ${reason}`,
-    }) + '\n',
+    })}\n`,
   );
   process.exit(2);
 }

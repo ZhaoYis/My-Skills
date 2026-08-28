@@ -1,9 +1,9 @@
-import fs from 'fs-extra';
 import os from 'node:os';
 import path from 'node:path';
+import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
-import { validateTarget } from '../../src/core/init/validateTarget.js';
 import type { ToolAdapter, ToolId } from '../../src/core/adapters/types.js';
+import { validateTarget } from '../../src/core/init/validateTarget.js';
 
 const createdDirs: string[] = [];
 
@@ -33,7 +33,7 @@ function createMockAdapter(markers: string[]): ToolAdapter {
     supportsUserDestination: () => true,
     getRoot: () => '.claude',
     getSkillRootNote: () => undefined,
-      getHookMode: () => undefined,
+    getHookMode: () => undefined,
   };
 }
 
@@ -122,7 +122,14 @@ describe('validateTarget', () => {
     // node_modules is also in SAFE_FILES, so it should be excluded
     expect(result.existingEntries).toEqual(expect.arrayContaining(['src']));
     expect(result.existingEntries).not.toEqual(
-      expect.arrayContaining(['.git', '.gitignore', 'README.md', 'package.json', 'package-lock.json', 'node_modules']),
+      expect.arrayContaining([
+        '.git',
+        '.gitignore',
+        'README.md',
+        'package.json',
+        'package-lock.json',
+        'node_modules',
+      ]),
     );
   });
 

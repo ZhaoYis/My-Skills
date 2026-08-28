@@ -36,7 +36,9 @@ async function readStdin(timeoutMs = 1000) {
       process.stdin.removeListener('end', onEnd);
       resolve(buf);
     };
-    const onData = (chunk) => { buf += chunk.toString('utf8'); };
+    const onData = (chunk) => {
+      buf += chunk.toString('utf8');
+    };
     const onEnd = () => finish();
 
     process.stdin.on('data', onData);
@@ -74,13 +76,13 @@ if (toolName && !WRITE_TOOLS.has(toolName)) {
 //   OpenCode write/edit:      tool_input.filePath
 //   OpenCode multi_edit:      tool_input.filePath
 const filePath = String(
-  envelope.tool_input?.file_path
-    ?? envelope.toolInput?.file_path
-    ?? envelope.tool_input?.filePath
-    ?? envelope.toolInput?.filePath
-    ?? envelope.tool_input?.path
-    ?? envelope.toolInput?.path
-    ?? '',
+  envelope.tool_input?.file_path ??
+    envelope.toolInput?.file_path ??
+    envelope.tool_input?.filePath ??
+    envelope.toolInput?.filePath ??
+    envelope.tool_input?.path ??
+    envelope.toolInput?.path ??
+    '',
 ).trim();
 
 if (!filePath) {
@@ -95,14 +97,14 @@ const basename = normalized.split('/').pop() ?? '';
 // ---- 2. deny helpers --------------------------------------------------
 function deny(reason) {
   process.stdout.write(
-    JSON.stringify({
+    `${JSON.stringify({
       hookSpecificOutput: {
         hookEventName: 'PreToolUse',
         permissionDecision: 'deny',
         permissionDecisionReason: reason,
       },
       systemMessage: `Blocked by opsx-dev-pipeline hook: ${reason}`,
-    }) + '\n',
+    })}\n`,
   );
   process.exit(2);
 }
@@ -119,10 +121,10 @@ if (/(^|\/)openspec\/\.pipeline-state\/[^/]+\.json$/.test(normalized)) {
 
 // 3.3 *.env / *.env.*
 if (
-  basename === '.env'
-  || basename.startsWith('.env.')
-  || basename.endsWith('.env')
-  || /\.env\./.test(basename)
+  basename === '.env' ||
+  basename.startsWith('.env.') ||
+  basename.endsWith('.env') ||
+  /\.env\./.test(basename)
 ) {
   deny('sensitive-env-blocked');
 }

@@ -74,7 +74,7 @@ export function buildTemplateContext(params: {
   techStackName?: string;
   hooksEnabled?: boolean;
 }): Record<string, unknown> {
-  const commandSeparator = (params.toolId === 'claude' || params.toolId === 'opencode') ? ':' : '-';
+  const commandSeparator = params.toolId === 'claude' || params.toolId === 'opencode' ? ':' : '-';
   const commandPrefix = params.toolId === 'codex' ? '$' : '/';
   const commandInvocation = (command: string) =>
     `${commandPrefix}opsx${commandSeparator}${command}`;

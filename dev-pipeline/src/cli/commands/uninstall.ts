@@ -1,9 +1,9 @@
 import path from 'node:path';
+import { readManifest } from '../../core/manifest/io.js';
 import { buildUninstallPlan } from '../../core/uninstall/buildUninstallPlan.js';
 import { executeUninstallPlan } from '../../core/uninstall/executeUninstallPlan.js';
 import { resolveUninstallConflicts } from '../../core/uninstall/resolveUninstallConflicts.js';
 import type { UninstallOptions } from '../../core/uninstall/types.js';
-import { readManifest } from '../../core/manifest/io.js';
 
 export async function runUninstallCommand(options: UninstallOptions): Promise<void> {
   const targetDir = path.resolve(options.dir ?? process.cwd());

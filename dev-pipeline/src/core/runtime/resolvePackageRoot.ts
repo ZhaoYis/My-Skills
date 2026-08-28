@@ -1,6 +1,6 @@
-import fs from 'fs-extra';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import fs from 'fs-extra';
 
 const MARKERS = ['package.json', 'src/config/tools.json', 'src/templates/common/base/gitignore'];
 

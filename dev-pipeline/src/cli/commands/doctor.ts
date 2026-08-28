@@ -2,7 +2,7 @@ import pc from 'picocolors';
 import { checkStackHealth } from '../../core/doctor/checkStackHealth.js';
 import type { HealthStatus, StackHealthResult } from '../../core/doctor/types.js';
 import { readManifest } from '../../core/manifest/io.js';
-import { checkManifestVersion, mergeHealthStatus } from '../../core/manifest/versionCheck.js';
+import { checkManifestVersion } from '../../core/manifest/versionCheck.js';
 import { MANIFEST_PACKAGE_JSON_KEY, PACKAGE_VERSION } from '../../core/runtime/meta.js';
 
 export interface DoctorCommandOptions {

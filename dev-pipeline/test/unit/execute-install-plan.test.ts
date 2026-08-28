@@ -31,7 +31,7 @@ function createAdapter(): ToolAdapter {
     supportsUserDestination: () => true,
     getRoot: () => '.',
     getSkillRootNote: () => undefined,
-      getHookMode: () => undefined,
+    getHookMode: () => undefined,
   };
 }
 

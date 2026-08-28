@@ -30,10 +30,15 @@ afterEach(async () => {
 
 function runModule(source: string): Promise<ModuleResult> {
   return new Promise((resolve) => {
-    execFile(process.execPath, ['--input-type=module', '--eval', source], { cwd: repo }, (error, stdout, stderr) => {
-      const code = error && 'code' in error && typeof error.code === 'number' ? error.code : 0;
-      resolve({ code, stdout, stderr });
-    });
+    execFile(
+      process.execPath,
+      ['--input-type=module', '--eval', source],
+      { cwd: repo },
+      (error, stdout, stderr) => {
+        const code = error && 'code' in error && typeof error.code === 'number' ? error.code : 0;
+        resolve({ code, stdout, stderr });
+      },
+    );
   });
 }
 

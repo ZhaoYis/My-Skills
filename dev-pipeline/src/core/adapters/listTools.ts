@@ -1,5 +1,5 @@
-import type { ToolDefinition } from './types.js';
 import { PACKAGE_VERSION } from '../runtime/meta.js';
+import type { ToolDefinition } from './types.js';
 
 export interface ToolsListPayload {
   packageVersion: string;

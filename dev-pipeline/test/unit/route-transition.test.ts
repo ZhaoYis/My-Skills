@@ -1,7 +1,6 @@
 import { execFile } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
 import fs from 'fs-extra';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanupDirectories } from '../helpers/cleanup.js';
@@ -44,10 +43,15 @@ function runCommand(command: string, args: string[], cwd: string): Promise<Modul
 
 function runScript(args: string[]): Promise<ModuleResult> {
   return new Promise((resolve) => {
-    execFile(process.execPath, [scriptPath, ...args, '--view', 'full'], { cwd: repo }, (error, stdout, stderr) => {
-      const code = error && 'code' in error && typeof error.code === 'number' ? error.code : 0;
-      resolve({ code, stdout, stderr });
-    });
+    execFile(
+      process.execPath,
+      [scriptPath, ...args, '--view', 'full'],
+      { cwd: repo },
+      (error, stdout, stderr) => {
+        const code = error && 'code' in error && typeof error.code === 'number' ? error.code : 0;
+        resolve({ code, stdout, stderr });
+      },
+    );
   });
 }
 
@@ -91,7 +95,13 @@ async function createState(name: string, route?: string) {
     updatedAt: '2026-01-01 00:00:00',
     createdBy: 'test',
     createdByEmail: 'test@test.com',
-    machineInfo: { platform: 'test', hostname: 'test', osRelease: 'test', nodeVersion: 'test', arch: 'test' },
+    machineInfo: {
+      platform: 'test',
+      hostname: 'test',
+      osRelease: 'test',
+      nodeVersion: 'test',
+      arch: 'test',
+    },
     featureInfo: null,
     fingerprintId: '',
     fingerprintNonce: '',

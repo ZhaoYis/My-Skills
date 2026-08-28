@@ -1,9 +1,9 @@
-import fs from 'fs-extra';
 import os from 'node:os';
 import path from 'node:path';
+import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
-import { buildUninstallPlan } from '../../src/core/uninstall/buildUninstallPlan.js';
 import type { ManifestReadResult } from '../../src/core/manifest/io.js';
+import { buildUninstallPlan } from '../../src/core/uninstall/buildUninstallPlan.js';
 
 const createdDirs: string[] = [];
 

@@ -61,10 +61,14 @@ async function transition(from, to, overrides = {}) {
   const state = baseState(changeName, from, overrides);
   await writeFile(path.join(stateDirectory, `${changeName}.json`), `${JSON.stringify(state)}\n`);
 
-  const result = spawnSync(process.execPath, [script, 'transition', changeName, String(to), '99', '--view', 'full'], {
-    cwd: repo,
-    encoding: 'utf8',
-  });
+  const result = spawnSync(
+    process.execPath,
+    [script, 'transition', changeName, String(to), '99', '--view', 'full'],
+    {
+      cwd: repo,
+      encoding: 'utf8',
+    },
+  );
 
   return {
     code: result.status,

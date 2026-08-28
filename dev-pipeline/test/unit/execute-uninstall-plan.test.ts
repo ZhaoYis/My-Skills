@@ -1,11 +1,11 @@
-import fs from 'fs-extra';
 import os from 'node:os';
 import path from 'node:path';
+import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
+import { readManifest } from '../../src/core/manifest/io.js';
+import { MANIFEST_FILE, MANIFEST_PACKAGE_JSON_KEY } from '../../src/core/runtime/meta.js';
 import { executeUninstallPlan } from '../../src/core/uninstall/executeUninstallPlan.js';
 import type { UninstallPlan } from '../../src/core/uninstall/types.js';
-import { MANIFEST_FILE, MANIFEST_PACKAGE_JSON_KEY } from '../../src/core/runtime/meta.js';
-import { readManifest } from '../../src/core/manifest/io.js';
 
 const createdDirs: string[] = [];
 

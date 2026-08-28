@@ -1,8 +1,15 @@
 import os from 'node:os';
-import fs from 'fs-extra';
 import path from 'node:path';
+import fs from 'fs-extra';
 import { z } from 'zod';
-import type { FeatureId, HookMode, InstallScope, ToolAdapter, ToolDefinition, ToolId } from './types.js';
+import type {
+  FeatureId,
+  HookMode,
+  InstallScope,
+  ToolAdapter,
+  ToolDefinition,
+  ToolId,
+} from './types.js';
 
 // Tool adapter schema. To add a new AI tool:
 // 1. Add its id to the id enum below
