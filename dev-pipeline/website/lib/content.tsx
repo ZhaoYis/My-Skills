@@ -1,17 +1,25 @@
 import {
   Archive,
+  BookX,
   Bot,
+  BotOff,
   Braces,
   ClipboardCheck,
   Eye,
+  EyeOff,
   FileCheck2,
+  FileKey,
+  FileQuestion,
   GitBranch,
   LockKeyhole,
+  OctagonAlert,
+  Puzzle,
   RefreshCw,
   Rocket,
   SearchCheck,
   ShieldCheck,
   TestTube2,
+  Unlink,
   Workflow,
   Clock,
   Link2,
@@ -22,6 +30,13 @@ import {
   ShieldAlert,
   Sparkles,
   Wrench,
+  Code2,
+  Server,
+  Globe,
+  Package,
+  Terminal,
+  Cpu,
+  Database,
 } from "lucide-react";
 
 export const navItems = [
@@ -32,20 +47,59 @@ export const navItems = [
   { label: "Route 分级", href: "#routes" },
   { label: "安全钩子", href: "#hooks" },
   { label: "安全", href: "#safety" },
-  { label: "诚实边界", href: "#limitations" },
   { label: "快速开始", href: "#quick-start" },
   { label: "FAQ", href: "#faq" },
 ];
 
 export const problems = [
-  { index: "01", title: "Agent 自主失控", cause: "Agent 自己写代码、调试、部署，决策速度远超人类 review 能力。" },
-  { index: "02", title: "交互黑箱", cause: "Agent 之间的交互你根本看不到，不知道它们做了什么决定。" },
-  { index: "03", title: "Review 变成猜测", cause: "变更没有 proposal，reviewer 只能从代码 diff 猜意图。" },
-  { index: "04", title: "决策链断裂", cause: "三个月前的变更没有一条完整记录，为什么这样写没人知道。" },
-  { index: "05", title: "敏感文件漏网", cause: "Agent 把 .env 提交了，安全扫描没拦住，规则对 Agent 不起作用。" },
-  { index: "06", title: "规则形同虚设", cause: '"下次设个规则"→ 下次换了个 Agent，规则没用上。口头约定无法规模化。' },
-  { index: "07", title: "工具碎片化", cause: "团队一半人用 Claude Code、一半用 Cursor，脚本、门禁、命名约定全部割裂。" },
-  { index: "08", title: "危险命令被默许", cause: "Agent 顺手 rm -rf、push --force、chmod 777——prompt 写了也拦不住。" },
+  {
+    index: "01",
+    title: "Agent 自主失控",
+    cause: "Agent 自己写代码、调试、部署，决策速度远超人类 review 能力。",
+    icon: BotOff,
+  },
+  {
+    index: "02",
+    title: "交互黑箱",
+    cause: "Agent 之间的交互你根本看不到，不知道它们做了什么决定。",
+    icon: EyeOff,
+  },
+  {
+    index: "03",
+    title: "Review 变成猜测",
+    cause: "变更没有 proposal，reviewer 只能从代码 diff 猜意图。",
+    icon: FileQuestion,
+  },
+  {
+    index: "04",
+    title: "决策链断裂",
+    cause: "三个月前的变更没有一条完整记录，为什么这样写没人知道。",
+    icon: Unlink,
+  },
+  {
+    index: "05",
+    title: "敏感文件漏网",
+    cause: "Agent 把 .env 提交了，安全扫描没拦住，规则对 Agent 不起作用。",
+    icon: FileKey,
+  },
+  {
+    index: "06",
+    title: "规则形同虚设",
+    cause: '"下次设个规则"→ 下次换了个 Agent，规则没用上。口头约定无法规模化。',
+    icon: BookX,
+  },
+  {
+    index: "07",
+    title: "工具碎片化",
+    cause: "团队一半人用 Claude Code、一半用 Cursor，脚本、门禁、命名约定全部割裂。",
+    icon: Puzzle,
+  },
+  {
+    index: "08",
+    title: "危险命令被默许",
+    cause: "Agent 顺手 rm -rf、push --force、chmod 777——prompt 写了也拦不住。",
+    icon: OctagonAlert,
+  },
 ];
 
 export const phases = [
@@ -289,21 +343,6 @@ export const techStacks = [
   { id: "python-react", parent: "fullstack", summary: "Monorepo: Python FastAPI + React 18+" },
 ];
 
-export const limitations = [
-  {
-    title: "不能替代人工 code review",
-    can: "发现硬编码密钥、空指针、注入风险等可自动检测的问题；检查代码是否符合项目规范；验证测试是否覆盖边界情况；交叉验证多维度一致性。",
-    cannot: "理解业务逻辑是否正确（\"这个折扣计算策略对吗？\"）；判断架构设计是否合理（\"这个抽象层有意义吗？\"）；评估产品体验（\"这个交互流程用户会困惑吗？\"）；替代团队协作中的知识传递和共识建立。",
-  },
-];
-
-export const limitationsScale = [
-  { scenario: "中小型功能开发（< 500 行 diff）", grade: "最佳适配" },
-  { scenario: "大型重构（> 2000 行 diff）", grade: "建议拆分为多个小变更" },
-  { scenario: "一次性脚本/配置修改", grade: "不推荐 trivial 之外路线" },
-  { scenario: "紧急 hotfix", grade: "可用 trivial Route，需手动确认" },
-];
-
 export const stats = [
   ["< 30s", "初始化耗时"],
   ["8", "Phase 0–7 门禁"],
@@ -313,6 +352,21 @@ export const stats = [
   ["3", "Route 风险等级"],
   ["2", "PreToolUse 钩子"],
   ["MIT", "开源协议"],
+];
+
+export const integrations = [
+  { label: "OpenSpec", icon: <FileCheck2 aria-hidden="true" /> },
+  { label: "Claude Code", icon: <Bot aria-hidden="true" /> },
+  { label: "OpenCode", icon: <Wrench aria-hidden="true" /> },
+  { label: "Cursor", icon: <Braces aria-hidden="true" /> },
+  { label: "Codex", icon: <Workflow aria-hidden="true" /> },
+  { label: "React", icon: <Code2 aria-hidden="true" /> },
+  { label: "Spring Boot", icon: <Server aria-hidden="true" /> },
+  { label: "FastAPI", icon: <Globe aria-hidden="true" /> },
+  { label: "Node.js 20+", icon: <Cpu aria-hidden="true" /> },
+  { label: "TypeScript", icon: <Terminal aria-hidden="true" /> },
+  { label: "Python 3.10+", icon: <Database aria-hidden="true" /> },
+  { label: "Java 17+", icon: <Package aria-hidden="true" /> },
 ];
 
 export const faqs = [
