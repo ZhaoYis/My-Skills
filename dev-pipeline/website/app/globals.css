@@ -80,7 +80,7 @@
   --space-24: 96px;
   --space-28: 112px;
   --space-32: 128px;
-  --section-y: clamp(var(--space-16), 7vw, var(--space-24));
+  --section-y: clamp(var(--space-8), 3.5vw, var(--space-12));
   --section-heading-gap: clamp(var(--space-8), 3.5vw, var(--space-12));
   --auto-grid: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
   --auto-grid-wide: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
@@ -369,7 +369,7 @@ code {
 /* ===== Hero ===== */
 .hero {
   position: relative;
-  padding: clamp(var(--space-20), 9vw, var(--space-28)) 0 var(--section-y);
+  padding: clamp(var(--space-10), 4.5vw, 56px) 0 var(--section-y);
   overflow: hidden;
   background:
     radial-gradient(ellipse 70% 50% at 50% -10%, rgba(142, 138, 248, 0.18) 0%, transparent 55%),
@@ -2591,7 +2591,7 @@ code {
 
 /* ===== Numbers ===== */
 .numbers {
-  padding: clamp(var(--space-12), 6vw, var(--space-20)) 0;
+  padding: clamp(var(--space-6), 3vw, var(--space-10)) 0;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   background: var(--bg-secondary);
@@ -2730,7 +2730,7 @@ code {
 /* ===== Final CTA ===== */
 .final-cta {
   position: relative;
-  padding: clamp(var(--space-20), 9vw, var(--space-28)) 0;
+  padding: clamp(var(--space-10), 4.5vw, 56px) 0;
   overflow: hidden;
   background:
     radial-gradient(ellipse 70% 60% at 50% 100%, rgba(142, 138, 248, 0.18) 0%, transparent 60%),
@@ -2959,7 +2959,7 @@ code {
 @media (max-width: 640px) {
   :root { --header-height: 56px; }
   .container, .header-inner { width: min(calc(100% - 32px), var(--container)); }
-  .section { padding: var(--space-12) 0; }
+  .section { padding: var(--space-6) 0; }
   .github-link { display: none; }
   .menu-button { display: inline-flex; }
   .mobile-nav {
