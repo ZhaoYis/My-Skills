@@ -49,6 +49,17 @@ schema 升级、跨工具 init 合并、`--tool` 卸载隔离、共享资产保�
 - **chore**: `.gitignore` 追加 `.DS_Store` / `Thumbs.db` /
 `desktop.ini`；新增 `LICENSE` (MIT) 文件、`CONTEXT.md` 领域词汇表、
 `docs/adr/0001` / `0002` 两份初始 ADR。
+- **docs(website)**：官网 `website/` 同步 v0.2.20+ 的最新能力——
+Hero / Problem 新增"工具碎片化 / 危险命令被默许"两条痛点；
+Tools 版块从 3 工具扩展到 4 工具（Claude Code / OpenCode / Cursor /
+Codex），新增 5 套 tech-stack 模板列表；新增 **MULTI-TOOL** 版块
+（manifest.tools 追踪、init --tool 可叠加、按工具粒度卸载）、
+新增 **ROUTE 分级** 版块（trivial / standard / full 三档流水线
+重量）、新增 **PIPELINE HOOKS** 版块（block-dangerous-bash.sh +
+block-sensitive-write.sh 的拦截规则与按工具的接入矩阵）；
+Limitations 版块补回并按 Schema v2 调整适用规模；Stats 升级到 8
+项指标（增加 Route 等级、PreToolUse 钩子数量）；FAQ 新增多工具、
+Route 升降级、PreToolUse 钩子接入、`--lang en` 等条目。
 
 
 
