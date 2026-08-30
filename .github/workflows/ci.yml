@@ -18,6 +18,10 @@ defaults:
   run:
     working-directory: dev-pipeline
 
+env:
+  npm_config_audit: 'false'
+  npm_config_fund: 'false'
+
 jobs:
   lint:
     name: Lint (biome)
@@ -29,7 +33,9 @@ jobs:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: dev-pipeline/package-lock.json
-      - run: npm ci
+      - name: Verify working directory
+        run: pwd && ls package.json package-lock.json
+      - run: npm ci --no-audit --no-fund --prefer-offline
       - name: biome lint
         run: npm run lint
 
@@ -43,7 +49,9 @@ jobs:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: dev-pipeline/package-lock.json
-      - run: npm ci
+      - name: Verify working directory
+        run: pwd && ls package.json package-lock.json
+      - run: npm ci --no-audit --no-fund --prefer-offline
       - name: tsc --noEmit
         run: npm run typecheck
 
@@ -57,7 +65,9 @@ jobs:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: dev-pipeline/package-lock.json
-      - run: npm ci
+      - name: Verify working directory
+        run: pwd && ls package.json package-lock.json
+      - run: npm ci --no-audit --no-fund --prefer-offline
       - name: vitest run --dir test/unit/hooks
         run: npm run test:hooks
 
@@ -76,7 +86,9 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: 'npm'
           cache-dependency-path: dev-pipeline/package-lock.json
-      - run: npm ci
+      - name: Verify working directory
+        run: pwd && ls package.json package-lock.json
+      - run: npm ci --no-audit --no-fund --prefer-offline
       - name: vitest run --dir test (unit + integration + pipeline)
         run: npm test
       - name: Init CLI smoke (--dry-run, no openspec required)
@@ -92,7 +104,9 @@ jobs:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: dev-pipeline/package-lock.json
-      - run: npm ci
+      - name: Verify working directory
+        run: pwd && ls package.json package-lock.json
+      - run: npm ci --no-audit --no-fund --prefer-offline
       - name: tsc --build
         run: npm run build
       - name: Inspect npm pack contents
