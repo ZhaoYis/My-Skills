@@ -1,5 +1,9 @@
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { renderString, renderTemplate } from '../../src/core/init/renderTemplates.js';
+
+const fixture = (name: string) =>
+  fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
 
 describe('renderString', () => {
   it('interpolates simple {{var}} placeholders', () => {
@@ -79,18 +83,12 @@ describe('renderTemplate helpers', () => {
 
 describe('renderTemplate', () => {
   it('reads the template file and renders it with the supplied context', async () => {
-    const output = await renderTemplate(
-      new URL('./fixtures/greeting.hbs', import.meta.url).pathname,
-      { name: 'opsx' },
-    );
+    const output = await renderTemplate(fixture('greeting.hbs'), { name: 'opsx' });
     expect(output).toBe('Hello opsx!');
   });
 
   it('still works when a non-existent path is provided as long as the caller avoids it', async () => {
-    const output = await renderTemplate(
-      new URL('./fixtures/static.hbs', import.meta.url).pathname,
-      {},
-    );
+    const output = await renderTemplate(fixture('static.hbs'), {});
     expect(output).toBe('STATIC');
   });
 });
