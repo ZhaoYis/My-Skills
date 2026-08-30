@@ -72,9 +72,11 @@ switch (command) {
   const mockScript = path.join(bin, 'openspec.mjs');
   await fs.outputFile(mockScript, mock);
   if (process.platform === 'win32') {
+    const nodeExe = process.execPath.replace(/"/g, '""');
+    const mockPath = mockScript.replace(/"/g, '""');
     await fs.outputFile(
       path.join(bin, 'openspec.cmd'),
-      `@echo off\r\n"${process.execPath}" "${mockScript}" %*\r\n`,
+      `@echo off\r\n"${nodeExe}" "${mockPath}" %*\r\nexit /b %ERRORLEVEL%\r\n`,
     );
   } else {
     const mockPath = path.join(bin, 'openspec');

@@ -71,9 +71,11 @@ async function writeNodeCommand(name: string, content: string): Promise<void> {
   const script = path.join(bin, `${name}.mjs`);
   await fs.outputFile(script, content);
   if (process.platform === 'win32') {
+    const nodeExe = process.execPath.replace(/"/g, '""');
+    const scriptPath = script.replace(/"/g, '""');
     await fs.outputFile(
       path.join(bin, `${name}.cmd`),
-      `@echo off\r\n"${process.execPath}" "${script}" %*\r\n`,
+      `@echo off\r\n"${nodeExe}" "${scriptPath}" %*\r\nexit /b %ERRORLEVEL%\r\n`,
     );
   } else {
     const executable = path.join(bin, name);

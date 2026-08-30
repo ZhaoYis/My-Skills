@@ -82,6 +82,14 @@ async function writeOpenspecMock(repo: string, behavior: 'success' | 'fail' = 's
   `;
   await fs.outputFile(path.join(bin, 'openspec'), `#!/usr/bin/env node\n${behavior === 'success' ? successBody : failBody}`);
   await fs.chmod(path.join(bin, 'openspec'), 0o755);
+  if (process.platform === 'win32') {
+    const nodeExe = process.execPath.replace(/"/g, '""');
+    const mockPath = path.join(bin, 'openspec').replace(/"/g, '""');
+    await fs.outputFile(
+      path.join(bin, 'openspec.cmd'),
+      `@echo off\r\n"${nodeExe}" "${mockPath}" %*\r\nexit /b %ERRORLEVEL%\r\n`,
+    );
+  }
 }
 
 function state(repo: string, ...args: string[]): Promise<StateResult> {
