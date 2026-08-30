@@ -188,14 +188,6 @@ function isBundleFileGated(asset: AssetDefinition, entry: string, features: Feat
   );
 }
 
-function isAssetInUpgradeScope(asset: AssetDefinition, managed: ManagedAssetIndex): boolean {
-  if (managed.topLevelIds.has(asset.id) || managed.bundleIds.has(asset.id)) {
-    return true;
-  }
-
-  return true;
-}
-
 function shouldIncludeInstallFile(
   file: InstallFile,
   mode: BuildInstallPlanInput['mode'],
@@ -314,9 +306,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
 
   const upgradeAssetIds = new Set(
     input.mode === 'upgrade'
-      ? selectedAssets
-          .filter((asset) => isAssetInUpgradeScope(asset, managed))
-          .map((asset) => asset.id)
+      ? selectedAssets.map((asset) => asset.id)
       : [],
   );
 

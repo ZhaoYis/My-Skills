@@ -10,58 +10,29 @@
 
 ### Changed
 
-- **feat(manifest)**：升级 manifest 到 `schemaVersion = 2`，引入
-`tools: ToolId[]` 字段记录所有已安装的工具；旧版单一 `tool` 字段保留
-作为向后兼容的"主工具"标识。新版结构允许在同一项目中多次执行
-`init` 安装不同工具（例如先装 `claude` 再装 `opencode`），第二次
-`init` 不会覆盖第一次的资产记录。
-- **feat(manifest)**：`managedAssets[]` 中每条资产新增可选 `tool`
-字段用于归属标记；`README.md`、`openspec/config.yaml` 等工具无关
-资产保持无标签。读取老版 manifest 时会按目标路径前缀和资产 id 前缀
-自动反推工具归属。
-- **feat(uninstall)**：`uninstall` 命令新增 `--tool <id>` 选项，仅
-卸载指定工具的资产；不指定时维持原有"全部卸载"语义，但 manifest
-的 `tools` 字段会随单工具卸载同步收敛。
+- **feat(manifest)**：升 schemaVersion=2；新增 `tools: ToolId[]`，旧 `tool` 字段保留作向后兼容。
+- **feat(manifest)**：`managedAssets[]` 每条新增可选 `tool` 字段；非工具目录资产保持无标签。
+- **feat(uninstall)**：`uninstall --tool <id>` 仅卸载指定工具资产；无 `--tool` 时维持全部卸载语义，`tools` 字段同步收敛。
 
 ### Added
 
-- **feat(sync/upgrade)**：`sync` 与 `upgrade` 现在会遍历 manifest 中
-记录的所有工具，逐个重新渲染受管文件，确保多工具安装的资产在升级
-时同步刷新。
-- **feat(doctor)**：`doctor` 输出新增 `tools` 列表；当同时存在多个
-工具时额外打印 `active tool` 行。
-- 新增 `opsx-init` skill 与 command 资产包
-（`opsx-dev-pipeline-skill-bundle:SKILL.md.hbs`、
-`opsx-dev-pipeline-command`），已纳入 manifest，使 `init` 在安装
-dev-pipeline skill 的同时一并安装 init 辅助 skill。
+- **feat(sync/upgrade)**：`sync` / `upgrade` 遍历 manifest 中所有工具逐个重渲染。
+- **feat(doctor)**：`doctor` 输出新增 `tools` 列表；多工具时打印 `active tool`。
+- 新增 `opsx-init` skill + command 资产包（`opsx-dev-pipeline-skill-bundle:SKILL.md.hbs`、`opsx-dev-pipeline-command`），`init` 时一并安装。
+
+
 
 ### Tests
 
-- **test**：新增 `test/integration/multi-tool.test.ts`，覆盖
-schema 升级、跨工具 init 合并、`--tool` 卸载隔离、共享资产保留、
-重复 init 幂等、错误工具拒绝等场景。
+- **test**：新增 `test/integration/multi-tool.test.ts`（schema 升级 / 跨工具 init 合并 / `--tool` 卸载隔离 / 共享资产保留 / 重复 init 幂等 / 错误工具拒绝）。
+
+
 
 ### Fixed
 
-- **chore(lint)**：清掉 49 条 biome lint 警告（含 `useLiteralKeys`、
-`noNonNullAssertion`、`useOptionalChain`、`noUnusedImports` 等），
-并对必要的非空断言使用 `// biome-ignore` 标注。
-- **chore**: `.gitignore` 追加 `.DS_Store` / `Thumbs.db` /
-`desktop.ini`；新增 `LICENSE` (MIT) 文件、`CONTEXT.md` 领域词汇表、
-`docs/adr/0001` / `0002` 两份初始 ADR。
-- **docs(website)**：官网 `website/` 同步 v0.2.20+ 的最新能力——
-Hero / Problem 新增"工具碎片化 / 危险命令被默许"两条痛点；
-Tools 版块从 3 工具扩展到 4 工具（Claude Code / OpenCode / Cursor /
-Codex），新增 5 套 tech-stack 模板列表；新增 **MULTI-TOOL** 版块
-（manifest.tools 追踪、init --tool 可叠加、按工具粒度卸载）、
-新增 **ROUTE 分级** 版块（trivial / standard / full 三档流水线
-重量）、新增 **PIPELINE HOOKS** 版块（block-dangerous-bash.sh +
-block-sensitive-write.sh 的拦截规则与按工具的接入矩阵）；
-Limitations 版块补回并按 Schema v2 调整适用规模；Stats 升级到 8
-项指标（增加 Route 等级、PreToolUse 钩子数量）；FAQ 新增多工具、
-Route 升降级、PreToolUse 钩子接入、`--lang en` 等条目。
-
-
+- **fix(init)**：移除 `buildInstallPlan.ts` 中永远返回 `true` 的 `isAssetInUpgradeScope` 死代码。
+- **refactor(init)**：`executeInstallPlan.ts` 中 stack-config schema 行兜底逻辑改为复用同文件 `mergeConfigSchema`。
+- **chore(lint)**：清掉 49 条 biome lint 警告（`useLiteralKeys` / `noNonNullAssertion` / `useOptionalChain` / `noUnusedImports`）；必要非空断言用 `// biome-ignore` 标注。
 
 ## [0.2.20](https://github.com/ZhaoYis/My-Skills/compare/v0.2.19...v0.2.20) - 2025-08-28
 
