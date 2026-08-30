@@ -66,9 +66,12 @@ async function writeOpenspecMock(content: string, _exitCode = 0): Promise<void> 
   await fs.outputFile(executable, `#!/usr/bin/env node\n${content}`);
   await fs.chmod(executable, 0o755);
   if (process.platform === 'win32') {
+    const cmdPath = path.join(bin, 'openspec.cmd');
+    const nodeExe = process.execPath.replace(/"/g, '""');
+    const scriptPath = executable.replace(/"/g, '""');
     await fs.outputFile(
-      path.join(bin, 'openspec.cmd'),
-      `@echo off\r\n"${process.execPath}" "${executable}" %*\r\n`,
+      cmdPath,
+      `@echo off\r\n"${nodeExe}" "${scriptPath}" %*\r\nexit /b %ERRORLEVEL%\r\n`,
     );
   }
 }
@@ -79,11 +82,12 @@ function findExecutableDir(name: string): string | null {
     process.platform === 'win32'
       ? ['.cmd', '.bat', '.exe', '']
       : [''];
+  const mode = process.platform === 'win32' ? fs.constants.F_OK : fs.constants.X_OK;
   for (const dir of dirs) {
     for (const ext of extensions) {
       try {
         const full = path.join(dir, `${name}${ext}`);
-        fs.accessSync(full, fs.constants.X_OK);
+        fs.accessSync(full, mode);
         return dir;
       } catch {
         // try the next candidate
@@ -99,16 +103,22 @@ function commandEnv(options: { isolateOpenspec?: boolean } = {}): NodeJS.Process
   env.NO_COLOR = '1';
   const nodeBin = path.dirname(process.execPath);
   const gitBin = findExecutableDir('git');
+  const inheritedPath = process.env.PATH?.split(path.delimiter).filter(Boolean) ?? [];
   if (options.isolateOpenspec === false) {
-    env.PATH = `${bin}${path.delimiter}${process.env.PATH ?? ''}`;
+    env.PATH = [bin, ...inheritedPath].join(path.delimiter);
   } else {
-    const parts = [bin, nodeBin];
+    const parts: string[] = [bin, nodeBin];
     if (gitBin) parts.push(gitBin);
-    parts.push('/usr/bin', '/bin', '/usr/local/bin');
+    if (process.platform === 'win32') {
+      parts.push(...inheritedPath);
+    } else {
+      parts.push('/usr/bin', '/bin', '/usr/local/bin');
+    }
     env.PATH = parts.join(path.delimiter);
   }
-  env.GIT_CONFIG_GLOBAL = '/dev/null';
-  env.GIT_CONFIG_SYSTEM = '/dev/null';
+  const nullDevice = process.platform === 'win32' ? 'NUL' : '/dev/null';
+  env.GIT_CONFIG_GLOBAL = nullDevice;
+  env.GIT_CONFIG_SYSTEM = nullDevice;
   return env;
 }
 

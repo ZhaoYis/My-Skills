@@ -25,8 +25,10 @@ function normalizePaths(value) {
 
 function commandCandidates(name) {
   if (process.platform !== 'win32' || path.extname(name)) return [name];
+  // On Windows, skip the bare name — Node.js can't exec extension-less files
+  // directly. Only PATHEXT-listed extensions (.cmd, .bat, .exe) are runnable.
   const extensions = (process.env.PATHEXT || '.COM;.EXE;.BAT;.CMD').split(';');
-  return [name, ...extensions.map((extension) => `${name}${extension.toLowerCase()}`)];
+  return extensions.map((extension) => `${name}${extension.toLowerCase()}`);
 }
 
 function isExecutable(filePath) {
