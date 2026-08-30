@@ -1,7 +1,7 @@
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildTemplateContext } from '../../../src/core/init/buildInstallPlan.js';
 import { renderTemplate } from '../../../src/core/init/renderTemplates.js';
-import path from 'node:path';
 
 const TEMPLATE = path.resolve(
   process.cwd(),

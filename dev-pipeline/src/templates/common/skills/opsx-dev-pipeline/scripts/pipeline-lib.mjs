@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { accessSync, constants, existsSync, statSync, readFileSync } from 'node:fs';
+import { accessSync, constants, existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 const EXIT_DEPENDENCY_MISSING = 1;
@@ -25,8 +25,10 @@ function normalizePaths(value) {
 
 function commandCandidates(name) {
   if (process.platform !== 'win32' || path.extname(name)) return [name];
+  // On Windows, skip the bare name — Node.js can't exec extension-less files
+  // directly. Only PATHEXT-listed extensions (.cmd, .bat, .exe) are runnable.
   const extensions = (process.env.PATHEXT || '.COM;.EXE;.BAT;.CMD').split(';');
-  return [name, ...extensions.map((extension) => `${name}${extension.toLowerCase()}`)];
+  return extensions.map((extension) => `${name}${extension.toLowerCase()}`);
 }
 
 function isExecutable(filePath) {
@@ -274,7 +276,7 @@ export function parseRouteConfig(configPath) {
     const routes = {};
     let currentRoute = null;
     let inRoutes = false;
-    let inPhases = false;
+    let _inPhases = false;
 
     for (const line of lines) {
       const trimmed = line.trim();
@@ -294,7 +296,7 @@ export function parseRouteConfig(configPath) {
         if (routeMatch) {
           currentRoute = routeMatch[1];
           routes[currentRoute] = { description: '', phases: [] };
-          inPhases = false;
+          _inPhases = false;
           continue;
         }
 
@@ -307,9 +309,10 @@ export function parseRouteConfig(configPath) {
 
           const phasesMatch = line.match(/^ {4}phases:\s*\[([^\]]+)\]$/);
           if (phasesMatch) {
-            routes[currentRoute].phases = phasesMatch[1].split(',').map((p) => parseInt(p.trim(), 10));
-            inPhases = false;
-            continue;
+            routes[currentRoute].phases = phasesMatch[1]
+              .split(',')
+              .map((p) => parseInt(p.trim(), 10));
+            _inPhases = false;
           }
         }
       }

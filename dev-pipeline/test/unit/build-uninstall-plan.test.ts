@@ -1,9 +1,9 @@
-import fs from 'fs-extra';
 import os from 'node:os';
 import path from 'node:path';
+import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
-import { buildUninstallPlan } from '../../src/core/uninstall/buildUninstallPlan.js';
 import type { ManifestReadResult } from '../../src/core/manifest/io.js';
+import { buildUninstallPlan } from '../../src/core/uninstall/buildUninstallPlan.js';
 
 const createdDirs: string[] = [];
 
@@ -25,9 +25,10 @@ function createManifestResult(
     path: path.join(targetDir, 'opsx-dev-pipeline.json'),
     storage: 'standalone',
     manifest: {
-      schemaVersion: 1,
+      schemaVersion: 2,
       projectName: 'demo',
       tool: 'claude',
+      tools: ['claude'],
       features: ['base', 'skills', 'commands', 'docs'],
       templateVersion: '0.2.1',
       packageName: 'opsx-dev-pipeline',

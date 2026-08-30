@@ -74,7 +74,7 @@ export function buildTemplateContext(params: {
   techStackName?: string;
   hooksEnabled?: boolean;
 }): Record<string, unknown> {
-  const commandSeparator = (params.toolId === 'claude' || params.toolId === 'opencode') ? ':' : '-';
+  const commandSeparator = params.toolId === 'claude' || params.toolId === 'opencode' ? ':' : '-';
   const commandPrefix = params.toolId === 'codex' ? '$' : '/';
   const commandInvocation = (command: string) =>
     `${commandPrefix}opsx${commandSeparator}${command}`;
@@ -186,14 +186,6 @@ function isBundleFileGated(asset: AssetDefinition, entry: string, features: Feat
       (gate) => gate.path === entry && !features.includes(gate.feature),
     ) ?? false
   );
-}
-
-function isAssetInUpgradeScope(asset: AssetDefinition, managed: ManagedAssetIndex): boolean {
-  if (managed.topLevelIds.has(asset.id) || managed.bundleIds.has(asset.id)) {
-    return true;
-  }
-
-  return true;
 }
 
 function shouldIncludeInstallFile(
@@ -314,9 +306,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
 
   const upgradeAssetIds = new Set(
     input.mode === 'upgrade'
-      ? selectedAssets
-          .filter((asset) => isAssetInUpgradeScope(asset, managed))
-          .map((asset) => asset.id)
+      ? selectedAssets.map((asset) => asset.id)
       : [],
   );
 

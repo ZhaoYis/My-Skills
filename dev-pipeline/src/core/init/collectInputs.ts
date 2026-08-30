@@ -45,7 +45,7 @@ function resolveFeatures(option: InitOptions['feature']): {
   if (explicitHooks && explicitNoHooks) {
     throw new Error('`hooks` 与 `no-hooks` 互斥，请只传其中一个');
   }
-  const hooksEnabled = explicitNoHooks ? false : true;
+  const hooksEnabled = !explicitNoHooks;
 
   const filtered = normalized.filter((v) => v !== 'hooks' && v !== 'no-hooks');
   const unknown = filtered.filter(
@@ -60,9 +60,9 @@ function resolveFeatures(option: InitOptions['feature']): {
 
   // All features are default features; the `hooks` toggle controls whether
   // the `hooks` capability is part of the resolved feature list.
-  const features: FeatureId[] = hooksEnabled ? [...ALL_FEATURE_IDS] : ALL_FEATURE_IDS.filter(
-    (f) => f !== 'hooks',
-  );
+  const features: FeatureId[] = hooksEnabled
+    ? [...ALL_FEATURE_IDS]
+    : ALL_FEATURE_IDS.filter((f) => f !== 'hooks');
   return { features, hooksEnabled };
 }
 

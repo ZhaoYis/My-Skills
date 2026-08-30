@@ -64,7 +64,7 @@ function createAdapter(
     supportsUserDestination: () => true,
     getRoot: () => '.',
     getSkillRootNote: () => undefined,
-      getHookMode: () => undefined,
+    getHookMode: () => undefined,
   };
 }
 
@@ -546,7 +546,8 @@ describe('buildInstallPlan', () => {
       skillsDir,
       commandsDir,
     });
-    const askTool = toolId === 'cursor' ? 'AskQuestion' : toolId === 'opencode' ? 'question' : 'AskUserQuestion';
+    const askTool =
+      toolId === 'cursor' ? 'AskQuestion' : toolId === 'opencode' ? 'question' : 'AskUserQuestion';
 
     for (const command of standaloneCommands) {
       const rendered = await renderTemplate(

@@ -23,12 +23,9 @@ function ensureHandlebarsHelpers(): void {
     },
   );
 
-  Handlebars.registerHelper(
-    'isTool',
-    function isTool(this: { toolId?: string }, toolId: string) {
-      return this.toolId === toolId;
-    },
-  );
+  Handlebars.registerHelper('isTool', function isTool(this: { toolId?: string }, toolId: string) {
+    return this.toolId === toolId;
+  });
 
   helpersRegistered = true;
 }

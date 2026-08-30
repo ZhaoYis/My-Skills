@@ -1,6 +1,6 @@
-import fs from 'fs-extra';
 import os from 'node:os';
 import path from 'node:path';
+import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
 import { checkStackHealth } from '../../src/core/doctor/checkStackHealth.js';
 
@@ -48,10 +48,7 @@ describe('checkStackHealth', () => {
 
   it('returns error when stack.id is missing', async () => {
     const dir = await createTempDir();
-    await writeConfig(
-      dir,
-      'stack:\n  services: [api]\n',
-    );
+    await writeConfig(dir, 'stack:\n  services: [api]\n');
 
     const result = await checkStackHealth(dir);
 

@@ -1,4 +1,11 @@
-import type { DocLanguage, FeatureId, InstallScope, StackId, ToolAdapter, ToolId } from '../adapters/types.js';
+import type {
+  DocLanguage,
+  FeatureId,
+  InstallScope,
+  StackId,
+  ToolAdapter,
+  ToolId,
+} from '../adapters/types.js';
 import type { InstallConflictResolution, InstallFile, InstallMode } from '../assets/types.js';
 import type { TechStackId } from '../tech-stack/types.js';
 

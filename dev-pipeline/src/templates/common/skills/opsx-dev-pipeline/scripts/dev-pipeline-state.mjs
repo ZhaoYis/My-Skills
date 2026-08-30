@@ -6,10 +6,10 @@ import {
   emitError,
   execCommandSync,
   findOpenSpecRoot,
-  validateChangeName,
-  parseRouteConfig,
-  validateRouteConfig,
   getRoutePhases,
+  parseRouteConfig,
+  validateChangeName,
+  validateRouteConfig,
 } from './pipeline-lib.mjs';
 
 const EXIT_STATE_NOT_FOUND = 10;
@@ -52,7 +52,12 @@ const executionModes = new Set(['pipeline', 'standalone', 'hybrid']);
 
 function output(payload, exitCode = 0, raw) {
   const shouldStrip = raw === undefined ? !rawOutput : !raw;
-  if (shouldStrip && payload.state && typeof payload.state === 'object' && !Array.isArray(payload.state)) {
+  if (
+    shouldStrip &&
+    payload.state &&
+    typeof payload.state === 'object' &&
+    !Array.isArray(payload.state)
+  ) {
     payload = { ...payload, state: summaryView(payload.state) };
   }
   process.stdout.write(`${JSON.stringify(payload)}\n`);
@@ -73,18 +78,14 @@ function summaryView(state) {
 
   // Strip decisions snapshots from phaseHistory entries (redundant with top-level decisions).
   if (Array.isArray(stripped.phaseHistory)) {
-    stripped.phaseHistory = stripped.phaseHistory.map(
-      ({ decisions: _d, ...entry }) => entry,
-    );
+    stripped.phaseHistory = stripped.phaseHistory.map(({ decisions: _d, ...entry }) => entry);
   }
 
   // Strip decisions snapshots from review.rounds entries.
   if (stripped.review && Array.isArray(stripped.review.rounds)) {
     stripped.review = {
       ...stripped.review,
-      rounds: stripped.review.rounds.map(
-        ({ decisions: _d, ...round }) => round,
-      ),
+      rounds: stripped.review.rounds.map(({ decisions: _d, ...round }) => round),
     };
   }
 
@@ -637,7 +638,8 @@ const attemptRules = {
 const [command, ...commandArgs] = process.argv.slice(2);
 const viewIdx = commandArgs.indexOf('--view');
 const rawOutput = viewIdx !== -1 && commandArgs[viewIdx + 1] === 'full';
-const filteredArgs = viewIdx === -1 ? commandArgs : commandArgs.filter((_, i) => i !== viewIdx && i !== viewIdx + 1);
+const filteredArgs =
+  viewIdx === -1 ? commandArgs : commandArgs.filter((_, i) => i !== viewIdx && i !== viewIdx + 1);
 if (!command) {
   emitError(
     'missing-command',

@@ -2,7 +2,7 @@ import pc from 'picocolors';
 import { checkStackHealth } from '../../core/doctor/checkStackHealth.js';
 import type { HealthStatus, StackHealthResult } from '../../core/doctor/types.js';
 import { readManifest } from '../../core/manifest/io.js';
-import { checkManifestVersion, mergeHealthStatus } from '../../core/manifest/versionCheck.js';
+import { checkManifestVersion } from '../../core/manifest/versionCheck.js';
 import { MANIFEST_PACKAGE_JSON_KEY, PACKAGE_VERSION } from '../../core/runtime/meta.js';
 
 export interface DoctorCommandOptions {
@@ -109,6 +109,7 @@ export async function runDoctorCommand(
             ? `${manifestResult.path} (${MANIFEST_PACKAGE_JSON_KEY})`
             : manifestResult.path,
         tool: manifestResult.manifest.tool,
+        tools: manifestResult.manifest.tools,
         features: manifestResult.manifest.features,
         templateVersion: manifestResult.manifest.templateVersion,
         currentVersion: PACKAGE_VERSION,
@@ -129,7 +130,13 @@ export async function runDoctorCommand(
 
   if (manifestResult) {
     console.log(pc.green(`Manifest: found at ${manifest.path}`));
-    console.log(`- tool: ${manifest.tool}`);
+    const installedTools = manifest.tools ?? [];
+    console.log(`- tools: ${installedTools.join(', ') || '(none recorded)'}`);
+    if (manifest.tool && installedTools.length > 1) {
+      console.log(`- active tool: ${manifest.tool}`);
+    } else if (manifest.tool) {
+      console.log(`- tool: ${manifest.tool}`);
+    }
     console.log(`- features: ${manifest.features?.join(', ') ?? ''}`);
     console.log(`- templateVersion: ${manifest.templateVersion}`);
     console.log(`- currentVersion: ${PACKAGE_VERSION}`);

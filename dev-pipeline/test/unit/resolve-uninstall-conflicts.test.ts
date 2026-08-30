@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import prompts from 'prompts';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolveUninstallConflicts } from '../../src/core/uninstall/resolveUninstallConflicts.js';
 import type { UninstallPlan } from '../../src/core/uninstall/types.js';
 
@@ -56,5 +56,43 @@ describe('resolveUninstallConflicts', () => {
     );
 
     expect(plan.files.every((file) => file.resolution === 'skip')).toBe(true);
+  });
+
+  it('applies remove-all from the prompt', async () => {
+    vi.mocked(prompts).mockResolvedValueOnce({ resolution: 'remove-all' });
+    const plan = await resolveUninstallConflicts(
+      createPlan([
+        { destinationPath: '/tmp/demo/README.md', appendable: true },
+        { destinationPath: '/tmp/demo/CLAUDE.md', appendable: true },
+      ]),
+      { yes: false },
+    );
+
+    expect(plan.files.every((file) => file.resolution === 'remove')).toBe(true);
+  });
+
+  it('records per-file remove when yes is enabled', async () => {
+    const plan = await resolveUninstallConflicts(
+      createPlan([
+        { destinationPath: '/tmp/demo/README.md', appendable: true },
+        { destinationPath: '/tmp/demo/CLAUDE.md', appendable: false },
+      ]),
+      { yes: true },
+    );
+
+    expect(plan.files.every((file) => file.resolution === 'remove')).toBe(true);
+  });
+
+  it('keeps files already resolved when yes is enabled', async () => {
+    const plan = await resolveUninstallConflicts(
+      createPlan([
+        { destinationPath: '/tmp/demo/README.md', appendable: true, resolution: 'skip' },
+        { destinationPath: '/tmp/demo/CLAUDE.md', appendable: true, resolution: 'unresolved' },
+      ]),
+      { yes: true },
+    );
+
+    expect(plan.files[0]?.resolution).toBe('skip');
+    expect(plan.files[1]?.resolution).toBe('remove');
   });
 });

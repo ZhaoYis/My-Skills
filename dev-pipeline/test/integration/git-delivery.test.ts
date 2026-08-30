@@ -16,9 +16,7 @@ interface GitResult {
 afterEach(async () => {
   // Use native fs.promises.rm instead of fs-extra's remove to avoid
   // graceful-fs compat issues with Node.js ≥22 on Linux (ENOTEMPTY).
-  await Promise.all(
-    createdDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })),
-  );
+  await Promise.all(createdDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
 });
 
 function runGit(cwd: string, args: string[]): Promise<GitResult> {

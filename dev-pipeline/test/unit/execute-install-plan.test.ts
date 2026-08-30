@@ -31,7 +31,7 @@ function createAdapter(): ToolAdapter {
     supportsUserDestination: () => true,
     getRoot: () => '.',
     getSkillRootNote: () => undefined,
-      getHookMode: () => undefined,
+    getHookMode: () => undefined,
   };
 }
 
@@ -75,7 +75,7 @@ describe('executeInstallPlan', () => {
 
     const managedAssets = [
       { id: 'common-readme', destination: 'README.md' },
-      { id: 'claude-docs', destination: 'CLAUDE.md' },
+      { id: 'claude-docs', destination: 'CLAUDE.md', tool: 'claude' as const },
     ];
 
     await fs.writeJson(path.join(dir, MANIFEST_FILE), {

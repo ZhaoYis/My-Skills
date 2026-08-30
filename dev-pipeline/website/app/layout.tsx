@@ -8,11 +8,24 @@ export const metadata: Metadata = {
     template: "%s | opsx-dev-pipeline",
   },
   description:
-    "开源的 AI 研发流水线 CLI，7 阶段门禁 + 子Agent 对抗验证 + 完整链路追溯，让 Claude Code、Cursor 和 Codex 的每次变更都可验证、可追溯。",
-  keywords: ["AI coding", "OpenSpec", "Claude Code", "Cursor", "Codex", "研发流水线", "对抗验证", "Agent"],
+    "开源的 AI 研发流水线 CLI，8 阶段门禁 + 子Agent 对抗验证 + PreToolUse 钩子 + 多工具共存 + Route 分级，让 Claude Code、OpenCode、Cursor 和 Codex 的每次变更都可验证、可追溯。",
+  keywords: [
+    "AI coding",
+    "OpenSpec",
+    "Claude Code",
+    "OpenCode",
+    "Cursor",
+    "Codex",
+    "研发流水线",
+    "对抗验证",
+    "Agent",
+    "PreToolUse",
+    "Pipeline Hook",
+    "Route 分级",
+  ],
   openGraph: {
     title: "opsx-dev-pipeline",
-    description: "给团队的 AI 编程助手装上规范、门禁和独立验证。30 秒初始化，独立 Agent 对抗验证。",
+    description: "给团队的 AI 编程助手装上规范、门禁、PreToolUse 钩子与独立验证。30 秒初始化，多工具共存。",
     type: "website",
     locale: "zh_CN",
   },
@@ -22,13 +35,20 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  colorScheme: "light",
-  themeColor: "#059669",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#08090A" },
+    { media: "(prefers-color-scheme: light)", color: "#FAFAFA" },
+  ],
 };
+
+const themeInitScript = `(function(){try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t)}else{document.documentElement.setAttribute("data-theme","light")}}catch(e){document.documentElement.setAttribute("data-theme","light")}})();`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="zh-CN">
+    <html lang="zh-CN" data-theme="light" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body>{children}</body>
     </html>
   );

@@ -3,9 +3,9 @@ import path from 'node:path';
 import fs from 'fs-extra';
 import prompts from 'prompts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanupDirectories } from '../../helpers/cleanup.js';
 import { runInit } from '../../../src/core/init/runInit.js';
 import { readManifest } from '../../../src/core/manifest/io.js';
+import { cleanupDirectories } from '../../helpers/cleanup.js';
 
 vi.mock('prompts', () => ({
   default: vi.fn(),
@@ -18,9 +18,7 @@ afterEach(async () => {
   vi.mocked(prompts).mockReset();
 });
 
-async function initToTmp(
-  options: Parameters<typeof runInit>[0],
-): Promise<string> {
+async function initToTmp(options: Parameters<typeof runInit>[0]): Promise<string> {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'opsx-hooks-'));
   createdDirs.push(dir);
   await runInit({ ...options, dir });
@@ -54,10 +52,9 @@ describe('pipeline hooks integration', () => {
     // Hooks are tracked in manifest (so sync/upgrade re-renders them).
     const result = await readManifest(dir);
     expect(result).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: narrowed by expect(result).not.toBeNull() above
     const manifest = result!.manifest;
-    const bashAsset = manifest.managedAssets.find((a) =>
-      a.id.endsWith('block-dangerous-bash.mjs'),
-    );
+    const bashAsset = manifest.managedAssets.find((a) => a.id.endsWith('block-dangerous-bash.mjs'));
     const writeAsset = manifest.managedAssets.find((a) =>
       a.id.endsWith('block-sensitive-write.mjs'),
     );
@@ -98,9 +95,7 @@ describe('pipeline hooks integration', () => {
     expect(parsed.hooks.PreToolUse).toHaveLength(2);
     expect(parsed._opsxManaged.hooksEnabled).toBe(true);
 
-    const matchers = parsed.hooks.PreToolUse.map(
-      (e: { matcher: string }) => e.matcher,
-    );
+    const matchers = parsed.hooks.PreToolUse.map((e: { matcher: string }) => e.matcher);
     expect(matchers).toContain('Bash');
     expect(matchers).toContain('Write|Edit|MultiEdit');
   });
@@ -119,9 +114,7 @@ describe('pipeline hooks integration', () => {
 
     const parsed = JSON.parse(await fs.readFile(opencodeConfig, 'utf8'));
     expect(parsed.hooks.PreToolUse).toHaveLength(2);
-    const matchers = parsed.hooks.PreToolUse.map(
-      (e: { matcher: string }) => e.matcher,
-    );
+    const matchers = parsed.hooks.PreToolUse.map((e: { matcher: string }) => e.matcher);
     expect(matchers).toContain('bash');
     expect(matchers).toContain('write|edit|multi_edit');
   });
@@ -140,16 +133,13 @@ describe('pipeline hooks integration', () => {
     expect(await fs.pathExists(path.join(dir, '.claude/settings.json'))).toBe(false);
     expect(
       await fs.pathExists(
-        path.join(
-          dir,
-          '.claude/skills/opsx-dev-pipeline/scripts/hooks/block-dangerous-bash.mjs',
-        ),
+        path.join(dir, '.claude/skills/opsx-dev-pipeline/scripts/hooks/block-dangerous-bash.mjs'),
       ),
     ).toBe(false);
 
     // Manifest excludes `hooks` from features list
     const result = await readManifest(dir);
-    expect(result!.manifest.features).not.toContain('hooks');
+    expect(result?.manifest.features).not.toContain('hooks');
   });
 
   it('--feature hooks + --feature no-hooks is a mutex violation', async () => {

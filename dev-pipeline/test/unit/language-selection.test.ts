@@ -13,9 +13,10 @@ vi.mock('prompts', () => ({
 
 const createdDirs: string[] = [];
 const manifest: PipelineManifest = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   projectName: 'demo',
   tool: 'claude',
+  tools: ['claude'],
   stack: 'frontend',
   features: [],
   templateVersion: '0.2.1',

@@ -1,6 +1,6 @@
-import fs from 'fs-extra';
 import os from 'node:os';
 import path from 'node:path';
+import fs from 'fs-extra';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { runDoctorCommand } from '../../src/cli/commands/doctor.js';
 import { MANIFEST_FILE, PACKAGE_VERSION } from '../../src/core/runtime/meta.js';

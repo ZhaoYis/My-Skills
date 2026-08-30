@@ -317,8 +317,8 @@ describe('Route End-to-End Scenarios', () => {
       // Upgrade to standard
       result = await runState(['route', changeName, 'upgrade', 'standard']);
       expect(result.code).toBe(0);
-      expect(result.payload.route!.choice).toBe('standard');
-      expect(result.payload.route!.upgradedFrom).toBe('trivial');
+      expect(result.payload.route?.choice).toBe('standard');
+      expect(result.payload.route?.upgradedFrom).toBe('trivial');
 
       // Now Phase 1 should be accessible (going back)
       result = await runState(['transition', changeName, '1', '3']);
@@ -326,7 +326,7 @@ describe('Route End-to-End Scenarios', () => {
 
       // Verify upgrade history
       const finalState = await runState(['get', changeName]);
-      expect(finalState.payload.state!.route).toMatchObject({
+      expect(finalState.payload.state?.route).toMatchObject({
         choice: 'standard',
         upgradedFrom: 'trivial',
         upgradedAt: expect.any(String),

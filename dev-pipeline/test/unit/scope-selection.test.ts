@@ -4,7 +4,6 @@ import prompts from 'prompts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { loadToolRegistry } from '../../src/core/adapters/registry.js';
 import type { ToolAdapter, ToolId } from '../../src/core/adapters/types.js';
-import { assetManifest } from '../../src/core/assets/manifest.js';
 import { buildInstallPlan } from '../../src/core/init/buildInstallPlan.js';
 import { collectInputs } from '../../src/core/init/collectInputs.js';
 import { resolvePackageRoot } from '../../src/core/runtime/resolvePackageRoot.js';
@@ -26,11 +25,11 @@ describe('scope selection (user vs project)', () => {
       for (const toolId of ['claude', 'cursor', 'codex', 'opencode'] as const) {
         const adapter = registry.get(toolId);
         expect(adapter).toBeDefined();
-        expect(adapter!.getDestination('skills', 'project')).toBe(
-          adapter!.definition.destinations.skills,
+        expect(adapter?.getDestination('skills', 'project')).toBe(
+          adapter?.definition.destinations.skills,
         );
-        expect(adapter!.getDestination('commands', 'project')).toBe(
-          adapter!.definition.destinations.commands,
+        expect(adapter?.getDestination('commands', 'project')).toBe(
+          adapter?.definition.destinations.commands,
         );
       }
     });
@@ -38,6 +37,7 @@ describe('scope selection (user vs project)', () => {
     it('resolves user-level destinations as absolute paths under home directory', async () => {
       const rootDir = await resolvePackageRoot(import.meta.url);
       const registry = await loadToolRegistry(rootDir);
+      // biome-ignore lint/style/noNonNullAssertion: test fixture guarantees key exists
       const adapter = registry.get('claude')!;
 
       expect(adapter.getDestination('skills', 'user')).toBe(
@@ -53,16 +53,19 @@ describe('scope selection (user vs project)', () => {
       const registry = await loadToolRegistry(rootDir);
 
       // Claude Code supports both skills and commands at user scope
+      // biome-ignore lint/style/noNonNullAssertion: test fixture guarantees key exists
       const claude = registry.get('claude')!;
       expect(claude.supportsUserDestination('skills')).toBe(true);
       expect(claude.supportsUserDestination('commands')).toBe(true);
 
       // Cursor supports both skills and commands at user scope
+      // biome-ignore lint/style/noNonNullAssertion: test fixture guarantees key exists
       const cursor = registry.get('cursor')!;
       expect(cursor.supportsUserDestination('skills')).toBe(true);
       expect(cursor.supportsUserDestination('commands')).toBe(true);
 
       // Codex supports both skills and commands at user scope
+      // biome-ignore lint/style/noNonNullAssertion: test fixture guarantees key exists
       const codex = registry.get('codex')!;
       expect(codex.supportsUserDestination('skills')).toBe(true);
       expect(codex.supportsUserDestination('commands')).toBe(true);
@@ -71,6 +74,7 @@ describe('scope selection (user vs project)', () => {
     it('defaults to project scope when no scope is passed to getDestination', async () => {
       const rootDir = await resolvePackageRoot(import.meta.url);
       const registry = await loadToolRegistry(rootDir);
+      // biome-ignore lint/style/noNonNullAssertion: test fixture guarantees key exists
       const adapter = registry.get('claude')!;
 
       // Without explicit scope, should use project destinations
@@ -108,7 +112,7 @@ describe('scope selection (user vs project)', () => {
             supportsUserDestination: () => true,
             getRoot: () => '.',
             getSkillRootNote: () => undefined,
-      getHookMode: () => undefined,
+            getHookMode: () => undefined,
           },
         ],
       ]);
@@ -212,7 +216,7 @@ describe('scope selection (user vs project)', () => {
         (file) => file.assetId === 'opsx-dev-pipeline-skill-bundle:SKILL.md.hbs',
       );
       expect(skillFile).toBeDefined();
-      expect(skillFile!.destinationPath).toContain(
+      expect(skillFile?.destinationPath).toContain(
         path.join('.claude', 'skills', 'opsx-dev-pipeline'),
       );
       expect(path.isAbsolute('.claude/skills')).toBe(false);
@@ -239,7 +243,7 @@ describe('scope selection (user vs project)', () => {
         (file) => file.assetId === 'opsx-dev-pipeline-skill-bundle:SKILL.md.hbs',
       );
       expect(skillFile).toBeDefined();
-      expect(skillFile!.destinationPath).toContain(
+      expect(skillFile?.destinationPath).toContain(
         path.join(os.homedir(), '.claude/skills/opsx-dev-pipeline'),
       );
     });
@@ -320,8 +324,8 @@ describe('scope selection (user vs project)', () => {
 
       for (const toolId of ['claude', 'cursor', 'codex', 'opencode'] as const) {
         const adapter = registry.get(toolId);
-        expect(adapter!.definition.userDestinations).toBeDefined();
-        expect(adapter!.definition.userDestinations?.skills).toBeDefined();
+        expect(adapter?.definition.userDestinations).toBeDefined();
+        expect(adapter?.definition.userDestinations?.skills).toBeDefined();
       }
     });
 
@@ -329,10 +333,10 @@ describe('scope selection (user vs project)', () => {
       const rootDir = await resolvePackageRoot(import.meta.url);
       const registry = await loadToolRegistry(rootDir);
 
-      expect(registry.get('claude')!.definition.userDestinations?.commands).toBeDefined();
-      expect(registry.get('cursor')!.definition.userDestinations?.commands).toBeDefined();
-      expect(registry.get('codex')!.definition.userDestinations?.commands).toBeDefined();
-      expect(registry.get('opencode')!.definition.userDestinations?.commands).toBeDefined();
+      expect(registry.get('claude')?.definition.userDestinations?.commands).toBeDefined();
+      expect(registry.get('cursor')?.definition.userDestinations?.commands).toBeDefined();
+      expect(registry.get('codex')?.definition.userDestinations?.commands).toBeDefined();
+      expect(registry.get('opencode')?.definition.userDestinations?.commands).toBeDefined();
     });
   });
 });

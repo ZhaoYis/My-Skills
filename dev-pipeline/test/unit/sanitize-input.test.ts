@@ -26,16 +26,18 @@ describe('sanitizeInput', () => {
 
     it('handles complex SSTI payloads', () => {
       // All curly braces are stripped, leaving harmless text
-      expect(
-        sanitizeProjectName("{{#with 'constructor'}}{{this}}{{/with}}"),
-      ).toBe("#with 'constructor'this/with");
+      expect(sanitizeProjectName("{{#with 'constructor'}}{{this}}{{/with}}")).toBe(
+        "#with 'constructor'this/with",
+      );
     });
   });
 
   describe('assertPathWithinBase', () => {
     it('allows paths within the base directory', () => {
       expect(() => assertPathWithinBase('/home/user/project', 'src/file.ts')).not.toThrow();
-      expect(() => assertPathWithinBase('/home/user/project', '.claude/skills/test.md')).not.toThrow();
+      expect(() =>
+        assertPathWithinBase('/home/user/project', '.claude/skills/test.md'),
+      ).not.toThrow();
     });
 
     it('allows the base directory itself', () => {
@@ -52,16 +54,14 @@ describe('sanitizeInput', () => {
     });
 
     it('rejects paths that escape via nested traversal', () => {
-      expect(() =>
-        assertPathWithinBase('/home/user/project', 'src/../../outside'),
-      ).toThrow(/Path traversal detected/);
+      expect(() => assertPathWithinBase('/home/user/project', 'src/../../outside')).toThrow(
+        /Path traversal detected/,
+      );
     });
 
     it('handles paths that look like traversal but stay within bounds', () => {
       // src/../src/file.ts resolves to src/file.ts which is within base
-      expect(() =>
-        assertPathWithinBase('/home/user/project', 'src/../src/file.ts'),
-      ).not.toThrow();
+      expect(() => assertPathWithinBase('/home/user/project', 'src/../src/file.ts')).not.toThrow();
     });
   });
 });

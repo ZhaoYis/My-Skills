@@ -65,6 +65,10 @@ export async function runCli(argv: string[]): Promise<void> {
     .command('uninstall', 'Remove managed files tracked by opsx-dev-pipeline manifest')
     .option('--yes', 'Remove all matched managed files without prompts')
     .option('--dry-run', 'Preview files that would be removed without deleting them')
+    .option(
+      '--tool <tool>',
+      'Uninstall only assets owned by this tool; omit to remove every managed asset',
+    )
     .option(...dirOption)
     .action(async (options) => {
       await runUninstallCommand(options);

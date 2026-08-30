@@ -14,9 +14,10 @@ import {
 const createdDirs: string[] = [];
 
 const sampleManifest: PipelineManifest = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   projectName: 'demo',
   tool: 'claude',
+  tools: ['claude'],
   techStack: 'java-spring-boot',
   features: ['base'],
   templateVersion: '0.2.1',
