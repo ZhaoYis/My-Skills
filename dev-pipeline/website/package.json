@@ -13,6 +13,8 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@emnapi/core": "^1.7.1",
+    "@emnapi/runtime": "^1.7.1",
     "lucide-react": "0.468.0",
     "next": "16.2.11",
     "react": "19.2.3",
@@ -26,9 +28,5 @@
     "eslint": "^9.39.1",
     "eslint-config-next": "16.2.11",
     "typescript": "^5.8.3"
-  },
-  "overrides": {
-    "@emnapi/core": "^1.7.1",
-    "@emnapi/runtime": "^1.7.1"
   }
 }
