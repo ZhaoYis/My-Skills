@@ -97,20 +97,41 @@ function findExecutableDir(name: string): string | null {
   return null;
 }
 
+function directoryHasExecutable(dir: string, name: string): boolean {
+  const extensions =
+    process.platform === 'win32'
+      ? ['.cmd', '.bat', '.exe', '']
+      : [''];
+  for (const ext of extensions) {
+    try {
+      fs.accessSync(path.join(dir, `${name}${ext}`), fs.constants.F_OK);
+      return true;
+    } catch {
+      // try the next candidate
+    }
+  }
+  return false;
+}
+
 function commandEnv(options: { isolateOpenspec?: boolean } = {}): NodeJS.ProcessEnv {
   const env = { ...process.env };
   env.FORCE_COLOR = '0';
   env.NO_COLOR = '1';
   const nodeBin = path.dirname(process.execPath);
   const gitBin = findExecutableDir('git');
-  const inheritedPath = process.env.PATH?.split(path.delimiter).filter(Boolean) ?? [];
+  const inheritedPath = (process.env.PATH?.split(path.delimiter) ?? []).filter(Boolean);
+  // Drop inherited directories that already expose an openspec binary, otherwise the
+  // "fails when openspec is not on PATH" test picks up a globally-installed copy on
+  // CI runners that ship one in their PATH. The mock in `bin` is prepended below so
+  // happy-path tests still find the mock.
+  const safeInheritedPath = inheritedPath.filter((dir) => !directoryHasExecutable(dir, 'openspec'));
   if (options.isolateOpenspec === false) {
-    env.PATH = [bin, ...inheritedPath].join(path.delimiter);
+    env.PATH = [bin, ...safeInheritedPath].join(path.delimiter);
   } else {
     const parts: string[] = [bin, nodeBin];
     if (gitBin) parts.push(gitBin);
     if (process.platform === 'win32') {
-      parts.push(...inheritedPath);
+      parts.push(...safeInheritedPath);
     } else {
       parts.push('/usr/bin', '/bin', '/usr/local/bin');
     }
