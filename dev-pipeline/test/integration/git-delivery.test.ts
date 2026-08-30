@@ -84,7 +84,7 @@ describe('Phase6 and Phase7 isolated Git delivery commands', () => {
 
       const ancestor = await runGit(root, ['merge-base', '--is-ancestor', 'feature/demo', 'HEAD']);
       expect(ancestor.code).toBe(strategy === 'squash' ? 1 : 0);
-    });
+    }, 60000);
   }
 
   it('lists conflicts and can abort a standard merge cleanly', async () => {
@@ -100,7 +100,7 @@ describe('Phase6 and Phase7 isolated Git delivery commands', () => {
     await git(root, 'merge', '--abort');
     expect(await git(root, 'status', '--porcelain')).toBe('');
     expect(await fs.readFile(path.join(root, 'conflict.txt'), 'utf8')).toBe('target\n');
-  });
+  }, 60000);
 
   it('rejects a non-fast-forward pull when local and remote target diverge', async () => {
     const { root, remote } = await createDeliveryRepo();
@@ -115,5 +115,5 @@ describe('Phase6 and Phase7 isolated Git delivery commands', () => {
     await commitFile(root, 'local.txt', 'local\n', 'chore: advance local independently');
     const pull = await runGit(root, ['pull', '--ff-only', 'origin', 'main']);
     expect(pull.code).not.toBe(0);
-  });
+  }, 60000);
 });

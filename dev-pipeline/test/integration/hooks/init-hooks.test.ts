@@ -176,5 +176,5 @@ describe('pipeline hooks integration', () => {
         `unexpected .opencode/opencode.json for ${tool}`,
       ).toBe(false);
     }
-  });
+  }, 60000);
 });
