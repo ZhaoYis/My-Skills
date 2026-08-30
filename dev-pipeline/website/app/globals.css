@@ -2,42 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
-  /* Linear-style dark palette */
-  --bg-app: #08090A;
-  --bg-secondary: #0E1012;
-  --bg-tertiary: #131517;
-  --bg-quaternary: #191D20;
-  --bg-panel: #1A1C1F;
-  --bg-elevated: #1F2125;
-  --bg-inset: rgba(255, 255, 255, 0.04);
-  --bg-inset-strong: rgba(255, 255, 255, 0.08);
-
-  --text-primary: #F7F8F8;
-  --text-secondary: #D0D6E0;
-  --text-tertiary: #8B93A1;
-  --text-quaternary: #62666D;
-
-  --line-soft: rgba(255, 255, 255, 0.06);
-  --line: rgba(255, 255, 255, 0.09);
-  --line-strong: rgba(255, 255, 255, 0.16);
-  --line-bright: #D0D6E0;
-
-  --accent: #8E8AF8;
-  --accent-bright: #B5B0FF;
-  --accent-soft: rgba(142, 138, 248, 0.16);
-  --accent-glow: rgba(142, 138, 248, 0.45);
-  --accent-deep: #5E57E8;
-
-  --blue: #8FA6FF;
-  --green: #4ADE80;
-  --yellow: #F2C94C;
-  --red: #F34E52;
-  --orange: #FFC47C;
-  --indigo: #B5B0FF;
-  --teal: #83dcdc;
-  --pink: #F79CE0;
-
-  /* Typography tokens */
+  /* Typography tokens (shared across themes) */
   --font-sans: 'Inter', 'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', Consolas, monospace;
 
@@ -65,7 +30,7 @@
   --text-large: 18px;
   --text-xl: 20px;
 
-  /* Spacing */
+  /* Spacing (shared) */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -85,7 +50,7 @@
   --auto-grid: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
   --auto-grid-wide: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
 
-  /* Radius — small, sharp, Linear-like */
+  /* Radius (shared) */
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -93,12 +58,102 @@
   --radius-xl: 16px;
   --radius-pill: 999px;
 
-  /* Shadows — Linear uses edge glow, not box-shadow */
-  --shadow-button: 0 0 0 1px rgba(255, 255, 255, 0.08);
-  --shadow-button-hover: 0 0 0 1px rgba(255, 255, 255, 0.16);
-
   --container: 1250px;
   --header-height: 60px;
+}
+
+/* ===== Dark theme (default) ===== */
+:root[data-theme='dark'] {
+  --bg-app: #08090A;
+  --bg-secondary: #0E1012;
+  --bg-tertiary: #131517;
+  --bg-quaternary: #191D20;
+  --bg-panel: #1A1C1F;
+  --bg-elevated: #1F2125;
+  --bg-inset: rgba(255, 255, 255, 0.04);
+  --bg-inset-strong: rgba(255, 255, 255, 0.08);
+  --bg-header: rgba(8, 9, 10, 0.72);
+
+  --text-primary: #F7F8F8;
+  --text-secondary: #D0D6E0;
+  --text-tertiary: #8B93A1;
+  --text-quaternary: #62666D;
+
+  --line-soft: rgba(255, 255, 255, 0.06);
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --line-bright: #D0D6E0;
+
+  --accent: #8E8AF8;
+  --accent-bright: #B5B0FF;
+  --accent-soft: rgba(142, 138, 248, 0.16);
+  --accent-glow: rgba(142, 138, 248, 0.45);
+  --accent-deep: #5E57E8;
+
+  --blue: #8FA6FF;
+  --green: #4ADE80;
+  --yellow: #F2C94C;
+  --red: #F34E52;
+  --orange: #FFC47C;
+  --indigo: #B5B0FF;
+  --teal: #83dcdc;
+  --pink: #F79CE0;
+
+  --bg-inverse: #FFFFFF;
+  --text-inverse: #08090A;
+
+  --shadow-button: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --shadow-button-hover: 0 0 0 1px rgba(255, 255, 255, 0.16);
+  --shadow-panel-inset: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+
+  color-scheme: dark;
+}
+
+/* ===== Light theme ===== */
+:root[data-theme='light'] {
+  --bg-app: #FAFAFA;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #F4F4F5;
+  --bg-quaternary: #E8E8EA;
+  --bg-panel: #FFFFFF;
+  --bg-elevated: #F4F4F5;
+  --bg-inset: rgba(10, 10, 14, 0.04);
+  --bg-inset-strong: rgba(10, 10, 14, 0.07);
+  --bg-header: rgba(250, 250, 250, 0.78);
+
+  --text-primary: #1A1A1E;
+  --text-secondary: #4A4A52;
+  --text-tertiary: #6E6E78;
+  --text-quaternary: #A0A0A8;
+
+  --line-soft: rgba(0, 0, 0, 0.06);
+  --line: rgba(0, 0, 0, 0.08);
+  --line-strong: rgba(0, 0, 0, 0.14);
+  --line-bright: #1A1A1E;
+
+  --accent: #6E5FE6;
+  --accent-bright: #5E57E8;
+  --accent-soft: rgba(94, 87, 232, 0.10);
+  --accent-glow: rgba(94, 87, 232, 0.30);
+  --accent-deep: #4A3FCB;
+
+  --blue: #5B6FE0;
+  --green: #16A34A;
+  --yellow: #B45309;
+  --red: #DC2626;
+  --orange: #D97706;
+  --indigo: #5E57E8;
+  --teal: #0E7C7B;
+  --pink: #C026D3;
+
+  --bg-inverse: #1A1A1E;
+  --text-inverse: #FFFFFF;
+
+  --shadow-button: 0 0 0 1px rgba(0, 0, 0, 0.08);
+  --shadow-button-hover: 0 0 0 1px rgba(0, 0, 0, 0.14);
+  --shadow-panel-inset: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+
+  color-scheme: light;
 }
 
 * {
@@ -109,7 +164,6 @@ html {
   scroll-behavior: smooth;
   scroll-padding-top: calc(var(--header-height) + 24px);
   background: var(--bg-app);
-  color-scheme: dark;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -125,6 +179,7 @@ body {
   line-height: 1.5;
   letter-spacing: -0.005em;
   min-height: 100vh;
+  transition: background-color 220ms ease, color 220ms ease;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -266,7 +321,7 @@ code {
   z-index: 40;
   top: 0;
   height: var(--header-height);
-  background: rgba(8, 9, 10, 0.72);
+  background: var(--bg-header);
   backdrop-filter: saturate(140%) blur(14px);
   -webkit-backdrop-filter: saturate(140%) blur(14px);
   border-bottom: 1px solid var(--line-soft);
@@ -352,6 +407,34 @@ code {
 .github-link svg { width: 16px; height: 16px; }
 .github-link svg:last-child { width: 12px; height: 12px; opacity: 0.6; }
 
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease;
+}
+
+.theme-toggle:hover {
+  border-color: var(--line-strong);
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.theme-toggle svg { width: 16px; height: 16px; }
+
 .menu-button {
   display: none;
   width: 32px; height: 32px;
@@ -362,6 +445,12 @@ code {
   background: var(--bg-secondary);
   color: var(--text-primary);
   cursor: pointer;
+}
+
+.header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .mobile-nav { display: none; }
@@ -480,7 +569,7 @@ code {
   overflow: hidden;
   box-shadow:
     0 30px 80px -20px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    var(--shadow-panel-inset);
 }
 
 .hero-panel::before {
@@ -703,12 +792,13 @@ code {
 .button svg { width: 15px; height: 15px; }
 
 .button--primary {
-  background: #fff;
-  color: var(--bg-app);
+  background: var(--bg-inverse);
+  color: var(--text-inverse);
 }
 
 .button--primary:hover {
   background: var(--text-secondary);
+  color: var(--text-inverse);
 }
 
 .button--ghost {
@@ -2825,8 +2915,8 @@ code {
 
 .cta-links > span svg { width: 12px; height: 12px; color: var(--accent); }
 
-.cta-links .button--light { background: #fff; color: var(--bg-app); border: 1px solid transparent; }
-.cta-links .button--light:hover { background: var(--text-secondary); }
+.cta-links .button--light { background: var(--bg-inverse); color: var(--text-inverse); border: 1px solid transparent; }
+.cta-links .button--light:hover { background: var(--text-secondary); color: var(--text-inverse); }
 
 /* ===== Footer ===== */
 .site-footer {

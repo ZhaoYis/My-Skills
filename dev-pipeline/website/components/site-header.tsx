@@ -2,6 +2,7 @@
 
 import { ArrowUpRight, Github, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { navItems } from "@/lib/content";
 
 export function SiteHeader() {
@@ -44,26 +45,29 @@ export function SiteHeader() {
             </a>
           ))}
         </nav>
-        <a
-          className="github-link"
-          href="https://github.com/ZhaoYis/My-Skills/tree/main/dev-pipeline"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <Github aria-hidden="true" />
-          <span>GitHub</span>
-          <ArrowUpRight aria-hidden="true" />
-        </a>
-        <button
-          className="menu-button"
-          type="button"
-          onClick={() => setOpen(!open)}
-          aria-expanded={open}
-          aria-controls="mobile-nav"
-          aria-label={open ? "关闭导航" : "打开导航"}
-        >
-          {open ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
-        </button>
+        <div className="header-actions">
+          <ThemeToggle />
+          <a
+            className="github-link"
+            href="https://github.com/ZhaoYis/My-Skills/tree/main/dev-pipeline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <Github aria-hidden="true" />
+            <span>GitHub</span>
+            <ArrowUpRight aria-hidden="true" />
+          </a>
+          <button
+            className="menu-button"
+            type="button"
+            onClick={() => setOpen(!open)}
+            aria-expanded={open}
+            aria-controls="mobile-nav"
+            aria-label={open ? "关闭导航" : "打开导航"}
+          >
+            {open ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
+          </button>
+        </div>
       </div>
       <nav
         id="mobile-nav"
