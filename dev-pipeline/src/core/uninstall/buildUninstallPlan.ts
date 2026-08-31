@@ -47,9 +47,14 @@ export async function buildUninstallPlan(input: BuildUninstallPlanInput): Promis
 
   const files = await Promise.all(
     scopedAssets.map(async (asset): Promise<UninstallFile> => {
-      // Validate that the destination stays within the target directory (path traversal guard)
-      assertPathWithinBase(input.targetDir, asset.destination);
-      const destinationPath = path.join(input.targetDir, asset.destination);
+      // Validate that the destination stays within the target directory (path traversal guard).
+      // Skip for user-scope destinations (absolute paths outside the project directory).
+      if (!path.isAbsolute(asset.destination)) {
+        assertPathWithinBase(input.targetDir, asset.destination);
+      }
+      const destinationPath = path.isAbsolute(asset.destination)
+        ? asset.destination
+        : path.join(input.targetDir, asset.destination);
       const exists = await fs.pathExists(destinationPath);
       const kind = inferInstallKind(asset.id);
       const appendable =

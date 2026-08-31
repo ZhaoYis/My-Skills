@@ -231,10 +231,10 @@ async function expandBundle(
   toolId: ToolId,
 ): Promise<InstallFile[]> {
   const sourceRoot = path.join(rootDir, asset.source);
-  const bundleDestinationRoot = path.join(
-    targetDir,
-    renderString(resolveAssetDestination(asset, toolId), templateContext),
-  );
+  const renderedDest = renderString(resolveAssetDestination(asset, toolId), templateContext);
+  const bundleDestinationRoot = path.isAbsolute(renderedDest)
+    ? renderedDest
+    : path.join(targetDir, renderedDest);
   const files = await fs.readdir(sourceRoot, { recursive: true });
 
   const eligibleEntries = files
@@ -328,6 +328,11 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
         path.join(input.rootDir, renderString(asset.source, templateContext)),
       );
 
+      const renderedDestination = renderString(
+        resolveAssetDestination(asset, input.tool),
+        templateContext,
+      );
+
       return [
         {
           assetId: asset.id,
@@ -335,10 +340,9 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
             asset.kind === 'template'
               ? await resolveTemplateSource(renderedSource, language)
               : renderedSource,
-          destinationPath: path.join(
-            input.targetDir,
-            renderString(resolveAssetDestination(asset, input.tool), templateContext),
-          ),
+          destinationPath: path.isAbsolute(renderedDestination)
+            ? renderedDestination
+            : path.join(input.targetDir, renderedDestination),
           kind: asset.kind,
           exists: false,
           appendStrategy: 'none',

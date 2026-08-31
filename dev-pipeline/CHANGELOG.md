@@ -8,6 +8,10 @@
 
 ## [Unreleased](https://github.com/ZhaoYis/My-Skills/compare/v0.2.20...HEAD)
 
+### Fixed
+
+- **fix(init)**：修复 Windows 上 `scope: 'user'` 安装时路径拼接错误的问题。当用户选择 User 安装范围时，`adapter.getDestination()` 返回的是绝对路径（如 `C:\Users\...\.cursor\skills`），但 `path.join(targetDir, absolutePath)` 在 Windows 上不会像 POSIX 那样丢弃前置参数，导致路径变成 `D:\project\C:\Users\...\skills`。修复方案：在 `buildInstallPlan.ts` 的 bundle 和单文件路径拼接前，检查目标路径是否已为绝对路径，若是则直接使用而不拼接 `targetDir`。同步修复 `buildUninstallPlan.ts` 中相同的路径拼接问题。
+
 ### Changed
 
 - **feat(manifest)**：升 schemaVersion=2；新增 `tools: ToolId[]`，旧 `tool` 字段保留作向后兼容。
