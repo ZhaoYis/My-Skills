@@ -323,7 +323,7 @@ describe('tool matrix', () => {
     for (const name of removed) {
       expect(
         allFiles.filter((file) => {
-          const normalized = file.replaceAll('\\\\', '/');
+          const normalized = file.replaceAll('\\', '/');
           return (
             normalized.endsWith(`/${name}`) ||
             normalized.endsWith(`/${name}.md`) ||

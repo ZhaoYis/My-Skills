@@ -29,6 +29,7 @@ const STATE_SCRIPT = path.join(
 
 afterEach(async () => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
   await Promise.all(createdDirs.splice(0).map((dir) => fs.remove(dir)));
 });
 
@@ -59,7 +60,7 @@ async function writeOpenspecMock(repo: string, behavior: 'success' | 'fail' = 's
   await fs.ensureDir(bin);
   const successBody = `
     if (process.argv[2] === '--version') {
-      process.stdout.write('0.7.0\\n');
+      process.stdout.write('1.6.0\\n');
       return;
     }
     if (process.argv[2] === 'init') {
@@ -90,6 +91,9 @@ async function writeOpenspecMock(repo: string, behavior: 'success' | 'fail' = 's
       `@echo off\r\n"${nodeExe}" "${mockPath}" %*\r\nexit /b %ERRORLEVEL%\r\n`,
     );
   }
+  // Prepend the mock to PATH so runInit resolves the fake openspec instead of a
+  // globally installed one; inherited PATH is kept so git stays reachable.
+  vi.stubEnv('PATH', `${bin}${path.delimiter}${process.env.PATH ?? ''}`);
 }
 
 function state(repo: string, ...args: string[]): Promise<StateResult> {
@@ -163,18 +167,13 @@ describe('end-to-end pipeline lifecycle (mocked openspec CLI)', () => {
     ).toBe(true);
   });
 
-  it('refuses runInit when openspec --version is missing', async () => {
+  it('refuses runInit when openspec --version fails', async () => {
     const repo = await createRepo();
     await writeOpenspecMock(repo, 'fail');
-    vi.stubEnv('PATH', path.join(repo, 'mock-bin'));
 
-    try {
-      await expect(
-        runInit({ dir: repo, tool: 'claude', stack: 'backend', yes: true }),
-      ).rejects.toThrow(/OpenSpec|openspec/i);
-    } finally {
-      vi.unstubAllEnvs();
-    }
+    await expect(
+      runInit({ dir: repo, tool: 'claude', stack: 'backend', yes: true }),
+    ).rejects.toThrow(/OpenSpec|openspec/i);
   });
 
   it('runs a trivial change lifecycle after runInit', async () => {

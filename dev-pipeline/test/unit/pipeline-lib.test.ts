@@ -85,13 +85,13 @@ async function writeNodeCommand(name: string, content: string): Promise<void> {
 }
 
 describe('pipeline-lib', () => {
-  it('wraps Windows command shims with cmd.exe', async () => {
+  it('wraps Windows command shims with cmd.exe using cmd quoting semantics', async () => {
     const result = await runModule(`
       import { resolveCommandInvocation } from ${JSON.stringify(libUrl)};
       process.stdout.write(JSON.stringify(
         resolveCommandInvocation(
           'C:\\\\tools & fixtures\\\\openspec.cmd',
-          ['--version', 'name&value'],
+          ['--version', 'name&value', 'plain', 'quote"mark', 'C:\\\\dir\\\\'],
           'win32'
         )
       ));
@@ -103,8 +103,26 @@ describe('pipeline-lib', () => {
       windowsVerbatimArguments: true,
     });
     expect(invocation.args.slice(0, 3)).toEqual(['/d', '/s', '/c']);
-    expect(invocation.args[3]).toContain('tools^ ^&^ fixtures');
-    expect(invocation.args[3]).toContain('name^&value');
+    // The command is caret-escaped (never quoted — a leading quote pair would be
+    // stripped by cmd's /s legacy parsing and re-expose metacharacters).
+    // Backslashes stay literal (cmd.exe semantics, no CreateProcess-style doubling);
+    // metacharacter arguments are double-quoted; inner quotes are doubled ("");
+    // trailing backslashes are left untouched.
+    expect(invocation.args[3]).toBe(
+      'C:\\tools^ ^&^ fixtures\\openspec.cmd --version "name&value" plain "quote""mark" C:\\dir\\',
+    );
+  });
+
+  it('executes a .cmd shim whose path contains cmd metacharacters', async () => {
+    // bin lives at .../mock&bin — the & exercises cmd.exe escaping end to end.
+    const result = await runModule(`
+      import { execCommandSync } from ${JSON.stringify(libUrl)};
+      const out = execCommandSync('fixture-command', ['success'], { encoding: 'utf8' });
+      process.stdout.write(out);
+    `);
+
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout)).toEqual({ status: 'ok', items: [1, 2] });
   });
 
   it('accepts valid change names and identifiers', async () => {
