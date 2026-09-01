@@ -28,6 +28,12 @@ beforeEach(async () => {
   await run('git', ['init', '--quiet']);
   await run('git', ['config', 'user.name', 'Skill Tester']);
   await run('git', ['config', 'user.email', 'skill@example.com']);
+  // nodeBin (e.g. nvm4w's C:\nvm4w\nodejs) may ship a globally-installed openspec
+  // alongside node.exe; commandEnv drops such a dir, so stub node in `bin` to keep
+  // `requireCommand('node')` satisfiable without exposing the stray openspec.
+  if (directoryHasExecutable(path.dirname(process.execPath), 'openspec')) {
+    await writeNodeStub();
+  }
 });
 
 afterEach(async () => {
@@ -73,6 +79,18 @@ async function writeOpenspecMock(content: string, _exitCode = 0): Promise<void> 
       cmdPath,
       `@echo off\r\n"${nodeExe}" "${scriptPath}" %*\r\nexit /b %ERRORLEVEL%\r\n`,
     );
+  }
+}
+
+async function writeNodeStub(): Promise<void> {
+  if (process.platform === 'win32') {
+    const nodeExe = process.execPath.replace(/"/g, '""');
+    await fs.outputFile(
+      path.join(bin, 'node.cmd'),
+      `@echo off\r\n"${nodeExe}" %*\r\nexit /b %ERRORLEVEL%\r\n`,
+    );
+  } else {
+    await fs.symlink(process.execPath, path.join(bin, 'node'));
   }
 }
 
@@ -125,10 +143,16 @@ function commandEnv(options: { isolateOpenspec?: boolean } = {}): NodeJS.Process
   // CI runners that ship one in their PATH. The mock in `bin` is prepended below so
   // happy-path tests still find the mock.
   const safeInheritedPath = inheritedPath.filter((dir) => !directoryHasExecutable(dir, 'openspec'));
+  // nodeBin gets the same treatment: on machines where node.exe shares its install
+  // dir with a global openspec (nvm4w), the entry would smuggle openspec into the
+  // isolated PATH. A node forwarder stub in `bin` (see beforeEach) keeps `node`
+  // findable when this entry is dropped.
+  const safeNodeBin = directoryHasExecutable(nodeBin, 'openspec') ? null : nodeBin;
   if (options.isolateOpenspec === false) {
     env.PATH = [bin, ...safeInheritedPath].join(path.delimiter);
   } else {
-    const parts: string[] = [bin, nodeBin];
+    const parts: string[] = [bin];
+    if (safeNodeBin) parts.push(safeNodeBin);
     if (gitBin) parts.push(gitBin);
     if (process.platform === 'win32') {
       parts.push(...safeInheritedPath);
