@@ -23,7 +23,7 @@ description: |
         "hooks": [
           {
             "type": "command",
-            "command": "node {{skillsDir}}/opsx-dev-pipeline/scripts/hooks/block-dangerous-bash.mjs",
+            "command": "node {{{hookBlockDangerousBash}}}",
             "timeout": 5
           }
         ]
@@ -33,7 +33,7 @@ description: |
         "hooks": [
           {
             "type": "command",
-            "command": "node {{skillsDir}}/opsx-dev-pipeline/scripts/hooks/block-sensitive-write.mjs",
+            "command": "node {{{hookBlockSensitiveWrite}}}",
             "timeout": 5
           }
         ]

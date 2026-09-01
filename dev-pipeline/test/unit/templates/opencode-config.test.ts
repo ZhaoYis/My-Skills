@@ -5,7 +5,7 @@ import { renderTemplate } from '../../../src/core/init/renderTemplates.js';
 
 const TEMPLATE = path.resolve(process.cwd(), 'src/templates/tools/opencode/opencode.json.hbs');
 
-function context(hooksEnabled = true) {
+function context(hooksEnabled = true, skillsDir = '.opencode/skills') {
   return buildTemplateContext({
     projectName: 'demo',
     toolId: 'opencode',
@@ -13,7 +13,7 @@ function context(hooksEnabled = true) {
     stack: 'frontend',
     language: 'zh',
     features: ['base', 'skills', 'commands', 'docs', 'schema', 'hooks'],
-    skillsDir: '.opencode/skills',
+    skillsDir,
     commandsDir: '.opencode/commands',
     hooksEnabled,
   });
@@ -67,5 +67,19 @@ describe('opencode.json.hbs', () => {
   it('still produces valid JSON when hooksEnabled is false', async () => {
     const content = await renderTemplate(TEMPLATE, context(false));
     expect(() => JSON.parse(content)).not.toThrow();
+  });
+
+  it('renders valid JSON for Windows user-scope skill paths with spaces', async () => {
+    const content = await renderTemplate(
+      TEMPLATE,
+      context(true, 'C:\\Users\\John Doe\\.opencode\\skills'),
+    );
+    const parsed = JSON.parse(content);
+    expect(parsed.hooks.PreToolUse[0].hooks[0].command).toBe(
+      'node "C:/Users/John Doe/.opencode/skills/opsx-dev-pipeline/scripts/hooks/block-dangerous-bash.mjs"',
+    );
+    expect(parsed.hooks.PreToolUse[1].hooks[0].command).toBe(
+      'node "C:/Users/John Doe/.opencode/skills/opsx-dev-pipeline/scripts/hooks/block-sensitive-write.mjs"',
+    );
   });
 });

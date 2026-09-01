@@ -8,7 +8,7 @@ const TEMPLATE = path.resolve(
   'src/templates/tools/claude/overlay/.claude/settings.json.hbs',
 );
 
-function context(hooksEnabled = true) {
+function context(hooksEnabled = true, skillsDir = '.claude/skills') {
   return buildTemplateContext({
     projectName: 'demo',
     toolId: 'claude',
@@ -16,7 +16,7 @@ function context(hooksEnabled = true) {
     stack: 'backend',
     language: 'zh',
     features: ['base', 'skills', 'commands', 'docs', 'schema', 'hooks'],
-    skillsDir: '.claude/skills',
+    skillsDir,
     commandsDir: '.claude/commands',
     hooksEnabled,
   });
@@ -76,5 +76,30 @@ describe('claude settings.json.hbs', () => {
     const parsed = JSON.parse(await renderTemplate(TEMPLATE, context(true)));
     expect(parsed._opsxManaged.package).toBe('opsx-dev-pipeline');
     expect(typeof parsed._opsxManaged.templateVersion).toBe('string');
+  });
+
+  it('renders valid JSON for Windows user-scope skill paths with spaces', async () => {
+    // user-scope skillsDir comes from path.join(os.homedir(), ...) and carries
+    // backslashes on Windows; the rendered JSON must stay parseable and keep the
+    // hook script path as a single quoted argument.
+    const content = await renderTemplate(
+      TEMPLATE,
+      context(true, 'C:\\Users\\John Doe\\.claude\\skills'),
+    );
+    const parsed = JSON.parse(content);
+    expect(parsed.hooks.PreToolUse[0].hooks[0].command).toBe(
+      'node "C:/Users/John Doe/.claude/skills/opsx-dev-pipeline/scripts/hooks/block-dangerous-bash.mjs"',
+    );
+    expect(parsed.hooks.PreToolUse[1].hooks[0].command).toBe(
+      'node "C:/Users/John Doe/.claude/skills/opsx-dev-pipeline/scripts/hooks/block-sensitive-write.mjs"',
+    );
+  });
+
+  it('renders valid JSON for Windows user-scope skill paths without spaces', async () => {
+    const content = await renderTemplate(TEMPLATE, context(true, 'C:\\Users\\jane\\.claude\\skills'));
+    const parsed = JSON.parse(content);
+    expect(parsed.hooks.PreToolUse[0].hooks[0].command).toBe(
+      'node C:/Users/jane/.claude/skills/opsx-dev-pipeline/scripts/hooks/block-dangerous-bash.mjs',
+    );
   });
 });

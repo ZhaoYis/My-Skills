@@ -60,6 +60,20 @@ export function normalizeBundleEntry(entry: string): string {
   return entry.replaceAll('\\', '/');
 }
 
+/**
+ * Hook script paths are embedded in tool JSON config files. Backslashes are
+ * normalized to forward slashes so the rendered JSON stays valid on Windows
+ * (raw backslashes would form invalid escapes like \U). Paths containing
+ * whitespace are wrapped in double quotes so the host tool's command tokenizer
+ * keeps them as a single argument; the returned value is JSON-escaped (" → \")
+ * because it is spliced into a JSON string literal by the template.
+ */
+function hookScriptPath(skillsDir: string, script: string): string {
+  const scriptPath = `${skillsDir.replaceAll('\\', '/')}/opsx-dev-pipeline/scripts/hooks/${script}`;
+  const escaped = scriptPath.replace(/"/g, '\\"');
+  return /\s/.test(scriptPath) ? `\\"${escaped}\\"` : escaped;
+}
+
 export function buildTemplateContext(params: {
   projectName: string;
   toolId: ToolId;
@@ -87,6 +101,8 @@ export function buildTemplateContext(params: {
     language: params.language,
     packageName: PACKAGE_NAME,
     skillsDir: params.skillsDir,
+    hookBlockDangerousBash: hookScriptPath(params.skillsDir, 'block-dangerous-bash.mjs'),
+    hookBlockSensitiveWrite: hookScriptPath(params.skillsDir, 'block-sensitive-write.mjs'),
     commandsDir: params.commandsDir,
     features: params.features,
     techStack: params.techStack,

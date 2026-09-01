@@ -36,7 +36,14 @@ export function isOpenSpecCliMissingError(
   if (!error || typeof error !== 'object' || !('code' in error)) return false;
 
   const code = error.code;
-  return code === 'ENOENT' || (platform === 'win32' && (code === 1 || code === '1'));
+  if (code === 'ENOENT') return true;
+  if (platform !== 'win32' || (code !== 1 && code !== '1')) return false;
+
+  // cmd.exe exits 1 both when a command cannot be found and when the command
+  // itself fails, so classify the error as "missing" only when stderr carries
+  // cmd.exe's own command-not-found message.
+  const stderr = (error as { stderr?: unknown }).stderr;
+  return typeof stderr === 'string' && /not recognized|不是内部或外部命令/i.test(stderr);
 }
 
 export function resolveOpenSpecInvocation(
@@ -45,9 +52,11 @@ export function resolveOpenSpecInvocation(
 ): OpenSpecInvocation {
   if (platform === 'win32') {
     validateArgsForWindows(args);
+    // Use the bare command name so cmd.exe resolves it through PATHEXT: this
+    // finds .cmd/.bat npm shims as well as native .exe installs.
     return {
       command: 'cmd.exe',
-      args: ['/d', '/s', '/c', 'openspec.cmd', ...args],
+      args: ['/d', '/s', '/c', 'openspec', ...args],
     };
   }
 

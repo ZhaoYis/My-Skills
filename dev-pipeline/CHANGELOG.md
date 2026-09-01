@@ -11,6 +11,10 @@
 ### Fixed
 
 - **fix(init)**：修复 Windows 上 `scope: 'user'` 安装时路径拼接错误的问题。当用户选择 User 安装范围时，`adapter.getDestination()` 返回的是绝对路径（如 `C:\Users\...\.cursor\skills`），但 `path.join(targetDir, absolutePath)` 在 Windows 上不会像 POSIX 那样丢弃前置参数，导致路径变成 `D:\project\C:\Users\...\skills`。修复方案：在 `buildInstallPlan.ts` 的 bundle 和单文件路径拼接前，检查目标路径是否已为绝对路径，若是则直接使用而不拼接 `targetDir`。同步修复 `buildUninstallPlan.ts` 中相同的路径拼接问题。
+- **fix(init)**：修复 user-scope + Windows 下生成的 hook 配置为非法 JSON 的问题。`settings.json.hbs` / `opencode.json.hbs` 中 `{{skillsDir}}` 渲染出反斜杠路径（如 `C:\Users\...`），在 JSON 中形成 `\U` 等非法转义导致 hook 配置解析失败。修复方案：新增 `hookBlockDangerousBash` / `hookBlockSensitiveWrite` 上下文变量，反斜杠规范化为正斜杠，含空格路径用 JSON 转义的双引号包裹。
+- **fix(init)**：Windows 下 OpenSpec 调用不再硬编码 `openspec.cmd`，改为裸命令名由 cmd.exe 按 PATHEXT 解析，支持原生 `.exe` 安装；`isOpenSpecCliMissingError` 不再把 win32 下所有 exit 1 误判为「CLI 未安装」，仅当 stderr 包含 cmd.exe 的 command-not-found 消息（中英文）时才判定缺失。
+- **fix(scripts)**：`pipeline-lib.mjs` 的 cmd.exe 参数转义改为 cmd 语义——命令路径用 `^` 转义（含空格）且不引号（避免 `/s` legacy 剥离首引号后元字符重新暴露），参数含空白或元字符时双引号包裹、内部 `"` 写作 `""`，反斜杠不再翻倍（cmd.exe 中 `\` 是普通字符）。
+- **test**：修复 `init-matrix.test.ts` 只替换双反斜杠导致 Windows 上「已移除 preset 残留」负向断言恒真空通过的问题；`lifecycle.test.ts` 的 openspec mock 现在真正接入 PATH（版本提升至 1.6.0），不再隐性依赖全局 openspec。
 
 ### Changed
 

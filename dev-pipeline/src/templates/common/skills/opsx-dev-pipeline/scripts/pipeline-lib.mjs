@@ -9,8 +9,7 @@ const EXIT_COMMAND_FAILED = 5;
 const EXIT_INVALID_OUTPUT = 6;
 const MAX_BUFFER = 10 * 1024 * 1024;
 const MAX_ERROR_DETAIL_LENGTH = 4096;
-const CMD_META_CHARS = /([()\][%!^"`<>&|;, *?])/g;
-const CMD_SHIM_PATH = /node_modules[\\/]\.bin[\\/][^\\/]+\.cmd$/i;
+const CMD_SPECIAL_CHARS = /["\s&|<>^()]/;
 
 function normalizePaths(value) {
   if (typeof value === 'string') return value.replaceAll('\\', '/');
@@ -60,30 +59,37 @@ function commandExists(name) {
   return Boolean(resolveCommand(name));
 }
 
+// cmd.exe reparses the whole command string. The command itself is passed through
+// caret escaping and never quoted: with /s, a leading quote pair gets stripped by
+// cmd's legacy parsing, which would re-expose metacharacters; ^ also escapes
+// whitespace outside quotes. Arguments are wrapped in double quotes when they
+// contain whitespace or metacharacters; backslashes are ordinary characters to
+// cmd.exe (unlike CreateProcess-style parsing) and must not be doubled; a literal
+// double quote inside a quoted segment is written as "".
+// Note: % sequences (e.g. %VAR%) still undergo environment expansion and cannot
+// be reliably escaped — avoid paths containing them.
 function escapeCmdCommand(value) {
-  return value.replace(CMD_META_CHARS, '^$1');
+  return String(value).replace(/["\s&|<>^()]/g, '^$&');
 }
 
-function escapeCmdArgument(value, doubleEscapeMetaChars) {
-  // cmd.exe reparses one command string, so quote backslashes before escaping shell metacharacters.
-  let escaped = String(value);
-  escaped = escaped.replace(/(?=(\\+?)?)\1"/g, '$1$1\\"');
-  escaped = escaped.replace(/(?=(\\+?)?)\1$/g, '$1$1');
-  escaped = `"${escaped}"`.replace(CMD_META_CHARS, '^$1');
-  return doubleEscapeMetaChars ? escaped.replace(CMD_META_CHARS, '^$1') : escaped;
+function escapeCmdArgument(value) {
+  const escaped = String(value);
+  if (escaped.length === 0) return '""';
+  if (CMD_SPECIAL_CHARS.test(escaped)) {
+    return `"${escaped.replace(/"/g, '""')}"`;
+  }
+  return escaped;
 }
 
 function resolveWindowsScriptInvocation(command, args) {
-  const normalizedCommand = path.normalize(command);
-  const doubleEscapeMetaChars = CMD_SHIM_PATH.test(normalizedCommand);
   const shellCommand = [
-    escapeCmdCommand(normalizedCommand),
-    ...args.map((arg) => escapeCmdArgument(arg, doubleEscapeMetaChars)),
+    escapeCmdCommand(path.normalize(command)),
+    ...args.map(escapeCmdArgument),
   ].join(' ');
 
   return {
     command: process.env.ComSpec || 'cmd.exe',
-    args: ['/d', '/s', '/c', `"${shellCommand}"`],
+    args: ['/d', '/s', '/c', shellCommand],
     windowsVerbatimArguments: true,
   };
 }
