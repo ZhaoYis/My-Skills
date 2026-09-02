@@ -34,24 +34,24 @@ Implement tasks from an OpenSpec change while preserving resumable pipeline stat
 
 1. Select the change using the rules in the underlying Skill, then run:
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<name>"
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<name>"
    ```
 2. If the state is Schema v1, run `migrate-schema "<name>"`; require explicit approval before `migrate-schema "<name>" --confirm`.
 3. If state is missing, **MUST call {{askTool}} and wait for an explicit choice**: `Associate external requirement` / `Skip association`. Never infer a skip from a detailed request, absent issue information, or an instruction to proceed. If the user chooses association, collect `featureId` and optional `featureUrl`. Run exactly one `init` branch, then set `executionMode` to `standalone`:
    ```bash
    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
    # Associate external requirement without a URL
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>"
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>"
    # Associate external requirement with a URL
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
    # Explicitly skip association
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --skip-feature-association
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --skip-feature-association
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
    ```
    Run exactly one `init` command and never pass placeholder values.
 4. Check `phaseHistory` for an `in-progress` Phase 2 entry executed by `openspec-apply-change`. Reuse it when present; otherwise start Phase 2 before transitioning. The history entry lets hybrid gate inference recognize that applying an existing proposal implies proposal approval:
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 2 6 openspec-apply-change --start
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 2 6 openspec-apply-change --start
    ```
 5. Handle the recorded phase:
    - Phase 0/1: transition to Phase 2 Step 6.
@@ -60,7 +60,7 @@ Implement tasks from an OpenSpec change while preserving resumable pipeline stat
 
 ### Execute
 
-Load and follow `{{skillsDir}}/openspec-apply-change/SKILL.md` completely. Use its change selection, status, context files, implementation loop, task checkboxes, pause conditions, and guardrails.
+Load and follow `{{skillsRelPath}}/openspec-apply-change/SKILL.md` completely. Use its change selection, status, context files, implementation loop, task checkboxes, pause conditions, and guardrails.
 
 When all tasks are complete, ask what to do next: `Skip review and continue to tests/archive` / `Continue with pipeline review` / `Pause`.
 
@@ -70,20 +70,20 @@ Execute these commands **in order**, checking every exit code:
 
 1. `record-phase` first. Add `review-skipped` only when the user chose to skip review:
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 2 8 openspec-apply-change [review-skipped]
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 2 8 openspec-apply-change [review-skipped]
    ```
 2. Persist the implementation decision:
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs decision "<name>" implementationConfirmed true
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs decision "<name>" implementationConfirmed true
    ```
 3. Transition according to the explicit choice:
    ```bash
    # Skip review
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 4 13
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 4 13
    # Continue with review
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 3 9
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 3 9
    # Pause
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs pause "<name>" "paused-after-standalone-apply"
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs pause "<name>" "paused-after-standalone-apply"
    ```
    Run exactly one branch. For review, tell the user to continue with `{{commands.devPipeline}} <name>`.
 4. Run `get "<name>"`. Verify `implementationConfirmed=true`, Phase 2 has a completed entry, and `currentPhase` matches the selected branch. Warn and stop on mismatch.

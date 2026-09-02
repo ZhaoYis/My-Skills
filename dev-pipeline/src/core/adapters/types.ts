@@ -32,8 +32,6 @@ export interface ToolDefinition {
   /** Optional user-level destinations. Omitted features are not supported at user scope. */
   userDestinations?: Partial<ToolDestinations>;
   supports: FeatureId[];
-  /** Custom SKILL_ROOT guidance. Supports a `{skillsDir}` placeholder. */
-  skillRootNote?: string;
   /** Optional tool-specific metadata. */
   metadata?: {
     /** Hook configuration for this tool. */
@@ -52,7 +50,6 @@ export interface ToolAdapter {
   /** Whether this tool supports installing the given feature at user scope. */
   supportsUserDestination(feature: Extract<FeatureId, 'skills' | 'commands'>): boolean;
   getRoot(): string;
-  getSkillRootNote(): string | undefined;
   /** Hook generation mode for this tool. `undefined` when the tool has no hook metadata. */
   getHookMode(): HookMode | undefined;
 }

@@ -14,7 +14,7 @@ format: markdown-with-handlebars
 ## Step6：获取实施指令
 
 ```bash
-node <SKILL_ROOT>/scripts/instructions-apply.mjs "<name>"
+node ../scripts/instructions-apply.mjs "<name>"
 ```
 
 返回状态处理：
@@ -60,14 +60,14 @@ node <SKILL_ROOT>/scripts/instructions-apply.mjs "<name>"
 按选择先记录再迁移：
 ```bash
 # 进入代码审查
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" implementationConfirmed true
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" reviewDisposition '"review"'
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 3 9
+node ../scripts/dev-pipeline-state.mjs decision "<name>" implementationConfirmed true
+node ../scripts/dev-pipeline-state.mjs decision "<name>" reviewDisposition '"review"'
+node ../scripts/dev-pipeline-state.mjs transition "<name>" 3 9
 
 # 显式跳过审查
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" implementationConfirmed true
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" reviewDisposition '"skip-review"'
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 4 13
+node ../scripts/dev-pipeline-state.mjs decision "<name>" implementationConfirmed true
+node ../scripts/dev-pipeline-state.mjs decision "<name>" reviewDisposition '"skip-review"'
+node ../scripts/dev-pipeline-state.mjs transition "<name>" 4 13
 ```
 
 回到提案时迁移到 Phase1 Step3；暂停时执行 `pause`。任何路径都不得绕过 `implementationConfirmed`。

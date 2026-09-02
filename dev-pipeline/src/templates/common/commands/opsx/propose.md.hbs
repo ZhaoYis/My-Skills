@@ -37,20 +37,20 @@ State command exit codes:
 1. Resolve a kebab-case change name from the input. If no input was provided, ask the user what they want to build before continuing.
 2. Run:
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<name>"
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<name>"
    ```
 3. If the state is Schema v1, run `migrate-schema "<name>"`, show the returned confirmation prompt, and only after explicit approval run `migrate-schema "<name>" --confirm`.
 4. If state is missing, **MUST call {{askTool}} and wait for an explicit choice**: `Associate external requirement` / `Skip association`. This gate is mandatory even when the request is detailed or the user says to proceed; never infer a skip from context. If the user chooses association, collect `featureId` and optional `featureUrl`. Then run exactly one `init` branch, followed by the remaining commands, and check every exit code:
    ```bash
    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
    # Associate external requirement without a URL
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>"
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>"
    # Associate external requirement with a URL
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
    # Explicitly skip association
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --skip-feature-association
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 1 3
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --skip-feature-association
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 1 3
    ```
    Run exactly one `init` command and never pass placeholder values.
 5. For existing state:
@@ -59,12 +59,12 @@ State command exit codes:
    - Phase 2+: warn that work is already in progress and ask: `Re-propose and update artifacts` / `Continue from current phase` / `Cancel`. Only `Re-propose` may continue. If the mode is `pipeline`, first set `executionMode` to `hybrid`, then transition back to Phase 1 Step 3.
 6. Check `phaseHistory` for an `in-progress` Phase 1 entry executed by `openspec-propose`. Reuse it when present; otherwise start the audit entry below. Starting it also changes an existing `pipeline` state to `hybrid`:
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 1 3 openspec-propose --start
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 1 3 openspec-propose --start
    ```
 
 ### Execute
 
-Load and follow the complete instructions in `{{skillsDir}}/openspec-propose/SKILL.md`. Keep that Skill as the source of truth for artifact creation, dependency order, store selection, clarification, and output paths.
+Load and follow the complete instructions in `{{skillsRelPath}}/openspec-propose/SKILL.md`. Keep that Skill as the source of truth for artifact creation, dependency order, store selection, clarification, and output paths.
 
 ### Post-flight: Record State
 
@@ -72,20 +72,20 @@ After all required artifacts exist and the user confirms the proposal, execute t
 
 1. `record-phase`, because later recovery and inference depend on `phaseHistory`:
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 1 5 openspec-propose
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 1 5 openspec-propose
    ```
 2. `decision`, after the phase record is durable:
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs decision "<name>" requirementsConfirmed true
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs decision "<name>" proposalApproved true
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs decision "<name>" requirementsConfirmed true
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs decision "<name>" proposalApproved true
    ```
 3. `transition`, after `proposalApproved` is durable:
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 2 6
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 2 6
    ```
 4. Consistency check:
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<name>"
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<name>"
    ```
    Verify `currentPhase=2`, `currentStep=6`, both decisions are `true`, and Phase 1 has a completed history entry. If any value differs, warn explicitly and stop.
 

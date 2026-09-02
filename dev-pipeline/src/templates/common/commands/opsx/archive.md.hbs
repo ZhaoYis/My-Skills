@@ -38,12 +38,12 @@ Archive a completed change and persist the final pipeline gates.
    ```bash
    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
    # Associate external requirement without a URL
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>"
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>"
    # Associate external requirement with a URL
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
    # Explicitly skip association
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --skip-feature-association
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --skip-feature-association
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
    ```
    Run exactly one `init` command and never pass placeholder values.
 4. Compensate missing gates without guessing:
@@ -51,13 +51,13 @@ Archive a completed change and persist the final pipeline gates.
    - If `verify.status` is pending, ask `passed` / `failed` / `skipped` / `run {{commands.verify}}`. Persist `passed` or `failed` through `attempt verify`, and a confirmed skip through `set verify.status`; stop on failed.
 5. Check `phaseHistory` for an `in-progress` Phase 5 entry executed by `openspec-archive-change`. Reuse it when present; otherwise start the archive audit entry below. Starting it changes an existing strict `pipeline` state to `hybrid` before any standalone forward transition:
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 15 openspec-archive-change --start
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 15 openspec-archive-change --start
    ```
 6. If `currentPhase<5`, transition to Phase 5 Step 15 only after the test gate and audit entry are durable.
 
 ### Execute
 
-Load and follow `{{skillsDir}}/openspec-archive-change/SKILL.md` completely, including artifact/task warnings, delta-spec assessment, store-aware paths, archive collision handling, and the final archive summary.
+Load and follow `{{skillsRelPath}}/openspec-archive-change/SKILL.md` completely, including artifact/task warnings, delta-spec assessment, store-aware paths, archive collision handling, and the final archive summary.
 
 After a successful archive, resolve the actual archive path from the Skill result or filesystem. Ask the user to choose `merge` / `push-only` / `local-only`; this intent must never be inferred.
 
@@ -67,19 +67,19 @@ Execute these commands **in order**, checking every exit code:
 
 1. Persist the actual archive path:
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" archivePath '"<actual-archive-path>"'
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" archivePath '"<actual-archive-path>"'
    ```
 2. Complete `record-phase` before later transition logic reads the history:
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 19 openspec-archive-change
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 19 openspec-archive-change
    ```
 3. Persist the explicit delivery decision:
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs decision "<name>" postArchiveAction '"<merge|push-only|local-only>"'
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs decision "<name>" postArchiveAction '"<merge|push-only|local-only>"'
    ```
 4. Transition only after verify, archive path, and delivery decision are durable:
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 6 20
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs transition "<name>" 6 20
    ```
 5. Run `get "<name>"`. Verify `currentPhase=6`, `archivePath` is exact, `verify.status` is `passed` or `skipped`, the delivery choice matches, and the archive history entry is completed. Warn and stop on mismatch.
 

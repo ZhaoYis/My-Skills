@@ -33,7 +33,7 @@ format: markdown-with-handlebars
 1. **先选择目标分支，再执行任何 checkout/switch**。列出本地和远程分支，询问 target branch。
 2. 使用 `git check-ref-format --branch "<target-branch>"` 校验，确认 target 不等于 source，然后记录：
    ```bash
-   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<name>" targetBranch '"<target-branch>"'
+   node ../scripts/dev-pipeline-state.mjs set "<name>" targetBranch '"<target-branch>"'
    ```
 3. 确认工作区干净且源提交已推送，再准备目标分支：
    ```bash
@@ -81,9 +81,9 @@ git diff --stat "origin/<target-branch>..HEAD"
 询问：`确认推送目标分支` / `保留本地合并，暂不推送` / `终止流程`。确认后：
 
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" targetPushApproved true
+node ../scripts/dev-pipeline-state.mjs decision "<name>" targetPushApproved true
 git push origin "<target-branch>"
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<name>" delivery.targetPushed true
+node ../scripts/dev-pipeline-state.mjs set "<name>" delivery.targetPushed true
 ```
 
 ## Step25：完成状态与摘要
@@ -93,7 +93,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<name>" delivery.targetPus
 只有 target push 完成时才执行 `complete`。恢复执行时先读取状态：
 
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<name>"
+node ../scripts/dev-pipeline-state.mjs get "<name>"
 git log -1 --format="%s" -- openspec/.pipeline-state/<name>.json
 git diff --quiet HEAD -- openspec/.pipeline-state/<name>.json
 ```
@@ -105,13 +105,13 @@ git diff --quiet HEAD -- openspec/.pipeline-state/<name>.json
 ```bash
 git check-ref-format "refs/tags/<tag-name>"
 git rev-parse -q --verify "refs/tags/<tag-name>"
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<name>" delivery.tag '"<tag-name>"'
+node ../scripts/dev-pipeline-state.mjs set "<name>" delivery.tag '"<tag-name>"'
 ```
 
 这样最终状态提交会包含计划创建的标签名，而实际标签仍指向该最终状态提交。未选择标签时保持 `delivery.tag=null`。
 
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs complete "<name>"
+node ../scripts/dev-pipeline-state.mjs complete "<name>"
 ```
 
 ### 25.2 提交最终流水线状态
@@ -173,7 +173,7 @@ git push origin "<target-branch>"
 推送成功后最终确认：
 
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<name>"
+node ../scripts/dev-pipeline-state.mjs get "<name>"
 ```
 
 **展示摘要**：change、归档路径、审查报告、测试/verify 结果、各决策、提交 SHA、source/target push、合并策略、分支清理和标签结果。跳过项明确标记，不得用"完成"掩盖暂停或失败。

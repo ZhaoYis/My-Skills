@@ -22,12 +22,10 @@ format: markdown-with-handlebars
 
 # Phase0: 入口判断
 
-**`<SKILL_ROOT>`**：本技能安装根目录（内含 `scripts/`），命令在目标 git 仓库根目录执行。
-
 ## Step1：环境预检
 
 ```bash
-node <SKILL_ROOT>/scripts/preflight.mjs
+node ../scripts/preflight.mjs
 ```
 
 解析返回 JSON，按 `status` 和 `reason` 处理：
@@ -53,13 +51,13 @@ node <SKILL_ROOT>/scripts/preflight.mjs
 2. 用户在对话框中输入需求信息（如 featureId、featureUrl 等），从用户输入中提取信息，根据是否提供 URL 只执行下面一条命令：
    ```bash
    # 未提供 URL
-   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --feature-id "<featureId>"
+   node ../scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --feature-id "<featureId>"
    # 提供了 URL
-   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   node ../scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --feature-id "<featureId>" --feature-url "<featureUrl>"
    ```
 3. 用户选择 `跳过关联` 时执行：
    ```bash
-   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --skip-feature-association
+   node ../scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --skip-feature-association
    ```
 4. 上述 `init` 命令只能执行一个，不得传入 `<featureId>`、`<featureUrl>` 等占位值。后续每条状态命令都必须检查 exit code。
 
@@ -67,7 +65,7 @@ node <SKILL_ROOT>/scripts/preflight.mjs
 
 1. 读取持久化状态：
    ```bash
-   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<name>" --view full
+   node ../scripts/dev-pipeline-state.mjs get "<name>" --view full
    ```
 2. 若 `schemaVersion=1`，执行 `migrate-schema "<name>"` 展示迁移详情；只有用户明确确认后才执行 `migrate-schema "<name>" --confirm`。拒绝迁移时保持 v1 原文件不变并终止续接。
 3. 并行核对事实：活跃/归档 change、任务勾选、状态中记录的审查报告、Git 分支和冲突状态。
@@ -80,7 +78,7 @@ node <SKILL_ROOT>/scripts/preflight.mjs
 - 从描述推导 kebab-case 的 change 名称
 - 获取当前分支，按“首次创建状态的统一规则”询问外部需求关联并初始化状态，然后迁移到 Phase1：
   ```bash
-  node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 1 3
+  node ../scripts/dev-pipeline-state.mjs transition "<name>" 1 3
   ```
 - 进入 **Phase1 Step3（决策点 1a）**
 
@@ -146,7 +144,7 @@ node <SKILL_ROOT>/scripts/preflight.mjs
      - `full` — 高保障变更，需要完整验证
 4. 记录用户选择的 route：
    ```bash
-   node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" route_choice "<route>"
+   node ../scripts/dev-pipeline-state.mjs decision "<name>" route_choice "<route>"
    ```
 5. 根据 route 确定需要执行的 phases，后续 Phase 跳转时会验证目标 phase 是否在当前 route 的执行列表中
 
@@ -161,4 +159,4 @@ node <SKILL_ROOT>/scripts/preflight.mjs
    - 选择 `已有 change 名称` → 发送文本消息请用户输入 change 名称，收到后走 **2.a** 路径
    - 选择 `新的需求描述` → 发送文本消息请用户描述需求，收到后走 **2.b** 路径
    - 选择 `系分设计文档` → 发送文本消息请用户输入已生成的系分设计文档名称（如 `openspec/docs/<yyyyMMdd>/<kebab-case-name>.md`），读取该文档内容作为需求描述，走 **2.b** 路径（从描述推导 change 名称、初始化状态并迁移到 Phase1）
-   - 选择 `查看已有 change 列表` → 运行 `node <SKILL_ROOT>/scripts/list-changes.mjs`（或 `openspec list --json`）展示可用 change，展示后重新回到步骤 1（再次使用 **{{askTool}}**，此时可额外追加当前已有的 change 名称作为附加选项供快速选择）
+   - 选择 `查看已有 change 列表` → 运行 `node ../scripts/list-changes.mjs`（或 `openspec list --json`）展示可用 change，展示后重新回到步骤 1（再次使用 **{{askTool}}**，此时可额外追加当前已有的 change 名称作为附加选项供快速选择）

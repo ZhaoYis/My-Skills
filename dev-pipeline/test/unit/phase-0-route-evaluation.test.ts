@@ -58,7 +58,7 @@ describe('Phase 0 Template Route Evaluation', () => {
 
     // Verify route selection recording command exists
     expect(templateContent).toContain(
-      'node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" route_choice "<route>"',
+      'node ../scripts/dev-pipeline-state.mjs decision "<name>" route_choice "<route>"',
     );
   });
 

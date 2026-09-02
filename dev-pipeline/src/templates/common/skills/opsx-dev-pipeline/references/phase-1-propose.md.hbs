@@ -22,7 +22,7 @@ format: markdown-with-handlebars
 
 确认后记录：
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" requirementsConfirmed true
+node ../scripts/dev-pipeline-state.mjs decision "<name>" requirementsConfirmed true
 ```
 
 ## Step4：创建 change 并生成制品
@@ -31,17 +31,17 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" requirementsC
 
 **新建 change**：
 ```bash
-node <SKILL_ROOT>/scripts/new-change.mjs "<name>"
+node ../scripts/new-change.mjs "<name>"
 ```
 若名称冲突，**{{askTool}}**：`在已有 change 上继续` / `创建新名称`。
 
 对每个 `ready` 状态的制品：
 ```bash
-node <SKILL_ROOT>/scripts/instructions.mjs "<name>" <artifact-id>
+node ../scripts/instructions.mjs "<name>" <artifact-id>
 ```
 读取指令后创建文件。优先使用当前 Agent 的任务工具；不可用时在回复中维护编号进度，并以 `tasks.md` 为完成事实。
 
-（可选）在决策点 1 前运行 `node <SKILL_ROOT>/scripts/validate-change.mjs "<name>"` 做结构校验。
+（可选）在决策点 1 前运行 `node ../scripts/validate-change.mjs "<name>"` 做结构校验。
 
 ## Step5：[决策点 1] 确认提案（必过门禁）
 
@@ -54,8 +54,8 @@ node <SKILL_ROOT>/scripts/instructions.mjs "<name>" <artifact-id>
 
 确认进入实施时，先记录门禁再迁移：
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" proposalApproved true
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 2 6
+node ../scripts/dev-pipeline-state.mjs decision "<name>" proposalApproved true
+node ../scripts/dev-pipeline-state.mjs transition "<name>" 2 6
 ```
 
 用户要求修改时记录 `proposalApproved=false`；暂停或终止时执行状态 `pause` 并写明原因。

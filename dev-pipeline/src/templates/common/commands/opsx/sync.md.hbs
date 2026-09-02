@@ -38,22 +38,22 @@ Sync delta specs from an active change to main specs and audit the operation.
    ```bash
    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
    # Associate external requirement without a URL
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>"
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>"
    # Associate external requirement with a URL
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
    # Explicitly skip association
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --skip-feature-association
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --skip-feature-association
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
    ```
    Run exactly one `init` command and never pass placeholder values.
 4. Reuse an `in-progress` Phase 5 entry executed by `openspec-sync-specs` when present; otherwise start the sync audit entry:
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 17 openspec-sync-specs --start
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 17 openspec-sync-specs --start
    ```
 
 ### Execute
 
-Load and follow `{{skillsDir}}/openspec-sync-specs/SKILL.md` completely. Preserve its intelligent merge semantics, idempotency, change path resolution, and summary requirements.
+Load and follow `{{skillsRelPath}}/openspec-sync-specs/SKILL.md` completely. Preserve its intelligent merge semantics, idempotency, change path resolution, and summary requirements.
 
 ### Post-flight: Record State
 
@@ -61,7 +61,7 @@ Execute these commands **in order**, checking every exit code:
 
 1. Complete the audit record:
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 17 openspec-sync-specs
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 17 openspec-sync-specs
    ```
 2. No decision or transition is implied by sync.
 3. Run `get "<name>"` and verify Phase 5 Step 17 has a completed `openspec-sync-specs` entry. Warn and stop on mismatch.

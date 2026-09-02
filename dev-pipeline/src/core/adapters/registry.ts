@@ -33,7 +33,6 @@ const toolSchema = z.object({
     })
     .optional(),
   supports: z.array(z.enum(['base', 'skills', 'commands', 'docs', 'schema', 'hooks'])),
-  skillRootNote: z.string().optional(),
   metadata: z
     .object({
       hooks: z
@@ -76,10 +75,6 @@ class StaticToolAdapter implements ToolAdapter {
 
   getRoot(): string {
     return this.definition.destinations.root;
-  }
-
-  getSkillRootNote(): string | undefined {
-    return this.definition.skillRootNote;
   }
 
   getHookMode(): HookMode | undefined {

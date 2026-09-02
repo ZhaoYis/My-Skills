@@ -32,7 +32,6 @@ function createMockAdapter(markers: string[]): ToolAdapter {
     getDestination: () => '',
     supportsUserDestination: () => true,
     getRoot: () => '.claude',
-    getSkillRootNote: () => undefined,
     getHookMode: () => undefined,
   };
 }

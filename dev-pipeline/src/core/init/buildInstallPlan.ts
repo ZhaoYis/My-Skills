@@ -74,6 +74,41 @@ function hookScriptPath(skillsDir: string, script: string): string {
   return /\s/.test(scriptPath) ? `\\"${escaped}\\"` : escaped;
 }
 
+/**
+ * Compute the relative path from a command file's directory to the skills root.
+ *
+ * Command destination layouts vary per tool:
+ * - claude/opencode: `<commandsDir>/opsx/<name>.md` → command base is `<commandsDir>/opsx`
+ * - cursor: `<commandsDir>/<name>.md` → command base is `<commandsDir>`
+ * - codex: `<commandsDir>/<name>/SKILL.md` → command base is `<commandsDir>/<name>`, but for codex
+ *   `commandsDir == skillsDir`, so the relative path is always `..` regardless of `<name>`.
+ *
+ * The returned path uses forward slashes and is intended to be joined with the skill folder
+ * name in templates, e.g. `{{skillsRelPath}}/openspec-apply-change/SKILL.md`.
+ */
+export function computeSkillsRelPath(
+  toolId: ToolId,
+  commandsDir: string,
+  skillsDir: string,
+): string {
+  let commandBaseDir: string;
+  switch (toolId) {
+    case 'claude':
+    case 'opencode':
+      commandBaseDir = path.join(commandsDir, 'opsx');
+      break;
+    case 'cursor':
+      commandBaseDir = commandsDir;
+      break;
+    case 'codex':
+      // commandsDir == skillsDir, and the command sits one level under commandsDir.
+      // Any synthetic name yields the same relative path: `..`.
+      commandBaseDir = path.join(commandsDir, 'opsx-apply');
+      break;
+  }
+  return path.relative(commandBaseDir, skillsDir).replaceAll(path.sep, '/');
+}
+
 export function buildTemplateContext(params: {
   projectName: string;
   toolId: ToolId;
@@ -83,7 +118,6 @@ export function buildTemplateContext(params: {
   features: FeatureId[];
   skillsDir: string;
   commandsDir: string;
-  skillRootNote?: string;
   techStack?: TechStackId;
   techStackName?: string;
   hooksEnabled?: boolean;
@@ -104,6 +138,7 @@ export function buildTemplateContext(params: {
     hookBlockDangerousBash: hookScriptPath(params.skillsDir, 'block-dangerous-bash.mjs'),
     hookBlockSensitiveWrite: hookScriptPath(params.skillsDir, 'block-sensitive-write.mjs'),
     commandsDir: params.commandsDir,
+    skillsRelPath: computeSkillsRelPath(params.toolId, params.commandsDir, params.skillsDir),
     features: params.features,
     techStack: params.techStack,
     techStackName: params.techStackName,
@@ -111,7 +146,6 @@ export function buildTemplateContext(params: {
     packageVersion: PACKAGE_VERSION,
     packageLicense: PACKAGE_LICENSE,
     packageRepoUrl: PACKAGE_REPO_URL,
-    skillRootNote: params.skillRootNote?.replaceAll('{skillsDir}', params.skillsDir),
     hooksEnabled: params.hooksEnabled ?? true,
     askTool: ASK_TOOL_MAP[params.toolId],
     commands: {
@@ -304,7 +338,6 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
     skillsDir: adapter.getDestination('skills', scope),
     commandsDir: adapter.getDestination('commands', scope),
     features: effectiveFeatures,
-    skillRootNote: adapter.getSkillRootNote(),
     techStack: input.techStack,
     techStackName: techStackDefinition?.displayName,
     hooksEnabled: input.hooksEnabled,

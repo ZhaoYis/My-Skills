@@ -28,7 +28,6 @@ function createPlan(files?: Partial<InstallPlan['files'][number]>[]): InstallPla
       getDestination: (feature) => (feature === 'skills' ? '.claude/skills' : '.claude/commands'),
       supportsUserDestination: () => true,
       getRoot: () => '.',
-      getSkillRootNote: () => undefined,
       getHookMode: () => undefined,
     },
     files: (

@@ -204,7 +204,6 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
       skillsDir: plan.adapter.getDestination('skills', plan.scope),
       commandsDir: plan.adapter.getDestination('commands', plan.scope),
       features: plan.features,
-      skillRootNote: plan.adapter.getSkillRootNote(),
       techStack: plan.techStack,
       techStackName: plan.techStack ? getTechStackById(plan.techStack)?.displayName : undefined,
       hooksEnabled: plan.hooksEnabled,

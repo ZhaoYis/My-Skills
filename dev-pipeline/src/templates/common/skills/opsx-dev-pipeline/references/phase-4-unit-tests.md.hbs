@@ -28,15 +28,15 @@ format: markdown-with-handlebars
 2. 编写或修改单元测试代码（风格与既有用例一致）
 3. 执行测试命令
 4. 失败 → **{{askTool}}**：`修复代码或测试后重试` / `跳过并记录技术债务（需写明原因和跟进 issue）` / `终止流程`
-   - 每次执行后调用 `node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs attempt "<name>" tests passed` 或 `tests failed`
+   - 每次执行后调用 `node ../scripts/dev-pipeline-state.mjs attempt "<name>" tests passed` 或 `tests failed`
    - **修复循环最多 3 轮**；第三次 `failed` 会强制暂停。只有用户随后明确确认技术债务，才能记录 `debt-recorded` 后继续
 5. 通过 → 进入 Phase5 Step15
 
 通过后记录测试命令和状态：
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<name>" tests.command '"<test-command>"'
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs attempt "<name>" tests passed
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 5 15
+node ../scripts/dev-pipeline-state.mjs set "<name>" tests.command '"<test-command>"'
+node ../scripts/dev-pipeline-state.mjs attempt "<name>" tests passed
+node ../scripts/dev-pipeline-state.mjs transition "<name>" 5 15
 ```
 
 ## 子流程 B（跳过并记录技术债务）
@@ -51,7 +51,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 5 15
 
 进入 Phase5 前，无论选择测试通过、显式跳过还是记录技术债务，都必须执行：
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 5 15
+node ../scripts/dev-pipeline-state.mjs transition "<name>" 5 15
 ```
 
 若 transition 失败并返回 `test-gate-required`，必须回到决策点 4，补齐用户选择和测试状态后再重试；不得直接执行 Phase5 命令。

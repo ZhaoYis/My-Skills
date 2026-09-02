@@ -38,8 +38,8 @@ format: markdown-with-handlebars
 
 报告写入后同步状态：
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<name>" review.reportPath '"<report-path>"'
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs attempt "<name>" review passed # 或 issues-found
+node ../scripts/dev-pipeline-state.mjs set "<name>" review.reportPath '"<report-path>"'
+node ../scripts/dev-pipeline-state.mjs attempt "<name>" review passed # 或 issues-found
 ```
 
 ## Step12：[决策点 3] 审查结果处理
@@ -69,7 +69,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs attempt "<name>" review passed 
 
 进入后续流程前记录 `reviewDisposition`，再执行：
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 4 14
+node ../scripts/dev-pipeline-state.mjs transition "<name>" 4 14
 ```
 
 回到 Phase2 时执行 `transition "<name>" 2 6`；暂停时执行 `pause`。修复循环轮次以状态中的 `review.currentRound` 为准。
@@ -93,8 +93,8 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 4 14
 创建文件后记录：
 
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" fixProposalPath '"openspec/changes/<name>/fix-proposal-round-<N>.md"'
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" fixProposalGenerated true
+node ../scripts/dev-pipeline-state.mjs decision "<name>" fixProposalPath '"openspec/changes/<name>/fix-proposal-round-<N>.md"'
+node ../scripts/dev-pipeline-state.mjs decision "<name>" fixProposalGenerated true
 ```
 
 **禁止在生成提案文档前修改任何源代码。**
@@ -110,7 +110,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" fixProposalGe
 批准后记录：
 
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" fixProposalApproved true
+node ../scripts/dev-pipeline-state.mjs decision "<name>" fixProposalApproved true
 ```
 
 **禁止在用户批准前修改任何源代码。**
@@ -120,7 +120,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" fixProposalAp
 逐任务实施修复（参照 Phase2 Step6-7），完成后记录：
 
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" fixApplied true
+node ../scripts/dev-pipeline-state.mjs decision "<name>" fixApplied true
 ```
 
 ### Step R4：重新审查

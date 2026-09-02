@@ -111,7 +111,6 @@ describe('scope selection (user vs project)', () => {
                   : '.claude/commands',
             supportsUserDestination: () => true,
             getRoot: () => '.',
-            getSkillRootNote: () => undefined,
             getHookMode: () => undefined,
           },
         ],

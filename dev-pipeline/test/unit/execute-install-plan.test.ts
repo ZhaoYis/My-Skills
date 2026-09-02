@@ -30,7 +30,6 @@ function createAdapter(): ToolAdapter {
       feature === 'skills' ? '.claude/skills' : '.claude/commands',
     supportsUserDestination: () => true,
     getRoot: () => '.',
-    getSkillRootNote: () => undefined,
     getHookMode: () => undefined,
   };
 }

@@ -7,7 +7,7 @@ description: Generate a lightweight system analysis and design specification fro
 
 Generate a focused system analysis and design document from the bundled lite template. Work from the target repository root unless the user specifies another project.
 
-Resolve `<SKILL_ROOT>` to the directory containing this `SKILL.md`. Resolve `<OPSX_PIPELINE_SKILL_ROOT>` to the sibling `opsx-dev-pipeline` skill directory when installed; if the host provides another installed path, use that path instead.
+The `opsx-dev-pipeline` skill is at `../opsx-dev-pipeline` relative to this SKILL.md.
 
 ## Inputs
 
@@ -40,7 +40,7 @@ Treat pipeline awareness as read-only. Never initialize, migrate, transition, or
 3. When the `opsx-dev-pipeline` skill and its state script are installed, run:
 
    ```bash
-   node <OPSX_PIPELINE_SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<change-name>"
+   node ../opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<change-name>"
    ```
 
 4. Use returned change metadata, current phase, feature information, decisions, and artifact paths only as supporting context. Read relevant change artifacts when they improve the design.
@@ -48,7 +48,7 @@ Treat pipeline awareness as read-only. Never initialize, migrate, transition, or
 
 ### 3. Generate the document
 
-1. Read `<SKILL_ROOT>/references/system-analysis-design-template-lite.md` completely before drafting.
+1. Read `references/system-analysis-design-template-lite.md` completely before drafting.
 2. Preserve the template's section order and tailor every section to the current change.
 3. Keep only relevant detail. Write `不涉及` for an irrelevant section or remove optional content only when doing so does not make the document ambiguous.
 4. Replace example Mermaid diagrams with diagrams that reflect the actual business flow, system relationships, sequence, and data model. Remove a diagram when the subject is genuinely not involved.

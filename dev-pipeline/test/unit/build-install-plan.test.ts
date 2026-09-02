@@ -63,7 +63,6 @@ function createAdapter(
     getDestination: (feature) => (feature === 'skills' ? skills : commands),
     supportsUserDestination: () => true,
     getRoot: () => '.',
-    getSkillRootNote: () => undefined,
     getHookMode: () => undefined,
   };
 }
@@ -94,7 +93,7 @@ describe('buildInstallPlan', () => {
     );
   });
 
-  it('builds shared package metadata and expands a custom skill root note', async () => {
+  it('builds shared package metadata', async () => {
     const context = buildTemplateContext({
       projectName: 'demo',
       toolId: 'claude',
@@ -104,7 +103,6 @@ describe('buildInstallPlan', () => {
       features: ['skills'],
       skillsDir: '.custom/skills',
       commandsDir: '.custom/commands',
-      skillRootNote: '- Custom root: `{skillsDir}/opsx-dev-pipeline`',
       techStack: 'java-spring-boot',
       techStackName: 'Java Spring Boot',
     });
@@ -114,7 +112,6 @@ describe('buildInstallPlan', () => {
       packageVersion: PACKAGE_VERSION,
       packageLicense: PACKAGE_LICENSE,
       packageRepoUrl: PACKAGE_REPO_URL,
-      skillRootNote: '- Custom root: `.custom/skills/opsx-dev-pipeline`',
       askTool: 'AskUserQuestion',
       commands: {
         apply: '/opsx:apply',
@@ -129,8 +126,9 @@ describe('buildInstallPlan', () => {
       path.join(PACKAGE_ROOT, 'src/templates/common/skills/opsx-dev-pipeline/SKILL.md.hbs'),
       context,
     );
-    expect(rendered).toContain('- Custom root: `.custom/skills/opsx-dev-pipeline`');
-    expect(rendered).not.toContain('- 对于 Claude Code 安装：');
+    expect(rendered).toContain('node scripts/dev-pipeline-state.mjs');
+    expect(rendered).not.toContain('<SKILL_ROOT>');
+    expect(rendered).not.toContain('{{skillsDir}}');
   });
 
   it.each([
@@ -531,62 +529,86 @@ describe('buildInstallPlan', () => {
   });
 
   it.each([
-    ['claude', '.claude/skills', '.claude/commands', '/opsx:apply', '/opsx:dev-pipeline'],
-    ['cursor', '.cursor/rules', '.cursor/commands', '/opsx-apply', '/opsx-dev-pipeline'],
-    ['codex', '.agents/skills', '.agents/skills', '$opsx-apply', '$opsx-dev-pipeline'],
-    ['opencode', '.opencode/skills', '.opencode/commands', '/opsx:apply', '/opsx:dev-pipeline'],
-  ] as const)('renders standalone command templates for %s', async (toolId, skillsDir, commandsDir, applyInvocation, pipelineInvocation) => {
-    const context = buildTemplateContext({
-      projectName: 'demo',
-      toolId,
-      toolName: toolId,
-      stack: 'backend',
-      language: 'zh',
-      features: ['skills', 'commands'],
-      skillsDir,
-      commandsDir,
-    });
-    const askTool =
-      toolId === 'cursor' ? 'AskQuestion' : toolId === 'opencode' ? 'question' : 'AskUserQuestion';
+    [
+      'claude',
+      '.claude/skills',
+      '.claude/commands',
+      '../../skills',
+      '/opsx:apply',
+      '/opsx:dev-pipeline',
+    ],
+    [
+      'cursor',
+      '.cursor/rules',
+      '.cursor/commands',
+      '../rules',
+      '/opsx-apply',
+      '/opsx-dev-pipeline',
+    ],
+    ['codex', '.agents/skills', '.agents/skills', '..', '$opsx-apply', '$opsx-dev-pipeline'],
+    [
+      'opencode',
+      '.opencode/skills',
+      '.opencode/commands',
+      '../../skills',
+      '/opsx:apply',
+      '/opsx:dev-pipeline',
+    ],
+  ] as const)(
+    'renders standalone command templates for %s',
+    async (toolId, skillsDir, commandsDir, skillsRelPath, applyInvocation, pipelineInvocation) => {
+      const context = buildTemplateContext({
+        projectName: 'demo',
+        toolId,
+        toolName: toolId,
+        stack: 'backend',
+        language: 'zh',
+        features: ['skills', 'commands'],
+        skillsDir,
+        commandsDir,
+      });
+      const askTool =
+        toolId === 'cursor' ? 'AskQuestion' : toolId === 'opencode' ? 'question' : 'AskUserQuestion';
 
-    for (const command of standaloneCommands) {
-      const rendered = await renderTemplate(
-        path.join(PACKAGE_ROOT, 'src/templates/common/commands/opsx', `${command}.md.hbs`),
-        context,
-      );
+      for (const command of standaloneCommands) {
+        const rendered = await renderTemplate(
+          path.join(PACKAGE_ROOT, 'src/templates/common/commands/opsx', `${command}.md.hbs`),
+          context,
+        );
 
-      expect(rendered).toContain(
-        `node ${skillsDir}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs`,
-      );
-      expect(rendered).not.toMatch(/\{\{[^}]+\}\}/);
-      if (command === 'propose') {
-        expect(rendered).toContain(`${applyInvocation} <name>`);
-        expect(rendered).toContain(`${pipelineInvocation} <name>`);
-      }
-      if (command === 'explore') {
-        expect(rendered).toContain('featureInfo');
-        expect(rendered).toContain('Do not collect or persist metadata in explore mode.');
-      } else if (command === 'dev-spec-design') {
-        expect(rendered).toContain(askTool);
-        if (toolId === 'claude') {
-          expect(rendered).toMatch(/^allowed-tools: .*AskUserQuestion$/m);
+        expect(rendered).toContain(
+          `node ${skillsRelPath}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs`,
+        );
+        expect(rendered).not.toMatch(/\{\{[^}]+\}\}/);
+        if (command === 'propose') {
+          expect(rendered).toContain(`${applyInvocation} <name>`);
+          expect(rendered).toContain(`${pipelineInvocation} <name>`);
         }
-        expect(rendered).toContain(`${skillsDir}/opsx-dev-spec-design/SKILL.md`);
-        expect(rendered).toContain('Never initialize, migrate, or modify pipeline state.');
-        expect(rendered).not.toContain(' --feature-id ');
-      } else {
-        expect(rendered).toContain(askTool);
-        if (toolId === 'claude') {
-          expect(rendered).toMatch(/^allowed-tools: .*AskUserQuestion$/m);
+        if (command === 'explore') {
+          expect(rendered).toContain('featureInfo');
+          expect(rendered).toContain('Do not collect or persist metadata in explore mode.');
+        } else if (command === 'dev-spec-design') {
+          expect(rendered).toContain(askTool);
+          if (toolId === 'claude') {
+            expect(rendered).toMatch(/^allowed-tools: .*AskUserQuestion$/m);
+          }
+          expect(rendered).toContain(`${skillsRelPath}/opsx-dev-spec-design/SKILL.md`);
+          expect(rendered).toContain('Never initialize, migrate, or modify pipeline state.');
+          expect(rendered).not.toContain(' --feature-id ');
+        } else {
+          expect(rendered).toContain(askTool);
+          if (toolId === 'claude') {
+            expect(rendered).toMatch(/^allowed-tools: .*AskUserQuestion$/m);
+          }
+          expect(rendered).toContain(`MUST call ${askTool} and wait for an explicit choice`);
+          expect(rendered).toContain('--feature-id "<featureId>"');
+          expect(rendered).toContain('--feature-url "<featureUrl>"');
+          expect(rendered).toContain('--skip-feature-association');
+          expect(rendered).not.toContain('[--feature-url');
         }
-        expect(rendered).toContain(`MUST call ${askTool} and wait for an explicit choice`);
-        expect(rendered).toContain('--feature-id "<featureId>"');
-        expect(rendered).toContain('--feature-url "<featureUrl>"');
-        expect(rendered).toContain('--skip-feature-association');
-        expect(rendered).not.toContain('[--feature-url');
       }
-    }
-  });
+    },
+  );
 
   it('marks sync files as unresolved without force', async () => {
     const managedAssets: ManagedAssetRecord[] = [{ id: 'common-readme', destination: 'README.md' }];

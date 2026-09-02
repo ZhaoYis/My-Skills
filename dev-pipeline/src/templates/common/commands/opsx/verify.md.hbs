@@ -38,22 +38,22 @@ Verify that implementation matches the change artifacts and record the result.
    ```bash
    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
    # Associate external requirement without a URL
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>"
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>"
    # Associate external requirement with a URL
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --feature-id "<featureId>" --feature-url "<featureUrl>"
    # Explicitly skip association
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --skip-feature-association
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs init "<name>" "$CURRENT_BRANCH" --skip-feature-association
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs set "<name>" executionMode '"standalone"'
    ```
    Run exactly one `init` command and never pass placeholder values.
 4. Reuse an `in-progress` Phase 5 entry executed by `openspec-verify-change` when present; otherwise start the verification audit entry:
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 16 openspec-verify-change --start
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 16 openspec-verify-change --start
    ```
 
 ### Execute
 
-Load and follow `{{skillsDir}}/openspec-verify-change/SKILL.md` completely. Use its artifact loading, completeness/correctness/coherence checks, severity rules, graceful degradation, and report format.
+Load and follow `{{skillsRelPath}}/openspec-verify-change/SKILL.md` completely. Use its artifact loading, completeness/correctness/coherence checks, severity rules, graceful degradation, and report format.
 
 Classify the final result as `passed` only when there are no CRITICAL issues; otherwise classify it as `failed`.
 
@@ -63,11 +63,11 @@ Execute these commands **in order**, checking every exit code:
 
 1. Complete the audit record:
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 16 openspec-verify-change
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs record-phase "<name>" 5 16 openspec-verify-change
    ```
 2. Record the attempt result:
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs attempt "<name>" verify <passed|failed>
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs attempt "<name>" verify <passed|failed>
    ```
 3. Run `get "<name>"`. Verify `verify.status` matches the report and Phase 5 Step 16 has a completed history entry. Warn and stop on mismatch. This command does not transition phases.
 

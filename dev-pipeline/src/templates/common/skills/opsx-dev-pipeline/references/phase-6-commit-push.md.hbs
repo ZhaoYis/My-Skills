@@ -27,7 +27,7 @@ format: markdown-with-handlebars
 ## Step20：读取状态与预提交检查
 
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<name>"
+node ../scripts/dev-pipeline-state.mjs get "<name>"
 git status --short
 git branch --show-current
 git remote -v
@@ -59,9 +59,9 @@ git diff --cached --check
 询问：`确认提交` / `修改提交信息` / `取消暂存并重选` / `终止流程`。确认后先记录：
 
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" commitApproved true
+node ../scripts/dev-pipeline-state.mjs decision "<name>" commitApproved true
 git commit -m "<conventional-commit-message>"
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<name>" delivery.commitSha '"<commit-sha>"'
+node ../scripts/dev-pipeline-state.mjs set "<name>" delivery.commitSha '"<commit-sha>"'
 ```
 
 hook 失败时修复后重试；`--no-verify` 必须作为新的高风险决策单独确认。
@@ -79,9 +79,9 @@ git log --oneline "origin/<source-branch>..HEAD"
 询问：`确认推送源分支` / `暂不推送` / `终止流程`。确认后：
 
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs decision "<name>" sourcePushApproved true
+node ../scripts/dev-pipeline-state.mjs decision "<name>" sourcePushApproved true
 git push origin "<source-branch>"
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<name>" delivery.sourcePushed true
+node ../scripts/dev-pipeline-state.mjs set "<name>" delivery.sourcePushed true
 ```
 
 推送失败不得自动 rebase。先 fetch 并展示 ahead/behind，再询问 `pull --rebase`、保持本地等待人工处理或终止。
@@ -90,7 +90,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<name>" delivery.sourcePus
 
 - `postArchiveAction=local-only` → 进入 [local-only 完成流程](#local-only-完成流程)
 - `postArchiveAction=push-only` → 进入 [push-only 完成流程](#push-only-完成流程)
-- `postArchiveAction=merge` → 执行 `node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs transition "<name>" 7 23` 进入 Phase 7
+- `postArchiveAction=merge` → 执行 `node ../scripts/dev-pipeline-state.mjs transition "<name>" 7 23` 进入 Phase 7
 
 ### local-only 完成流程
 
@@ -101,7 +101,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs set "<name>" delivery.sourcePus
 只有 source commit 已完成时才执行 `complete`。恢复执行时先读取状态：
 
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<name>"
+node ../scripts/dev-pipeline-state.mjs get "<name>"
 git log -1 --format="%s" -- openspec/.pipeline-state/<name>.json
 git diff --quiet HEAD -- openspec/.pipeline-state/<name>.json
 ```
@@ -109,7 +109,7 @@ git diff --quiet HEAD -- openspec/.pipeline-state/<name>.json
 只有状态已经是 `completed`、commit message 包含 `finalize pipeline delivery state`，且 `git diff --quiet` 返回 0 时，才说明最终状态已完整提交，可跳过后续。否则继续执行。
 
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs complete "<name>"
+node ../scripts/dev-pipeline-state.mjs complete "<name>"
 ```
 
 #### 提交最终流水线状态
@@ -155,7 +155,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs complete "<name>"
 恢复执行时先读取状态：
 
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get "<name>"
+node ../scripts/dev-pipeline-state.mjs get "<name>"
 git log -1 --format="%s" -- openspec/.pipeline-state/<name>.json
 git diff --quiet HEAD -- openspec/.pipeline-state/<name>.json
 ```
@@ -163,7 +163,7 @@ git diff --quiet HEAD -- openspec/.pipeline-state/<name>.json
 只有状态已经是 `completed`、commit message 包含 `finalize pipeline delivery state`，且 `git diff --quiet` 返回 0 时，才说明最终状态已完整提交，可跳过后续。否则继续执行。
 
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs complete "<name>"
+node ../scripts/dev-pipeline-state.mjs complete "<name>"
 ```
 
 #### 提交最终流水线状态

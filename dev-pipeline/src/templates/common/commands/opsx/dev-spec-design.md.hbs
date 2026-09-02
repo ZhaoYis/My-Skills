@@ -34,7 +34,7 @@ Generate a system analysis and design specification document using the lite temp
 2. If the user mentions a change, or exactly one active change is clearly relevant, run:
 
    ```bash
-   node {{skillsDir}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<name>"
+   node {{skillsRelPath}}/opsx-dev-pipeline/scripts/dev-pipeline-state.mjs get "<name>"
    ```
 
 3. If several changes could apply, use {{askTool}} to ask the user which change to use. Do not guess.
@@ -43,7 +43,7 @@ Generate a system analysis and design specification document using the lite temp
 
 ### Execute
 
-Load and follow `{{skillsDir}}/opsx-dev-spec-design/SKILL.md` completely. Let that Skill control requirement collection, template use, filename derivation, document generation, verification, and output reporting.
+Load and follow `{{skillsRelPath}}/opsx-dev-spec-design/SKILL.md` completely. Let that Skill control requirement collection, template use, filename derivation, document generation, verification, and output reporting.
 
 ### Post-flight
 

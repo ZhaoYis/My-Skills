@@ -309,7 +309,11 @@ describe('tool matrix', () => {
       );
     }
     if (!isCodex) {
-      expect(devSpecCommand).toContain(`${path.dirname(skillRoot)}/opsx-dev-spec-design/SKILL.md`);
+      const expectedSkillRef =
+        tool === 'cursor'
+          ? '../rules/opsx-dev-spec-design/SKILL.md'
+          : '../../skills/opsx-dev-spec-design/SKILL.md';
+      expect(devSpecCommand).toContain(expectedSkillRef);
       expect(devSpecCommand).toContain('Never initialize, migrate, or modify pipeline state.');
     }
     expect([skill, entrance, propose, devSpecSkill, devSpecCommand].join('\n')).not.toMatch(
@@ -625,16 +629,10 @@ describe('tool matrix', () => {
     expect(frontmatter).toContain(`repository: "${PACKAGE_REPO_URL}"`);
     expect(skillContent).not.toMatch(/\{\{[^}]+\}\}/);
 
-    const expectedSkillRoot = {
-      claude: '- 对于 Claude Code 安装：`<SKILL_ROOT>` = `.claude/skills/opsx-dev-pipeline`',
-      cursor: '- 对于 Cursor 安装：`<SKILL_ROOT>` = `.cursor/rules/opsx-dev-pipeline`',
-      codex: '- 对于 Codex 安装：`<SKILL_ROOT>` = `.agents/skills/opsx-dev-pipeline`',
-      opencode: '- 对于 OpenCode 安装：`<SKILL_ROOT>` = `.opencode/skills/opsx-dev-pipeline`',
-    }[tool];
-    expect(skillContent.match(/^- 对于 .*安装：.*$/gm)).toEqual([expectedSkillRoot]);
-    expect(skillContent).toContain(
-      '- 若宿主将 Skill 安装到其他位置，`<SKILL_ROOT>` = 当前 `SKILL.md` 所在目录',
-    );
+    expect(skillContent).not.toMatch(/<SKILL_ROOT>/);
+    expect(skillContent).not.toMatch(/\{\{skillsDir\}\}/);
+    expect(skillContent).toContain('node scripts/dev-pipeline-state.mjs');
+    expect(skillContent).toContain('test -d "scripts" || echo "scripts not found"');
 
     const openaiConfig = await fs.readFile(path.join(skillDir, 'agents/openai.yaml'), 'utf8');
     expect(openaiConfig).toContain('display_name: "opsx-dev-pipeline"');
