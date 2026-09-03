@@ -225,6 +225,15 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
 
   for (const file of plan.files) {
     if (file.resolution === 'skip') {
+      // Skip means the destination already existed and the caller kept it.
+      // Top-level assets (no bundle prefix, e.g. README.md, .gitignore) are
+      // user-owned once the user provides their own copy — leave them out of
+      // the manifest. Bundle members (assetId contains ':') remain CLI-managed
+      // even when their content is preserved, so sync/uninstall still know
+      // about them.
+      if (file.assetId.includes(':')) {
+        managedFiles.push(file);
+      }
       continue;
     }
 
