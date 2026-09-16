@@ -451,7 +451,6 @@ opsx:propose "..."          # executionMode=standalone，自带状态跟踪
 opsx:apply <change-name>
 opsx:verify <change-name>
 opsx:archive <change-name>
-opsx:dev-pipeline <change-name>   # 从 Phase 6 继续交付（hybrid 续接）
 ```
 
 流水线在每个决策点暂停等待你确认（**详细决策点见 [附录 C](#附录-c流水线决策点) 与 [pipeline-decision-points.md](./pipeline-decision-points.md)**）。

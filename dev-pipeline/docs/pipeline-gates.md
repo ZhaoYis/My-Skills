@@ -4,6 +4,7 @@
 > 本文档以当前实现为准（`dev-pipeline-state.mjs` Schema v3），区分**硬门禁**（脚本拒绝，exit 11）与**协议门禁**（Skill 要求 Agent 遵守，状态机不直接拦截）。
 >
 > 人工决策点的选项与审计字段见 [pipeline-decision-points.md](pipeline-decision-points.md)。术语定义见 [CONTEXT.md](../CONTEXT.md)。
+> 将门禁做成「自动跳过 / 必须人工确认」配置的可行性见 [gate-configurability-feasibility.md](./gate-configurability-feasibility.md)。
 
 ---
 
