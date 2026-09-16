@@ -22,6 +22,8 @@ OpenSpec 安装方式和版本说明参见 [OpenSpec](https://github.com/Fission
 npx opsx-dev-pipeline@latest init
 ```
 
+> **第一次使用？** 请阅读[新手快速上手教程](docs/getting-started.md)，按照完整步骤完成环境准备、Claude Code + Backend 初始化和首次 Pipeline 交付。
+
 交互模式会提示选择 AI 工具和项目 stack，stack 默认选中 `backend`。
 
 非交互模式示例：
