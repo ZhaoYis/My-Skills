@@ -1,6 +1,8 @@
 # 流水线人工决策点汇总
 
 > 覆盖 Phase 0-7 全部需要人工确认的决策点。每个决策点都会被记录在状态文件中，形成完整的决策审计链。
+>
+> 硬门禁、Preflight、Route、Hook 与 CLI 版本检查见 [pipeline-gates.md](pipeline-gates.md)。
 
 ---
 

@@ -710,7 +710,7 @@ describe('pipeline state machine', () => {
   });
 
   it('enforces proposal, implementation, test and archive gates', async () => {
-    expect((await state('init', 'demo-change', 'feature/demo')).code).toBe(0);
+    expect((await state('init', 'demo-change', 'feature/demo', '--skip-feature-association')).code).toBe(0);
     expect((await state('transition', 'demo-change', '1', '3')).code).toBe(0);
 
     const noProposalApproval = await state('transition', 'demo-change', '2', '6');
@@ -744,6 +744,8 @@ describe('pipeline state machine', () => {
 
     await state('set', 'demo-change', 'archivePath', 'openspec/changes/archive/demo-change');
     await state('decision', 'demo-change', 'postArchiveAction', 'push-only');
+    await state('set', 'demo-change', 'delivery.commitSha', 'abc123');
+    await state('set', 'demo-change', 'delivery.sourcePushed', 'true');
     expect((await state('transition', 'demo-change', '6', '20')).code).toBe(0);
     expect((await state('complete', 'demo-change')).code).toBe(0);
 
@@ -755,7 +757,7 @@ describe('pipeline state machine', () => {
 
   it('enforces Phase 7 merge delivery gates and completion', async () => {
     const changeName = 'phase-seven-gates';
-    await state('init', changeName, 'feature/phase-seven-gates');
+    await state('init', changeName, 'feature/phase-seven-gates', '--skip-feature-association');
     await state('decision', changeName, 'proposalApproved', 'true');
     await state('decision', changeName, 'implementationConfirmed', 'true');
     await state('set', changeName, 'tests.status', 'passed');
@@ -781,6 +783,7 @@ describe('pipeline state machine', () => {
 
     await state('set', changeName, 'delivery.sourcePushed', 'true');
     expect((await state('transition', changeName, '7', '23')).code).toBe(0);
+    await state('set', changeName, 'delivery.mergeCommitSha', 'merge-abc');
     expect((await state('complete', changeName)).code).toBe(0);
 
     const current = await state('get', changeName);

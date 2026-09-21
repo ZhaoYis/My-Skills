@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Fission-AI/opsx-dev-pipeline/docs/stack-profile-schema.json",
+  "title": "OpenSpec Stack Profile",
+  "description": "Schema for the `stack:` section of openspec/config.yaml consumed by `opsx-dev-pipeline doctor --stack`. Mirrors the validation performed by src/core/doctor/checkStackHealth.ts and the StackId values defined in src/core/adapters/types.ts.",
+  "type": "object",
+  "required": ["stack"],
+  "additionalProperties": false,
+  "properties": {
+    "stack": {
+      "type": "object",
+      "required": ["id", "services"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "enum": ["frontend", "backend", "fullstack"],
+          "description": "Stable identifier for the stack profile. Must match one of the StackId values defined in src/core/adapters/types.ts."
+        },
+        "languages": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Programming languages used by the stack (e.g. [\"typescript\", \"python\"]). An empty array triggers a warning in checkStackHealth."
+        },
+        "services": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Logical services that compose the stack. Each entry's `path` must exist on disk relative to the project root.",
+          "items": { "$ref": "#/$defs/service" }
+        },
+        "verify": {
+          "type": "object",
+          "description": "Optional top-level verification commands (build / smoke / contract).",
+          "additionalProperties": false,
+          "properties": {
+            "build": { "$ref": "#/$defs/command" },
+            "smoke": { "$ref": "#/$defs/command" },
+            "contract": { "$ref": "#/$defs/command" }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "service": {
+      "type": "object",
+      "required": ["name", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable service identifier (e.g. \"backend\", \"frontend\")."
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Directory containing the service, expressed relative to the project root. checkStackHealth requires this path to exist on disk."
+        },
+        "dev": { "$ref": "#/$defs/command" },
+        "test": { "$ref": "#/$defs/command" },
+        "integration": { "$ref": "#/$defs/command" },
+        "e2e": { "$ref": "#/$defs/command" }
+      }
+    },
+    "command": {
+      "type": "object",
+      "description": "Shell command descriptor. `command` is the shell snippet to execute; `cwd` (if set) is resolved against the project root and must be an existing directory; `env` is an optional map of additional environment variables.",
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "Shell command to run. Empty `command` is allowed when `required: false`; with `required: true` an empty string is treated as an error by checkStackHealth."
+        },
+        "cwd": {
+          "type": "string",
+          "description": "Working directory for the command, relative to the project root. If set, checkStackHealth requires the directory to exist on disk."
+        },
+        "env": {
+          "type": "object",
+          "description": "Extra environment variables injected when the command runs. Keys are variable names; values are stringified before being passed to the shell.",
+          "additionalProperties": { "type": "string" }
+        },
+        "required": {
+          "type": "boolean",
+          "description": "When true, an empty `command` is reported as an error by checkStackHealth instead of being silently ignored."
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "stack": {
+        "id": "fullstack",
+        "languages": ["typescript"],
+        "services": [
+          {
+            "name": "frontend",
+            "path": "frontend",
+            "dev": { "command": "npm run dev", "cwd": "frontend" },
+            "test": { "command": "npm test", "cwd": "frontend" }
+          },
+          {
+            "name": "backend",
+            "path": "backend",
+            "dev": { "command": "npm run dev" },
+            "test": { "command": "npm test", "required": true },
+            "integration": { "command": "npm run test:integration", "env": { "NODE_ENV": "test" } },
+            "e2e": { "command": "npm run test:e2e" }
+          }
+        ],
+        "verify": {
+          "build": { "command": "npm run build" },
+          "smoke": { "command": "npm run smoke" }
+        }
+      }
+    }
+  ]
+}

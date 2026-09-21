@@ -156,7 +156,7 @@ Manifest 采用双存储策略：优先嵌入 `package.json`（`opsxDevPipeline`
 | `commands` | 必装 | AI 命令入口 |
 | `docs` | 必装 | 项目指令文档 |
 | `schema` | 必装 | Stack schema 和模板 |
-| `structural-analysis-hint` | 可选 | 代码结构分析提示 |
+| `hooks` / `no-hooks` | 可选 | 控制危险命令与敏感文件写入的宿主 hook；默认启用 |
 
 ---
 

@@ -281,44 +281,50 @@ export function parseRouteConfig(configPath) {
     const lines = content.split('\n');
     const routes = {};
     let currentRoute = null;
-    let inRoutes = false;
-    let _inPhases = false;
+    let routesIndent = null;
+    let routeIndent = null;
 
     for (const line of lines) {
       const trimmed = line.trim();
 
       if (trimmed === 'routes:') {
-        inRoutes = true;
+        routesIndent = line.length - line.trimStart().length;
         continue;
       }
 
-      if (inRoutes && !line.startsWith(' ') && !line.startsWith('\t') && trimmed) {
-        inRoutes = false;
+      if (routesIndent === null || !trimmed || trimmed.startsWith('#')) {
         continue;
       }
 
-      if (inRoutes) {
-        const routeMatch = line.match(/^ {2}(\w+):\s*$/);
+      const indent = line.length - line.trimStart().length;
+      if (indent <= routesIndent) {
+        routesIndent = null;
+        currentRoute = null;
+        continue;
+      }
+
+      if (routesIndent !== null) {
+        const routeMatch = line.match(/^(\s+)([A-Za-z0-9_-]+):\s*$/);
         if (routeMatch) {
-          currentRoute = routeMatch[1];
+          if (routeIndent === null) routeIndent = routeMatch[1].length;
+          if (routeMatch[1].length !== routeIndent) continue;
+          currentRoute = routeMatch[2];
           routes[currentRoute] = { description: '', phases: [] };
-          _inPhases = false;
           continue;
         }
 
         if (currentRoute) {
-          const descMatch = line.match(/^ {4}description:\s*(.+)$/);
+          const descMatch = line.match(/^\s+description:\s*(.+)$/);
           if (descMatch) {
             routes[currentRoute].description = descMatch[1].replace(/^["']|["']$/g, '');
             continue;
           }
 
-          const phasesMatch = line.match(/^ {4}phases:\s*\[([^\]]+)\]$/);
+          const phasesMatch = line.match(/^\s+phases:\s*\[([^\]]+)\]\s*(?:#.*)?$/);
           if (phasesMatch) {
             routes[currentRoute].phases = phasesMatch[1]
               .split(',')
               .map((p) => parseInt(p.trim(), 10));
-            _inPhases = false;
           }
         }
       }
@@ -335,6 +341,16 @@ export function parseRouteConfig(configPath) {
 }
 
 export function validateRouteConfig(routes) {
+  for (const routeName of ['trivial', 'standard', 'full']) {
+    if (!routes[routeName]) {
+      emitError(
+        'invalid-route-config',
+        `缺少必需 route: ${routeName}`,
+        'fix-route-config',
+        4,
+      );
+    }
+  }
   for (const [routeName, route] of Object.entries(routes)) {
     if (!Array.isArray(route.phases)) {
       emitError(
@@ -381,7 +397,7 @@ export function validateRouteConfig(routes) {
 export function getRoutePhases(routeName, routes) {
   const route = routes[routeName];
   if (!route) {
-    return routes.full.phases;
+    return routes.full?.phases ?? [0, 1, 2, 3, 4, 5, 6, 7];
   }
   return route.phases;
 }

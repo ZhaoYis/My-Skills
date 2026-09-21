@@ -24,6 +24,7 @@
 
 ### Added
 
+- **docs**：新增从环境准备、Claude Code + Backend 初始化到首次 Pipeline 交付的新手快速上手教程，并在 README Quick Start 中增加导航入口。
 - **feat(sync/upgrade)**：`sync` / `upgrade` 遍历 manifest 中所有工具逐个重渲染。
 - **feat(doctor)**：`doctor` 输出新增 `tools` 列表；多工具时打印 `active tool`。
 - 新增 `opsx-init` skill + command 资产包（`opsx-dev-pipeline-skill-bundle:SKILL.md.hbs`、`opsx-dev-pipeline-command`），`init` 时一并安装。

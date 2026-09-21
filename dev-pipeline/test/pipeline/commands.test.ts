@@ -163,7 +163,7 @@ describe('runDoctorCommand', () => {
 
   it('returns ok for a project with the current template version', async () => {
     const dir = await createTempDir();
-    await writeManifestInPackageJson(dir, baseManifest());
+    await seedInitializedProject(dir);
 
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const status = await runDoctorCommand(dir);
@@ -176,6 +176,7 @@ describe('runDoctorCommand', () => {
 
   it('emits JSON when --json is enabled and includes versionCheck', async () => {
     const dir = await createTempDir();
+    await seedInitializedProject(dir);
     await writeManifestInPackageJson(
       dir,
       baseManifest({ templateVersion: '0.0.1' }),
@@ -452,7 +453,7 @@ describe('runCli command dispatch', () => {
     const originalExitCode = process.exitCode;
     try {
       process.chdir(dir);
-      await writeManifestInPackageJson(dir, baseManifest());
+      await seedInitializedProject(dir);
       const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
       await runCli(['node', 'opsx-dev-pipeline', 'doctor', '--json']);
