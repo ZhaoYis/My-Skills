@@ -7,9 +7,11 @@ import { collectExistingLanguage } from '../../core/init/resolveExistingLanguage
 import { resolveInstallConflicts } from '../../core/init/resolveInstallConflicts.js';
 import { readManifest } from '../../core/manifest/io.js';
 import type { ManagedAssetRecord } from '../../core/manifest/types.js';
+import { checkManifestVersion } from '../../core/manifest/versionCheck.js';
 import type { InitOptions } from '../../core/prompts/types.js';
 import { resolvePackageRoot } from '../../core/runtime/resolvePackageRoot.js';
 import { resolveTechStackId } from '../../core/tech-stack/registry.js';
+import { ensureUpgradeVersionCheck } from '../../core/upgrade/versionPrompt.js';
 
 function installedTools(manifest: { tools: ToolId[]; tool?: ToolId }): ToolId[] {
   if (manifest.tools.length > 0) return manifest.tools;
@@ -28,6 +30,10 @@ export async function runSyncCommand(options: InitOptions): Promise<void> {
   if (!result) {
     throw new Error('No manifest found for sync. Run init first.');
   }
+  await ensureUpgradeVersionCheck(checkManifestVersion(result.manifest.templateVersion), {
+    yes: Boolean(options.yes),
+    dryRun: Boolean(options.dryRun),
+  });
   const languageSelection = await collectExistingLanguage(targetDir, options, result.manifest);
 
   const toolsToSync = installedTools(result.manifest);

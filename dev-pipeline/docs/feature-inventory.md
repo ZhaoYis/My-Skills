@@ -21,7 +21,7 @@
 | **交互式 + 非交互双模式**             | `--yes` 静默安装适配 CI/CD；交互模式引导式配置                             |
 | `--dry-run` **预览**           | 安装前完整展示将要生成的文件清单，所见即所得                                     |
 | `--force` **覆盖**             | 智能冲突管理：默认跳过已有文件，`--force` 覆盖托管文件                           |
-| `--feature` **可选模块**         | 按需启用 `structural-analysis-hint` 等增强功能                      |
+| `--feature` **可选模块**         | 控制 hooks；默认启用，`--feature no-hooks` 可关闭                    |
 | `--dir` **目标目录**             | 支持安装到任意项目目录                                                |
 
 
@@ -234,7 +234,7 @@ EnvironmentFactory → PipelineAgentOrchestrator → PhaseValidators → ReportG
 | **Bundle 模式资源管理**     | 批量展开目录 → 追踪每个成员 → sync/upgrade 精确到文件级                                              |
 | **Appendable 文件**     | 智能识别可追加文件（如 `.gitignore`），允许用户追加自定义内容                                              |
 | **智能 Config 合并**      | `config.yaml` 安装时检测已有 `context:` 块，自动追加而非覆盖                                        |
-| **Feature Flag 系统**   | `base` / `skills` / `commands` / `docs` / `schema` + 可选 `structural-analysis-hint` |
+| **Feature Flag 系统**   | `base` / `skills` / `commands` / `docs` / `schema` / `hooks`；`no-hooks` 是 hooks 的关闭开关 |
 | **Zod Schema 校验**     | Manifest 读取时严格类型校验，防止损坏的配置文件                                                       |
 | **双入口 CLI**           | `opsx-dev-pipeline` + `create-opsx-dev-pipeline` 快捷别名                              |
 | **picocolors 终端美化**   | 仅 2KB 的终端色彩库，doctor/sync/upgrade 输出清晰可读                                            |

@@ -23,7 +23,7 @@ export async function runCli(argv: string[]): Promise<void> {
     )
     .option('--force', 'Overwrite existing managed files even if they would conflict')
     .option('--dry-run', 'Preview generated files without writing them')
-    .option('--feature <feature>', 'Enable an optional feature (e.g. structural-analysis-hint)')
+    .option('--feature <feature>', 'Configure optional features (hooks or no-hooks)')
     .option('--scope <user|project>', 'Install scope: project-level (default) or user-level (~)')
     .option(...dirOption)
     .action(async (options) => {

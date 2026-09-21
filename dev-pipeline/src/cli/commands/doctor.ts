@@ -1,8 +1,18 @@
 import pc from 'picocolors';
+import { checkManagedAssets } from '../../core/doctor/checkManagedAssets.js';
+import { checkPathEscapes } from '../../core/doctor/checkPathEscapes.js';
 import { checkStackHealth } from '../../core/doctor/checkStackHealth.js';
-import type { HealthStatus, StackHealthResult } from '../../core/doctor/types.js';
+import { checkToolConfig } from '../../core/doctor/checkToolConfig.js';
+import type {
+  HealthStatus,
+  ManagedAssetHealthResult,
+  PathEscapeHealthResult,
+  StackHealthResult,
+  StackIssue,
+  ToolConfigHealthResult,
+} from '../../core/doctor/types.js';
 import { readManifest } from '../../core/manifest/io.js';
-import { checkManifestVersion } from '../../core/manifest/versionCheck.js';
+import { checkManifestVersion, mergeHealthStatus } from '../../core/manifest/versionCheck.js';
 import { MANIFEST_PACKAGE_JSON_KEY, PACKAGE_VERSION } from '../../core/runtime/meta.js';
 
 export interface DoctorCommandOptions {
@@ -74,6 +84,40 @@ function printStackReport(stack: StackHealthResult): void {
   }
 }
 
+/** Derive a `HealthStatus` from a check's validity and any error/warning issues. */
+export function statusFromCheck(check: { valid: boolean; issues: StackIssue[] }): HealthStatus {
+  if (!check.valid) return 'fail';
+  if (check.issues.some((i) => i.severity === 'warning')) return 'warn';
+  return 'ok';
+}
+
+/** Print a named check's outcome (status + any errors/warnings) for human reading. */
+export function printHealthReport(
+  checkName: string,
+  result: { valid: boolean; issues: StackIssue[] },
+): void {
+  const status = statusFromCheck(result);
+  const icon = result.valid ? pc.green('✓') : status === 'warn' ? pc.yellow('⚠') : pc.red('✗');
+  console.log(`${checkName}: ${icon} ${colorizeStatus(status, statusLabel(status))}`);
+
+  const errors = result.issues.filter((i) => i.severity === 'error');
+  const warnings = result.issues.filter((i) => i.severity === 'warning');
+
+  if (errors.length > 0) {
+    console.log(pc.red(`  Errors (${errors.length}):`));
+    for (const e of errors) {
+      console.log(pc.red(`    ✗ ${e.path}: ${e.message}`));
+    }
+  }
+
+  if (warnings.length > 0) {
+    console.log(pc.yellow(`  Warnings (${warnings.length}):`));
+    for (const w of warnings) {
+      console.log(pc.yellow(`    ⚠ ${w.path}: ${w.message}`));
+    }
+  }
+}
+
 export async function runDoctorCommand(
   dir: string = process.cwd(),
   json = false,
@@ -98,7 +142,7 @@ export async function runDoctorCommand(
     ? checkManifestVersion(manifestResult.manifest.templateVersion, PACKAGE_VERSION)
     : undefined;
 
-  const status: HealthStatus = !manifestResult ? 'warn' : (versionCheck?.healthStatus ?? 'ok');
+  let status: HealthStatus = !manifestResult ? 'warn' : (versionCheck?.healthStatus ?? 'ok');
 
   const manifest = manifestResult
     ? {
@@ -121,8 +165,39 @@ export async function runDoctorCommand(
         message: 'No opsx-dev-pipeline manifest found in target directory.',
       };
 
+  // ── Drift checks (only when a manifest exists) ──
+  let assetsHealth: ManagedAssetHealthResult | null = null;
+  let pathEscapesHealth: PathEscapeHealthResult | null = null;
+  let toolConfigHealth: ToolConfigHealthResult | null = null;
+
+  if (manifestResult) {
+    const manifestRef = manifestResult.manifest;
+    [assetsHealth, pathEscapesHealth, toolConfigHealth] = await Promise.all([
+      checkManagedAssets(dir, manifestRef),
+      checkPathEscapes(dir, manifestRef),
+      checkToolConfig(manifestRef),
+    ]);
+
+    // Combine: any error upgrades to `fail`, any warning upgrades to `warn`.
+    status = mergeHealthStatus(status, statusFromCheck(assetsHealth));
+    status = mergeHealthStatus(status, statusFromCheck(pathEscapesHealth));
+    status = mergeHealthStatus(status, statusFromCheck(toolConfigHealth));
+  }
+
   if (json) {
-    console.log(JSON.stringify({ status, manifest }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          status,
+          manifest,
+          assets: assetsHealth ?? { valid: true, issues: [] },
+          pathEscapes: pathEscapesHealth ?? { valid: true, issues: [] },
+          toolConfig: toolConfigHealth ?? { valid: true, issues: [] },
+        },
+        null,
+        2,
+      ),
+    );
     return status;
   }
 
@@ -152,6 +227,11 @@ export async function runDoctorCommand(
         );
       }
     }
+
+    console.log();
+    if (assetsHealth) printHealthReport('Managed assets', assetsHealth);
+    if (pathEscapesHealth) printHealthReport('Path escapes', pathEscapesHealth);
+    if (toolConfigHealth) printHealthReport('Tool config', toolConfigHealth);
   } else {
     console.log(pc.yellow(manifest.message));
   }

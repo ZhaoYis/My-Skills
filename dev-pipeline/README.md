@@ -447,7 +447,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get <change-name>
 
 ### 阻止规则
 
-**block-dangerous-bash.sh**
+**block-dangerous-bash.mjs**
 
 | 模式 | 拒绝原因 |
 | ---- | -------- |
@@ -459,7 +459,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get <change-name>
 | `mkfs.ext4 /dev/sda1` | `filesystem-format-blocked` |
 | `dd if=/dev/zero of=/dev/sda` | `raw-disk-write-blocked` |
 
-**block-sensitive-write.sh**
+**block-sensitive-write.mjs**
 
 | 模式 | 拒绝原因 |
 | ---- | -------- |
@@ -536,13 +536,11 @@ npx opsx-dev-pipeline init --tool claude --stack backend --yes
 
 **解决方案**：
 ```bash
-# 检查 hook 脚本权限
+# 检查 hook 脚本是否存在（Node.js 文件，无需可执行位）
 ls -la .claude/skills/opsx-dev-pipeline/scripts/hooks/
+# 期望看到 block-dangerous-bash.mjs 与 block-sensitive-write.mjs
 
-# 添加执行权限
-chmod +x .claude/skills/opsx-dev-pipeline/scripts/hooks/*.sh
-
-# 或重新初始化
+# 如缺失，重新初始化即可（Node 运行时直接调用，无需 chmod）
 npx opsx-dev-pipeline init --tool claude --stack backend --yes --force
 ```
 

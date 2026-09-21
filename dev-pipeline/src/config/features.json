@@ -31,10 +31,10 @@
       "default": true
     },
     {
-      "id": "structural-analysis-hint",
-      "displayName": "Structural analysis hint (optional)",
-      "description": "Opt-in guidance to prefer structural search (code graph / LSP / index MCP) over plain text search when available. Default off; references stay no-op when disabled.",
-      "default": false
+      "id": "hooks",
+      "displayName": "Pipeline hooks",
+      "description": "Install supported host hooks for dangerous shell commands and sensitive file writes. Enabled by default; pass --feature no-hooks to disable.",
+      "default": true
     }
   ]
 }

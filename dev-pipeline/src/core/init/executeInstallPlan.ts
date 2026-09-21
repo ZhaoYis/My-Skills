@@ -298,13 +298,22 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
   }
 
   const writtenAssets: ManagedAssetRecord[] = managedFiles.map((file) => {
-    const destination = path.relative(plan.targetDir, file.destinationPath);
+    // User-scope skill and command destinations are outside the project. Persist
+    // those paths as absolute values so sync/uninstall do not reinterpret them as
+    // project-relative traversal paths.
+    const destination =
+      plan.scope === 'user' && path.isAbsolute(file.destinationPath)
+        ? file.destinationPath
+        : path.relative(plan.targetDir, file.destinationPath);
     const record: ManagedAssetRecord = { id: file.assetId, destination };
     // Tag the asset with its owning tool when the destination lives inside a tool
     // directory (e.g. .claude/, .opencode/) OR when the asset id encodes a tool
     // prefix (e.g. `claude-docs` → CLAUDE.md). Shared assets stay untagged so they
     // survive any single-tool uninstall.
-    const inferredTool = inferAssetTool(destination, file.assetId);
+    const inferredTool =
+      plan.scope === 'user' && path.isAbsolute(destination)
+        ? plan.tool
+        : inferAssetTool(destination, file.assetId);
     if (inferredTool) {
       record.tool = inferredTool;
     }
@@ -350,7 +359,13 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
     language: plan.language,
     scope: plan.scope,
     features: plan.features,
-    templateVersion: TEMPLATE_VERSION,
+    // sync updates only assets that were already managed. Keep the prior version
+    // visible to Doctor so a later upgrade can still advertise newly introduced
+    // assets from the current package.
+    templateVersion:
+      plan.mode === 'sync' && existingManifest
+        ? existingManifest.manifest.templateVersion
+        : TEMPLATE_VERSION,
     packageName: PACKAGE_NAME,
     managedAssets: context.managedAssets,
   });

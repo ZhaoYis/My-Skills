@@ -48,18 +48,19 @@ node ../scripts/preflight.mjs
 当目标 change 的状态不存在且即将执行 `init` 时，必须先完成以下步骤：
 
 1. 必须使用 **{{askTool}}** 询问用户是否关联外部需求（如 JIRA issue）。选项：`跳过关联`，并等待用户显式选择或输入。即使需求描述完整、未提及 issue 或用户要求直接继续，也不得推断为跳过。
-2. 用户在对话框中输入需求信息（如 featureId、featureUrl 等），从用户输入中提取信息，根据是否提供 URL 只执行下面一条命令：
+2. 对新 change，先完成 Step2.5 的 Route 选择；把用户确认的 `<route>` 作为 `--route` 传给唯一的 `init` 命令。未提供时才使用兼容默认值 `full`。
+3. 用户在对话框中输入需求信息（如 featureId、featureUrl 等），从用户输入中提取信息，根据是否提供 URL 只执行下面一条命令：
    ```bash
    # 未提供 URL
-   node ../scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --feature-id "<featureId>"
+   node ../scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --route "<route>" --feature-id "<featureId>"
    # 提供了 URL
-   node ../scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   node ../scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --route "<route>" --feature-id "<featureId>" --feature-url "<featureUrl>"
    ```
-3. 用户选择 `跳过关联` 时执行：
+4. 用户选择 `跳过关联` 时执行：
    ```bash
-   node ../scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --skip-feature-association
+   node ../scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --route "<route>" --skip-feature-association
    ```
-4. 上述 `init` 命令只能执行一个，不得传入 `<featureId>`、`<featureUrl>` 等占位值。后续每条状态命令都必须检查 exit code。
+5. 上述 `init` 命令只能执行一个，不得传入 `<featureId>`、`<featureUrl>` 等占位值。后续每条状态命令都必须检查 exit code。
 
 ### 2.a 用户提供了已有 change 名称
 
@@ -142,11 +143,8 @@ node ../scripts/preflight.mjs
      - `trivial` — 无行为变化的极小变更
      - `standard` — 标准变更，风险可控
      - `full` — 高保障变更，需要完整验证
-4. 记录用户选择的 route：
-   ```bash
-   node ../scripts/dev-pipeline-state.mjs decision "<name>" route_choice "<route>"
-   ```
-5. 根据 route 确定需要执行的 phases，后续 Phase 跳转时会验证目标 phase 是否在当前 route 的执行列表中
+4. 对新 change，将确认的 route 传给状态初始化命令：`init "<name>" "<source-branch>" --route "<route>" ...`。不得写入 `decisions.route_choice`，Route 的唯一状态字段是 `route.choice`。
+5. 根据 `route.choice` 确定需要执行的 phases；后续 Phase 跳转会验证目标 phase 是否在当前 route 的执行列表中。
 
 ### 跳过条件
 

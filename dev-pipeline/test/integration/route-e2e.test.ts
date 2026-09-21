@@ -78,15 +78,16 @@ ${Object.entries(routes)
 }
 
 async function initState(changeName: string, route: string) {
-  const result = await runState(['init', changeName, 'main', '--skip-feature-association']);
+  const result = await runState([
+    'init',
+    changeName,
+    'main',
+    '--route',
+    route,
+    '--skip-feature-association',
+  ]);
   expect(result.code).toBe(0);
   expect(result.payload.status).toBe('ok');
-
-  // Set the route field directly by reading and updating the state file
-  const statePath = path.join(repo, 'openspec', '.pipeline-state', `${changeName}.json`);
-  const state = await fs.readJson(statePath);
-  state.route = { choice: route, upgradedFrom: null, upgradedAt: null };
-  await fs.writeJson(statePath, state, { spaces: 2 });
 }
 
 describe('Route End-to-End Scenarios', () => {
@@ -102,25 +103,13 @@ describe('Route End-to-End Scenarios', () => {
       await writeConfig(routes);
       await initState(changeName, 'trivial');
 
-      // Set required gate decisions for Phase 2
-      const statePath = path.join(repo, 'openspec', '.pipeline-state', `${changeName}.json`);
-      let state = await fs.readJson(statePath);
-      state.decisions.proposalApproved = true;
-      state.decisions.implementationConfirmed = true;
-      await fs.writeJson(statePath, state, { spaces: 2 });
+      // Trivial skips proposal, but implementation confirmation remains required.
+      await runState(['decision', changeName, 'implementationConfirmed', 'true']);
 
       // Phase 0 → Phase 2
       const toPhase2 = await runState(['transition', changeName, '2', '6']);
       expect(toPhase2.code).toBe(0);
       expect(toPhase2.payload.status).toBe('ok');
-
-      // Set required gate decisions for Phase 6
-      state = await fs.readJson(statePath);
-      state.tests = { status: 'skipped' };
-      state.verify = { status: 'passed' };
-      state.archivePath = '/path/to/archive';
-      state.decisions.postArchiveAction = 'push-only';
-      await fs.writeJson(statePath, state, { spaces: 2 });
 
       // Phase 2 → Phase 6
       const toPhase6 = await runState(['transition', changeName, '6', '20']);
@@ -181,9 +170,6 @@ describe('Route End-to-End Scenarios', () => {
 
       // Set implementation confirmed (gate for Phase 5)
       await runState(['decision', changeName, 'implementationConfirmed', 'true']);
-
-      // Set test status (gate for Phase 5)
-      await runState(['set', changeName, 'tests.status', 'passed']);
 
       // Phase 2 → Phase 5
       const toPhase5 = await runState(['transition', changeName, '5', '15']);
@@ -303,12 +289,7 @@ describe('Route End-to-End Scenarios', () => {
       await writeConfig(routes);
       await initState(changeName, 'trivial');
 
-      // Set required gate decisions
-      const statePath = path.join(repo, 'openspec', '.pipeline-state', `${changeName}.json`);
-      const state = await fs.readJson(statePath);
-      state.decisions.proposalApproved = true;
-      state.decisions.implementationConfirmed = true;
-      await fs.writeJson(statePath, state, { spaces: 2 });
+      await runState(['decision', changeName, 'implementationConfirmed', 'true']);
 
       // Phase 0 → Phase 2 (trivial route)
       let result = await runState(['transition', changeName, '2', '6']);

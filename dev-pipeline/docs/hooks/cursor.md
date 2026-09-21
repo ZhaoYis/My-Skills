@@ -6,7 +6,7 @@ opsx-dev-pipeline 的 hook 脚本对 Claude Code 和 OpenCode 自动生成。Cur
 
 - Cursor 的 hooks 走 `.cursor/hooks.json`（与 Claude 的 `settings.json` 不同协议）。
 - 当前 opsx 不生成此文件，避免与 Cursor 的云端 agent 行为不一致。
-- 拦截脚本本身（`block-dangerous-bash.sh`、`block-sensitive-write.sh`）已经由 opsx 自动复制到 `<skillsDir>/opsx-dev-pipeline/scripts/hooks/`，可直接复用。
+- 拦截脚本本身（`block-dangerous-bash.mjs`、`block-sensitive-write.mjs`）已经由 opsx 自动复制到 `<skillsDir>/opsx-dev-pipeline/scripts/hooks/`，可直接复用。
 
 ## 配置步骤
 

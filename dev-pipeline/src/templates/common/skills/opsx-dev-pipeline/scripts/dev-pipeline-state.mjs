@@ -473,16 +473,24 @@ function allowedTransition(from, to, state) {
 }
 
 function validateGates(state, from, to) {
-  if (to === 2 && state.decisions.proposalApproved !== true) {
+  const configPath = path.join(findOpenSpecRoot(), 'openspec', 'config.yaml');
+  const routePhases = getRoutePhases(state.route?.choice || 'full', parseRouteConfig(configPath));
+  if (!routePhases.includes(to)) return null;
+
+  if (to === 2 && routePhases.includes(1) && state.decisions.proposalApproved !== true) {
     return ['proposal-approval-required', '进入 Phase2 前必须记录 proposalApproved=true'];
   }
   if (from === 2 && to >= 3 && state.decisions.implementationConfirmed !== true) {
     return ['implementation-confirmation-required', '离开 Phase2 前必须确认实施摘要'];
   }
-  if (to === 5 && !['passed', 'skipped', 'debt-recorded'].includes(state.tests.status)) {
+  if (
+    to === 5 &&
+    routePhases.includes(4) &&
+    !['passed', 'skipped', 'debt-recorded'].includes(state.tests.status)
+  ) {
     return ['test-gate-required', '进入 Phase5 前必须记录测试通过、显式跳过或技术债务'];
   }
-  if (to === 6) {
+  if (to === 6 && routePhases.includes(5)) {
     if (!['passed', 'skipped'].includes(state.verify.status)) {
       return ['verify-gate-required', '进入 Phase6 前必须记录 verify 通过或经用户确认跳过'];
     }
@@ -574,6 +582,17 @@ function parseInitArgs(args) {
   }
 
   return { sourceBranch, namedArgs };
+}
+
+function validateRouteName(routeName) {
+  if (!['trivial', 'standard', 'full'].includes(routeName)) {
+    emitError(
+      'invalid-route-name',
+      `无效的 route 名称: ${routeName}，必须是 trivial/standard/full 之一`,
+      'choose-valid-route',
+      EXIT_INVALID_TRANSITION,
+    );
+  }
 }
 
 function recordPipelineTransition(state, fromPhase, fromStep, toPhase, toStep, now) {
@@ -690,6 +709,9 @@ if (!command) {
         const featureId = namedArgs['--feature-id'] || null;
         const featureUrl = namedArgs['--feature-url'] || null;
         const skipFeatureAssociation = namedArgs['--skip-feature-association'] === true;
+        const initialRoute = namedArgs['--route'] || 'full';
+
+        validateRouteName(initialRoute);
 
         if (featureUrl && !featureId) {
           emitError(
@@ -727,7 +749,7 @@ if (!command) {
             status: 'active',
             executionMode: 'pipeline',
             route: {
-              choice: 'full',
+              choice: initialRoute,
               upgradedFrom: null,
               upgradedAt: null,
             },
@@ -1091,15 +1113,7 @@ if (!command) {
               EXIT_INVALID_TRANSITION,
             );
           }
-          const validRoutes = ['trivial', 'standard', 'full'];
-          if (!validRoutes.includes(targetRoute)) {
-            emitError(
-              'invalid-route-name',
-              `无效的 route 名称: ${targetRoute}，必须是 trivial/standard/full 之一`,
-              'choose-valid-route',
-              EXIT_INVALID_TRANSITION,
-            );
-          }
+          validateRouteName(targetRoute);
           const currentRoute = state.route?.choice || 'full';
           const routeOrder = { trivial: 0, standard: 1, full: 2 };
           if (routeOrder[targetRoute] <= routeOrder[currentRoute]) {
@@ -1128,6 +1142,30 @@ if (!command) {
               'pipeline-not-delivered',
               '只有 Phase6 或 Phase7 可以标记流水线完成',
               'finish-delivery-phase',
+              EXIT_INVALID_TRANSITION,
+            );
+          } else if (!state.delivery.commitSha) {
+            emitError(
+              'commit-required',
+              '完成流水线前必须记录 delivery.commitSha',
+              'record-delivery-commit',
+              EXIT_INVALID_TRANSITION,
+            );
+          } else if (
+            state.decisions.postArchiveAction !== 'local-only' &&
+            !state.delivery.sourcePushed
+          ) {
+            emitError(
+              'source-push-required',
+              'push-only 或 merge 交付前必须记录 delivery.sourcePushed=true',
+              'push-source-branch',
+              EXIT_INVALID_TRANSITION,
+            );
+          } else if (state.currentPhase === 7 && !state.delivery.mergeCommitSha) {
+            emitError(
+              'merge-commit-required',
+              '完成 Phase7 前必须记录 delivery.mergeCommitSha',
+              'record-merge-commit',
               EXIT_INVALID_TRANSITION,
             );
           } else {

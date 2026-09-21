@@ -2,6 +2,8 @@ import path from 'node:path';
 import fs from 'fs-extra';
 import pc from 'picocolors';
 import { loadToolRegistry } from '../adapters/registry.js';
+import { readManifest } from '../manifest/io.js';
+import { checkManifestVersion } from '../manifest/versionCheck.js';
 import type { InitOptions } from '../prompts/types.js';
 import { PACKAGE_NAME } from '../runtime/meta.js';
 import { resolvePackageRoot } from '../runtime/resolvePackageRoot.js';
@@ -11,6 +13,7 @@ import { executeInstallPlan } from './executeInstallPlan.js';
 import { execOpenSpec, isOpenSpecCliMissingError } from './openSpecCli.js';
 import { resolveInstallConflicts } from './resolveInstallConflicts.js';
 import { validateTarget } from './validateTarget.js';
+import { ensureUpgradeVersionCheck } from '../upgrade/versionPrompt.js';
 
 const MIN_OPENSPEC_VERSION = [1, 6, 0] as const;
 
@@ -113,7 +116,19 @@ export async function runInit(options: InitOptions): Promise<void> {
 
   const validation = await validateTarget(targetDir, registry);
 
-  await preflightOpenSpec();
+  const existingManifest = await readManifest(targetDir);
+  if (existingManifest) {
+    await ensureUpgradeVersionCheck(checkManifestVersion(existingManifest.manifest.templateVersion), {
+      yes: Boolean(options.yes),
+      dryRun: Boolean(options.dryRun),
+    });
+  }
+
+  // A dry run only renders the install plan and never invokes OpenSpec, so it
+  // remains usable for previewing a package before the external dependency is installed.
+  if (!options.dryRun) {
+    await preflightOpenSpec();
+  }
 
   if (validation.existingEntries.length > 0 && !options.force && !options.dryRun) {
     console.log(
@@ -133,9 +148,6 @@ export async function runInit(options: InitOptions): Promise<void> {
     },
     registry,
   );
-  if (!options.dryRun) {
-    await initializeOpenSpec(targetDir, answers.tool);
-  }
   const plan = await buildInstallPlan({
     rootDir,
     targetDir,
@@ -157,5 +169,10 @@ export async function runInit(options: InitOptions): Promise<void> {
     force: Boolean(options.force),
   });
 
+  // Resolve every managed-file conflict before OpenSpec performs its own setup.
+  // A declined prompt or a failed plan must not leave an initialized partial tree.
+  if (!options.dryRun) {
+    await initializeOpenSpec(targetDir, answers.tool);
+  }
   await executeInstallPlan(resolvedPlan);
 }

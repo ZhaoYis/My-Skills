@@ -49,9 +49,17 @@ export async function ensureUpgradeVersionCheck(
 ): Promise<void> {
   printUpgradeVersionNotice(versionCheck, Boolean(options.dryRun));
 
-  if (options.dryRun || options.yes) {
+  if (options.dryRun) {
     return;
   }
+
+  if (options.yes && (versionCheck.status === 'ahead' || versionCheck.status === 'unknown')) {
+    throw new Error(
+      'Refusing non-interactive upgrade because the manifest version is newer than or incompatible with this CLI.',
+    );
+  }
+
+  if (options.yes) return;
 
   if (versionCheck.status !== 'ahead' && versionCheck.status !== 'unknown') {
     return;
