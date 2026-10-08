@@ -22,18 +22,19 @@ format: markdown-with-handlebars
 - 所有命令在 Git 仓库根目录执行；先读取 `dev-pipeline-state.mjs get`，状态与 Git 事实不一致时立即暂停。
 - commit、source push 分别确认，禁止合并确认。
 - 禁止 `git add -A`、`git push --force`、`git branch -D`、未经逐文件确认的全局 ours/theirs。
-- 任一步失败时先记录 `pause` 和失败事实，不得谎报完成或自动选择破坏性恢复方案。
+- 最终状态文件提交前，失败时记录 `pause` 和失败事实；提交后只暂停执行、展示待办与错误，不改写已提交状态快照。不得谎报完成或自动选择破坏性恢复方案。
 
 ## Step20：读取状态与预提交检查
 
 ```bash
-node ../scripts/dev-pipeline-state.mjs get "<name>"
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" get "<name>"
 git status --short
 git branch --show-current
 git remote -v
 ```
 
 1. 当前分支必须等于状态中的 `sourceBranch`；否则询问切换或暂停。
+   `postArchiveAction` 缺失时（包括 trivial 跳过 Phase5 的路径），先询问 `仅本地提交` / `提交并推送` / `升级到 full 后合并` 并记录 `local-only` / `push-only` / `merge`。选择合并且 Route 非 full 时先执行 `route "<name>" upgrade full`，按 `resumePhase` / `resumeStep` 补偿提案、审查、测试与归档，不在本轮直接提交或进入 Phase7。
 2. 无 `origin` 时询问：`配置远程后继续` / `仅本地提交` / `终止流程`。仅本地提交时记录 `postArchiveAction=local-only`。
 3. 有远程时执行 `git fetch --prune origin`；失败后只能重试、转为仅本地交付或终止。
 4. 扫描 `.env`、`.env.*`、`*.key`、`*.pem`、`*.p12`、`*.pfx`、`credentials.json`、`service-account.json`、`*.secret` 和私钥块。
@@ -56,19 +57,21 @@ git diff --cached --name-only
 git diff --cached --check
 ```
 
+用 `git diff --cached --quiet` 判断是否有待提交内容。暂存为空时（例如业务代码已提交，或升级后没有新增代码修改），展示 source HEAD，询问 `确认复用现有源提交` / `暂停检查` / `终止流程`。确认后记录 `commitApproved=true` 和实际 HEAD 到 `delivery.commitSha`，然后进入单独的 source push 决策；不运行会失败的空提交，也不使用 `--allow-empty` 伪造交付。
+
 询问：`确认提交` / `修改提交信息` / `取消暂存并重选` / `终止流程`。确认后先记录：
 
 ```bash
-node ../scripts/dev-pipeline-state.mjs decision "<name>" commitApproved true
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" decision "<name>" commitApproved true
 git commit -m "<conventional-commit-message>"
-node ../scripts/dev-pipeline-state.mjs set "<name>" delivery.commitSha '"<commit-sha>"'
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" set "<name>" delivery.commitSha '"<commit-sha>"'
 ```
 
 hook 失败时修复后重试；`--no-verify` 必须作为新的高风险决策单独确认。
 
 ## Step22：源分支推送与交付分支
 
-`postArchiveAction=local-only` 时跳过本 Step，直接进入完成流程（见下方 [local-only 完成流程](#local-only-完成流程)）。
+`postArchiveAction=local-only` 时跳过本 Step，直接进入下方共享的完成流程。
 
 否则展示 source branch、remote URL、待推送提交：
 
@@ -76,125 +79,80 @@ hook 失败时修复后重试；`--no-verify` 必须作为新的高风险决策�
 git log --oneline "origin/<source-branch>..HEAD"
 ```
 
+先确认远程 source ref 是否存在。首次推送尚无 `origin/<source-branch>` 时，展示首次推送事实和审查基线以来的提交，不把不存在的 ref 当成推送失败。
+
 询问：`确认推送源分支` / `暂不推送` / `终止流程`。确认后：
 
 ```bash
-node ../scripts/dev-pipeline-state.mjs decision "<name>" sourcePushApproved true
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" decision "<name>" sourcePushApproved true
 git push origin "<source-branch>"
-node ../scripts/dev-pipeline-state.mjs set "<name>" delivery.sourcePushed true
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" set "<name>" delivery.sourcePushed true
 ```
 
 推送失败不得自动 rebase。先 fetch 并展示 ahead/behind，再询问 `pull --rebase`、保持本地等待人工处理或终止。
 
 ### 分支逻辑
 
-- `postArchiveAction=local-only` → 进入 [local-only 完成流程](#local-only-完成流程)
-- `postArchiveAction=push-only` → 进入 [push-only 完成流程](#push-only-完成流程)
-- `postArchiveAction=merge` → 执行 `node ../scripts/dev-pipeline-state.mjs transition "<name>" 7 23` 进入 Phase 7
+- `postArchiveAction=local-only` → 进入下方共享完成流程（仅本地提交）
+- `postArchiveAction=push-only` → 进入下方共享完成流程（提交并推送）
+- `postArchiveAction=merge` → 查询 `next "<name>"`，使用 `nextPhase` / `nextStep` 执行 `transition`；返回 `merge-route-upgrade-required` 时先升级到 full 并完成补偿，不直接进入 Phase7
 
-### local-only 完成流程
+### local-only / push-only 完成流程
 
-仅本地提交时，无需推送，直接完成流水线：
+#### 恢复与完成检查
 
-#### 完成流水线
-
-只有 source commit 已完成时才执行 `complete`。恢复执行时先读取状态：
+先读取状态并检查最终状态提交的事实：
 
 ```bash
-node ../scripts/dev-pipeline-state.mjs get "<name>"
-git log -1 --format="%s" -- openspec/.pipeline-state/<name>.json
-git diff --quiet HEAD -- openspec/.pipeline-state/<name>.json
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" get "<name>"
+node "<SKILL_ROOT>/scripts/delivery-check.mjs" final-state "<name>"
 ```
 
-只有状态已经是 `completed`、commit message 包含 `finalize pipeline delivery state`，且 `git diff --quiet` 返回 0 时，才说明最终状态已完整提交，可跳过后续。否则继续执行。
+- `local-only`：只有状态为 `completed` 且 `localCommitted=true` 才能跳过最终状态提交，进入摘要。
+- `push-only`：只有状态为 `completed`、`localCommitted=true` 且 `remoteContains=true` 才能跳过最终提交和推送，进入摘要。`delivery.sourcePushed=true` 只证明业务提交曾推送，不能证明随后创建的最终状态提交已推送。
+- `localCommitted=true`、`remoteContains=false` 时保留已有最终状态 commit，直接进入「推送最终状态」；不得重复调用 `complete` 或制造新的 finalize commit。
+- 脚本无法读取远程或返回非零时展示错误并暂停，不推断远程已包含提交。仅在最终状态文件提交前可由用户明确改为 local-only 并持久化；提交后保留既定模式与快照，修复远程后补推，或暂停执行。
+
+未完成状态的恢复只有 source commit 已完成、且 push-only 的源分支推送已成功时才执行：
 
 ```bash
-node ../scripts/dev-pipeline-state.mjs complete "<name>"
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" complete "<name>"
 ```
+
+状态已经为 `completed` 时不重复调用 `complete`。`complete` 成功只表示业务交付门禁满足，最终状态文件仍须按下面步骤提交和按交付模式推送。
 
 #### 提交最终流水线状态
 
-1. **幂等性检查**——确认状态文件是否已被提交：
-
-   ```bash
-   git log -1 --format="%s" -- openspec/.pipeline-state/<name>.json
-   git diff --quiet HEAD -- openspec/.pipeline-state/<name>.json
-   ```
-
-   如果返回的 commit message 包含 `finalize pipeline delivery state`，且 `git diff --quiet` 返回 0，说明状态已提交过 → 跳过，直接进入摘要。否则继续。
-
-2. 展示状态文件变更。
-
-3. 确认当前分支为 source branch。
-
-4. **询问**：`确认提交最终流水线状态` / `终止流程`。
-
-5. 暂存并检查：
+1. `localCommitted=false` 时展示状态文件内容或 diff，确认当前分支为 source branch。
+2. **询问**：`确认提交最终流水线状态` / `终止流程`。
+3. 暂存并检查：
 
    ```bash
    git add -f -- openspec/.pipeline-state/<name>.json
    git diff --cached --name-only
    ```
 
-6. 提交：
+   输出包含其他文件时暂停，询问是否取消其他文件暂存；不得静默夹带其他变更。
+4. 提交：
 
    ```bash
    git commit -m "chore(<change-name>): finalize pipeline delivery state"
+   node "<SKILL_ROOT>/scripts/delivery-check.mjs" final-state "<name>"
    ```
 
-#### 摘要
-
-展示 change、归档路径、审查报告、测试/verify 结果、各决策、提交 SHA、交付模式（local-only）、分支清理结果。
-
-### push-only 完成流程
-
-源分支推送完成后，直接完成流水线：
-
-#### 完成流水线
-
-恢复执行时先读取状态：
-
-```bash
-node ../scripts/dev-pipeline-state.mjs get "<name>"
-git log -1 --format="%s" -- openspec/.pipeline-state/<name>.json
-git diff --quiet HEAD -- openspec/.pipeline-state/<name>.json
-```
-
-只有状态已经是 `completed`、commit message 包含 `finalize pipeline delivery state`，且 `git diff --quiet` 返回 0 时，才说明最终状态已完整提交，可跳过后续。否则继续执行。
-
-```bash
-node ../scripts/dev-pipeline-state.mjs complete "<name>"
-```
-
-#### 提交最终流水线状态
-
-1. **幂等性检查**——同上。
-2. 展示状态文件变更。
-3. 确认当前分支为 source branch。
-4. **询问**：`确认提交最终流水线状态` / `终止流程`。
-5. 暂存并检查：
-
-   ```bash
-   git add -f -- openspec/.pipeline-state/<name>.json
-   git diff --cached --name-only
-   ```
-
-6. 提交：
-
-   ```bash
-   git commit -m "chore(<change-name>): finalize pipeline delivery state"
-   ```
+5. 验证 `localCommitted=true` 后，local-only 进入摘要；push-only 进入下面推送步骤。
 
 #### 推送最终状态
 
-询问 `推送最终状态到 source branch` / `终止流程`。确认后：
+仅 push-only 执行。`remoteContains=true` 时跳过重复推送；否则询问 `推送最终状态到 source branch` / `暂停，稍后推送` / `终止流程`。确认后：
 
 ```bash
 git push origin "<source-branch>"
+node "<SKILL_ROOT>/scripts/delivery-check.mjs" final-state "<name>"
 ```
 
-推送失败不得自动 rebase。先 fetch 并展示 ahead/behind，再询问 `pull --rebase`、保持本地等待人工处理或终止。若最终无法推送成功，调用 `pause "<name>" "state-commit-push-failed"`。
+只有重新核验 `remoteContains=true` 后才能展示最终状态已交付。推送失败不得自动 rebase；先 fetch 并展示 ahead/behind，再询问 `pull --rebase`、保持本地等待人工处理或终止。最终无法推送时暂停执行，展示 `state-commit-push-failed` 和待推送的最终状态 commit SHA；不得调用 `pause` 或其他写状态命令。重新触发技能时先核验 `localCommitted=true`，保留原快照与 commit，仅补推并重新检查远程包含事实。
 
 #### 摘要
 
-展示 change、归档路径、审查报告、测试/verify 结果、各决策、提交 SHA、source push 状态、分支清理结果。
+展示 change、实际制品/归档路径（trivial 标记不适用）、审查报告、测试/verify 结果、各决策、业务提交 SHA、最终状态提交 SHA、交付模式和远程包含核验结果。Route 跳过的阶段标记为不适用，不写成验证通过。

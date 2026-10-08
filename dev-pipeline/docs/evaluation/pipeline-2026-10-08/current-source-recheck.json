@@ -1,0 +1,30 @@
+{
+  "aFinal": {
+    "status": "ok",
+    "branch": "codex/readme-typo",
+    "localCommitted": true,
+    "remoteContains": null,
+    "finalStateCommitSha": "78d34a9670f5da661cae00c2fd2ca6c36a619345",
+    "remoteHead": null
+  },
+  "bFinal": {
+    "status": "ok",
+    "branch": "main",
+    "localCommitted": true,
+    "remoteContains": true,
+    "finalStateCommitSha": "f963340fe16c8896085c3cb56f0a37ff5d433fee",
+    "remoteHead": "f963340fe16c8896085c3cb56f0a37ff5d433fee"
+  },
+  "bMerge": {
+    "status": "ok",
+    "delivered": true,
+    "canDeleteLocal": true,
+    "canDeleteRemote": true,
+    "sourceBranchExists": true,
+    "remoteSourceExists": true,
+    "sourceCommitSha": "f7b176a5e7aa17c013c0e4ecc192653dc27dff9c",
+    "mergeCommitSha": "f7b176a5e7aa17c013c0e4ecc192653dc27dff9c",
+    "remoteHead": "f963340fe16c8896085c3cb56f0a37ff5d433fee",
+    "evidence": "source-ancestry"
+  }
+}

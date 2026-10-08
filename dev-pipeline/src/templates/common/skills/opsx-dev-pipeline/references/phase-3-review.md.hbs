@@ -17,9 +17,14 @@ format: markdown-with-handlebars
 
 ## Step10：获取变更内容
 
-- 有未提交变更：`git diff HEAD` + `git diff --stat HEAD`
-- 无未提交变更：检查未推送提交 `git log origin/<branch>..HEAD --oneline`
-- 无任何变更：提示后进入 Phase4
+```bash
+node "<SKILL_ROOT>/scripts/review-scope.mjs" "<name>"
+```
+
+- 使用返回的 `baseCommit` / `headCommit` / `trackedFiles` / `diff` 审查整个 change；它包含基线以来已提交（含已推送）以及当前已跟踪的修改，不能用是否存在未推送提交来判断审查范围。
+- 逐一读取 `untrackedFiles` 中拟随本 change 交付的新增文件，按相同维度审查；说明排除文件的理由。`diff` 为空不能证明没有新增实现。
+- 旧状态返回 exit code 4、`reason=review-baseline-required` 时，展示候选 base ref，由用户显式选择；使用 `review-scope.mjs "<name>" --base "<base-ref>"` 验证，记录返回的实际 SHA：`set "<name>" review.baseCommit '"<base-commit-sha>"'`，然后重跑脚本。不得自动选择 HEAD 或 origin/source 而漏掉已实现代码。
+- 只有脚本成功且 `hasChanges=false`，并确认无遗漏新增文件，才记录无变更审查结论并查询下一有效 Phase；脚本失败时暂停，不推断“无变更”。
 
 ## Step11：执行代码审查
 
@@ -38,8 +43,8 @@ format: markdown-with-handlebars
 
 报告写入后同步状态：
 ```bash
-node ../scripts/dev-pipeline-state.mjs set "<name>" review.reportPath '"<report-path>"'
-node ../scripts/dev-pipeline-state.mjs attempt "<name>" review passed # 或 issues-found
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" set "<name>" review.reportPath '"<report-path>"'
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" attempt "<name>" review passed # 或 issues-found
 ```
 
 ## Step12：[决策点 3] 审查结果处理
@@ -62,14 +67,15 @@ node ../scripts/dev-pipeline-state.mjs attempt "<name>" review passed # 或 issu
 
 **重要：「继续后续流程」仅跳过修复当前审查发现的问题。选择此项后必须：**
 
-1. 先执行 `transition "<name>" 4 14` 进入 Phase4 决策点 4
+1. 先查询 `next "<name>"`，使用返回的 `nextPhase` / `nextStep` 执行 `transition`，进入下一有效 Phase
 2. 等待用户在 Phase4 决策点 4 的显式选择
-3. 按 Phase4 → Phase5 → Phase6 → Phase7 顺序逐阶段推进，每阶段必经其决策点
+3. 按当前 Route 的有效 Phase 顺序推进，每阶段必经其适用决策点
 4. **禁止**跳过任何后续决策点直接执行归档、提交或推送命令
 
 进入后续流程前记录 `reviewDisposition`，再执行：
 ```bash
-node ../scripts/dev-pipeline-state.mjs transition "<name>" 4 14
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" next "<name>"
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" transition "<name>" <nextPhase> <nextStep>
 ```
 
 回到 Phase2 时执行 `transition "<name>" 2 6`；暂停时执行 `pause`。修复循环轮次以状态中的 `review.currentRound` 为准。
@@ -84,7 +90,7 @@ node ../scripts/dev-pipeline-state.mjs transition "<name>" 4 14
 
 ### Step R1：生成修复提案文档
 
-根据审查报告确定修复 scope（如 `fix-cr-null-check`、`fix-cr-security`），在 `openspec/changes/<name>/` 下创建 `fix-proposal-round-<N>.md`，内容包含：
+根据审查报告确定修复 scope（如 `fix-cr-null-check`、`fix-cr-security`），在实际 `<artifactRoot>/` 下创建 `fix-proposal-round-<N>.md`，内容包含：
 
 - 问题描述（引用审查报告中的发现）
 - 修复方案（具体到文件和修改内容）
@@ -93,8 +99,8 @@ node ../scripts/dev-pipeline-state.mjs transition "<name>" 4 14
 创建文件后记录：
 
 ```bash
-node ../scripts/dev-pipeline-state.mjs decision "<name>" fixProposalPath '"openspec/changes/<name>/fix-proposal-round-<N>.md"'
-node ../scripts/dev-pipeline-state.mjs decision "<name>" fixProposalGenerated true
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" decision "<name>" fixProposalPath '"<artifactRoot>/fix-proposal-round-<N>.md"'
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" decision "<name>" fixProposalGenerated true
 ```
 
 **禁止在生成提案文档前修改任何源代码。**
@@ -110,7 +116,7 @@ node ../scripts/dev-pipeline-state.mjs decision "<name>" fixProposalGenerated tr
 批准后记录：
 
 ```bash
-node ../scripts/dev-pipeline-state.mjs decision "<name>" fixProposalApproved true
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" decision "<name>" fixProposalApproved true
 ```
 
 **禁止在用户批准前修改任何源代码。**
@@ -120,7 +126,7 @@ node ../scripts/dev-pipeline-state.mjs decision "<name>" fixProposalApproved tru
 逐任务实施修复（参照 Phase2 Step6-7），完成后记录：
 
 ```bash
-node ../scripts/dev-pipeline-state.mjs decision "<name>" fixApplied true
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" decision "<name>" fixApplied true
 ```
 
 ### Step R4：重新审查

@@ -1,6 +1,7 @@
 import path from 'node:path';
 import fs from 'fs-extra';
 import pc from 'picocolors';
+import { removePipelineHookConfig } from '../init/mergeHookConfig.js';
 import { readManifest, removeManifest, writeManifest } from '../manifest/io.js';
 import { PACKAGE_NAME, TEMPLATE_VERSION } from '../runtime/meta.js';
 import type { UninstallPlan } from './types.js';
@@ -57,6 +58,10 @@ async function updateManifestAfterUninstall(plan: UninstallPlan): Promise<void> 
 
   await writeManifest(plan.targetDir, {
     ...manifestResult.manifest,
+    tool:
+      manifestResult.manifest.tool && remainingTools.includes(manifestResult.manifest.tool)
+        ? manifestResult.manifest.tool
+        : remainingTools[0],
     tools: remainingTools,
     managedAssets: remainingAssets,
     templateVersion: TEMPLATE_VERSION,
@@ -92,8 +97,31 @@ export async function executeUninstallPlan(plan: UninstallPlan): Promise<void> {
 
   const removedPaths: string[] = [];
 
+  // 合并写入的宿主配置包含用户设置；先验证，再仅卸载 Pipeline 拥有的部分。
+  const hookConfigs = new Map<string, string | null>();
+  for (const file of filesToRemove) {
+    if (
+      (file.assetId === 'claude-settings-hooks' || file.assetId === 'opencode-config-hooks') &&
+      (await fs.pathExists(file.destinationPath))
+    ) {
+      hookConfigs.set(
+        file.destinationPath,
+        removePipelineHookConfig(
+          await fs.readFile(file.destinationPath, 'utf8'),
+          file.destinationPath,
+        ),
+      );
+    }
+  }
+
   for (const file of filesToRemove) {
     if (!(await fs.pathExists(file.destinationPath))) {
+      continue;
+    }
+
+    const userConfig = hookConfigs.get(file.destinationPath);
+    if (typeof userConfig === 'string') {
+      await fs.outputFile(file.destinationPath, userConfig);
       continue;
     }
 
@@ -105,6 +133,12 @@ export async function executeUninstallPlan(plan: UninstallPlan): Promise<void> {
   await updateManifestAfterUninstall(plan);
 
   console.log(pc.green(`Uninstalled ${PACKAGE_NAME} managed files.`));
-  console.log(`- removed: ${filesToRemove.length}`);
+  console.log(`- removed: ${removedPaths.length}`);
   console.log(`- skipped: ${filesToSkip.length}`);
+  const preservedConfigs = Array.from(hookConfigs.values()).filter(
+    (content) => typeof content === 'string',
+  ).length;
+  if (preservedConfigs > 0) {
+    console.log(`- preserved user configurations: ${preservedConfigs}`);
+  }
 }

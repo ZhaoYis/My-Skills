@@ -1,0 +1,53 @@
+{
+  "root": "/var/folders/6f/h440pn6d6lbb_szrsths70dc0000gn/T/pipeline-final-recovery-5LnIin",
+  "repo": "/private/var/folders/6f/h440pn6d6lbb_szrsths70dc0000gn/T/pipeline-final-recovery-5LnIin/push-only-consumer",
+  "remote": "/var/folders/6f/h440pn6d6lbb_szrsths70dc0000gn/T/pipeline-final-recovery-5LnIin/origin.git",
+  "business": "25d0f6fef4608dc40c8231a3e6192d877ed59104",
+  "finalize": "5e8aee6ff7dff2dbcf60f7abd81b3e0d8be1874a",
+  "beforeCheck": {
+    "status": "ok",
+    "branch": "codex/recover-final-state",
+    "localCommitted": true,
+    "remoteContains": false,
+    "finalStateCommitSha": "5e8aee6ff7dff2dbcf60f7abd81b3e0d8be1874a",
+    "remoteHead": "25d0f6fef4608dc40c8231a3e6192d877ed59104"
+  },
+  "failure": {
+    "pushExit": 128,
+    "pushStderr": "fatal: '/var/folders/6f/h440pn6d6lbb_szrsths70dc0000gn/T/pipeline-final-recovery-5LnIin/origin.git' does not appear to be a git repository\nfatal: Could not read from remote repository.\n\nPlease make sure you have the correct access rights\nand the repository exists.\n",
+    "checkExit": 5,
+    "checkJSON": {
+      "status": "error",
+      "reason": "remote-query-failed",
+      "detail": "无法读取 origin 的实际分支，请检查网络或权限",
+      "nextAction": "retry-remote-query"
+    }
+  },
+  "recoveredBeforePush": {
+    "status": "ok",
+    "branch": "codex/recover-final-state",
+    "localCommitted": true,
+    "remoteContains": false,
+    "finalStateCommitSha": "5e8aee6ff7dff2dbcf60f7abd81b3e0d8be1874a",
+    "remoteHead": "25d0f6fef4608dc40c8231a3e6192d877ed59104"
+  },
+  "final": {
+    "status": "ok",
+    "branch": "codex/recover-final-state",
+    "localCommitted": true,
+    "remoteContains": true,
+    "finalStateCommitSha": "5e8aee6ff7dff2dbcf60f7abd81b3e0d8be1874a",
+    "remoteHead": "5e8aee6ff7dff2dbcf60f7abd81b3e0d8be1874a"
+  },
+  "byteEquality": {
+    "beforeFailureAfterEqual": true,
+    "byteLength": 2761,
+    "beforeSha256": "4dca56516a11aa782e363d757366728e3608a6494fd78815f179e214c4f00297",
+    "failureSha256": "4dca56516a11aa782e363d757366728e3608a6494fd78815f179e214c4f00297",
+    "afterSha256": "4dca56516a11aa782e363d757366728e3608a6494fd78815f179e214c4f00297"
+  },
+  "stateCommitCount": 1,
+  "writeStateCommandsAfterFinalize": 0,
+  "remoteHead": "5e8aee6ff7dff2dbcf60f7abd81b3e0d8be1874a",
+  "commands": 70
+}

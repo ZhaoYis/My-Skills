@@ -34,6 +34,9 @@ const mutablePaths = new Set([
   'featureInfo.featureId',
   'featureInfo.featureUrl',
   'archivePath',
+  'review.baseCommit',
+  'review.baseBranch',
+  'review.baseEmpty',
   'review.reportPath',
   'tests.command',
   'tests.status',
@@ -49,6 +52,84 @@ const mutablePaths = new Set([
 ]);
 
 const executionModes = new Set(['pipeline', 'standalone', 'hybrid']);
+const phaseEntrySteps = [1, 3, 6, 9, 13, 15, 20, 23];
+
+function initialReviewBaseline(root) {
+  const gitValue = (args) => {
+    try {
+      return (
+        execCommandSync('git', args, {
+          cwd: root,
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'ignore'],
+        }).trim() || null
+      );
+    } catch {
+      return null;
+    }
+  };
+  const baseCommit = gitValue(['rev-parse', '--verify', 'HEAD']);
+  return {
+    baseCommit,
+    baseBranch: gitValue(['branch', '--show-current']),
+    baseEmpty: baseCommit === null,
+  };
+}
+
+function configuredRoutePhases(root, routeChoice) {
+  const routes = parseRouteConfig(path.join(root, 'openspec', 'config.yaml'));
+  validateRouteConfig(routes);
+  return getRoutePhases(routeChoice, routes);
+}
+
+function nextPhaseView(root, state) {
+  const routeChoice = state.route?.choice || 'full';
+  const phases = configuredRoutePhases(root, routeChoice);
+  let nextPhase = null;
+  if (state.status !== 'completed' && state.currentPhase < 7) {
+    if (state.currentPhase === 6) {
+      const deliveryMode = state.decisions.postArchiveAction;
+      if (!['merge', 'push-only', 'local-only'].includes(deliveryMode)) {
+        emitError(
+          'post-archive-decision-required',
+          '结束 Phase6 前必须明确选择交付方式',
+          'record-delivery-mode',
+          EXIT_INVALID_TRANSITION,
+        );
+      }
+      if (deliveryMode === 'merge' && !phases.includes(7)) {
+        emitError(
+          'merge-route-upgrade-required',
+          '合并交付需要 full Route，请先升级并补齐质量阶段',
+          'upgrade-route-to-full',
+          EXIT_INVALID_TRANSITION,
+        );
+      }
+      if (deliveryMode === 'merge') nextPhase = 7;
+    } else {
+      nextPhase =
+        [...phases]
+          .sort((left, right) => left - right)
+          .find((phase) => phase > state.currentPhase) ?? null;
+      if (
+        state.currentPhase === 2 &&
+        nextPhase === 3 &&
+        state.decisions.reviewDisposition === 'skip-review' &&
+        phases.includes(4)
+      )
+        nextPhase = 4;
+    }
+  }
+  return {
+    status: 'ok',
+    route: routeChoice,
+    currentPhase: state.currentPhase,
+    currentStep: state.currentStep,
+    nextPhase,
+    nextStep: nextPhase === null ? null : phaseEntrySteps[nextPhase],
+    terminal: nextPhase === null,
+  };
+}
 
 function output(payload, exitCode = 0, raw) {
   const shouldStrip = raw === undefined ? !rawOutput : !raw;
@@ -473,15 +554,17 @@ function allowedTransition(from, to, state) {
 }
 
 function validateGates(state, from, to) {
+  // This is an exit gate, including Route edges such as 2 -> 5 and 2 -> 6.
+  // Check it before filtering skipped intermediate phases.
+  if (from === 2 && to >= 3 && state.decisions.implementationConfirmed !== true) {
+    return ['implementation-confirmation-required', '离开 Phase2 前必须确认实施摘要'];
+  }
   const configPath = path.join(findOpenSpecRoot(), 'openspec', 'config.yaml');
   const routePhases = getRoutePhases(state.route?.choice || 'full', parseRouteConfig(configPath));
   if (!routePhases.includes(to)) return null;
 
   if (to === 2 && routePhases.includes(1) && state.decisions.proposalApproved !== true) {
     return ['proposal-approval-required', '进入 Phase2 前必须记录 proposalApproved=true'];
-  }
-  if (from === 2 && to >= 3 && state.decisions.implementationConfirmed !== true) {
-    return ['implementation-confirmation-required', '离开 Phase2 前必须确认实施摘要'];
   }
   if (
     to === 5 &&
@@ -508,7 +591,7 @@ function validateGates(state, from, to) {
     if (!state.delivery.commitSha) {
       return ['commit-required', '进入 Phase7 前必须记录 delivery.commitSha'];
     }
-    if (!state.delivery.sourcePushed) {
+    if (state.delivery.sourcePushed !== true) {
       return ['source-push-required', '进入 Phase7 前必须推送源分支'];
     }
   }
@@ -644,6 +727,96 @@ function recordPipelineTransition(state, fromPhase, fromStep, toPhase, toStep, n
   }
 }
 
+function compensateRouteUpgrade(state, fromRoute, toRoute, previousPhases, nextPhases, now) {
+  const previousPhase = state.currentPhase;
+  const resumePhase = [...nextPhases]
+    .sort((left, right) => left - right)
+    .find((phase) => phase <= previousPhase && !previousPhases.includes(phase));
+  const invalidated = {};
+  if (resumePhase !== undefined) {
+    const decisionKeys = [
+      'reviewDisposition',
+      'fixProposalPath',
+      'fixProposalGenerated',
+      'fixProposalApproved',
+      'fixApplied',
+      'commitApproved',
+      'sourcePushApproved',
+      'mergeApproved',
+      'targetPushApproved',
+      'mergeStrategy',
+    ];
+    if (resumePhase <= 1) decisionKeys.push('requirementsConfirmed', 'proposalApproved');
+    if (resumePhase <= 2) decisionKeys.push('implementationConfirmed');
+    invalidated.decisions = {};
+    for (const key of decisionKeys) {
+      if (Object.hasOwn(state.decisions, key)) {
+        invalidated.decisions[key] = state.decisions[key];
+        delete state.decisions[key];
+      }
+    }
+    invalidated.review = { status: state.review.status, reportPath: state.review.reportPath };
+    state.review.status = 'pending';
+    state.review.reportPath = null;
+    for (const scope of ['tests', 'verify']) {
+      invalidated[scope] = { ...state[scope] };
+      state[scope] = { ...state[scope], attempts: 0, status: 'pending', detail: null };
+    }
+    // An existing archive remains a historical fact when adding review/tests.
+    // Phase5 must re-verify it, but must not archive the same change twice.
+    if (resumePhase <= 2) {
+      invalidated.archivePath = state.archivePath;
+      state.archivePath = null;
+    }
+    invalidated.delivery = { ...state.delivery };
+    state.delivery = {
+      ...state.delivery,
+      commitSha: null,
+      mergeCommitSha: null,
+      sourcePushed: false,
+      targetPushed: false,
+      tag: null,
+    };
+    for (const entry of state.phaseHistory || []) {
+      if (entry.executedBy === 'pipeline' && entry.status === 'in-progress') {
+        entry.status = 'abandoned';
+        entry.completedAt = now;
+        entry.reason = 'route-upgrade-compensation';
+      }
+    }
+    state.currentPhase = resumePhase;
+    state.currentStep = phaseEntrySteps[resumePhase];
+    state.status = 'active';
+    delete state.pauseReason;
+    recordPipelineTransition(
+      state,
+      resumePhase,
+      state.currentStep,
+      resumePhase,
+      state.currentStep,
+      now,
+    );
+  }
+  const upgradeHistory = [
+    ...(state.route?.upgradeHistory || []),
+    {
+      from: fromRoute,
+      to: toRoute,
+      timestamp: now,
+      previousPhase,
+      resumePhase: state.currentPhase,
+      invalidated,
+    },
+  ];
+  state.route = {
+    choice: toRoute,
+    upgradedFrom: fromRoute,
+    upgradedAt: now,
+    upgradeHistory,
+  };
+  return resumePhase !== undefined;
+}
+
 const attemptRules = {
   review: {
     statuses: ['passed', 'issues-found'],
@@ -662,7 +835,7 @@ const filteredArgs =
 if (!command) {
   emitError(
     'missing-command',
-    '用法：dev-pipeline-state.mjs <init|get|decision|set|attempt|record-phase|migrate-schema|transition|pause|complete> <change>，或 refresh-fingerprints <project-root> [--dry-run]',
+    '用法：dev-pipeline-state.mjs <init|get|next|decision|set|attempt|record-phase|migrate-schema|transition|pause|complete> <change>，或 refresh-fingerprints <project-root> [--dry-run]',
     'provide-state-command',
     EXIT_INVALID_TRANSITION,
   );
@@ -783,6 +956,7 @@ if (!command) {
             gatesBypassed: [],
             decisions: {},
             review: {
+              ...initialReviewBaseline(root),
               currentRound: 0,
               rounds: [],
               reportPath: null,
@@ -809,6 +983,8 @@ if (!command) {
       if (state) {
         if (command === 'get') {
           output({ status: 'ok', state });
+        } else if (command === 'next') {
+          output(nextPhaseView(root, state));
         } else if (command === 'migrate-schema') {
           if (state.schemaVersion === SCHEMA_VERSION) {
             output({ status: 'ok', reason: 'already-v3', state });
@@ -1080,6 +1256,7 @@ if (!command) {
               state.currentPhase = toPhase;
               state.currentStep = toStep;
               state.status = 'active';
+              delete state.pauseReason;
               recordPipelineTransition(
                 state,
                 fromPhase,
@@ -1114,6 +1291,14 @@ if (!command) {
             );
           }
           validateRouteName(targetRoute);
+          if (state.status === 'completed') {
+            emitError(
+              'completed-pipeline-route-upgrade-not-allowed',
+              '已完成交付的 Pipeline 不可升级 Route，请为后续工作新建 change',
+              'create-new-change',
+              EXIT_INVALID_TRANSITION,
+            );
+          }
           const currentRoute = state.route?.choice || 'full';
           const routeOrder = { trivial: 0, standard: 1, full: 2 };
           if (routeOrder[targetRoute] <= routeOrder[currentRoute]) {
@@ -1124,24 +1309,54 @@ if (!command) {
               EXIT_INVALID_TRANSITION,
             );
           }
-          // Perform upgrade
-          state.route = {
-            choice: targetRoute,
-            upgradedFrom: currentRoute,
-            upgradedAt: formatLocalTime(),
-          };
+          const previousPhases = configuredRoutePhases(root, currentRoute);
+          const nextPhases = configuredRoutePhases(root, targetRoute);
+          const rewound = compensateRouteUpgrade(
+            state,
+            currentRoute,
+            targetRoute,
+            previousPhases,
+            nextPhases,
+            formatLocalTime(),
+          );
           if (await saveState(root, state)) {
             output({
               status: 'ok',
               route: state.route,
+              resumePhase: state.currentPhase,
+              resumeStep: state.currentStep,
+              rewound,
+              state,
             });
           }
         } else if (command === 'complete') {
+          const deliveryMode = state.decisions.postArchiveAction;
           if (state.currentPhase !== 6 && state.currentPhase !== 7) {
             emitError(
               'pipeline-not-delivered',
               '只有 Phase6 或 Phase7 可以标记流水线完成',
               'finish-delivery-phase',
+              EXIT_INVALID_TRANSITION,
+            );
+          } else if (!['merge', 'push-only', 'local-only'].includes(deliveryMode)) {
+            emitError(
+              'post-archive-decision-required',
+              '完成 Pipeline 前必须明确选择交付方式',
+              'record-delivery-mode',
+              EXIT_INVALID_TRANSITION,
+            );
+          } else if (deliveryMode === 'merge' && state.currentPhase !== 7) {
+            emitError(
+              'merge-phase-required',
+              'merge 交付必须完成 Phase7 后才能标记完成',
+              'finish-merge-delivery',
+              EXIT_INVALID_TRANSITION,
+            );
+          } else if (deliveryMode !== 'merge' && state.currentPhase !== 6) {
+            emitError(
+              'delivery-phase-mismatch',
+              'local-only 和 push-only 交付必须在 Phase6 完成',
+              'check-delivery-mode',
               EXIT_INVALID_TRANSITION,
             );
           } else if (!state.delivery.commitSha) {
@@ -1151,10 +1366,7 @@ if (!command) {
               'record-delivery-commit',
               EXIT_INVALID_TRANSITION,
             );
-          } else if (
-            state.decisions.postArchiveAction !== 'local-only' &&
-            !state.delivery.sourcePushed
-          ) {
+          } else if (deliveryMode !== 'local-only' && state.delivery.sourcePushed !== true) {
             emitError(
               'source-push-required',
               'push-only 或 merge 交付前必须记录 delivery.sourcePushed=true',
@@ -1168,9 +1380,21 @@ if (!command) {
               'record-merge-commit',
               EXIT_INVALID_TRANSITION,
             );
+          } else if (deliveryMode === 'merge' && state.delivery.targetPushed !== true) {
+            emitError(
+              'target-push-required',
+              'merge 交付完成前必须推送目标分支',
+              'push-target-branch',
+              EXIT_INVALID_TRANSITION,
+            );
           } else {
-            state.status = 'completed';
-            if (await saveState(root, state)) output({ status: 'ok', state });
+            if (state.status === 'completed') {
+              output({ status: 'ok', reason: 'pipeline-already-completed', state });
+            } else {
+              state.status = 'completed';
+              delete state.pauseReason;
+              if (await saveState(root, state)) output({ status: 'ok', state });
+            }
           }
         } else {
           emitError(

@@ -4,8 +4,8 @@ import path from 'node:path';
 import fs from 'fs-extra';
 import prompts from 'prompts';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { runInit } from '../../src/core/init/runInit.js';
 import { runUninstallCommand } from '../../src/cli/commands/uninstall.js';
+import { runInit } from '../../src/core/init/runInit.js';
 import { readManifest } from '../../src/core/manifest/io.js';
 import type { PipelineManifest } from '../../src/core/manifest/types.js';
 import { PACKAGE_ROOT } from '../helpers/package-root.js';
@@ -55,7 +55,10 @@ function run(repo: string, command: string, args: string[]): Promise<void> {
   });
 }
 
-async function writeOpenspecMock(repo: string, behavior: 'success' | 'fail' = 'success'): Promise<void> {
+async function writeOpenspecMock(
+  repo: string,
+  behavior: 'success' | 'fail' = 'success',
+): Promise<void> {
   bin = path.join(repo, 'mock-bin');
   await fs.ensureDir(bin);
   const successBody = `
@@ -81,7 +84,10 @@ async function writeOpenspecMock(repo: string, behavior: 'success' | 'fail' = 's
     process.stderr.write('openspec: simulated failure\\n');
     process.exit(2);
   `;
-  await fs.outputFile(path.join(bin, 'openspec'), `#!/usr/bin/env node\n${behavior === 'success' ? successBody : failBody}`);
+  await fs.outputFile(
+    path.join(bin, 'openspec'),
+    `#!/usr/bin/env node\n${behavior === 'success' ? successBody : failBody}`,
+  );
   await fs.chmod(path.join(bin, 'openspec'), 0o755);
   if (process.platform === 'win32') {
     const nodeExe = process.execPath.replace(/"/g, '""');
@@ -153,18 +159,16 @@ describe('end-to-end pipeline lifecycle (mocked openspec CLI)', () => {
         'opsx-propose-command',
       ]),
     );
-    expect(
-      ids.some((id) => id.startsWith('opsx-dev-pipeline-skill-bundle:SKILL.md.hbs')),
-    ).toBe(true);
+    expect(ids.some((id) => id.startsWith('opsx-dev-pipeline-skill-bundle:SKILL.md.hbs'))).toBe(
+      true,
+    );
 
     // README + claude docs are actually on disk
     expect(await fs.pathExists(path.join(repo, 'README.md'))).toBe(true);
     expect(await fs.pathExists(path.join(repo, 'CLAUDE.md'))).toBe(true);
-    expect(
-      await fs.pathExists(
-        path.join(repo, '.claude/skills/opsx-dev-pipeline/SKILL.md'),
-      ),
-    ).toBe(true);
+    expect(await fs.pathExists(path.join(repo, '.claude/skills/opsx-dev-pipeline/SKILL.md'))).toBe(
+      true,
+    );
   });
 
   it('refuses runInit when openspec --version fails', async () => {
@@ -205,6 +209,7 @@ describe('end-to-end pipeline lifecycle (mocked openspec CLI)', () => {
 
     await state(repo, 'set', 'fix-typo', 'delivery.commitSha', 'abc123');
     await state(repo, 'set', 'fix-typo', 'delivery.sourcePushed', 'true');
+    await state(repo, 'decision', 'fix-typo', 'postArchiveAction', 'push-only');
     const completed = await state(repo, 'complete', 'fix-typo');
     expect(completed.code).toBe(0);
     expect(completed.payload.state).toMatchObject({
@@ -244,13 +249,7 @@ describe('end-to-end pipeline lifecycle (mocked openspec CLI)', () => {
 
     // Phase 5 → Phase 6 (push)
     await state(repo, 'set', 'add-feature', 'verify.status', 'passed');
-    await state(
-      repo,
-      'set',
-      'add-feature',
-      'archivePath',
-      'openspec/changes/archive/add-feature',
-    );
+    await state(repo, 'set', 'add-feature', 'archivePath', 'openspec/changes/archive/add-feature');
     await state(repo, 'decision', 'add-feature', 'postArchiveAction', 'push-only');
     expect((await state(repo, 'transition', 'add-feature', '6', '20')).code).toBe(0);
 
@@ -292,13 +291,7 @@ describe('end-to-end pipeline lifecycle (mocked openspec CLI)', () => {
 
     // Phase 6 — merge delivery
     await state(repo, 'set', 'core-change', 'verify.status', 'passed');
-    await state(
-      repo,
-      'set',
-      'core-change',
-      'archivePath',
-      'openspec/changes/archive/core-change',
-    );
+    await state(repo, 'set', 'core-change', 'archivePath', 'openspec/changes/archive/core-change');
     await state(repo, 'decision', 'core-change', 'postArchiveAction', 'merge');
     expect((await state(repo, 'transition', 'core-change', '6', '20')).code).toBe(0);
 
@@ -307,7 +300,10 @@ describe('end-to-end pipeline lifecycle (mocked openspec CLI)', () => {
     await state(repo, 'set', 'core-change', 'delivery.sourcePushed', 'true');
     expect((await state(repo, 'transition', 'core-change', '7', '23')).code).toBe(0);
     await state(repo, 'set', 'core-change', 'delivery.mergeCommitSha', 'def456');
-
+    expect((await state(repo, 'complete', 'core-change')).payload.reason).toBe(
+      'target-push-required',
+    );
+    await state(repo, 'set', 'core-change', 'delivery.targetPushed', 'true');
     expect((await state(repo, 'complete', 'core-change')).code).toBe(0);
     const finalState = await state(repo, 'get', 'core-change');
     expect(finalState.payload.state).toMatchObject({

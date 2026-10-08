@@ -13,8 +13,14 @@ format: markdown-with-handlebars
 
 ## Step6：获取实施指令
 
+先读取状态的 `route.choice` 和 `archivePath`：
+
+- `trivial`：直接按用户确认的需求实施无行为变化的修改，跳过 OpenSpec 指令与 `tasks.md`，用等价任务清单执行 Step7 自审查及 Step8 实施确认。发现行为/API/配置语义变化时先询问升级到 `standard` 或 `full`，执行 `route "<name>" upgrade "<route>"`，按 `resumePhase` / `resumeStep` 返回补做提案，禁止继续沿用 trivial 路径。
+- 已归档且 `archivePath` 存在：使用该目录作为 `<artifactRoot>`，读取 proposal / design / specs / tasks 继续实施；不调用活跃 change 的 `instructions-apply.mjs`。补偿阶段的修复和任务勾选写入该目录。
+- 其他：执行以下 OpenSpec 指令。
+
 ```bash
-node ../scripts/instructions-apply.mjs "<name>"
+node "<SKILL_ROOT>/scripts/instructions-apply.mjs" "<name>"
 ```
 
 返回状态处理：
@@ -24,7 +30,7 @@ node ../scripts/instructions-apply.mjs "<name>"
 
 ## Step7：逐任务实施
 
-遍历 `tasks.md`，每个任务动手前执行**写前复用门禁**：在仓库内检索已有相近函数/模块/类型/常量，命中则复用，不造重复轮子。
+遍历 `<artifactRoot>/tasks.md`（trivial 使用等价清单），每个任务动手前执行**写前复用门禁**：在仓库内检索已有相近函数/模块/类型/常量，命中则复用，不造重复轮子。
 
 标记任务完成前执行**准出自审查门禁**：
 
@@ -45,29 +51,27 @@ node ../scripts/instructions-apply.mjs "<name>"
 
 **有一条不满足 → 不允许标记完成**，先改到满足。
 
-准出全部通过后，编辑 `tasks.md` 将该任务条目的 `- [ ]` 改为 `- [x]`，完成标记。
+准出全部通过后，编辑 `tasks.md` 将该任务条目的 `- [ ]` 改为 `- [x]`；trivial 更新等价清单，不创建 OpenSpec 制品。
 
 遇到阻塞时 **{{askTool}}**：`提供补充说明` / `回到 Phase1 修改提案` / `跳过此任务`（标记 `[~]`） / `终止流程`
 
 ## Step8：[决策点 2] 实施完成确认
 
-展示实施摘要（完成任务数、跳过任务数、变更文件列表），**{{askTool}}**：
-- `进入代码审查` → Phase3
-- `暂停流水线，手动调整后继续` → 展示恢复指引后退出
-- `跳过审查，继续后续流程` → Phase4（完成后进入 Phase5）
-- `终止流程` → 退出
+展示实施摘要（完成任务数、跳过任务数、变更文件列表），按当前 Route 提供 **{{askTool}}** 选项：
+
+- `full`：`确认实施，进入代码审查` / `跳过审查，继续后续流程` / `暂停流水线，手动调整后继续` / `终止流程`。
+- `standard` / `trivial`：`确认实施，继续当前 Route` / `升级到 full 并审查` / `暂停流水线，手动调整后继续` / `终止流程`。不得向排除 Phase3/4 的 Route 提供直接进入这些 Phase 的选项。
 
 按选择先记录再迁移：
-```bash
-# 进入代码审查
-node ../scripts/dev-pipeline-state.mjs decision "<name>" implementationConfirmed true
-node ../scripts/dev-pipeline-state.mjs decision "<name>" reviewDisposition '"review"'
-node ../scripts/dev-pipeline-state.mjs transition "<name>" 3 9
 
-# 显式跳过审查
-node ../scripts/dev-pipeline-state.mjs decision "<name>" implementationConfirmed true
-node ../scripts/dev-pipeline-state.mjs decision "<name>" reviewDisposition '"skip-review"'
-node ../scripts/dev-pipeline-state.mjs transition "<name>" 4 13
+full 进入审查时先记录 `reviewDisposition="review"`；full 显式跳过时先记录 `reviewDisposition="skip-review"`。standard / trivial 不补造审查结果。
+```bash
+# 确认实施（所有 Route）
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" decision "<name>" implementationConfirmed true
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" next "<name>"
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" transition "<name>" <nextPhase> <nextStep>
 ```
+
+使用实际返回的 `nextPhase` / `nextStep`：standard 进入 Phase5，trivial 进入 Phase6。选择升级时先执行 `route "<name>" upgrade full`，按返回的 `resumePhase` / `resumeStep` 补做工作，不执行升级前的下一 Phase。
 
 回到提案时迁移到 Phase1 Step3；暂停时执行 `pause`。任何路径都不得绕过 `implementationConfirmed`。

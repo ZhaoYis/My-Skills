@@ -394,7 +394,8 @@ export const assetManifest: AssetDefinition[] = [
     source: 'src/templates/tools/claude/overlay/.claude/settings.json.hbs',
     destination: '.claude/settings.json',
     writePolicy: {
-      appendStrategy: 'simple',
+      // 更新 Pipeline Hook 条目，同时保留用户权限和其他宿主配置。
+      appendStrategy: 'hooks-json-merge',
       onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' },
     },
   },
@@ -407,7 +408,7 @@ export const assetManifest: AssetDefinition[] = [
     source: 'src/templates/tools/opencode/opencode.json.hbs',
     destination: '.opencode/opencode.json',
     writePolicy: {
-      appendStrategy: 'simple',
+      appendStrategy: 'hooks-json-merge',
       onConflict: { init: 'overwrite', sync: 'overwrite', upgrade: 'overwrite' },
     },
   },

@@ -7,7 +7,7 @@ name: opsx:dev-pipeline
 {{/if}}
 description: Drive the full OpenSpec + Git development pipeline (Phase 0-7)
 {{#if (isTool "claude")}}
-allowed-tools: Bash(openspec:*), {{askTool}}
+allowed-tools: Bash(openspec:*), Bash(node:*), Bash(git:*), {{askTool}}
 category: Workflow
 tags: [workflow, experimental]
 {{else}}{{#if (isTool "cursor")}}

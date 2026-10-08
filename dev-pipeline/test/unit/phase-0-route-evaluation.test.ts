@@ -59,7 +59,7 @@ describe('Phase 0 Template Route Evaluation', () => {
     // Route is the only state field under state.route (not decisions.route_choice).
     // The confirmed route is passed to `init` via --route, which writes route.choice.
     expect(templateContent).toContain(
-      'node ../scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --route "<route>"',
+      'node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" init "<name>" "<source-branch>" --route "<route>"',
     );
     // Template must explicitly forbid writing decisions.route_choice.
     expect(templateContent).toContain('不得写入 `decisions.route_choice`');

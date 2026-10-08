@@ -126,8 +126,7 @@ describe('buildInstallPlan', () => {
       path.join(PACKAGE_ROOT, 'src/templates/common/skills/opsx-dev-pipeline/SKILL.md.hbs'),
       context,
     );
-    expect(rendered).toContain('node scripts/dev-pipeline-state.mjs');
-    expect(rendered).not.toContain('<SKILL_ROOT>');
+    expect(rendered).toContain('node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs"');
     expect(rendered).not.toContain('{{skillsDir}}');
   });
 

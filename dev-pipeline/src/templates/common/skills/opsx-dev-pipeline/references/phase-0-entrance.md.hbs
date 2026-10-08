@@ -9,23 +9,12 @@ format: markdown-with-handlebars
 ---
 --}}
 
-{{!--
----
-type: phase-reference
-phase: 0
-name: phase-0-entrance
-description: |
-  环境预检与入口类型判断。识别已有 change、新需求、系分文档或非 pipeline 续接模式。
-format: markdown-with-handlebars
----
---}}
-
 # Phase0: 入口判断
 
 ## Step1：环境预检
 
 ```bash
-node ../scripts/preflight.mjs
+node "<SKILL_ROOT>/scripts/preflight.mjs"
 ```
 
 解析返回 JSON，按 `status` 和 `reason` 处理：
@@ -52,13 +41,13 @@ node ../scripts/preflight.mjs
 3. 用户在对话框中输入需求信息（如 featureId、featureUrl 等），从用户输入中提取信息，根据是否提供 URL 只执行下面一条命令：
    ```bash
    # 未提供 URL
-   node ../scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --route "<route>" --feature-id "<featureId>"
+   node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" init "<name>" "<source-branch>" --route "<route>" --feature-id "<featureId>"
    # 提供了 URL
-   node ../scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --route "<route>" --feature-id "<featureId>" --feature-url "<featureUrl>"
+   node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" init "<name>" "<source-branch>" --route "<route>" --feature-id "<featureId>" --feature-url "<featureUrl>"
    ```
 4. 用户选择 `跳过关联` 时执行：
    ```bash
-   node ../scripts/dev-pipeline-state.mjs init "<name>" "<source-branch>" --route "<route>" --skip-feature-association
+   node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" init "<name>" "<source-branch>" --route "<route>" --skip-feature-association
    ```
 5. 上述 `init` 命令只能执行一个，不得传入 `<featureId>`、`<featureUrl>` 等占位值。后续每条状态命令都必须检查 exit code。
 
@@ -66,22 +55,24 @@ node ../scripts/preflight.mjs
 
 1. 读取持久化状态：
    ```bash
-   node ../scripts/dev-pipeline-state.mjs get "<name>" --view full
+   node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" get "<name>" --view full
    ```
+   `status=completed` 时直接按交付模式进入 Phase6 的共享恢复检查，或 Phase7 Step25/26 的恢复检查；不重放实施、门禁补偿或阶段审计写入。最终状态已提交后，只用 Git 事实续接待推送、清理或标签动作，核验失败只暂停执行，不改写快照。
 2. 若 `schemaVersion=1`，执行 `migrate-schema "<name>"` 展示迁移详情；只有用户明确确认后才执行 `migrate-schema "<name>" --confirm`。拒绝迁移时保持 v1 原文件不变并终止续接。
 3. 并行核对事实：活跃/归档 change、任务勾选、状态中记录的审查报告、Git 分支和冲突状态。
 4. 状态不存在但 change 存在时，展示检测事实并询问：`按检测结果重建状态` / `选择其他 change` / `终止流程`。只有用户确认后才按“首次创建状态的统一规则”询问外部需求关联并执行 `init`，再执行必要的 `set`/`transition`。
-5. 状态与事实不一致时，列出差异并执行 `pause`；禁止按文件是否存在自动跳阶段。
+5. 状态与事实不一致时，列出差异并暂停；最终状态文件提交前用 `pause` 记录，提交后保留快照。禁止按文件是否存在自动跳阶段。
 6. 状态一致且 `executionMode=pipeline` 时，使用 **{{askTool}}** 确认：`从记录的 Phase/Step 继续` / `从头开始（新建 change）` / `终止流程`。
 
 ### 2.b 用户提供了需求描述
 
 - 从描述推导 kebab-case 的 change 名称
-- 获取当前分支，按“首次创建状态的统一规则”询问外部需求关联并初始化状态，然后迁移到 Phase1：
+- 获取当前分支，按“首次创建状态的统一规则”完成需求关联和 Route 选择并初始化状态，再查询下一有效 Phase：
   ```bash
-  node ../scripts/dev-pipeline-state.mjs transition "<name>" 1 3
+  node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" next "<name>"
+  node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" transition "<name>" <nextPhase> <nextStep>
   ```
-- 进入 **Phase1 Step3（决策点 1a）**
+- `<nextPhase>` / `<nextStep>` 必须替换为 `next` 返回值。`trivial` 进入 Phase2 Step6 的直接实施路径；`standard` / `full` 进入 Phase1 Step3（决策点 1a）。不得为 `trivial` 创建 OpenSpec 提案制品或补写 `proposalApproved=true`。
 
 ### 2.c 检测到非 pipeline 执行模式
 
@@ -97,8 +88,9 @@ node ../scripts/preflight.mjs
    ```
 2. 单独展示全局 `gatesBypassed`；为空时明确显示“无”。
 3. 先执行 gate 补偿，任何结果都必须写入状态后再继续：
-   - `tests.status=pending`：**{{askTool}}**：`passed` / `failed` / `skipped` / `重新运行`。确认结果使用 `set tests.status`；选择重新运行则进入 Phase4，禁止预写通过。
-   - `verify.status=pending`：**{{askTool}}**：`passed` / `failed` / `skipped` / `重新验证`。通过或失败使用 `attempt verify`，显式跳过使用 `set verify.status skipped`；选择重新验证则进入 Phase5 Step16。
+   - 仅当当前 Route 包含 Phase4 且 `tests.status=pending` 时补偿测试 gate：**{{askTool}}**：`passed` / `failed` / `skipped` / `重新运行`。确认结果使用 `set tests.status`；选择重新运行则执行 Phase4，禁止预写通过。
+   - 仅当当前 Route 包含 Phase5 且 `verify.status=pending` 时补偿 verify gate：**{{askTool}}**：`passed` / `failed` / `skipped` / `重新验证`。通过或失败使用 `attempt verify`，显式跳过使用 `set verify.status skipped`；选择重新验证则执行 Phase5 Step16。
+   - Route 排除的 Phase 不补偿、不迁入，也不把其 `pending` 改写为 `passed`。
    - `decisions.postArchiveAction` 缺失且已经归档或即将进入 Phase6：**{{askTool}}**：`merge` / `push-only` / `local-only`，使用 `decision` 持久化。此字段禁止从 Git 或文件事实推断。
 4. 使用 **{{askTool}}** 确认续接方式：
    - `从当前 Phase/Step 继续（推荐）`：保留 `hybrid`/`standalone` 记录，进入状态中记录的步骤。
@@ -116,6 +108,12 @@ node ../scripts/preflight.mjs
      - `新的需求描述` — 描述新需求，创建 change 并走完整提案→实施→审查→归档→交付流程
      - `系分设计文档` — 输入已有细分的系分设计文档名称，以其内容作为需求描述创建 change
      - `查看已有 change 列表` — 列出所有可用 change，再决定续接或新建
+
+2. 根据用户选择：
+   - 选择 `已有 change 名称` → 发送文本消息请用户输入 change 名称，收到后走 **2.a** 路径
+   - 选择 `新的需求描述` → 发送文本消息请用户描述需求，收到后走 **2.b** 路径
+   - 选择 `系分设计文档` → 读取用户指定文档，以其内容作为需求描述走 **2.b**，按所选 Route 查询下一有效 Phase
+   - 选择 `查看已有 change 列表` → 运行 `node "<SKILL_ROOT>/scripts/list-changes.mjs"` 展示可用 change，再回到入口选择
 
 ## Step2.5：Route 评估
 
@@ -144,7 +142,7 @@ node ../scripts/preflight.mjs
      - `standard` — 标准变更，风险可控
      - `full` — 高保障变更，需要完整验证
 4. 对新 change，将确认的 route 传给状态初始化命令：`init "<name>" "<source-branch>" --route "<route>" ...`。不得写入 `decisions.route_choice`，Route 的唯一状态字段是 `route.choice`。
-5. 根据 `route.choice` 确定需要执行的 phases；后续 Phase 跳转会验证目标 phase 是否在当前 route 的执行列表中。
+5. 根据 `route.choice` 确定需要执行的 phases；使用 `next "<name>"` 查询下一有效 Phase，再按返回值执行 `transition`。后续 Phase 跳转会验证目标 phase 是否在当前 route 的执行列表中。
 
 ### 跳过条件
 
@@ -152,9 +150,3 @@ node ../scripts/preflight.mjs
 - 如果用户选择 `trivial` route，后续流程将跳过 Phase 1（提案）、Phase 3（审查）、Phase 4（单测）、Phase 5（归档）、Phase 7（合并）
 - 如果用户选择 `standard` route，后续流程将跳过 Phase 3（审查）、Phase 4（单测）、Phase 7（合并）
 - 如果用户选择 `full` route，执行完整 Phase 0-7 流程
-
-2. 根据用户选择：
-   - 选择 `已有 change 名称` → 发送文本消息请用户输入 change 名称，收到后走 **2.a** 路径
-   - 选择 `新的需求描述` → 发送文本消息请用户描述需求，收到后走 **2.b** 路径
-   - 选择 `系分设计文档` → 发送文本消息请用户输入已生成的系分设计文档名称（如 `openspec/docs/<yyyyMMdd>/<kebab-case-name>.md`），读取该文档内容作为需求描述，走 **2.b** 路径（从描述推导 change 名称、初始化状态并迁移到 Phase1）
-   - 选择 `查看已有 change 列表` → 运行 `node ../scripts/list-changes.mjs`（或 `openspec list --json`）展示可用 change，展示后重新回到步骤 1（再次使用 **{{askTool}}**，此时可额外追加当前已有的 change 名称作为附加选项供快速选择）

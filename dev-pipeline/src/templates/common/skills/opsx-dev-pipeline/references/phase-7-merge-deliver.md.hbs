@@ -23,7 +23,7 @@ format: markdown-with-handlebars
 - 所有命令在 Git 仓库根目录执行；先读取 `dev-pipeline-state.mjs get`，状态与 Git 事实不一致时立即暂停。
 - merge、target push、删除本地分支、删除远程分支、创建标签和推送标签分别确认，禁止合并确认。
 - 禁止 `git push --force`、`git branch -D`、未经逐文件确认的全局 ours/theirs。
-- 任一步失败时先记录 `pause` 和失败事实，不得谎报完成或自动选择破坏性恢复方案。
+- 最终状态文件提交前，失败时记录 `pause` 和失败事实；提交后推送、分支清理或标签失败只暂停执行、展示待办与错误，不改写已提交状态快照。不得谎报完成或自动选择破坏性恢复方案。
 
 > **前置条件**：本 Phase 仅在 `postArchiveAction=merge` 且 Phase 6 Step22 源分支推送完成后执行。
 > 进入前必须通过 Phase 7 门禁：`postArchiveAction=merge`、`delivery.commitSha` 已记录、`delivery.sourcePushed=true`。
@@ -33,7 +33,7 @@ format: markdown-with-handlebars
 1. **先选择目标分支，再执行任何 checkout/switch**。列出本地和远程分支，询问 target branch。
 2. 使用 `git check-ref-format --branch "<target-branch>"` 校验，确认 target 不等于 source，然后记录：
    ```bash
-   node ../scripts/dev-pipeline-state.mjs set "<name>" targetBranch '"<target-branch>"'
+   node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" set "<name>" targetBranch '"<target-branch>"'
    ```
 3. 确认工作区干净且源提交已推送，再准备目标分支：
    ```bash
@@ -41,19 +41,19 @@ format: markdown-with-handlebars
    git switch "<target-branch>" || git switch -c "<target-branch>" --track "origin/<target-branch>"
    git pull --ff-only origin "<target-branch>"
    ```
-4. 询问合并策略：`Standard merge` / `Squash merge` / `No-ff merge`，记录 `mergeStrategy`。
-5. 展示 `git log --oneline "<target-branch>..<source-branch>"` 和 diff，再单独询问 `确认本地合并` / `取消`。
+4. 询问合并策略：`Standard merge` / `Squash merge` / `No-ff merge`，使用 `decision "<name>" mergeStrategy` 分别记录规范值 `"standard"` / `"squash"` / `"no-ff"`，不得写入显示标签。
+5. 使用状态中 `delivery.commitSha` 对应的 `<source-commit-sha>`，核验其已推送，展示 `git log --oneline "<target-branch>..<source-commit-sha>"` 和 diff，再单独询问 `确认本地合并` / `取消`。合并获批的源提交，避免分支后来移动引入未确认提交。
 6. 确认后记录 `mergeApproved=true`，执行对应命令：
    ```bash
    # Standard
-   git merge "<source-branch>" --no-edit
+   git merge "<source-commit-sha>" --no-edit
 
    # Squash；不要向 git commit 传 --no-edit
-   git merge --squash "<source-branch>"
+   git merge --squash "<source-commit-sha>"
    git commit -m "<squash-message>"
 
    # No-ff
-   git merge --no-ff "<source-branch>" --no-edit
+   git merge --no-ff "<source-commit-sha>" --no-edit
    ```
 
 ### 冲突处理
@@ -81,9 +81,9 @@ git diff --stat "origin/<target-branch>..HEAD"
 询问：`确认推送目标分支` / `保留本地合并，暂不推送` / `终止流程`。确认后：
 
 ```bash
-node ../scripts/dev-pipeline-state.mjs decision "<name>" targetPushApproved true
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" decision "<name>" targetPushApproved true
 git push origin "<target-branch>"
-node ../scripts/dev-pipeline-state.mjs set "<name>" delivery.targetPushed true
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" set "<name>" delivery.targetPushed true
 ```
 
 ## Step25：完成状态与摘要
@@ -93,25 +93,24 @@ node ../scripts/dev-pipeline-state.mjs set "<name>" delivery.targetPushed true
 只有 target push 完成时才执行 `complete`。恢复执行时先读取状态：
 
 ```bash
-node ../scripts/dev-pipeline-state.mjs get "<name>"
-git log -1 --format="%s" -- openspec/.pipeline-state/<name>.json
-git diff --quiet HEAD -- openspec/.pipeline-state/<name>.json
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" get "<name>"
+node "<SKILL_ROOT>/scripts/delivery-check.mjs" final-state "<name>"
 ```
 
-只有状态已经是 `completed`、commit message 包含 `finalize pipeline delivery state`，且 `git diff --quiet` 返回 0 时，才说明最终状态已完整提交，可跳过 25.1 和 25.2。否则继续执行；不要先重复调用 `complete`，以免仅因刷新 `updatedAt` 产生多余提交。
+只有状态已经是 `completed` 且 `localCommitted=true`，才能跳过 25.1 和 25.2；`remoteContains=false` 时仍必须执行 25.3 的推送。状态为 completed 但尚无最终状态提交时只补做 25.2，不重复调用 `complete`。远程不可核验时暂停，不把本地 commit 当成远程交付。
 
 **标签准备**：在 `complete` 前询问是否创建标签。选择标签时先校验名称与不存在性，展示将要标记的 target HEAD，并单独询问 `确认创建标签` / `不创建标签` / `终止流程`。确认创建后先记录标签名；实际 `git tag` 必须等 25.2 的状态提交和 25.3 的 target push 完成后，回到 Step26 执行：
 
 ```bash
 git check-ref-format "refs/tags/<tag-name>"
 git rev-parse -q --verify "refs/tags/<tag-name>"
-node ../scripts/dev-pipeline-state.mjs set "<name>" delivery.tag '"<tag-name>"'
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" set "<name>" delivery.tag '"<tag-name>"'
 ```
 
 这样最终状态提交会包含计划创建的标签名，而实际标签仍指向该最终状态提交。未选择标签时保持 `delivery.tag=null`。
 
 ```bash
-node ../scripts/dev-pipeline-state.mjs complete "<name>"
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" complete "<name>"
 ```
 
 ### 25.2 提交最终流水线状态
@@ -121,12 +120,10 @@ node ../scripts/dev-pipeline-state.mjs complete "<name>"
 1. **幂等性检查**——确认状态文件是否已被提交：
 
    ```bash
-   git log -1 --format="%s" -- openspec/.pipeline-state/<name>.json
-   git diff --quiet HEAD -- openspec/.pipeline-state/<name>.json
+   node "<SKILL_ROOT>/scripts/delivery-check.mjs" final-state "<name>"
    ```
 
-   如果返回的 commit message 包含 `finalize pipeline delivery state`，且 `git diff --quiet` 返回 0，说明状态已提交过 → 跳过 25.2，直接进入 25.3。
-   如果返回其他提交、空（文件从未被 commit），或状态文件仍有差异，继续执行以下步骤。
+   `localCommitted=true` 时跳过 25.2，进入 25.3；否则继续提交实际状态文件。
 
 2. 展示状态文件变更：
 
@@ -160,20 +157,21 @@ node ../scripts/dev-pipeline-state.mjs complete "<name>"
 
 推送最终状态到 target branch：
 
-询问 `推送最终状态到 target branch` / `终止流程`。确认后：
+先调用 `delivery-check.mjs final-state "<name>"`。`localCommitted=true` 且 `remoteContains=true` 时跳过重复 push；否则询问 `推送最终状态到 target branch` / `终止流程`。确认后：
 
 ```bash
 git push origin "<target-branch>"
+node "<SKILL_ROOT>/scripts/delivery-check.mjs" final-state "<name>"
 ```
 
-推送失败不得自动 rebase。先 fetch 并展示 ahead/behind，再询问 `pull --rebase`、保持本地等待人工处理或终止。若最终无法推送成功，调用 `pause "<name>" "state-commit-push-failed"`。
+推送失败不得自动 rebase。先 fetch 并展示 ahead/behind，再询问 `pull --rebase`、保持本地等待人工处理或终止。若最终无法推送成功，暂停执行并展示 `state-commit-push-failed` 与待推送 commit SHA；不得调用 `pause` 或其他写状态命令。恢复时保留原快照与最终状态 commit，仅补推并重新核验远程包含事实。
 
-推送成功后进入 Step26；标签处理结束后回到本节继续最终确认和摘要。
+重新核验 `remoteContains=true` 后进入 Step26；标签处理结束后回到本节继续最终确认和摘要。
 
 推送成功后最终确认：
 
 ```bash
-node ../scripts/dev-pipeline-state.mjs get "<name>"
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" get "<name>"
 ```
 
 **展示摘要**：change、归档路径、审查报告、测试/verify 结果、各决策、提交 SHA、source/target push、合并策略、分支清理和标签结果。跳过项明确标记，不得用"完成"掩盖暂停或失败。
@@ -182,20 +180,31 @@ node ../scripts/dev-pipeline-state.mjs get "<name>"
 
 > ⚠️ 请确认 Step25 的状态提交与推送已完成，再继续本步骤创建 tag。确保 tag 覆盖完整的流水线状态文件。
 
-先验证 source 已包含在远程 target：
+先按已记录的 mergeStrategy、源提交和合并提交验证远程交付事实：
 
 ```bash
-git fetch origin
-git merge-base --is-ancestor "<source-branch>" "origin/<target-branch>"
+node "<SKILL_ROOT>/scripts/delivery-check.mjs" merge "<name>"
 ```
 
-分别询问是否删除本地和远程源分支。本地只允许 `git branch -d "<source-branch>"`；远程删除使用 `git push origin --delete "<source-branch>"`，不得使用强制删除兜底。
+脚本成功且 `delivered=true` 后才能清理。恢复时依据 `sourceBranchExists` / `remoteSourceExists` 跳过已删除分支的动作。Squash 不要求源提交成为 target 的祖先；`canDeleteLocal=false` 时明确保留仍存在的本地源分支，继续标签步骤，不能把正常 squash 当成失败暂停。`sourceBranchExists=true` 且 `canDeleteLocal=true` 时可单独询问删除本地分支，本地只允许 `git branch -d "<source-branch>"`。
 
-标签必须基于 target HEAD。读取 Step25.1 已确认并写入 `delivery.tag` 的标签名：未记录标签名时明确跳过；已记录时先校验标签不存在并展示目标提交，再执行已获确认的创建动作，并单独确认是否推送：
+`canDeleteLocal=false` 时同时推荐保留远程源分支。`remoteSourceExists=true` 且 `canDeleteRemote=true` 时才能另行询问删除，展示 `delivered=true` 的交付证据、远程当前 tip 与已交付源提交；若 tip 与记录不同，暂停核查，不按旧证据清理。确认后使用 `git push origin --delete "<source-branch>"`。不删除任一分支都不阻断标签；不得使用强制删除兜底。
+
+标签必须基于已确认的最终状态提交。读取 Step25.1 已确认并写入 `delivery.tag` 的标签名：未记录标签名时明确跳过；已记录时展示目标提交并检查已有标签。标签已存在且 peeled commit 等于预期提交时复用，不重复创建；指向其他提交时暂停，不覆盖标签。
 
 ```bash
-git rev-parse -q --verify "refs/tags/<tag-name>"
+git rev-parse -q --verify "refs/tags/<tag-name>^{commit}"
+```
+
+标签不存在时执行已获确认的创建动作：
+
+```bash
 git tag -a "<tag-name>" -m "<message>"
+```
+
+随后核验远程同名标签；已存在且指向相同提交时跳过重复 push，不同则暂停。远程不存在时单独确认是否推送：
+
+```bash
 git push origin "<tag-name>"
 ```
 

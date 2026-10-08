@@ -255,6 +255,8 @@ Phase6 负责 commit 和源分支 push；仅 `merge` 交付模式会进入 Phase
 
 ## 研发流程
 
+下图展示 full Route。实际推进通过状态命令 `next <change>` 查询配置中的下一有效 Phase，再执行 `transition`；trivial 直接实施后进入 Phase6，standard 在实施后进入 Phase5。
+
 ```mermaid
 flowchart TD
   START(["新需求 / 变更"]) --> P0["Phase0 预检与入口"]
@@ -361,21 +363,27 @@ pipeline:
 在执行过程中，如果发现变更的风险比预期高，可以升级 Route：
 
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs route <change-name> upgrade <target-route>
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" route <change-name> upgrade <target-route>
 ```
 
 **升级规则**：
 - 只能向上升级：`trivial` → `standard` → `full`
 - 不允许降级
 - 升级后会记录升级历史（`upgradedFrom` 和 `upgradedAt`）
+- 若升级新增了已经跳过的 Phase，自动回到最早缺失阶段，清除失效的门禁和交付批准，按返回的 `resumePhase` / `resumeStep` 补做工作。已有归档可作为制品位置复用，补偿后重新 verify，不二次归档。
+- standard 或 trivial 选择合并时须先升级到 full 并完成补偿；已完成的 change 不能通过升级重新交付，应创建新 change。
+
+trivial 不依赖 OpenSpec proposal / tasks；在 Phase2 完成直接实施和自审查，在 Phase6 明确选择仅本地提交或提交并推送。standard 跳过审查和单测是 Route 的既定策略，跳过项显示为不适用，不能当作通过验证。
+
+Phase3 使用初始化记录的 Git 基线审查整个 change，包括已推送的提交和未跟踪新增文件。旧状态缺少基线时要求用户选择，并保存实际 SHA。交付恢复会验证最终状态提交是否已被远程分支包含，仅存在本地 finalize commit 不代表最终状态已推送。Squash merge 以已记录的源提交、合并提交和远程包含关系核验；安全保留源分支不会阻断标签步骤。
 
 **示例**：
 ```bash
 # 从 trivial 升级到 standard
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs route fix-typo upgrade standard
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" route fix-typo upgrade standard
 
 # 从 standard 升级到 full
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs route add-feature upgrade full
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" route add-feature upgrade full
 ```
 
 ### 向后兼容
@@ -386,7 +394,7 @@ node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs route add-feature upgrade full
 
 **Q: 如何查看当前变更使用的 Route？**
 ```bash
-node <SKILL_ROOT>/scripts/dev-pipeline-state.mjs get <change-name>
+node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" get <change-name>
 ```
 查看返回结果中的 `route.choice` 字段。
 

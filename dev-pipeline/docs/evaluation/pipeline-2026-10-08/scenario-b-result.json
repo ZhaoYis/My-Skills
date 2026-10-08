@@ -1,0 +1,242 @@
+{
+  "cwd": "/private/var/folders/6f/h440pn6d6lbb_szrsths70dc0000gn/T/pipeline-forward-eval-GL0c4i/scenario-b",
+  "business": "f7b176a5e7aa17c013c0e4ecc192653dc27dff9c",
+  "merge": "f7b176a5e7aa17c013c0e4ecc192653dc27dff9c",
+  "before": {
+    "status": "ok",
+    "branch": "main",
+    "localCommitted": false,
+    "remoteContains": false,
+    "finalStateCommitSha": "",
+    "remoteHead": "f7b176a5e7aa17c013c0e4ecc192653dc27dff9c"
+  },
+  "local": {
+    "status": "ok",
+    "branch": "main",
+    "localCommitted": true,
+    "remoteContains": false,
+    "finalStateCommitSha": "f963340fe16c8896085c3cb56f0a37ff5d433fee",
+    "remoteHead": "f7b176a5e7aa17c013c0e4ecc192653dc27dff9c"
+  },
+  "final": {
+    "status": "ok",
+    "branch": "main",
+    "localCommitted": true,
+    "remoteContains": true,
+    "finalStateCommitSha": "f963340fe16c8896085c3cb56f0a37ff5d433fee",
+    "remoteHead": "f963340fe16c8896085c3cb56f0a37ff5d433fee"
+  },
+  "delivered": {
+    "status": "ok",
+    "delivered": true,
+    "canDeleteLocal": true,
+    "canDeleteRemote": true,
+    "sourceBranchExists": true,
+    "remoteSourceExists": true,
+    "sourceCommitSha": "f7b176a5e7aa17c013c0e4ecc192653dc27dff9c",
+    "mergeCommitSha": "f7b176a5e7aa17c013c0e4ecc192653dc27dff9c",
+    "remoteHead": "f963340fe16c8896085c3cb56f0a37ff5d433fee",
+    "evidence": "source-ancestry"
+  },
+  "state": {
+    "status": "ok",
+    "state": {
+      "schemaVersion": 3,
+      "changeName": "add-greeting",
+      "sourceBranch": "codex/add-greeting",
+      "targetBranch": "main",
+      "currentPhase": 7,
+      "currentStep": 23,
+      "status": "completed",
+      "executionMode": "pipeline",
+      "route": {
+        "choice": "full",
+        "upgradedFrom": "standard",
+        "upgradedAt": "2026-10-08 22:41:17",
+        "upgradeHistory": [
+          {
+            "from": "standard",
+            "to": "full",
+            "timestamp": "2026-10-08 22:41:17",
+            "previousPhase": 6,
+            "resumePhase": 3,
+            "invalidated": {
+              "decisions": {
+                "commitApproved": true,
+                "sourcePushApproved": true
+              },
+              "review": {
+                "status": "pending",
+                "reportPath": null
+              },
+              "tests": {
+                "command": null,
+                "attempts": 0,
+                "status": "pending",
+                "detail": null
+              },
+              "verify": {
+                "command": "node verify.mjs",
+                "attempts": 1,
+                "status": "passed",
+                "detail": null
+              },
+              "delivery": {
+                "commitSha": "6e73e196c19619cea5e54133e1e0ea78dcadcc7b",
+                "mergeCommitSha": null,
+                "sourcePushed": true,
+                "targetPushed": false,
+                "tag": null
+              }
+            }
+          }
+        ]
+      },
+      "featureInfo": null,
+      "phaseHistory": [
+        {
+          "phase": 0,
+          "step": 1,
+          "executedBy": "pipeline",
+          "status": "completed",
+          "startedAt": "2026-10-08 22:41:13",
+          "completedAt": "2026-10-08 22:41:13",
+          "gatesBypassed": []
+        },
+        {
+          "phase": 1,
+          "step": 3,
+          "executedBy": "pipeline",
+          "status": "completed",
+          "startedAt": "2026-10-08 22:41:13",
+          "completedAt": "2026-10-08 22:41:14",
+          "gatesBypassed": []
+        },
+        {
+          "phase": 2,
+          "step": 6,
+          "executedBy": "pipeline",
+          "status": "completed",
+          "startedAt": "2026-10-08 22:41:14",
+          "completedAt": "2026-10-08 22:41:14",
+          "gatesBypassed": []
+        },
+        {
+          "phase": 5,
+          "step": 15,
+          "executedBy": "pipeline",
+          "status": "completed",
+          "startedAt": "2026-10-08 22:41:14",
+          "completedAt": "2026-10-08 22:41:15",
+          "gatesBypassed": []
+        },
+        {
+          "phase": 6,
+          "step": 20,
+          "executedBy": "pipeline",
+          "status": "abandoned",
+          "startedAt": "2026-10-08 22:41:15",
+          "completedAt": "2026-10-08 22:41:17",
+          "gatesBypassed": [],
+          "reason": "route-upgrade-compensation"
+        },
+        {
+          "phase": 3,
+          "step": 9,
+          "executedBy": "pipeline",
+          "status": "completed",
+          "startedAt": "2026-10-08 22:41:17",
+          "completedAt": "2026-10-08 22:42:20",
+          "gatesBypassed": []
+        },
+        {
+          "phase": 4,
+          "step": 13,
+          "executedBy": "pipeline",
+          "status": "completed",
+          "startedAt": "2026-10-08 22:42:20",
+          "completedAt": "2026-10-08 22:42:21",
+          "gatesBypassed": []
+        },
+        {
+          "phase": 5,
+          "step": 15,
+          "executedBy": "pipeline",
+          "status": "completed",
+          "startedAt": "2026-10-08 22:42:21",
+          "completedAt": "2026-10-08 22:42:21",
+          "gatesBypassed": []
+        },
+        {
+          "phase": 6,
+          "step": 20,
+          "executedBy": "pipeline",
+          "status": "completed",
+          "startedAt": "2026-10-08 22:42:21",
+          "completedAt": "2026-10-08 22:42:23",
+          "gatesBypassed": []
+        },
+        {
+          "phase": 7,
+          "step": 23,
+          "executedBy": "pipeline",
+          "status": "in-progress",
+          "startedAt": "2026-10-08 22:42:23",
+          "completedAt": null,
+          "gatesBypassed": []
+        }
+      ],
+      "gatesBypassed": [],
+      "decisions": {
+        "requirementsConfirmed": true,
+        "proposalApproved": true,
+        "implementationConfirmed": true,
+        "postArchiveAction": "merge",
+        "reviewDisposition": "review",
+        "commitApproved": true,
+        "sourcePushApproved": true,
+        "mergeStrategy": "standard",
+        "mergeApproved": true,
+        "targetPushApproved": true
+      },
+      "review": {
+        "baseCommit": "1cfb3381f0551f82c888dcca57e0a564e00b48b7",
+        "baseBranch": "codex/add-greeting",
+        "baseEmpty": false,
+        "currentRound": 1,
+        "rounds": [
+          {
+            "round": 1,
+            "reportPath": "openspec/review/2026-10-08-22-43-codex-add-greeting-pipeline-review.md",
+            "status": "passed",
+            "timestamp": "2026-10-08 22:42:19"
+          }
+        ],
+        "reportPath": "openspec/review/2026-10-08-22-43-codex-add-greeting-pipeline-review.md",
+        "status": "passed"
+      },
+      "tests": {
+        "command": "node --test test/greet.test.mjs",
+        "attempts": 1,
+        "status": "passed",
+        "detail": null
+      },
+      "verify": {
+        "command": "node verify.mjs",
+        "attempts": 1,
+        "status": "passed",
+        "detail": null
+      },
+      "archivePath": "openspec/changes/archive/2026-10-07-add-greeting",
+      "delivery": {
+        "commitSha": "f7b176a5e7aa17c013c0e4ecc192653dc27dff9c",
+        "mergeCommitSha": "f7b176a5e7aa17c013c0e4ecc192653dc27dff9c",
+        "sourcePushed": true,
+        "targetPushed": true,
+        "tag": null
+      },
+      "createdAt": "2026-10-08 22:41:13",
+      "updatedAt": "2026-10-08 22:42:25"
+    }
+  }
+}

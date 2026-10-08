@@ -1,0 +1,20 @@
+{
+  "cwd": "/private/var/folders/6f/h440pn6d6lbb_szrsths70dc0000gn/T/pipeline-forward-eval-GL0c4i/scenario-a",
+  "business": "0aa05f6fd4f50f4cc41cf75525e6bd0b0e45e6ef",
+  "before": {
+    "status": "ok",
+    "branch": "codex/readme-typo",
+    "localCommitted": false,
+    "remoteContains": null,
+    "finalStateCommitSha": "",
+    "remoteHead": null
+  },
+  "final": {
+    "status": "ok",
+    "branch": "codex/readme-typo",
+    "localCommitted": true,
+    "remoteContains": null,
+    "finalStateCommitSha": "78d34a9670f5da661cae00c2fd2ca6c36a619345",
+    "remoteHead": null
+  }
+}

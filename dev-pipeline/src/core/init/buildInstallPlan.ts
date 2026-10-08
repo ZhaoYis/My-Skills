@@ -15,6 +15,7 @@ import {
 import { getTechStackById } from '../tech-stack/registry.js';
 import type { TechStackId } from '../tech-stack/types.js';
 import { findAssetDefinition, resolveFileWritePolicy } from './fileWritePolicy.js';
+import { parseHookConfig } from './mergeHookConfig.js';
 import { renderString } from './renderTemplates.js';
 import { assertPathWithinBase, sanitizeProjectName } from './sanitizeInput.js';
 import type { InstallPlan } from './types.js';
@@ -354,9 +355,7 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
   const managed = indexManagedAssets(input.managedAssets);
 
   const upgradeAssetIds = new Set(
-    input.mode === 'upgrade'
-      ? selectedAssets.map((asset) => asset.id)
-      : [],
+    input.mode === 'upgrade' ? selectedAssets.map((asset) => asset.id) : [],
   );
 
   const expandedFiles = await Promise.all(
@@ -417,6 +416,10 @@ export async function buildInstallPlan(input: BuildInstallPlanInput): Promise<In
         }
         const exists = await fs.pathExists(file.destinationPath);
         const policy = resolveFileWritePolicy(findAssetDefinition(file.assetId), file, input.mode);
+
+        if (exists && policy.appendStrategy === 'hooks-json-merge') {
+          parseHookConfig(await fs.readFile(file.destinationPath, 'utf8'), file.destinationPath);
+        }
 
         return {
           ...file,

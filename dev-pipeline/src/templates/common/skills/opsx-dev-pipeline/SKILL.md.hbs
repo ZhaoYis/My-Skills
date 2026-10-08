@@ -1,7 +1,7 @@
 ---
 name: opsx-dev-pipeline
 description: 执行基于 OpenSpec 和 Git 的门禁式需求开发与交付流程，覆盖预检、提案确认、实现、代码审查、测试、验证归档、提交、推送与合并，并支持中断恢复。用户要求实现或继续一个 OpenSpec change、按阶段推进完整开发流水线、审查并交付变更，或处理 opsx-dev-pipeline 时使用。
-allowed-tools: Bash(openspec:*), {{askTool}}
+allowed-tools: Bash(openspec:*), Bash(node:*), Bash(git:*), {{askTool}}
 version: "{{~packageVersion~}}"
 license: "{{~packageLicense~}}"
 repository: "{{~packageRepoUrl~}}"
@@ -21,36 +21,41 @@ repository: "{{~packageRepoUrl~}}"
 - 高风险决策必须显式确认；推荐项不等于自动代选。
 - 决策点首选 **{{askTool}}** tool；不可用时改用编号选项列表并等待用户回复，不得自动代选。
 - 任务跟踪首选宿主提供的任务工具；不可用时在回复中维护等价 Markdown 清单，并将阶段、决策和门禁结果写入流水线状态文件。
-- 未经决策点 1 用户明确选择「确认提案，开始实施」，禁止进入 Phase2。
+- Route 包含 Phase1 时，未经决策点 1 用户明确选择「确认提案，开始实施」，禁止进入 Phase2；`trivial` 按 Phase2 的直接实施路径执行。
 - 代码审查发现问题后，选择「生成修复提案并应用」时必须先创建修复提案文档（`fix-proposal-round-N.md`）并等待用户确认，禁止跳过提案直接修改代码。修复提案路径通过 `decision fixProposalPath` 记录。
 - 代码审查修复循环最多 3 轮，超过后强制暂停。
 - 暂停/终止时展示：change 名称、中断阶段、各 Phase完成状态、恢复指引（重新触发技能并传入 change 名称即可续跑）。
 - 进入 Phase 时先读取对应 reference；完成决策或门禁后先写入状态，再执行阶段迁移。
 - 每个 Phase 的「继续后续流程」选项仅跳过当前 Phase 的剩余工作，不得跳过后续 Phase 的任何决策点。从当前 Phase 切换到下一 Phase 时，必须先执行 `transition` 命令并通过门禁验证。若 transition 失败，必须展示失败原因并等待用户显式选择。
-- 禁止跳过中间 Phase 直接进入后续 Phase。Phase 推进必须按顺序进行，且每阶段必经其决策点。
+- Phase 推进按当前 Route 的有效 Phase 顺序进行；Route 排除的 Phase 不进入、不补造通过结果。每个执行的 Phase 必经其适用决策点，`full` 的显式跳过审查仍须记录用户决定。
 - 以 `openspec/.pipeline-state/<change>.json` 为恢复权威，并用 OpenSpec/Git 事实校验；不一致时暂停，不得猜测。
+- 最终状态文件提交后，推送、清理分支或标签失败只暂停执行并展示待办与错误，不再调用 `pause`、`set` 或其他写状态命令改写已提交快照。恢复时通过 `delivery-check.mjs` 核验 Git 事实并继续未完成动作；`completed` 不能单独证明最终状态已推送。
 
-**脚本路径**：本 SKILL.md 所在目录下的 `scripts/` 目录包含所有流水线脚本。命令在目标 git 仓库根目录执行，脚本使用相对于本 SKILL.md 的路径。
+**脚本路径**：先解析本 SKILL.md 所在目录的绝对路径为 `<SKILL_ROOT>`。所有命令在目标 Git 仓库根目录执行，引用脚本时始终使用带引号的绝对路径；不得切换到 skill 或 references 目录执行，也不得把 `<SKILL_ROOT>` 原样作为占位值传入命令。
 
-- 引用前先确认目录存在：`test -d "scripts" || echo "scripts not found"`
-- 状态命令示例：`node scripts/dev-pipeline-state.mjs get "<change>"`
+- 引用前用宿主文件工具确认 `<SKILL_ROOT>/scripts/` 存在。
+- 状态命令示例：`node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" get "<change>"`
 
 ## 状态协议
 
 - 新 change：先按 Phase0 获取用户明确的需求关联决定，再运行 `init "<change>" "<source-branch>" --feature-id "<featureId>"`（有 URL 时追加 `--feature-url "<featureUrl>"`）或 `init "<change>" "<source-branch>" --skip-feature-association`
-- 读取状态：`node scripts/dev-pipeline-state.mjs get "<change>"`
+- 读取状态：`node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" get "<change>"`
 - 确认迁移旧版 Schema：先运行 `migrate-schema "<change>"` 获取确认提示，用户同意后运行 `migrate-schema "<change>" --confirm`
-- 阶段审计开始：`node scripts/dev-pipeline-state.mjs record-phase "<change>" <phase> <step> <executed-by> --start`
-- 阶段审计完成：`node scripts/dev-pipeline-state.mjs record-phase "<change>" <phase> <step> <executed-by> [bypassed-gates...]`
-- 阶段审计放弃：`node scripts/dev-pipeline-state.mjs record-phase "<change>" <phase> <step> <executed-by> --abandon`
-- 记录决策：`node scripts/dev-pipeline-state.mjs decision "<change>" <key> <json-value>`
-- 记录结果：`node scripts/dev-pipeline-state.mjs set "<change>" <field> <json-value>`
-- 记录尝试：`node scripts/dev-pipeline-state.mjs attempt "<change>" <review|tests|verify> <status>`；`review` scope 每次会向 `review.rounds` 追加含报告路径、结果、时间和当前 decisions 快照的条目
-- 阶段迁移：`node scripts/dev-pipeline-state.mjs transition "<change>" <phase> <step>`
-- 暂停流程：`node scripts/dev-pipeline-state.mjs pause "<change>" "<reason>"`
-- 完成交付：`node scripts/dev-pipeline-state.mjs complete "<change>"`
+- 阶段审计开始：`node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" record-phase "<change>" <phase> <step> <executed-by> --start`
+- 阶段审计完成：`node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" record-phase "<change>" <phase> <step> <executed-by> [bypassed-gates...]`
+- 阶段审计放弃：`node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" record-phase "<change>" <phase> <step> <executed-by> --abandon`
+- 记录决策：`node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" decision "<change>" <key> <json-value>`
+- 记录结果：`node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" set "<change>" <field> <json-value>`
+- 记录尝试：`node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" attempt "<change>" <review|tests|verify> <status>`；`review` scope 每次会向 `review.rounds` 追加含报告路径、结果、时间和当前 decisions 快照的条目
+- 阶段迁移：`node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" transition "<change>" <phase> <step>`
+- 查询下一有效 Phase：`node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" next "<change>"`；读取 `nextPhase` / `nextStep` 后显式 `transition`。`terminal=true` 只表示无后续 Phase，仍须完成当前交付与 `complete` 门禁。
+- 升级 Route：`node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" route "<change>" upgrade "<target-route>"`；按返回的 `resumePhase` / `resumeStep` 补做先前跳过的工作，禁止沿用升级前的审查、测试、verify 或交付批准直接交付。
+- 暂停流程：最终状态文件提交前使用 `node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" pause "<change>" "<reason>"`；提交后的失败遵循上述快照保留规则。
+- 完成交付：`node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs" complete "<change>"`
 
 Schema v3 使用 `_version` 做乐观锁，并以 `review.currentRound` / `review.rounds` 保存审查历史；`executionMode` 仅作为 `pipeline` / `standalone` / `hybrid` 的执行来源审计标记，不影响阶段迁移和门禁验证；`phaseHistory` 和 `gatesBypassed` 提供独立命令审计。任何状态命令返回 exit code 10/11/12 时，按“状态不存在 / 非法迁移或 gate / I/O 或并发冲突”处理；并发冲突只重载重试一次，仍失败则暂停。写入后必须用 `get` 对比预期关键字段。
+
+**制品位置**：`<artifactRoot>` 默认为 `openspec/changes/<change>`；状态的 `archivePath` 指向已存在归档目录时，使用该路径。Route 升级或失败回退后的提案、tasks、修复提案和技术债务都使用实际制品位置，禁止对已归档 change 调用仅支持活跃 change 的 OpenSpec 命令。已归档 change 补偿审查、测试和 verify 后复用归档事实，不重复归档。
 
 ## Phase引用表
 
@@ -66,6 +71,8 @@ Schema v3 使用 `_version` 做乐观锁，并以 `review.currentRound` / `revie
 | 7 | 合并与交付 | `references/phase-7-merge-deliver.md` | 决策点 7、标签创建（可选） |
 
 ## 流程概览
+
+下图展示 `full` Route。`trivial` 为 Phase0 → Phase2（直接实施）→ Phase6；`standard` 为 Phase0 → Phase1 → Phase2 → Phase5 → Phase6。实际下一 Phase 始终以状态命令 `next` 和 `openspec/config.yaml#pipeline.routes` 为准。`standard` 选择合并时先升级到 `full`，完成新增 Phase 后再交付。
 
 ```mermaid
 flowchart TD

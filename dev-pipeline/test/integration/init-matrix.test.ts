@@ -531,7 +531,8 @@ describe('tool matrix', () => {
     const apply = await fs.readFile(path.join(skillRoot, 'references/phase-2-apply.md'), 'utf8');
     expect(apply).toContain('写前复用门禁');
     expect(apply).toContain('准出自审查门禁');
-    expect(apply).toContain('编辑 `tasks.md` 将该任务条目的 `- [ ]` 改为 `- [x]`，完成标记');
+    expect(apply).toContain('编辑 `tasks.md` 将该任务条目的 `- [ ]` 改为 `- [x]`');
+    expect(apply).toContain('trivial 更新等价清单，不创建 OpenSpec 制品');
 
     const propose = await fs.readFile(
       path.join(skillRoot, 'references/phase-1-propose.md'),
@@ -557,13 +558,14 @@ describe('tool matrix', () => {
 
     const review = await fs.readFile(path.join(skillRoot, 'references/phase-3-review.md'), 'utf8');
     expect(review).toContain('「继续后续流程」仅跳过修复当前审查发现的问题');
-    expect(review).toContain('transition "<name>" 4 14');
+    expect(review).toContain('next "<name>"');
+    expect(review).toContain('transition "<name>" <nextPhase> <nextStep>');
 
     const unitTests = await fs.readFile(
       path.join(skillRoot, 'references/phase-4-unit-tests.md'),
       'utf8',
     );
-    expect(unitTests).toContain('transition "<name>" 5 15');
+    expect(unitTests).toContain('transition "<name>" <nextPhase> <nextStep>');
     expect(unitTests).toContain('test-gate-required');
 
     const archive = await fs.readFile(
@@ -573,7 +575,7 @@ describe('tool matrix', () => {
     expect(archive).toContain('executionMode=standalone|hybrid');
     expect(archive).toContain('/opsx:verify <name>');
     expect(archive).toContain('禁止在未经用户显式确认的情况下使用 `-y` flag');
-    expect(archive).toContain('transition "<name>" 6 20');
+    expect(archive).toContain('transition "<name>" <nextPhase> <nextStep>');
 
     // Verify scripts directory exists with essential scripts
     const scriptsDir = path.join(skillRoot, 'scripts');
@@ -629,10 +631,10 @@ describe('tool matrix', () => {
     expect(frontmatter).toContain(`repository: "${PACKAGE_REPO_URL}"`);
     expect(skillContent).not.toMatch(/\{\{[^}]+\}\}/);
 
-    expect(skillContent).not.toMatch(/<SKILL_ROOT>/);
+    expect(skillContent).toContain('先解析本 SKILL.md 所在目录的绝对路径');
     expect(skillContent).not.toMatch(/\{\{skillsDir\}\}/);
-    expect(skillContent).toContain('node scripts/dev-pipeline-state.mjs');
-    expect(skillContent).toContain('test -d "scripts" || echo "scripts not found"');
+    expect(skillContent).toContain('node "<SKILL_ROOT>/scripts/dev-pipeline-state.mjs"');
+    expect(skillContent).toContain('用宿主文件工具确认 `<SKILL_ROOT>/scripts/` 存在');
 
     const openaiConfig = await fs.readFile(path.join(skillDir, 'agents/openai.yaml'), 'utf8');
     expect(openaiConfig).toContain('display_name: "opsx-dev-pipeline"');

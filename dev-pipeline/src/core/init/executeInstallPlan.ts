@@ -13,6 +13,7 @@ import type { ManagedAssetRecord } from '../manifest/types.js';
 import { PACKAGE_NAME, TEMPLATE_VERSION } from '../runtime/meta.js';
 import { getTechStackById } from '../tech-stack/registry.js';
 import { buildTemplateContext } from './buildInstallPlan.js';
+import { mergeHookConfig } from './mergeHookConfig.js';
 import { renderTemplate } from './renderTemplates.js';
 import type { InstallPlan } from './types.js';
 
@@ -223,6 +224,21 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
     return;
   }
 
+  // 先验证并渲染所有 Hook 配置，防止无效 JSON 在部分 Asset 写入后才被发现。
+  // --force 也只更新 Pipeline 条目，不删除宿主的其他设置。
+  const hookConfigs = new Map<string, string>();
+  for (const file of plan.files) {
+    if (file.resolution === 'skip' || file.appendStrategy !== 'hooks-json-merge') continue;
+    const generated = await renderTemplate(file.sourcePath, context);
+    const existing = (await fs.pathExists(file.destinationPath))
+      ? await fs.readFile(file.destinationPath, 'utf8')
+      : '{}';
+    hookConfigs.set(
+      file.destinationPath,
+      mergeHookConfig(existing, generated, file.destinationPath),
+    );
+  }
+
   for (const file of plan.files) {
     if (file.resolution === 'skip') {
       // Skip means the destination already existed and the caller kept it.
@@ -244,6 +260,12 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
     await fs.ensureDir(path.dirname(file.destinationPath));
 
     if (file.kind === 'template') {
+      const hookConfig = hookConfigs.get(file.destinationPath);
+      if (hookConfig !== undefined) {
+        await fs.outputFile(file.destinationPath, hookConfig);
+        managedFiles.push(file);
+        continue;
+      }
       const content =
         file.assetId === 'stack-config' && isStackConfigSkeleton(file.sourcePath)
           ? await composeStackConfig({
@@ -327,10 +349,7 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
   const priorAssets = existingManifest?.manifest.managedAssets ?? [];
   context.managedAssets = mergeManagedAssets(priorAssets, writtenAssets);
 
-  const priorTools: ToolId[] = [
-    ...(existingManifest?.manifest.tools ?? []),
-    ...(existingManifest?.manifest.tool ? [existingManifest.manifest.tool] : []),
-  ];
+  const priorTools: ToolId[] = existingManifest?.manifest.tools ?? [];
   const nextTools = mergeTools(priorTools, plan.tool);
 
   // Always ensure the schema line in config.yaml matches the selected stack,
@@ -339,10 +358,7 @@ export async function executeInstallPlan(plan: InstallPlan): Promise<void> {
     const configPath = path.join(plan.targetDir, 'openspec', 'config.yaml');
     if (await fs.pathExists(configPath)) {
       const existingContent = await fs.readFile(configPath, 'utf8');
-      const updatedContent = mergeConfigSchema(
-        existingContent,
-        `schema: ${plan.stack}\n`,
-      );
+      const updatedContent = mergeConfigSchema(existingContent, `schema: ${plan.stack}\n`);
       if (updatedContent !== existingContent) {
         await fs.outputFile(configPath, updatedContent);
       }

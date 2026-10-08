@@ -62,6 +62,8 @@
 
 Asset 级 `writePolicy` 可把部分文件标为 append（例如 `openspec/config.yaml`）。
 
+宿主 Hook JSON 配置采用所有权合并：仅替换 Pipeline 的两项 Hook，保留权限、其他 Hook 与未知字段，包括 `--force`；已有 JSON 无法安全解析时在 Asset 写入前拒绝。卸载只移除 Pipeline 配置，有用户设置时保留文件。
+
 ### 2.4 Manifest 版本门禁（仅 `upgrade`）
 
 比较 `package.json#opsxDevPipeline.templateVersion` 与当前 CLI 版本：
@@ -129,6 +131,7 @@ Phase0 ──► Phase1 ──► Phase2 ──► Phase3 ──► Phase4 ─�
 - `tests.status=pending` 或 `failed` 不能进 Phase 5；`failed` 必须先修到 `passed`，或改成 `skipped` / `debt-recorded`。
 - `verify.status=failed` 不能进 Phase 6，必须 `passed` 或用户确认后的 `skipped`。
 - `complete` 仅允许当前 Phase 为 6 或 7，否则 `pipeline-not-delivered`。
+- `complete` 要求明确交付模式和 `delivery.commitSha`：local-only / push-only 仅在 Phase6 完成，push-only 还要求 `sourcePushed=true`；merge 仅在 Phase7 且 source push、merge commit、target push 均已完成时允许。重复完成不刷新状态文件。
 
 ### 4.2 首次 `init`：外部需求关联
 
@@ -158,7 +161,9 @@ Route 决定**允许进入哪些 Phase**，阶段列表的单一事实源是 `op
 
 升级命令：`dev-pipeline-state.mjs route <change> upgrade <target>`，写入 `route.upgradedFrom` / `route.upgradedAt`。详见 ADR 0002。
 
-即使 Route 跳过某 Phase，累计硬门禁仍可能要求补齐字段（例如 `trivial` 从 0 跳到 2 仍要 `proposalApproved=true`）。Skill 层应在跳过的阶段做 **gate 补偿**（见第 7 节），而不是绕过 `transition`。
+`next <change>` 从配置查询下一有效 Phase / Step，Skill 先查询再显式迁移。trivial 不要求补造提案、单测和归档结果；standard 不要求补造审查和单测结果。所有 Route 离开 Phase2 都必须记录 `implementationConfirmed=true`。
+
+Route 升级会回到最早新增的前置 Phase，清除受影响的批准、测试、verify 和交付结果，并在 `route.upgradeHistory` 保留审计。已有归档可作为补偿阶段的制品上下文，重新验证后复用，不重复归档；completed 状态拒绝升级。轻量 Route 选择 merge 时先升级 full 并完成补偿。
 
 ### 4.4 重试上限（自动暂停）
 
@@ -215,7 +220,13 @@ Route 决定**允许进入哪些 Phase**，阶段列表的单一事实源是 `op
 
 ### 5.3 状态与事实不一致
 
-恢复或交付时并行核对：OpenSpec change、任务勾选、审查报告、Git 分支与冲突。不一致则 `pause`，禁止按文件是否存在自动跳阶段。
+恢复或交付时并行核对：OpenSpec change、任务勾选、审查报告、Git 分支与冲突。不一致则暂停，禁止按文件是否存在自动跳阶段。最终状态文件提交前用 `pause` 记录失败；提交后的推送、分支清理或标签失败只暂停执行并展示待办与错误，保留已提交快照，不再调用写状态命令。
+
+审查使用初始化保存的 `review.baseCommit`，通过 `review-scope.mjs` 覆盖已提交、工作区与未跟踪文件；旧状态缺基线时必须明确补齐。初始空仓库由 `review.baseEmpty` 标识，不会遗漏首次提交。
+
+最终状态恢复由 `delivery-check.mjs final-state <change>` 检查：`localCommitted` 证明最终状态已提交，`remoteContains` 证明实际远程分支包含该提交。push-only 只有两者都为 true 才可跳过；仅本地提交时复用原 commit 补推。检查使用实际 `ls-remote`，远程未知或本地缺对象时明确失败并要求 fetch 重试。
+
+`delivery-check.mjs merge <change>` 按实际 mergeStrategy 检查目标远程包含关系；Squash 不要求 source 为 target 祖先，不能安全删除本地源分支时保留并继续标签。实际源分支出现新提交时拒绝清理；已删除分支的恢复跳过删除操作。
 
 ---
 

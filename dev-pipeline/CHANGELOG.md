@@ -10,6 +10,13 @@
 
 ### Fixed
 
+- **fix(pipeline)**：对齐三档 Route 与 Phase 协议，新增只读 `next` 查询；修复轻量 Route 绕过实施确认、Route 升级无法补偿遗漏阶段、目标分支未推送仍可标记完成的问题。升级保留历史、失效受影响结果，已完成流程不允许升级。
+- **fix(review)**：初始化保存审查基线，新增 `review-scope.mjs`，覆盖已推送提交、工作区修改和未跟踪文件；旧状态缺基线时明确补齐，空仓库从首次实现开始审查。
+- **fix(delivery)**：新增基于实际远程分支的最终状态与合并交付检查，修复 push-only 在最终状态提交后中断时漏推送；推送失败恢复保留原状态快照与 commit；Squash 可保留源分支并继续标签，已删除分支的恢复不重复清理。
+- **fix(config)**：Hook 配置按所有权合并，保留用户权限、其他 Hook 与未知字段，重复同步幂等；卸载仅移除 Pipeline 条目，坏 JSON 在 Asset 写入或删除前拒绝。
+- **fix(manifest)**：修复 Codex `.agents/` Asset 归属（含旧 Manifest 和 user Scope），部分卸载同步 active Tool，避免 Sync 重新登记已卸载 Tool。
+- **test(pipeline)**：补齐 Route 门禁、升级补偿、Git 审查和交付恢复、配置保护与多 Tool 生命周期回归，并记录独立行为测评。
+
 - **fix(init)**：修复 Windows 上 `scope: 'user'` 安装时路径拼接错误的问题。当用户选择 User 安装范围时，`adapter.getDestination()` 返回的是绝对路径（如 `C:\Users\...\.cursor\skills`），但 `path.join(targetDir, absolutePath)` 在 Windows 上不会像 POSIX 那样丢弃前置参数，导致路径变成 `D:\project\C:\Users\...\skills`。修复方案：在 `buildInstallPlan.ts` 的 bundle 和单文件路径拼接前，检查目标路径是否已为绝对路径，若是则直接使用而不拼接 `targetDir`。同步修复 `buildUninstallPlan.ts` 中相同的路径拼接问题。
 - **fix(init)**：修复 user-scope + Windows 下生成的 hook 配置为非法 JSON 的问题。`settings.json.hbs` / `opencode.json.hbs` 中 `{{skillsDir}}` 渲染出反斜杠路径（如 `C:\Users\...`），在 JSON 中形成 `\U` 等非法转义导致 hook 配置解析失败。修复方案：新增 `hookBlockDangerousBash` / `hookBlockSensitiveWrite` 上下文变量，反斜杠规范化为正斜杠，含空格路径用 JSON 转义的双引号包裹。
 - **fix(init)**：Windows 下 OpenSpec 调用不再硬编码 `openspec.cmd`，改为裸命令名由 cmd.exe 按 PATHEXT 解析，支持原生 `.exe` 安装；`isOpenSpecCliMissingError` 不再把 win32 下所有 exit 1 误判为「CLI 未安装」，仅当 stderr 包含 cmd.exe 的 command-not-found 消息（中英文）时才判定缺失。
@@ -105,4 +112,3 @@ Cursor 用 `/opsx-xxx`，Codex 用 `$opsx-xxx`。
 ### Changed
 
 - **docs**：重写 README，统一使用 `opsx:` 命名约定。
-

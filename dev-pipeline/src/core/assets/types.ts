@@ -3,7 +3,7 @@ import type { FeatureId, StackId, ToolId } from '../adapters/types.js';
 export type AssetKind = 'template' | 'static' | 'bundle';
 export type AssetScope = 'common' | 'tool';
 export type InstallMode = 'init' | 'sync' | 'upgrade';
-export type AppendStrategy = 'none' | 'simple' | 'config-merge';
+export type AppendStrategy = 'none' | 'simple' | 'config-merge' | 'hooks-json-merge';
 export type ExistingFileAction = 'prompt' | 'overwrite' | 'skip';
 
 export interface FileWritePolicy {

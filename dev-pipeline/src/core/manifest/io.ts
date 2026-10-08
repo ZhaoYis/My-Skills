@@ -61,9 +61,17 @@ export interface ManifestReadResult {
  *  doesn't encode a tool prefix). */
 export function inferAssetTool(destination: string, assetId?: string): ToolId | undefined {
   const normalized = destination.replaceAll('\\', '/');
+  const isAbsolute = path.isAbsolute(destination) || path.win32.isAbsolute(destination);
+  // Codex 的项目和用户级 Skill 都使用 .agents，而不是 .codex。
+  if (normalized === '.agents' || normalized.startsWith('.agents/')) return 'codex';
+  if (isAbsolute && /(?:^|\/)\.agents\/skills(?:\/|$)/.test(normalized)) return 'codex';
   for (const tool of TOOL_DIRECTORY_PREFIXES) {
     const prefix = `.${tool}/`;
-    if (normalized.startsWith(prefix) || normalized === `.${tool}`) {
+    if (
+      normalized.startsWith(prefix) ||
+      normalized === `.${tool}` ||
+      (isAbsolute && normalized.includes(`/${prefix}`))
+    ) {
       return tool;
     }
   }
@@ -138,7 +146,7 @@ function normalizeManifest(manifest: PipelineManifest): PipelineManifest {
     managedAssets,
   };
 
-  if (manifest.tool) {
+  if (manifest.tool && tools.includes(manifest.tool)) {
     normalized.tool = manifest.tool;
   } else if (tools.length === 1 && tools[0]) {
     normalized.tool = tools[0];
